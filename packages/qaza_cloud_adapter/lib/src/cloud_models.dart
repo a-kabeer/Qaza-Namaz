@@ -2,8 +2,7 @@ import 'dart:convert';
 
 const int cloudSchemaVersion = 1;
 const String phase1AppId = 'qaza_namaz_app';
-const String cloudDriveScope =
-    'https://www.googleapis.com/auth/drive.appdata';
+const String cloudDriveScope = 'https://www.googleapis.com/auth/drive.appdata';
 const String cloudBackupFilePrefix = 'qaza_namaz_cloud_backup_';
 
 enum CloudSyncResultKind {
@@ -16,10 +15,7 @@ enum CloudSyncResultKind {
   failed,
 }
 
-enum CloudConflictDecision {
-  keepLocal,
-  useRemote,
-}
+enum CloudConflictDecision { keepLocal, useRemote }
 
 class CloudAdapterException implements Exception {
   const CloudAdapterException(this.message);
@@ -70,12 +66,12 @@ class CloudLineage {
   final DateTime createdAt;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'device_id': deviceId,
-        'backup_id': backupId,
-        'base_backup_id': baseBackupId,
-        'db_revision': dbRevision,
-        'created_at': createdAt.toUtc().toIso8601String(),
-      };
+    'device_id': deviceId,
+    'backup_id': backupId,
+    'base_backup_id': baseBackupId,
+    'db_revision': dbRevision,
+    'created_at': createdAt.toUtc().toIso8601String(),
+  };
 
   static CloudLineage fromJson(Map<dynamic, dynamic> json) {
     String requiredString(String key) {
@@ -130,10 +126,7 @@ class CloudLineage {
 }
 
 class CloudBackup {
-  const CloudBackup({
-    required this.lineage,
-    required this.phase1BackupJson,
-  });
+  const CloudBackup({required this.lineage, required this.phase1BackupJson});
 
   final CloudLineage lineage;
   final String phase1BackupJson;
@@ -255,19 +248,19 @@ class CloudSyncCursor {
   });
 
   const CloudSyncCursor.empty()
-      : lastSyncedLocalRevision = null,
-        lastSyncedBackupId = null,
-        lastSyncedRemoteVersion = null;
+    : lastSyncedLocalRevision = null,
+      lastSyncedBackupId = null,
+      lastSyncedRemoteVersion = null;
 
   final int? lastSyncedLocalRevision;
   final String? lastSyncedBackupId;
   final String? lastSyncedRemoteVersion;
 
   Map<String, dynamic> toJson() => <String, dynamic>{
-        'last_synced_local_revision': lastSyncedLocalRevision,
-        'last_synced_backup_id': lastSyncedBackupId,
-        'last_synced_remote_version': lastSyncedRemoteVersion,
-      };
+    'last_synced_local_revision': lastSyncedLocalRevision,
+    'last_synced_backup_id': lastSyncedBackupId,
+    'last_synced_remote_version': lastSyncedRemoteVersion,
+  };
 
   static CloudSyncCursor fromJson(Map<dynamic, dynamic> json) {
     final rawRevision = json['last_synced_local_revision'];
@@ -318,18 +311,18 @@ class CloudConflict {
   final String? lastSyncedBackupId;
 
   Map<String, dynamic> toDisplayData() => <String, dynamic>{
-        'local_timestamp': localTimestamp.toUtc().toIso8601String(),
-        'local_originating_device': localDeviceId,
-        'local_revision': localRevision,
-        'local_base_backup_id': localBaseBackupId,
-        'remote_timestamp': remoteTimestamp.toUtc().toIso8601String(),
-        'remote_originating_device': remoteLineage.deviceId,
-        'remote_revision': remoteLineage.dbRevision,
-        'remote_backup_id': remoteLineage.backupId,
-        'remote_base_backup_id': remoteLineage.baseBackupId,
-        'last_synced_backup_id': lastSyncedBackupId,
-        'remote_version': remoteVersion,
-      };
+    'local_timestamp': localTimestamp.toUtc().toIso8601String(),
+    'local_originating_device': localDeviceId,
+    'local_revision': localRevision,
+    'local_base_backup_id': localBaseBackupId,
+    'remote_timestamp': remoteTimestamp.toUtc().toIso8601String(),
+    'remote_originating_device': remoteLineage.deviceId,
+    'remote_revision': remoteLineage.dbRevision,
+    'remote_backup_id': remoteLineage.backupId,
+    'remote_base_backup_id': remoteLineage.baseBackupId,
+    'last_synced_backup_id': lastSyncedBackupId,
+    'remote_version': remoteVersion,
+  };
 }
 
 class CloudSyncResult {
@@ -340,41 +333,28 @@ class CloudSyncResult {
     this.backup,
   });
 
-  factory CloudSyncResult.noOp() => const CloudSyncResult._(
-        kind: CloudSyncResultKind.noOp,
-      );
+  factory CloudSyncResult.noOp() =>
+      const CloudSyncResult._(kind: CloudSyncResultKind.noOp);
 
-  factory CloudSyncResult.uploaded(CloudBackup backup) => CloudSyncResult._(
-        kind: CloudSyncResultKind.uploaded,
-        backup: backup,
-      );
+  factory CloudSyncResult.uploaded(CloudBackup backup) =>
+      CloudSyncResult._(kind: CloudSyncResultKind.uploaded, backup: backup);
 
   factory CloudSyncResult.downloaded(CloudBackup backup) =>
-      CloudSyncResult._(
-        kind: CloudSyncResultKind.downloaded,
-        backup: backup,
-      );
+      CloudSyncResult._(kind: CloudSyncResultKind.downloaded, backup: backup);
 
   factory CloudSyncResult.conflict(CloudConflict conflict) =>
-      CloudSyncResult._(
-        kind: CloudSyncResultKind.conflict,
-        conflict: conflict,
-      );
+      CloudSyncResult._(kind: CloudSyncResultKind.conflict, conflict: conflict);
 
   factory CloudSyncResult.remoteMissing(String message) => CloudSyncResult._(
-        kind: CloudSyncResultKind.remoteMissing,
-        message: message,
-      );
+    kind: CloudSyncResultKind.remoteMissing,
+    message: message,
+  );
 
-  factory CloudSyncResult.skipped(String message) => CloudSyncResult._(
-        kind: CloudSyncResultKind.skipped,
-        message: message,
-      );
+  factory CloudSyncResult.skipped(String message) =>
+      CloudSyncResult._(kind: CloudSyncResultKind.skipped, message: message);
 
-  factory CloudSyncResult.failed(String message) => CloudSyncResult._(
-        kind: CloudSyncResultKind.failed,
-        message: message,
-      );
+  factory CloudSyncResult.failed(String message) =>
+      CloudSyncResult._(kind: CloudSyncResultKind.failed, message: message);
 
   final CloudSyncResultKind kind;
   final CloudConflict? conflict;

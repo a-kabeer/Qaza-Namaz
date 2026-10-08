@@ -54,9 +54,8 @@ void initializeQazaCloudBackgroundDispatcher() {
 }
 
 class CloudSyncScheduler {
-  CloudSyncScheduler({
-    Workmanager? workmanager,
-  }) : _workmanager = workmanager ?? Workmanager();
+  CloudSyncScheduler({Workmanager? workmanager})
+    : _workmanager = workmanager ?? Workmanager();
 
   final Workmanager _workmanager;
   bool _initialized = false;
@@ -66,9 +65,7 @@ class CloudSyncScheduler {
     String? serverClientId,
   }) async {
     if (!_initialized) {
-      await _workmanager.initialize(
-        initializeQazaCloudBackgroundDispatcher,
-      );
+      await _workmanager.initialize(initializeQazaCloudBackgroundDispatcher);
       _initialized = true;
     }
 

@@ -35,76 +35,80 @@ void main() {
       expect(remote.writeCount, 0);
     });
 
-    test('local-only progression uploads with the last remote backup as base',
-        () async {
-      final phase1 = FakePhase1(revision: 11);
-      final state = FakeState(
-        deviceIdValue: 'device-B',
-        cursor: const CloudSyncCursor(
-          lastSyncedLocalRevision: 10,
-          lastSyncedBackupId: 'backup-100',
-          lastSyncedRemoteVersion: '1',
-        ),
-      );
-      final remote = FakeRemote(
-        latestSnapshot: _snapshot(
-          deviceId: 'device-A',
-          backupId: 'backup-100',
-          baseBackupId: null,
-          revision: 10,
-          modifiedAt: DateTime.utc(2026, 10, 8),
-          remoteVersion: '1',
-        ),
-      );
+    test(
+      'local-only progression uploads with the last remote backup as base',
+      () async {
+        final phase1 = FakePhase1(revision: 11);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-100',
+            baseBackupId: null,
+            revision: 10,
+            modifiedAt: DateTime.utc(2026, 10, 8),
+            remoteVersion: '1',
+          ),
+        );
 
-      final result = await CloudSyncEngine(
-        phase1: phase1,
-        remote: remote,
-        state: state,
-      ).sync();
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
 
-      expect(result.kind, CloudSyncResultKind.uploaded);
-      expect(remote.writeCount, 1);
-      expect(remote.written!.lineage.baseBackupId, 'backup-100');
-      expect(remote.written!.lineage.dbRevision, 11);
-      expect(
-        state.cursor!.lastSyncedBackupId,
-        remote.written!.lineage.backupId,
-      );
-    });
+        expect(result.kind, CloudSyncResultKind.uploaded);
+        expect(remote.writeCount, 1);
+        expect(remote.written!.lineage.baseBackupId, 'backup-100');
+        expect(remote.written!.lineage.dbRevision, 11);
+        expect(
+          state.cursor!.lastSyncedBackupId,
+          remote.written!.lineage.backupId,
+        );
+      },
+    );
 
-    test('remote-only progression downloads without using revision as cloud identity',
-        () async {
-      final phase1 = FakePhase1(revision: 10);
-      final state = FakeState(
-        deviceIdValue: 'device-B',
-        cursor: const CloudSyncCursor(
-          lastSyncedLocalRevision: 10,
-          lastSyncedBackupId: 'backup-100',
-          lastSyncedRemoteVersion: '1',
-        ),
-      );
-      final remote = FakeRemote(
-        latestSnapshot: _snapshot(
-          deviceId: 'device-A',
-          backupId: 'backup-101',
-          baseBackupId: 'backup-100',
-          revision: 3,
-          modifiedAt: DateTime.utc(2026, 10, 9),
-          remoteVersion: '2',
-        ),
-      );
+    test(
+      'remote-only progression downloads without using revision as cloud identity',
+      () async {
+        final phase1 = FakePhase1(revision: 10);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-101',
+            baseBackupId: 'backup-100',
+            revision: 3,
+            modifiedAt: DateTime.utc(2026, 10, 9),
+            remoteVersion: '2',
+          ),
+        );
 
-      final result = await CloudSyncEngine(
-        phase1: phase1,
-        remote: remote,
-        state: state,
-      ).sync();
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
 
-      expect(result.kind, CloudSyncResultKind.downloaded);
-      expect(phase1.importCount, 1);
-      expect(state.cursor!.lastSyncedBackupId, 'backup-101');
-    });
+        expect(result.kind, CloudSyncResultKind.downloaded);
+        expect(phase1.importCount, 1);
+        expect(state.cursor!.lastSyncedBackupId, 'backup-101');
+      },
+    );
 
     test('local unsynced plus remote changed returns a conflict', () async {
       final phase1 = FakePhase1(revision: 12);
@@ -141,41 +145,44 @@ void main() {
       expect(phase1.importCount, 0);
     });
 
-    test('conflict exposes display information for user confirmation', () async {
-      final phase1 = FakePhase1(revision: 12);
-      final state = FakeState(
-        deviceIdValue: 'device-B',
-        cursor: const CloudSyncCursor(
-          lastSyncedLocalRevision: 10,
-          lastSyncedBackupId: 'backup-100',
-          lastSyncedRemoteVersion: '1',
-        ),
-      );
-      final remote = FakeRemote(
-        latestSnapshot: _snapshot(
-          deviceId: 'device-A',
-          backupId: 'backup-102',
-          baseBackupId: 'backup-100',
-          revision: 11,
-          modifiedAt: DateTime.utc(2026, 10, 9, 0, 5),
-          remoteVersion: '3',
-        ),
-      );
+    test(
+      'conflict exposes display information for user confirmation',
+      () async {
+        final phase1 = FakePhase1(revision: 12);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-102',
+            baseBackupId: 'backup-100',
+            revision: 11,
+            modifiedAt: DateTime.utc(2026, 10, 9, 0, 5),
+            remoteVersion: '3',
+          ),
+        );
 
-      final result = await CloudSyncEngine(
-        phase1: phase1,
-        remote: remote,
-        state: state,
-      ).sync();
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
 
-      final display = result.conflict!.toDisplayData();
-      expect(display['local_originating_device'], 'device-B');
-      expect(display['remote_originating_device'], 'device-A');
-      expect(display['local_revision'], 12);
-      expect(display['remote_revision'], 11);
-      expect(display['remote_backup_id'], 'backup-102');
-      expect(display['remote_base_backup_id'], 'backup-100');
-    });
+        final display = result.conflict!.toDisplayData();
+        expect(display['local_originating_device'], 'device-B');
+        expect(display['remote_originating_device'], 'device-A');
+        expect(display['local_revision'], 12);
+        expect(display['remote_revision'], 11);
+        expect(display['remote_backup_id'], 'backup-102');
+        expect(display['remote_base_backup_id'], 'backup-100');
+      },
+    );
 
     test('conflict resolution requires explicit confirmation', () async {
       final phase1 = FakePhase1(revision: 12);
@@ -275,15 +282,16 @@ void main() {
         ),
       );
 
-      final result = await CloudSyncEngine(
-        phase1: phase1,
-        remote: remote,
-        state: state,
-      ).resolveConflict(
-        conflict: _conflict(remote),
-        decision: CloudConflictDecision.keepLocal,
-        confirmed: true,
-      );
+      final result =
+          await CloudSyncEngine(
+            phase1: phase1,
+            remote: remote,
+            state: state,
+          ).resolveConflict(
+            conflict: _conflict(remote),
+            decision: CloudConflictDecision.keepLocal,
+            confirmed: true,
+          );
 
       expect(result.kind, CloudSyncResultKind.uploaded);
       expect(remote.written!.lineage.baseBackupId, 'backup-102');
@@ -344,7 +352,8 @@ class FakePhase1 implements Phase1BackupSource {
   Future<int> readDbRevision() async => _revision;
 
   @override
-  Future<String> exportBackup() async => '''
+  Future<String> exportBackup() async =>
+      '''
 {
   "metadata": {
     "app_id": "qaza_namaz_app",
@@ -363,10 +372,7 @@ class FakePhase1 implements Phase1BackupSource {
 }
 
 class FakeState implements CloudSyncStateStore {
-  FakeState({
-    required this.deviceIdValue,
-    required this.cursor,
-  });
+  FakeState({required this.deviceIdValue, required this.cursor});
 
   final String deviceIdValue;
   CloudSyncCursor? cursor;
@@ -392,9 +398,7 @@ class FakeRemote implements CloudRemoteStore {
   int writeCount = 0;
 
   @override
-  Future<CloudRemoteSnapshot?> latest({
-    required bool allowInteractive,
-  }) async =>
+  Future<CloudRemoteSnapshot?> latest({required bool allowInteractive}) async =>
       latestSnapshot;
 
   @override

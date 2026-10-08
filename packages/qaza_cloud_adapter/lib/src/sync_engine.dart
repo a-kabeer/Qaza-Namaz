@@ -10,17 +10,15 @@ class CloudSyncEngine {
     required Phase1BackupSource phase1,
     required CloudRemoteStore remote,
     required CloudSyncStateStore state,
-  })  : _phase1 = phase1,
-        _remote = remote,
-        _state = state;
+  }) : _phase1 = phase1,
+       _remote = remote,
+       _state = state;
 
   final Phase1BackupSource _phase1;
   final CloudRemoteStore _remote;
   final CloudSyncStateStore _state;
 
-  Future<CloudSyncResult> sync({
-    bool allowInteractive = false,
-  }) async {
+  Future<CloudSyncResult> sync({bool allowInteractive = false}) async {
     final cursor = await _state.readCursor();
     final deviceId = await _state.deviceId();
     final localRevision = await _phase1.readDbRevision();
@@ -43,7 +41,7 @@ class CloudSyncEngine {
     final remoteChanged = cursor.lastSyncedBackupId == null
         ? remote != null
         : remote == null ||
-            remote.backup.lineage.backupId != cursor.lastSyncedBackupId;
+              remote.backup.lineage.backupId != cursor.lastSyncedBackupId;
 
     if (!localUnsynced && !remoteChanged) {
       return CloudSyncResult.noOp();
@@ -219,10 +217,7 @@ class CloudSyncEngine {
       );
     }
 
-    return _Phase1Preview(
-      timestamp: parsed,
-      revision: revision,
-    );
+    return _Phase1Preview(timestamp: parsed, revision: revision);
   }
 
   String _newBackupId() {
@@ -239,10 +234,7 @@ class CloudSyncEngine {
 }
 
 class _Phase1Preview {
-  const _Phase1Preview({
-    required this.timestamp,
-    required this.revision,
-  });
+  const _Phase1Preview({required this.timestamp, required this.revision});
 
   final DateTime timestamp;
   final int revision;

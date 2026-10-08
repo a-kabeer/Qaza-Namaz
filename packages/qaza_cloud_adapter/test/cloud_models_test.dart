@@ -37,8 +37,7 @@ void main() {
         phase1BackupJson: phase1,
       );
 
-      final decoded =
-          jsonDecode(backup.toJsonString()) as Map<String, dynamic>;
+      final decoded = jsonDecode(backup.toJsonString()) as Map<String, dynamic>;
       expect(decoded['cloud_schema_version'], cloudSchemaVersion);
       expect(decoded['lineage']['backup_id'], 'backup-123');
       expect(decoded['phase1_backup']['metadata']['app_id'], 'qaza_namaz_app');

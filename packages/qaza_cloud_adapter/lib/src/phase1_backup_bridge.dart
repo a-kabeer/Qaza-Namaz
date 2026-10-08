@@ -11,7 +11,7 @@ abstract interface class Phase1BackupSource {
 
 class LocalPhase1BackupSource implements Phase1BackupSource {
   LocalPhase1BackupSource(this.database)
-      : _backupService = LocalBackupService(database);
+    : _backupService = LocalBackupService(database);
 
   final AppDatabase database;
   final LocalBackupService _backupService;

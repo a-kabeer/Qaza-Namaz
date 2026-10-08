@@ -12,15 +12,16 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
   final GoogleSignInGateway _auth;
 
   @override
-  Future<CloudRemoteSnapshot?> latest({
-    required bool allowInteractive,
-  }) async {
+  Future<CloudRemoteSnapshot?> latest({required bool allowInteractive}) async {
     return _withDrive<CloudRemoteSnapshot?>(
       allowInteractive: allowInteractive,
       action: (driveApi) async {
         final response = await driveApi.files.list(
           spaces: 'appDataFolder',
-          q: "name contains '" + cloudBackupFilePrefix + "' and trashed = false",
+          q:
+              "name contains '" +
+              cloudBackupFilePrefix +
+              "' and trashed = false",
           orderBy: 'modifiedTime desc,name desc',
           pageSize: 1,
           $fields:
@@ -78,9 +79,8 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
       allowInteractive: allowInteractive,
       action: (driveApi) async {
         final bytes = utf8.encode(backup.toJsonString());
-        final fileName = cloudBackupFilePrefix +
-            backup.lineage.backupId +
-            '.json';
+        final fileName =
+            cloudBackupFilePrefix + backup.lineage.backupId + '.json';
 
         final created = await driveApi.files.create(
           drive.File()
@@ -98,8 +98,7 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
             bytes.length,
             contentType: 'application/json',
           ),
-          $fields:
-              'id,name,modifiedTime,version,md5Checksum,appProperties',
+          $fields: 'id,name,modifiedTime,version,md5Checksum,appProperties',
         );
 
         final fileId = created.id;

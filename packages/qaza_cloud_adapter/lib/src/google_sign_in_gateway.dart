@@ -11,9 +11,9 @@ class GoogleSignInGateway {
     String? clientId,
     String? serverClientId,
     GoogleSignIn? googleSignIn,
-  })  : _clientId = clientId,
-        _serverClientId = serverClientId,
-        _signIn = googleSignIn ?? GoogleSignIn.instance;
+  }) : _clientId = clientId,
+       _serverClientId = serverClientId,
+       _signIn = googleSignIn ?? GoogleSignIn.instance;
 
   final String? _clientId;
   final String? _serverClientId;
@@ -23,54 +23,49 @@ class GoogleSignInGateway {
   Future<void> _tail = Future<void>.value();
 
   Future<void> initialize() => _serialized<void>(() async {
-        await _initializeUnlocked();
-      });
+    await _initializeUnlocked();
+  });
 
-  Future<GoogleSignInAccount> authenticate() => _serialized(
-        () => _authenticateUnlocked(),
-      );
+  Future<GoogleSignInAccount> authenticate() =>
+      _serialized(() => _authenticateUnlocked());
 
   Future<GoogleSignInAccount?> restoreLightweightAuthentication() =>
-      _serialized(
-        () async {
-          await _initializeUnlocked();
-          return _signIn.attemptLightweightAuthentication();
-        },
-      );
+      _serialized(() async {
+        await _initializeUnlocked();
+        return _signIn.attemptLightweightAuthentication();
+      });
 
-  Future<http.Client?> authorizeDrive({
-    required bool allowInteractive,
-  }) =>
-      _serialized(
-        () async {
-          await _initializeUnlocked();
+  Future<http.Client?> authorizeDrive({required bool allowInteractive}) =>
+      _serialized(() async {
+        await _initializeUnlocked();
 
-          var user = await _signIn.attemptLightweightAuthentication();
-          if (user == null) {
-            if (!allowInteractive) {
-              throw const CloudAuthorizationUnavailable();
-            }
-            user = await _authenticateUnlocked();
-          }
-
-          final authorization = await user.authorizationClient
-              .authorizationForScopes(const <String>[cloudDriveScope]);
-
-          final resolvedAuthorization = authorization ??
-              (allowInteractive
-                  ? await user.authorizationClient
-                      .authorizeScopes(const <String>[cloudDriveScope])
-                  : null);
-
-          if (resolvedAuthorization == null) {
+        var user = await _signIn.attemptLightweightAuthentication();
+        if (user == null) {
+          if (!allowInteractive) {
             throw const CloudAuthorizationUnavailable();
           }
+          user = await _authenticateUnlocked();
+        }
 
-          return resolvedAuthorization.authClient(
-            scopes: const <String>[cloudDriveScope],
-          );
-        },
-      );
+        final authorization = await user.authorizationClient
+            .authorizationForScopes(const <String>[cloudDriveScope]);
+
+        final resolvedAuthorization =
+            authorization ??
+            (allowInteractive
+                ? await user.authorizationClient.authorizeScopes(const <String>[
+                    cloudDriveScope,
+                  ])
+                : null);
+
+        if (resolvedAuthorization == null) {
+          throw const CloudAuthorizationUnavailable();
+        }
+
+        return resolvedAuthorization.authClient(
+          scopes: const <String>[cloudDriveScope],
+        );
+      });
 
   Future<void> _initializeUnlocked() async {
     if (_initialized) return;

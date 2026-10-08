@@ -13,7 +13,7 @@ abstract interface class CloudSyncStateStore {
 
 class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   SharedPreferencesCloudSyncStateStore({SharedPreferences? preferences})
-      : _preferences = preferences;
+    : _preferences = preferences;
 
   static const _deviceIdKey = 'qaza_cloud_adapter.device_id';
   static const _cursorKey = 'qaza_cloud_adapter.sync_cursor_v1';
