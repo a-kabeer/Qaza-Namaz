@@ -83,9 +83,9 @@ void main() {
     expect(await database.readDbRevision(), 3);
     expect(
       (await database.qazaRecordsDao.findById(
-            userId: 'guest',
-            id: record.id,
-          ))!
+        userId: 'guest',
+        id: record.id,
+      ))!
           .recordVersion,
       2,
     );
@@ -136,7 +136,8 @@ void main() {
     expect(await database.readDbRevision(), 4);
   });
 
-  test('delete advances revision once and repeated delete is a no-op', () async {
+  test('delete advances revision once and repeated delete is a no-op',
+      () async {
     final record = _record('delete', DateTime(2026, 7, 1));
     await store.appendRecords('guest', [record]);
 
@@ -167,7 +168,8 @@ void main() {
     expect(await database.readDbRevision(), 3);
   });
 
-  test('failed logical transaction rolls back both data and revision', () async {
+  test('failed logical transaction rolls back both data and revision',
+      () async {
     final beforeRevision = await database.readDbRevision();
 
     expect(
