@@ -13,13 +13,20 @@ class UserProfile {
   });
 
   static const int currentSchemaVersion = 2;
-  static const String storageKey = 'qaza_user_profile_v1';
   static const String localLedgerUserId = 'guest';
   static const int defaultDailyQazaTarget = 5;
   static const int minDailyQazaTarget = 1;
   static const int maxDailyQazaTarget = 50;
   static const List<int> dailyQazaTargetOptions = [
-    1, 2, 3, 5, 10, 15, 20, 30, 50,
+    1,
+    2,
+    3,
+    5,
+    10,
+    15,
+    20,
+    30,
+    50,
   ];
 
   static int normalizeDailyQazaTarget(int value) =>
@@ -106,9 +113,10 @@ class UserProfile {
         value is String ? DateTime.tryParse(value) : null;
 
     return UserProfile(
-      languageCode: (json['languageCode'] as String?)?.trim().isNotEmpty == true
-          ? json['languageCode'] as String
-          : 'en',
+      languageCode:
+          (json['languageCode'] as String?)?.trim().isNotEmpty == true
+              ? json['languageCode'] as String
+              : 'en',
       dailyQazaTarget: normalizeDailyQazaTarget(
         (json['dailyQazaTarget'] as num?)?.toInt() ?? defaultDailyQazaTarget,
       ),
