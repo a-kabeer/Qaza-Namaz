@@ -511,9 +511,26 @@ class DriftQazaLocalStore extends QazaLocalStore
       }
     }
     await _database.transactionWithRevision(() async {
+      final ids = records.map((record) => record.id).toList(growable: false);
+      final current = await _withProfilePlanProvenance(
+        userId,
+        await _database.qazaRecordsDao.getByIds(userId: userId, ids: ids),
+      );
+      final currentById = {
+        for (final record in current) record.id: record,
+      };
+      final changed = records.any(
+        (record) =>
+            currentById[record.id]?.toJson().toString() !=
+            record.toJson().toString(),
+      );
+      if (!changed) return false;
+
       await _database.qazaRecordsDao.upsertRecords(
         records.map(_toCompanion).toList(growable: false),
       );
+      await _replaceProfilePlanProvenance(userId, records);
+      return true;
     });
   }
 
