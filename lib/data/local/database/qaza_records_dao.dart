@@ -956,16 +956,24 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
 
   QazaRecordsCompanion _toCompanion(QazaRecord record) =>
       QazaRecordsCompanion.insert(
-          id: record.id,
-          userId: record.userId,
-          prayerType: record.prayerType.name,
-          originalDate: record.originalDate,
-          status: record.status.name,
-          completedAt: record.completedAt == null
-              ? const Value.absent()
-              : Value(record.completedAt),
-          createdAt: record.createdAt,
-          updatedAt: record.updatedAt);
+        id: record.id,
+        userId: record.userId,
+        prayerType: record.prayerType.name,
+        originalDate: record.originalDate,
+        status: record.status.name,
+        completedAt: record.completedAt == null
+            ? const Value.absent()
+            : Value(record.completedAt),
+        completionId: record.completionId == null
+            ? const Value.absent()
+            : Value(record.completionId),
+        additionId: record.additionId == null
+            ? const Value.absent()
+            : Value(record.additionId),
+        recordVersion: Value(record.recordVersion),
+        createdAt: record.createdAt,
+        updatedAt: record.updatedAt,
+      );
   void _validatePage(int limit, int offset) {
     if (limit < 1 || limit > maxPageSize) {
       throw ArgumentError.value(limit, 'limit');
