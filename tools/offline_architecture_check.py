@@ -11,9 +11,13 @@ BANNED_RUNTIME = (
     "firebase_auth",
     "cloud_firestore",
     "google_sign_in",
+    "googleapis",
+    "googleapis_auth",
     "firebase_app_check",
     "connectivity_plus",
     "workmanager",
+    "qaza_cloud_adapter",
+    "cloud_adapter",
     "FirebaseServices",
     "GoogleFirebaseAuthService",
     "FirebaseBackup",
@@ -47,6 +51,7 @@ for forbidden in (
     ROOT / "firebase.json",
     ROOT / "firestore.rules",
 ):
+
     if forbidden.exists():
         fail(f"cloud configuration still exists: {forbidden.relative_to(ROOT)}")
 
@@ -54,6 +59,7 @@ settings = (ROOT / "android/settings.gradle").read_text()
 app_gradle = (ROOT / "android/app/build.gradle").read_text()
 manifest = (ROOT / "android/app/src/main/AndroidManifest.xml").read_text()
 pubspec = (ROOT / "pubspec.yaml").read_text()
+lockfile = ROOT / "pubspec.lock"
 
 if "com.google.gms.google-services" in settings or "com.google.gms.google-services" in app_gradle:
     fail("Google Services Gradle plugin is still configured")
@@ -72,6 +78,47 @@ for package in (
 
 if "android.permission.INTERNET" in manifest:
     fail("INTERNET permission remains in the main Android manifest")
+
+location_dependency = "com.google.android.gms:play-services-location"
+if location_dependency not in app_gradle:
+    fail("native Google Play Services location dependency is missing")
+
+if lockfile.exists():
+    lock_text = lockfile.read_text(errors="ignore")
+    for package in (
+        "firebase_core",
+        "firebase_auth",
+        "cloud_firestore",
+        "firebase_app_check",
+        "google_sign_in",
+        "googleapis",
+        "googleapis_auth",
+        "workmanager",
+        "qaza_cloud_adapter",
+        "cloud_adapter",
+    ):
+        if re.search(rf"^  {re.escape(package)}:$", lock_text, re.MULTILINE):
+            fail(f"forbidden package remains in pubspec.lock: {package}")
+
+for path in (ROOT / "android").rglob("*"):
+    if not path.is_file() or path.suffix not in {".gradle", ".kts", ".xml", ".json"}:
+        continue
+    relative = path.relative_to(ROOT)
+    if relative == Path("android/app/src/debug/AndroidManifest.xml") or relative == Path("android/app/src/profile/AndroidManifest.xml"):
+        continue
+    file_text = path.read_text(errors="ignore")
+    for token in (
+        "com.google.gms.google-services",
+        "google-services.json",
+        "firebase-app",
+        "firebase-auth",
+        "cloud_firestore",
+        "google_sign_in",
+        "googleapis",
+        "workmanager",
+    ):
+        if token in file_text:
+            fail(f"cloud/auth configuration token found in {relative}: {token}")
 
 for root in RUNTIME_ROOTS:
     for path in root.rglob("*"):
