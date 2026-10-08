@@ -175,11 +175,13 @@ final diagnosticsProvider = Provider<DiagnosticsService>(
   (ref) => kReleaseMode ? PersistentDiagnostics() : const DebugDiagnostics(),
 );
 
-final qazaServiceProvider = Provider<QazaService>((ref) => QazaService(
-      ref.watch(qazaRepositoryProvider),
-      witrInclusionResolver: () => ref.read(effectiveWitrProvider),
-      diagnostics: ref.watch(diagnosticsProvider),
-    ));
+final qazaServiceProvider = Provider<QazaService>(
+  (ref) => QazaService(
+    ref.watch(qazaRepositoryProvider),
+    witrInclusionResolver: () => ref.read(effectiveWitrProvider),
+    diagnostics: ref.watch(diagnosticsProvider),
+  ),
+);
 
 final qazaAdditionRepositoryProvider = Provider<QazaAdditionRepository>(
   (ref) => DriftQazaAdditionRepository(ref.watch(appDatabaseProvider)),
