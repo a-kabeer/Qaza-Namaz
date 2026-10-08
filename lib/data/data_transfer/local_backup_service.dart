@@ -44,6 +44,9 @@ class LocalBackupService {
         final rows = await database.qazaRecordsDao.getAll(userId: userId);
         records.addAll(rows.map((row) => row.toJson()));
       }
+      records.sort(
+        (a, b) => (a['id'] as String).compareTo(b['id'] as String),
+      );
 
       final document = <String, dynamic>{
         'metadata': {
