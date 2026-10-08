@@ -1,8 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../domain/entities/qaza_activity.dart';
@@ -432,10 +430,9 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   Future<void> _restore() async {
     final restoreRevision = _targetRevision;
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final modeName = prefs.getString(_modeStorageKey);
-      final sequenceName = prefs.getString(_sequencePrayerStorageKey);
-      final selectedName = prefs.getString(_selectedPrayerStorageKey);
+      final modeName = await _readStoredValue(_modeStorageKey);
+      final sequenceName = await _readStoredValue(_sequencePrayerStorageKey);
+      final selectedName = await _readStoredValue(_selectedPrayerStorageKey);
       final mode = HomePrayerSelectionMode.values.firstWhere(
         (value) => value.name == modeName,
         // Existing installations without saved state keep their legacy value;
@@ -473,35 +470,59 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   Future<void> _persistMode(HomePrayerSelectionMode mode) async {
     final revision = _targetRevision;
     try {
-      final prefs = await SharedPreferences.getInstance();
       if (revision != _targetRevision) return;
-      await prefs.setString(_modeStorageKey, mode.name);
+      await _writeStoredValue(_modeStorageKey, mode.name);
     } catch (_) {}
   }
 
   Future<void> _persistSequence(PrayerType prayer) async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_sequencePrayerStorageKey, prayer.name);
+      await _writeStoredValue(_sequencePrayerStorageKey, prayer.name);
     } catch (_) {}
   }
 
   Future<void> _persistSelectedPrayer(PrayerType prayer) async {
     final revision = _targetRevision;
     try {
-      final prefs = await SharedPreferences.getInstance();
       if (revision != _targetRevision) return;
-      await prefs.setString(_selectedPrayerStorageKey, prayer.name);
+      await _writeStoredValue(_selectedPrayerStorageKey, prayer.name);
     } catch (_) {}
   }
 
   Future<void> _clearPersistedSelectedPrayer() async {
     final revision = _targetRevision;
     try {
-      final prefs = await SharedPreferences.getInstance();
       if (revision != _targetRevision) return;
-      await prefs.remove(_selectedPrayerStorageKey);
+      await _removeStoredValue(_selectedPrayerStorageKey);
     } catch (_) {}
+  }
+
+  Future<String?> _readStoredValue(String key) async {
+    final rows = await ref.read(appDatabaseProvider).customSelect(
+      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+      variables: [Variable.withString(key)],
+    ).get();
+    if (rows.isEmpty) return null;
+    return rows.first.read<String>('value');
+  }
+
+  Future<void> _writeStoredValue(String key, String value) async {
+    await ref.read(appDatabaseProvider).customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [
+        Variable.withString(key),
+        Variable.withString(value),
+      ],
+    );
+  }
+
+  Future<void> _removeStoredValue(String key) async {
+    await ref.read(appDatabaseProvider).customDelete(
+      'DELETE FROM meta_store WHERE key = ?',
+      variables: [Variable.withString(key)],
+    );
   }
 }
 
