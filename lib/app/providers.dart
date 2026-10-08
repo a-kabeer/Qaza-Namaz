@@ -172,7 +172,7 @@ final qazaProfilePlanMutationRepositoryProvider =
 });
 
 final diagnosticsProvider = Provider<DiagnosticsService>(
-  (ref) => kReleaseMode ? PersistentDiagnostics() : const DebugDiagnostics(),
+  (ref) => kReleaseMode ? const NoopDiagnostics() : const DebugDiagnostics(),
 );
 
 final qazaServiceProvider = Provider<QazaService>(
