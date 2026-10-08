@@ -12,6 +12,8 @@ import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/local/drift_qaza_local_store.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
+import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/theme/app_theme.dart';
 
 QazaRecordsCompanion _record(String id, DateTime date) =>
     QazaRecordsCompanion.insert(
@@ -134,6 +136,44 @@ void main() {
     await store.retireUserData(userId: 'guest');
 
     expect(await database.readDbRevision(), 1);
+  });
+
+  test('invalid revision metadata is rejected before mutation', () async {
+    final decoded =
+        jsonDecode(await service.exportJson()) as Map<String, dynamic>;
+    (decoded['metadata'] as Map<String, dynamic>)['db_revision'] = '2';
+
+    expect(
+      () => service.importJson(jsonEncode(decoded)),
+      throwsA(isA<LocalBackupException>()),
+    );
+    expect(await database.readDbRevision(), 1);
+  });
+
+  test('missing required payload node is rejected before mutation', () async {
+    final decoded =
+        jsonDecode(await service.exportJson()) as Map<String, dynamic>;
+    (decoded['data'] as Map<String, dynamic>).remove('qaza_records');
+
+    expect(
+      () => service.importJson(jsonEncode(decoded)),
+      throwsA(isA<LocalBackupException>()),
+    );
+    expect(await database.readDbRevision(), 1);
+  });
+
+  test('language and theme persist only through SharedPreferences', () async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    container.read(localeProvider.notifier).set(const Locale('ur'));
+    container.read(themeModeProvider.notifier).set(AppThemeMode.dark);
+    await Future<void>.delayed(Duration.zero);
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(prefs.getString('language_code'), 'ur');
+    expect(prefs.getString('qaza_theme_mode'), 'dark');
   });
 
   test('invalid timestamp is rejected before mutation', () async {
