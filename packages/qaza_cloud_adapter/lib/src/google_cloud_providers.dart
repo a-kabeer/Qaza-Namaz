@@ -134,7 +134,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         await _engine().sync(allowInteractive: true),
       );
     } catch (error) {
-      return _snapshot(CloudSyncStatus.failed, message: error.toString());
+      return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     } finally {
       _syncing = false;
     }
@@ -156,7 +156,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       } else {
         await _scheduler.cancel();
       }
-      return status();
+      return await status();
     } catch (error) {
       return _snapshot(CloudSyncStatus.failed, message: error.toString());
     }
@@ -177,7 +177,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         confirmed: confirmed,
         allowInteractive: true,
       );
-      return _snapshotFromResult(result);
+      return await _snapshotFromResult(result);
     } catch (error) {
       return _snapshot(CloudSyncStatus.failed, message: error.toString());
     }
