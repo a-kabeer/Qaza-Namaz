@@ -9,8 +9,6 @@ import '../../l10n/app_localizations.dart';
 import '../prayer_time/application/prayer_time_providers.dart';
 import 'profile_screen.dart';
 import '../account/account_screen.dart';
-import 'qaza_reset_controller.dart';
-import '../data_management/qaza_data_management_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -93,18 +91,6 @@ class SettingsScreen extends ConsumerWidget {
           const SizedBox(height: 12),
           Card(
             child: SettingsNavRow(
-              key: const Key('settings_data_management'),
-              icon: Icons.backup_outlined,
-              title: l10n.dataTitle,
-              subtitle: l10n.dataExportBody,
-              onTap: () => open(const QazaDataManagementScreen()),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const _ResetQazaCounterRow(),
-          const SizedBox(height: 12),
-          Card(
-            child: SettingsNavRow(
               key: const Key('settings_about'),
               icon: Icons.info_outline_rounded,
               title: l10n.settingsAboutSection,
@@ -114,44 +100,6 @@ class SettingsScreen extends ConsumerWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _ResetQazaCounterRow extends ConsumerWidget {
-  const _ResetQazaCounterRow();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l10n = AppLocalizations.of(context);
-    final summary = ref.watch(progressSummaryProvider).valueOrNull;
-    final running = ref.watch(qazaResetControllerProvider).running;
-    final total = summary?.overall.total ?? 0;
-    final empty = summary != null && total == 0;
-
-    return DestructiveActionRow(
-      key: const Key('settings_reset_qaza_counter'),
-      icon: Icons.restart_alt_rounded,
-      label: l10n.settingsResetCounterTitle,
-      description: empty
-          ? l10n.settingsResetCounterEmpty
-          : l10n.settingsResetCounterSubtitle,
-      enabled: summary != null && total > 0 && !running,
-      confirmationTitle: l10n.settingsResetCounterDialogTitle,
-      confirmationMessage: l10n.settingsResetCounterDialogMessage,
-      acknowledgeLabel: l10n.settingsResetCounterAcknowledge(total),
-      confirmLabel: l10n.settingsResetCounterConfirm,
-      onConfirm: () async {
-        final done =
-            await ref.read(qazaResetControllerProvider.notifier).reset();
-        final error = ref.read(qazaResetControllerProvider).error;
-        final snackbar = ref.read(appSnackbarServiceProvider);
-        if (done) {
-          snackbar.success(l10n.settingsResetCounterDone);
-        } else {
-          snackbar.error(l10n.settingsResetCounterFailed(error ?? ''));
-        }
-      },
     );
   }
 }
