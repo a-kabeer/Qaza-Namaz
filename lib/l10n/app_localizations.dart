@@ -4175,7 +4175,7 @@ abstract class AppLocalizations {
   /// No description provided for @dataImportRestoreSummary.
   ///
   /// In en, this message translates to:
-  /// **'This backup contains {records} Qaza records and {accounts} local account(s).\\n\\nRestoring replaces the current local application data on this device. Your device identity remains on this device.\\n\\nBackup revision: {revision}\\nOnboarding: {onboarding}'**
+  /// **'This backup contains {records} Qaza records and {accounts} local account(s).\n\nRestoring replaces the current local application data on this device. Your device identity remains on this device.\n\nBackup revision: {revision}\nOnboarding: {onboarding}'**
   String dataImportRestoreSummary(
       int records, int accounts, int revision, String onboarding);
 
