@@ -56,6 +56,27 @@ void main() {
 
     expect(find.text('This device'), findsOneWidget);
     expect(find.text('Your data is stored on this device'), findsOneWidget);
+    expect(find.text('Keep your progress safe'), findsOneWidget);
+    expect(find.text('Account'), findsOneWidget);
+
+    final deviceTitle = tester.getTopLeft(find.text('This device'));
+    final progressTitle = tester.getTopLeft(find.text('Keep your progress safe'));
+    expect(progressTitle.dx, deviceTitle.dx);
+
+    expect(
+      find.ancestor(
+        of: find.text('This device'),
+        matching: find.byType(Card),
+      ),
+      findsOneWidget,
+    );
+    expect(
+      find.ancestor(
+        of: find.text('Keep your progress safe'),
+        matching: find.byType(Card),
+      ),
+      findsOneWidget,
+    );
     expect(find.text('Continue with Google'), findsNothing);
     expect(find.text('Automatic backup'), findsNothing);
     expect(find.text('Sign out'), findsNothing);
