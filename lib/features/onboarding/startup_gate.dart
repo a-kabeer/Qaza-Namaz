@@ -23,9 +23,8 @@ class StartupGate extends ConsumerWidget {
         key: const Key('startup_cloud_setup_choice_error'),
         onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
       ),
-      data: (completed) => completed
-          ? const WorkspaceShell()
-          : const CloudSetupChoiceScreen(),
+      data: (completed) =>
+          completed ? const WorkspaceShell() : const CloudSetupChoiceScreen(),
     );
   }
 

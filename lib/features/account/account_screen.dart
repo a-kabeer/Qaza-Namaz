@@ -480,9 +480,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                   width: double.infinity,
                   child: OutlinedButton.icon(
                     key: const Key('account_resolve_pending_cloud_conflict'),
-                    onPressed: _busy
-                        ? null
-                        : () => _resolveConflict(_sync.conflict!),
+                    onPressed:
+                        _busy ? null : () => _resolveConflict(_sync.conflict!),
                     icon: const Icon(Icons.compare_arrows_rounded),
                     label: Text(l10n.cloudBackupConflictTitle),
                   ),
