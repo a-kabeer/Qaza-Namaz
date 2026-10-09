@@ -144,6 +144,7 @@ class _QazaDataManagementScreenState
             analysis.dbRevision,
             onboardingState,
           ),
+          textAlign: TextAlign.start,
         ),
         actions: [
           TextButton(
