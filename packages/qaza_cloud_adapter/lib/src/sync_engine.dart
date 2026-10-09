@@ -364,6 +364,8 @@ class CloudSyncEngine {
     );
   }
 
+  /// Persist before returning so background workers cannot lose a conflict
+  /// when the process exits before the Account Page is opened.
   Future<CloudSyncResult> _persistConflict(CloudConflict conflict) async {
     if (!await _state.isCloudSyncEnabled()) {
       return CloudSyncResult.skipped(
