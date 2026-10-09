@@ -50,17 +50,18 @@ jobs:
 
       - name: Format adapter source on branch pushes
         if: github.event_name == 'push'
+        working-directory: packages/qaza_cloud_adapter
         shell: bash
         run: |
           set -euo pipefail
           dart format lib test
-          if git diff --quiet -- packages/qaza_cloud_adapter/lib packages/qaza_cloud_adapter/test; then
+          if git diff --quiet -- lib test; then
             echo "Adapter Dart sources are already formatted."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add packages/qaza_cloud_adapter/lib packages/qaza_cloud_adapter/test
+          git add lib test
           git commit -m "style: format cloud adapter Dart sources"
           git push origin "HEAD:${GITHUB_REF_NAME}"
 
