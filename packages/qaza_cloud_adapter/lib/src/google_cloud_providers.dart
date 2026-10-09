@@ -122,7 +122,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   @override
   Future<CloudSyncSnapshot> backupNow() async {
     if (!await _state.isCloudSyncEnabled()) {
-      return _snapshot(
+      return await _snapshot(
         CloudSyncStatus.disconnected,
         message: 'Connect a Google account before backing up.',
       );
@@ -145,7 +145,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     try {
       if (enabled) {
         if (!await _state.isCloudSyncEnabled()) {
-          return _snapshot(
+          return await _snapshot(
             CloudSyncStatus.disconnected,
             message: 'Connect a Google account before enabling automatic backup.',
           );
@@ -191,7 +191,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       final result = await _engine().restoreLocalRecoverySnapshot(
         confirmed: confirmed,
       );
-      return _snapshotFromResult(result);
+      return await _snapshotFromResult(result);
     } catch (error) {
       return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     }
@@ -238,7 +238,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         result.kind != CloudSyncResultKind.noOp) {
       await _state.setLastSuccessfulSyncAt(DateTime.now().toUtc());
     }
-    return _snapshot(
+    return await _snapshot(
       status,
       message: result.message,
       conflict: result.conflict == null
