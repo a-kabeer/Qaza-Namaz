@@ -60,7 +60,8 @@ void main() {
     expect(find.text('Account'), findsOneWidget);
 
     final deviceTitle = tester.getTopLeft(find.text('This device'));
-    final progressTitle = tester.getTopLeft(find.text('Keep your progress safe'));
+    final progressTitle =
+        tester.getTopLeft(find.text('Keep your progress safe'));
     expect(progressTitle.dx, deviceTitle.dx);
 
     expect(
