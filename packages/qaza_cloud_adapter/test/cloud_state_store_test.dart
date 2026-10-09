@@ -47,4 +47,33 @@ void main() {
 
     expect(await state.lastSuccessfulSyncAt(), value);
   });
+
+  test('pending conflicts survive state-store recreation and can be cleared', () async {
+    final state = SharedPreferencesCloudSyncStateStore();
+    final conflict = CloudConflict(
+      localDeviceId: 'device-local',
+      localTimestamp: DateTime.utc(2026, 10, 9, 7),
+      localRevision: 12,
+      localBaseBackupId: 'backup-10',
+      remoteLineage: CloudLineage(
+        deviceId: 'device-remote',
+        backupId: 'backup-12',
+        baseBackupId: 'backup-10',
+        dbRevision: 11,
+        createdAt: DateTime.utc(2026, 10, 9, 6),
+      ),
+      remoteTimestamp: DateTime.utc(2026, 10, 9, 6),
+      remoteVersion: 'version-12',
+      lastSyncedBackupId: 'backup-10',
+    );
+
+    await state.writePendingConflict(conflict);
+
+    final restored = await SharedPreferencesCloudSyncStateStore()
+        .readPendingConflict();
+    expect(restored!.toDisplayData(), conflict.toDisplayData());
+
+    await state.clearPendingConflict();
+    expect(await state.readPendingConflict(), isNull);
+  });
 }
