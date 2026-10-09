@@ -115,7 +115,9 @@ class CloudSyncEngine {
       );
 
       if (!await _state.isCloudSyncEnabled()) {
-        return CloudSyncResult.skipped('Cloud sync was disabled before upload.');
+        return CloudSyncResult.skipped(
+          'Cloud sync was disabled before upload.',
+        );
       }
       final written = await _remote.write(
         backup,

@@ -3,30 +3,33 @@ import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
 
 void main() {
   group('CloudSyncEngine', () {
-    test('first connection with a remote backup requires an explicit decision', () async {
-      final phase1 = FakePhase1(revision: 1);
-      final state = FakeState(deviceIdValue: 'device-B', cursor: null);
-      final remote = FakeRemote(
-        latestSnapshot: _snapshot(
-          deviceId: 'device-A',
-          backupId: 'backup-existing',
-          baseBackupId: null,
-          revision: 9,
-          modifiedAt: DateTime.utc(2026, 10, 9),
-          remoteVersion: '1',
-        ),
-      );
+    test(
+      'first connection with a remote backup requires an explicit decision',
+      () async {
+        final phase1 = FakePhase1(revision: 1);
+        final state = FakeState(deviceIdValue: 'device-B', cursor: null);
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-existing',
+            baseBackupId: null,
+            revision: 9,
+            modifiedAt: DateTime.utc(2026, 10, 9),
+            remoteVersion: '1',
+          ),
+        );
 
-      final result = await CloudSyncEngine(
-        phase1: phase1,
-        remote: remote,
-        state: state,
-      ).sync();
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
 
-      expect(result.kind, CloudSyncResultKind.conflict);
-      expect(phase1.importCount, 0);
-      expect(remote.writeCount, 0);
-    });
+        expect(result.kind, CloudSyncResultKind.conflict);
+        expect(phase1.importCount, 0);
+        expect(remote.writeCount, 0);
+      },
+    );
 
     test('disabled cloud state prevents remote reads and writes', () async {
       final phase1 = FakePhase1(revision: 10);

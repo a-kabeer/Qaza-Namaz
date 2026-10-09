@@ -38,8 +38,7 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
       database.readLocalRecoverySnapshot();
 
   @override
-  Future<void> clearRecoverySnapshot() =>
-      database.clearLocalRecoverySnapshot();
+  Future<void> clearRecoverySnapshot() => database.clearLocalRecoverySnapshot();
 }
 
 abstract interface class CloudRemoteStore {

@@ -68,11 +68,9 @@ void initializeQazaCloudBackgroundDispatcher() {
 }
 
 class CloudSyncScheduler {
-  CloudSyncScheduler({
-    Workmanager? workmanager,
-    CloudSyncStateStore? state,
-  })  : _workmanager = workmanager ?? Workmanager(),
-        _state = state ?? SharedPreferencesCloudSyncStateStore();
+  CloudSyncScheduler({Workmanager? workmanager, CloudSyncStateStore? state})
+    : _workmanager = workmanager ?? Workmanager(),
+      _state = state ?? SharedPreferencesCloudSyncStateStore();
 
   final Workmanager _workmanager;
   final CloudSyncStateStore _state;

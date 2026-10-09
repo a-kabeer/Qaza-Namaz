@@ -15,9 +15,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     required CloudSyncStateStore state,
     required CloudSyncScheduler scheduler,
     this.serverClientId,
-  })  : _gateway = gateway,
-        _state = state,
-        _scheduler = scheduler;
+  }) : _gateway = gateway,
+       _state = state,
+       _scheduler = scheduler;
 
   final GoogleSignInGateway _gateway;
   final CloudSyncStateStore _state;
@@ -40,9 +40,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
 
       await _state.setCloudSyncEnabled(true);
       if (await _state.isAutomaticSyncEnabled()) {
-        await _scheduler.initializeAndSchedule(
-          serverClientId: serverClientId,
-        );
+        await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
       }
       return CloudAccountSnapshot(
         status: CloudAccountStatus.connected,
@@ -60,9 +58,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       final account = await _gateway.authenticate();
       await _state.setCloudSyncEnabled(true);
       if (await _state.isAutomaticSyncEnabled()) {
-        await _scheduler.initializeAndSchedule(
-          serverClientId: serverClientId,
-        );
+        await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
       }
       return CloudAccountSnapshot(
         status: CloudAccountStatus.connected,
@@ -89,10 +85,10 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     required CloudSyncStateStore state,
     required CloudSyncScheduler scheduler,
     this.serverClientId,
-  })  : _phase1 = LocalPhase1BackupSource(database),
-        _gateway = gateway,
-        _state = state,
-        _scheduler = scheduler;
+  }) : _phase1 = LocalPhase1BackupSource(database),
+       _gateway = gateway,
+       _state = state,
+       _scheduler = scheduler;
 
   final LocalPhase1BackupSource _phase1;
   final GoogleSignInGateway _gateway;
@@ -114,8 +110,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           : (_syncing ? CloudSyncStatus.syncing : CloudSyncStatus.idle),
       automaticSyncEnabled: automatic,
       lastSuccessAt: await _state.lastSuccessfulSyncAt(),
-      hasLocalRecoverySnapshot:
-          (await _phase1.readRecoverySnapshot()) != null,
+      hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
     );
   }
 
@@ -147,12 +142,11 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         if (!await _state.isCloudSyncEnabled()) {
           return await _snapshot(
             CloudSyncStatus.disconnected,
-            message: 'Connect a Google account before enabling automatic backup.',
+            message:
+                'Connect a Google account before enabling automatic backup.',
           );
         }
-        await _scheduler.initializeAndSchedule(
-          serverClientId: serverClientId,
-        );
+        await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
       } else {
         await _scheduler.cancel();
       }
@@ -198,32 +192,29 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   }
 
   CloudSyncEngine _engine() => CloudSyncEngine(
-        phase1: _phase1,
-        remote: GoogleDriveAppDataStore(_gateway),
-        state: _state,
-      );
+    phase1: _phase1,
+    remote: GoogleDriveAppDataStore(_gateway),
+    state: _state,
+  );
 
-  CloudConflict _toAdapterConflict(CloudConflictInfo conflict) =>
-      CloudConflict(
-        localDeviceId: conflict.localDeviceId,
-        localTimestamp: conflict.localTimestamp,
-        localRevision: conflict.localRevision,
-        localBaseBackupId: conflict.localBaseBackupId,
-        remoteLineage: CloudLineage(
-          deviceId: conflict.remoteDeviceId,
-          backupId: conflict.remoteBackupId,
-          baseBackupId: conflict.remoteBaseBackupId,
-          dbRevision: conflict.remoteRevision,
-          createdAt: conflict.remoteTimestamp.toUtc(),
-        ),
-        remoteTimestamp: conflict.remoteTimestamp,
-        remoteVersion: conflict.remoteVersion,
-        lastSyncedBackupId: conflict.lastSyncedBackupId,
-      );
+  CloudConflict _toAdapterConflict(CloudConflictInfo conflict) => CloudConflict(
+    localDeviceId: conflict.localDeviceId,
+    localTimestamp: conflict.localTimestamp,
+    localRevision: conflict.localRevision,
+    localBaseBackupId: conflict.localBaseBackupId,
+    remoteLineage: CloudLineage(
+      deviceId: conflict.remoteDeviceId,
+      backupId: conflict.remoteBackupId,
+      baseBackupId: conflict.remoteBaseBackupId,
+      dbRevision: conflict.remoteRevision,
+      createdAt: conflict.remoteTimestamp.toUtc(),
+    ),
+    remoteTimestamp: conflict.remoteTimestamp,
+    remoteVersion: conflict.remoteVersion,
+    lastSyncedBackupId: conflict.lastSyncedBackupId,
+  );
 
-  Future<CloudSyncSnapshot> _snapshotFromResult(
-    CloudSyncResult result,
-  ) async {
+  Future<CloudSyncSnapshot> _snapshotFromResult(CloudSyncResult result) async {
     final status = switch (result.kind) {
       CloudSyncResultKind.noOp => CloudSyncStatus.synced,
       CloudSyncResultKind.uploaded => CloudSyncStatus.synced,
@@ -266,14 +257,12 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     CloudSyncStatus status, {
     String? message,
     CloudConflictInfo? conflict,
-  }) async =>
-      CloudSyncSnapshot(
-        status: status,
-        automaticSyncEnabled: await _state.isAutomaticSyncEnabled(),
-        lastSuccessAt: await _state.lastSuccessfulSyncAt(),
-        message: message,
-        conflict: conflict,
-        hasLocalRecoverySnapshot:
-            (await _phase1.readRecoverySnapshot()) != null,
-      );
+  }) async => CloudSyncSnapshot(
+    status: status,
+    automaticSyncEnabled: await _state.isAutomaticSyncEnabled(),
+    lastSuccessAt: await _state.lastSuccessfulSyncAt(),
+    message: message,
+    conflict: conflict,
+    hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
+  );
 }
