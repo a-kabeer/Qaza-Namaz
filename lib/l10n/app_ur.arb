@@ -992,5 +992,37 @@
         "type": "String"
       }
     }
-  }
+  },
+  "cloudBackupTitle": "کلاؤڈ بیک اپ",
+  "cloudBackupDescription": "اپنی قضا کی پیش رفت کا گوگل ڈرائیو ایپ ڈیٹا میں الگ بیک اپ محفوظ رکھیں۔",
+  "cloudConnect": "گوگل سے منسلک کریں",
+  "cloudDisconnect": "اکاؤنٹ منقطع کریں",
+  "cloudConnected": "منسلک",
+  "cloudNotConnected": "اپنی پیش رفت کا بیک اپ رکھنے کے لیے گوگل اکاؤنٹ منسلک کریں۔",
+  "cloudBackupNow": "ابھی بیک اپ کریں",
+  "cloudAutomaticBackup": "روزانہ خودکار بیک اپ",
+  "cloudLastBackup": "آخری کامیاب بیک اپ",
+  "cloudNeverBackedUp": "ابھی تک بیک اپ نہیں ہوا",
+  "cloudBackupSucceeded": "کلاؤڈ بیک اپ/سنک مکمل ہو گیا۔",
+  "cloudBackupConflictTitle": "تبدیلیوں میں فرق ملا",
+  "cloudBackupConflictMessage": "اس ڈیوائس اور گوگل ڈرائیو پر مختلف پیش رفت موجود ہے۔ منتخب کریں کہ کون سا ڈیٹا رکھنا ہے۔",
+  "cloudKeepLocal": "اس ڈیوائس کی پیش رفت رکھیں",
+  "cloudUseRemote": "گوگل ڈرائیو سے بحال کریں",
+  "cloudKeepLocalConfirmTitle": "اس ڈیوائس کی پیش رفت رکھیں؟",
+  "cloudKeepLocalConfirmMessage": "اس ڈیوائس کے ڈیٹا سے نیا کلاؤڈ بیک اپ بنایا جائے گا۔ موجودہ ریموٹ بیک اپ اپنی تاریخ میں برقرار رہے گا۔",
+  "cloudUseRemoteConfirmTitle": "مقامی پیش رفت تبدیل کریں؟",
+  "cloudUseRemoteConfirmMessage": "موجودہ مقامی ایپ ڈیٹا گوگل ڈرائیو کے بیک اپ سے بدل جائے گا۔ پہلے ایک خفیہ کردہ مقامی ریکوری اسنیپ شاٹ محفوظ کیا جائے گا۔",
+  "cloudDisconnectConfirmTitle": "گوگل منقطع کریں؟",
+  "cloudDisconnectConfirmMessage": "خودکار کلاؤڈ کام بند کر دیا جائے گا۔ آپ کا قضا ڈیٹا اسی ڈیوائس پر محفوظ رہے گا۔",
+  "cloudRecoveryAvailable": "پچھلے مقامی ڈیٹا کا محفوظ ریکوری اسنیپ شاٹ دستیاب ہے۔",
+  "cloudRecoverLocal": "پچھلا مقامی ڈیٹا بحال کریں",
+  "cloudRecoveryConfirmTitle": "پچھلا مقامی ڈیٹا بحال کریں؟",
+  "cloudRecoveryConfirmMessage": "محفوظ مقامی اسنیپ شاٹ اس ڈیوائس کے موجودہ ایپ ڈیٹا کی جگہ لے گا۔",
+  "cloudAutomaticBackupRequiresConnection": "خودکار بیک اپ فعال کرنے سے پہلے گوگل منسلک کریں۔",
+  "cloudBackupWorking": "بیک اپ ہو رہا ہے…",
+  "cloudSetupChoiceTitle": "اپنی پیش رفت محفوظ رکھیں",
+  "cloudSetupChoiceDescription": "آپ کی قضا کی پیش رفت اسی ڈیوائس پر محفوظ ہوتی ہے۔ آپ مقامی طور پر جاری رکھ سکتے ہیں یا مختلف ڈیوائسز پر بیک اپ اور بحالی کے لیے گوگل منسلک کر سکتے ہیں۔",
+  "cloudSetupUseGoogle": "گوگل سے منسلک کریں",
+  "cloudSetupContinueLocal": "اسی ڈیوائس پر جاری رکھیں",
+  "cloudConnectionFailed": "گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔"
 }

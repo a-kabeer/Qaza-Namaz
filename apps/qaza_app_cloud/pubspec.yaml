@@ -1,0 +1,33 @@
+name: qaza_namaz_cloud
+description: Optional Google Drive-enabled host for Qaza Namaz.
+publish_to: "none"
+version: 0.2.0+2
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.5.1
+  timezone: ^0.11.1
+  flutter_timezone: ^5.1.0
+  qaza_namaz:
+    path: ../..
+  qaza_cloud_adapter:
+    path: ../../packages/qaza_cloud_adapter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+  drift: ^2.35.0
+
+flutter:
+  uses-material-design: true
+  generate: true
+
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc

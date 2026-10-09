@@ -323,6 +323,79 @@ class CloudConflict {
     'last_synced_backup_id': lastSyncedBackupId,
     'remote_version': remoteVersion,
   };
+
+  Map<String, dynamic> toJson() => <String, dynamic>{
+    'local_device_id': localDeviceId,
+    'local_timestamp': localTimestamp.toUtc().toIso8601String(),
+    'local_revision': localRevision,
+    'local_base_backup_id': localBaseBackupId,
+    'remote_lineage': remoteLineage.toJson(),
+    'remote_timestamp': remoteTimestamp.toUtc().toIso8601String(),
+    'remote_version': remoteVersion,
+    'last_synced_backup_id': lastSyncedBackupId,
+  };
+
+  static CloudConflict fromJson(Map<dynamic, dynamic> json) {
+    String requiredString(String key) {
+      final value = json[key];
+      if (value is! String || value.trim().isEmpty) {
+        throw CloudAdapterException(
+          'Stored pending conflict has an invalid $key.',
+        );
+      }
+      return value;
+    }
+
+    String? optionalString(String key) {
+      final value = json[key];
+      if (value == null) return null;
+      if (value is! String || value.trim().isEmpty) {
+        throw CloudAdapterException(
+          'Stored pending conflict has an invalid $key.',
+        );
+      }
+      return value;
+    }
+
+    int requiredInt(String key) {
+      final value = json[key];
+      if (value is! int || value < 1) {
+        throw CloudAdapterException(
+          'Stored pending conflict has an invalid $key.',
+        );
+      }
+      return value;
+    }
+
+    DateTime requiredUtcTimestamp(String key) {
+      final value = json[key];
+      final parsed = value is String ? DateTime.tryParse(value) : null;
+      if (parsed == null || !parsed.isUtc) {
+        throw CloudAdapterException(
+          'Stored pending conflict has an invalid $key.',
+        );
+      }
+      return parsed;
+    }
+
+    final rawLineage = json['remote_lineage'];
+    if (rawLineage is! Map) {
+      throw const CloudAdapterException(
+        'Stored pending conflict has no remote lineage.',
+      );
+    }
+
+    return CloudConflict(
+      localDeviceId: requiredString('local_device_id'),
+      localTimestamp: requiredUtcTimestamp('local_timestamp'),
+      localRevision: requiredInt('local_revision'),
+      localBaseBackupId: optionalString('local_base_backup_id'),
+      remoteLineage: CloudLineage.fromJson(rawLineage),
+      remoteTimestamp: requiredUtcTimestamp('remote_timestamp'),
+      remoteVersion: requiredString('remote_version'),
+      lastSyncedBackupId: optionalString('last_synced_backup_id'),
+    );
+  }
 }
 
 class CloudSyncResult {

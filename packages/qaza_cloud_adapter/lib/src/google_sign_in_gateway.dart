@@ -29,6 +29,11 @@ class GoogleSignInGateway {
   Future<GoogleSignInAccount> authenticate() =>
       _serialized(() => _authenticateUnlocked());
 
+  Future<void> signOut() => _serialized(() async {
+    await _initializeUnlocked();
+    await _signIn.signOut();
+  });
+
   Future<GoogleSignInAccount?> restoreLightweightAuthentication() =>
       _serialized(() async {
         await _initializeUnlocked();

@@ -1,7 +1,7 @@
-import 'package:flutter/services.dart';
 import 'package:geonames_offline/geonames_offline.dart';
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../../core/assets/qaza_asset_bundle.dart';
 import '../domain/prayer_location.dart';
 
 class PrayerLocationException implements Exception {
@@ -196,7 +196,7 @@ class OfflineCityCatalog {
   Future<void> load() async {
     if (_cities != null) return;
 
-    final raw = await rootBundle.loadString(_assetPath);
+    final raw = await loadQazaAssetString(_assetPath);
     final lines = raw.split('\n');
     final cities = <CityOption>[];
     final countries = <String, String>{};

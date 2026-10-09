@@ -69,7 +69,7 @@ class AppTheme {
     fontFeatures: [FontFeature.tabularFigures()],
   );
 
-  static ThemeData light({Locale? locale}) {
+  static ThemeData light({Locale? locale, String? assetPackage}) {
     return _base(
       FlexThemeData.light(
         primary: _lightPrimary,
@@ -95,10 +95,11 @@ class AppTheme {
       ),
       Brightness.light,
       urdu: isUrdu(locale),
+      assetPackage: assetPackage,
     );
   }
 
-  static ThemeData dark({Locale? locale}) {
+  static ThemeData dark({Locale? locale, String? assetPackage}) {
     return _base(
       FlexThemeData.dark(
         primary: _darkPrimary,
@@ -124,6 +125,7 @@ class AppTheme {
       ),
       Brightness.dark,
       urdu: isUrdu(locale),
+      assetPackage: assetPackage,
     );
   }
 
@@ -210,24 +212,25 @@ class AppTheme {
 
   /// Derives the Urdu scale from the Latin one, slot for slot, so no slot can
   /// be forgotten and the two scales cannot drift apart.
-  static TextTheme _urduTextTheme(ColorScheme scheme) {
+  static TextTheme _urduTextTheme(ColorScheme scheme, {String? assetPackage}) {
     final latin = _latinTextTheme(scheme);
     return TextTheme(
-      displayLarge: _toUrdu(latin.displayLarge!),
-      displayMedium: _toUrdu(latin.displayMedium!),
-      displaySmall: _toUrdu(latin.displaySmall!),
-      headlineLarge: _toUrdu(latin.headlineLarge!),
-      headlineMedium: _toUrdu(latin.headlineMedium!),
-      headlineSmall: _toUrdu(latin.headlineSmall!),
-      titleLarge: _toUrdu(latin.titleLarge!),
-      titleMedium: _toUrdu(latin.titleMedium!),
-      titleSmall: _toUrdu(latin.titleSmall!),
-      bodyLarge: _toUrdu(latin.bodyLarge!),
-      bodyMedium: _toUrdu(latin.bodyMedium!),
-      bodySmall: _toUrdu(latin.bodySmall!),
-      labelLarge: _toUrdu(latin.labelLarge!),
-      labelMedium: _toUrdu(latin.labelMedium!),
-      labelSmall: _toUrdu(latin.labelSmall!),
+      displayLarge: _toUrdu(latin.displayLarge!, assetPackage: assetPackage),
+      displayMedium: _toUrdu(latin.displayMedium!, assetPackage: assetPackage),
+      displaySmall: _toUrdu(latin.displaySmall!, assetPackage: assetPackage),
+      headlineLarge: _toUrdu(latin.headlineLarge!, assetPackage: assetPackage),
+      headlineMedium:
+          _toUrdu(latin.headlineMedium!, assetPackage: assetPackage),
+      headlineSmall: _toUrdu(latin.headlineSmall!, assetPackage: assetPackage),
+      titleLarge: _toUrdu(latin.titleLarge!, assetPackage: assetPackage),
+      titleMedium: _toUrdu(latin.titleMedium!, assetPackage: assetPackage),
+      titleSmall: _toUrdu(latin.titleSmall!, assetPackage: assetPackage),
+      bodyLarge: _toUrdu(latin.bodyLarge!, assetPackage: assetPackage),
+      bodyMedium: _toUrdu(latin.bodyMedium!, assetPackage: assetPackage),
+      bodySmall: _toUrdu(latin.bodySmall!, assetPackage: assetPackage),
+      labelLarge: _toUrdu(latin.labelLarge!, assetPackage: assetPackage),
+      labelMedium: _toUrdu(latin.labelMedium!, assetPackage: assetPackage),
+      labelSmall: _toUrdu(latin.labelSmall!, assetPackage: assetPackage),
     );
   }
 
@@ -236,7 +239,7 @@ class AppTheme {
   /// The size grows a little (Nastaliq's letterforms read small at a nominal
   /// size), the line box grows a lot, and letter spacing goes to zero: spacing
   /// out Arabic-script letters breaks the cursive join between them.
-  static TextStyle _toUrdu(TextStyle latin) {
+  static TextStyle _toUrdu(TextStyle latin, {String? assetPackage}) {
     final size = (latin.fontSize ?? 14) * _urduSizeFactor;
     final scaled = (latin.height ?? 1.2) * _urduHeightFactor;
     final height = size >= _urduLargeSize
@@ -244,7 +247,9 @@ class AppTheme {
         : math.max(scaled, _urduMinHeight);
     final weight = latin.fontWeight ?? FontWeight.w400;
     return latin.copyWith(
-      fontFamily: urduFamily,
+      fontFamily: assetPackage == null
+          ? urduFamily
+          : 'packages/$assetPackage/$urduFamily',
       fontSize: size,
       height: height,
       letterSpacing: 0,
@@ -261,11 +266,12 @@ class AppTheme {
     ThemeData baseTheme,
     Brightness brightness, {
     required bool urdu,
+    String? assetPackage,
   }) {
     final scheme = baseTheme.colorScheme;
     final typography = AppTypography(
       latin: _latinTextTheme(scheme),
-      urdu: _urduTextTheme(scheme),
+      urdu: _urduTextTheme(scheme, assetPackage: assetPackage),
     );
     final textTheme = typography.forScript(urduScript: urdu);
 

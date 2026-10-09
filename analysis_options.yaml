@@ -2,6 +2,8 @@ analyzer:
   exclude:
     - build/**
     - android/**
+    # The cloud host is analyzed from its own package configuration and workflow.
+    - apps/qaza_app_cloud/**
     # Phase 2 is an independent Dart package with its own dependencies and CI.
     # Analyze it from packages/qaza_cloud_adapter, never in Phase 1's context.
     - packages/qaza_cloud_adapter/**

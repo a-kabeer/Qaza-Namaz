@@ -7,12 +7,26 @@ import '../../domain/entities/local_account.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
+import 'cloud_setup_choice_screen.dart';
 import 'language_selection_screen.dart';
 import 'profile_setup_screen.dart';
 import 'splash_screen.dart';
 
 class StartupGate extends ConsumerWidget {
   const StartupGate({super.key});
+
+  Widget _cloudDestination(WidgetRef ref) {
+    final choice = ref.watch(cloudSetupChoiceCompleteProvider);
+    return choice.when(
+      loading: () => const SplashScreen(),
+      error: (_, __) => StartupProfileLoadErrorBoundary(
+        key: const Key('startup_cloud_setup_choice_error'),
+        onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
+      ),
+      data: (completed) =>
+          completed ? const WorkspaceShell() : const CloudSetupChoiceScreen(),
+    );
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -68,6 +82,19 @@ class StartupGate extends ConsumerWidget {
               return ProfileSetupScreen(
                 languageCode: ref.read(localeProvider).languageCode,
                 initialProfile: profile,
+              );
+            }
+
+            if (ref.watch(cloudAccountProvider).isSupported &&
+                ref.watch(cloudSyncProvider).isSupported) {
+              // Restore the saved cloud session before routing the cloud host.
+              // The gateway serializes this lightweight operation with sign-in;
+              // failures still allow local use and never force account choice.
+              final restoration = ref.watch(cloudAccountStartupRestoreProvider);
+              return restoration.when(
+                loading: () => const SplashScreen(),
+                error: (_, __) => _cloudDestination(ref),
+                data: (_) => _cloudDestination(ref),
               );
             }
 

@@ -32,6 +32,7 @@ import '../domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../domain/repositories/qaza_addition_repository.dart';
 import '../domain/repositories/user_profile_repository.dart';
+import '../domain/services/cloud_sync_contracts.dart';
 import '../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../domain/services/profile_rules.dart';
 import '../domain/services/qaza_plan_service.dart';
@@ -43,6 +44,31 @@ import '../domain/services/save_profile_use_case.dart';
 final appSnackbarServiceProvider = Provider<AppSnackbarService>(
   (_) => AppSnackbarService(messengerKey: appScaffoldMessengerKey),
 );
+
+/// Optional capabilities default to unavailable in the offline-only target.
+/// Cloud-enabled hosts override both providers from their composition root.
+final cloudAccountProvider = Provider<CloudAccountProvider>(
+  (ref) => const UnsupportedCloudAccountProvider(),
+);
+
+/// Runs lightweight account restoration once per app session. The cloud host
+/// starts it before routing; an onboarding screen can await the same future.
+final cloudAccountStartupRestoreProvider =
+    FutureProvider<CloudAccountSnapshot>((ref) {
+  final account = ref.watch(cloudAccountProvider);
+  if (!account.isSupported) {
+    return Future.value(const CloudAccountSnapshot.unavailable());
+  }
+  return account.restore();
+});
+
+final cloudSyncProvider = Provider<CloudSyncProvider>(
+  (ref) => const UnsupportedCloudSyncProvider(),
+);
+
+/// Prefix for assets/fonts owned by this package when embedded as a dependency.
+/// Null in the standalone offline app; the optional host sets `qaza_namaz`.
+final packageAssetNamespaceProvider = Provider<String?>((ref) => null);
 
 final accountLocalStoreProvider = Provider<AccountLocalStore>((ref) {
   return AccountLocalStore(database: ref.watch(appDatabaseProvider));
@@ -140,6 +166,10 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   final database = AppDatabase();
   ref.onDispose(database.close);
   return database;
+});
+
+final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) {
+  return ref.watch(appDatabaseProvider).isCloudSetupChoiceComplete();
 });
 
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {

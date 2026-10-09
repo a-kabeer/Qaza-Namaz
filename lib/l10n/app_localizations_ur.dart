@@ -2426,4 +2426,111 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get dataLocalOnlyNote =>
       'صرف مقامی بیک اپ۔ آپ کا قضا ڈیٹا اسی ڈیوائس پر رہتا ہے، جب تک آپ اسے واضح طور پر برآمد نہ کریں۔';
+
+  @override
+  String get cloudBackupTitle => 'کلاؤڈ بیک اپ';
+
+  @override
+  String get cloudBackupDescription =>
+      'اپنی قضا کی پیش رفت کا گوگل ڈرائیو ایپ ڈیٹا میں الگ بیک اپ محفوظ رکھیں۔';
+
+  @override
+  String get cloudConnect => 'گوگل سے منسلک کریں';
+
+  @override
+  String get cloudDisconnect => 'اکاؤنٹ منقطع کریں';
+
+  @override
+  String get cloudConnected => 'منسلک';
+
+  @override
+  String get cloudNotConnected =>
+      'اپنی پیش رفت کا بیک اپ رکھنے کے لیے گوگل اکاؤنٹ منسلک کریں۔';
+
+  @override
+  String get cloudBackupNow => 'ابھی بیک اپ کریں';
+
+  @override
+  String get cloudAutomaticBackup => 'روزانہ خودکار بیک اپ';
+
+  @override
+  String get cloudLastBackup => 'آخری کامیاب بیک اپ';
+
+  @override
+  String get cloudNeverBackedUp => 'ابھی تک بیک اپ نہیں ہوا';
+
+  @override
+  String get cloudBackupSucceeded => 'کلاؤڈ بیک اپ/سنک مکمل ہو گیا۔';
+
+  @override
+  String get cloudBackupConflictTitle => 'تبدیلیوں میں فرق ملا';
+
+  @override
+  String get cloudBackupConflictMessage =>
+      'اس ڈیوائس اور گوگل ڈرائیو پر مختلف پیش رفت موجود ہے۔ منتخب کریں کہ کون سا ڈیٹا رکھنا ہے۔';
+
+  @override
+  String get cloudKeepLocal => 'اس ڈیوائس کی پیش رفت رکھیں';
+
+  @override
+  String get cloudUseRemote => 'گوگل ڈرائیو سے بحال کریں';
+
+  @override
+  String get cloudKeepLocalConfirmTitle => 'اس ڈیوائس کی پیش رفت رکھیں؟';
+
+  @override
+  String get cloudKeepLocalConfirmMessage =>
+      'اس ڈیوائس کے ڈیٹا سے نیا کلاؤڈ بیک اپ بنایا جائے گا۔ موجودہ ریموٹ بیک اپ اپنی تاریخ میں برقرار رہے گا۔';
+
+  @override
+  String get cloudUseRemoteConfirmTitle => 'مقامی پیش رفت تبدیل کریں؟';
+
+  @override
+  String get cloudUseRemoteConfirmMessage =>
+      'موجودہ مقامی ایپ ڈیٹا گوگل ڈرائیو کے بیک اپ سے بدل جائے گا۔ پہلے ایک خفیہ کردہ مقامی ریکوری اسنیپ شاٹ محفوظ کیا جائے گا۔';
+
+  @override
+  String get cloudDisconnectConfirmTitle => 'گوگل منقطع کریں؟';
+
+  @override
+  String get cloudDisconnectConfirmMessage =>
+      'خودکار کلاؤڈ کام بند کر دیا جائے گا۔ آپ کا قضا ڈیٹا اسی ڈیوائس پر محفوظ رہے گا۔';
+
+  @override
+  String get cloudRecoveryAvailable =>
+      'پچھلے مقامی ڈیٹا کا محفوظ ریکوری اسنیپ شاٹ دستیاب ہے۔';
+
+  @override
+  String get cloudRecoverLocal => 'پچھلا مقامی ڈیٹا بحال کریں';
+
+  @override
+  String get cloudRecoveryConfirmTitle => 'پچھلا مقامی ڈیٹا بحال کریں؟';
+
+  @override
+  String get cloudRecoveryConfirmMessage =>
+      'محفوظ مقامی اسنیپ شاٹ اس ڈیوائس کے موجودہ ایپ ڈیٹا کی جگہ لے گا۔';
+
+  @override
+  String get cloudAutomaticBackupRequiresConnection =>
+      'خودکار بیک اپ فعال کرنے سے پہلے گوگل منسلک کریں۔';
+
+  @override
+  String get cloudBackupWorking => 'بیک اپ ہو رہا ہے…';
+
+  @override
+  String get cloudSetupChoiceTitle => 'اپنی پیش رفت محفوظ رکھیں';
+
+  @override
+  String get cloudSetupChoiceDescription =>
+      'آپ کی قضا کی پیش رفت اسی ڈیوائس پر محفوظ ہوتی ہے۔ آپ مقامی طور پر جاری رکھ سکتے ہیں یا مختلف ڈیوائسز پر بیک اپ اور بحالی کے لیے گوگل منسلک کر سکتے ہیں۔';
+
+  @override
+  String get cloudSetupUseGoogle => 'گوگل سے منسلک کریں';
+
+  @override
+  String get cloudSetupContinueLocal => 'اسی ڈیوائس پر جاری رکھیں';
+
+  @override
+  String get cloudConnectionFailed =>
+      'گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔';
 }

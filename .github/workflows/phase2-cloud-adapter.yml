@@ -16,7 +16,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 concurrency:
   group: phase2-cloud-adapter-${{ github.ref }}
@@ -47,6 +47,23 @@ jobs:
       - name: Analyze Phase 2 package
         working-directory: packages/qaza_cloud_adapter
         run: dart analyze
+
+      - name: Format adapter source on branch pushes
+        if: github.event_name == 'push'
+        working-directory: packages/qaza_cloud_adapter
+        shell: bash
+        run: |
+          set -euo pipefail
+          dart format lib test
+          if git diff --quiet -- lib test; then
+            echo "Adapter Dart sources are already formatted."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add lib test
+          git commit -m "style: format cloud adapter Dart sources"
+          git push origin "HEAD:${GITHUB_REF_NAME}"
 
       - name: Check Phase 2 formatting
         working-directory: packages/qaza_cloud_adapter
