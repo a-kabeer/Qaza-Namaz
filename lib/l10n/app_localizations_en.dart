@@ -2427,4 +2427,85 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dataLocalOnlyNote =>
       'Local backup only. Your Qaza data stays on this device unless you explicitly export it.';
+
+  @override
+  String get cloudBackupTitle => "Cloud backup";
+
+  @override
+  String get cloudBackupDescription => "Keep a separate backup of your Qaza progress in your Google Drive app data.";
+
+  @override
+  String get cloudConnect => "Connect Google";
+
+  @override
+  String get cloudDisconnect => "Disconnect account";
+
+  @override
+  String get cloudConnected => "Connected";
+
+  @override
+  String get cloudNotConnected => "Connect a Google account to back up your progress.";
+
+  @override
+  String get cloudBackupNow => "Back up now";
+
+  @override
+  String get cloudAutomaticBackup => "Daily automatic backup";
+
+  @override
+  String get cloudLastBackup => "Last successful backup";
+
+  @override
+  String get cloudNeverBackedUp => "Not backed up yet";
+
+  @override
+  String get cloudBackupSucceeded => "Cloud backup/sync completed.";
+
+  @override
+  String get cloudBackupConflictTitle => "Different changes found";
+
+  @override
+  String get cloudBackupConflictMessage => "This device and Google Drive contain different progress. Choose which version to keep.";
+
+  @override
+  String get cloudKeepLocal => "Keep this device";
+
+  @override
+  String get cloudUseRemote => "Restore from Google Drive";
+
+  @override
+  String get cloudKeepLocalConfirmTitle => "Keep this device's progress?";
+
+  @override
+  String get cloudKeepLocalConfirmMessage => "A new cloud backup will be created from this device's data. The current remote backup will remain in its history.";
+
+  @override
+  String get cloudUseRemoteConfirmTitle => "Replace local progress?";
+
+  @override
+  String get cloudUseRemoteConfirmMessage => "This replaces the current local application data with the Google Drive backup. An encrypted local recovery snapshot will be kept first.";
+
+  @override
+  String get cloudDisconnectConfirmTitle => "Disconnect Google?";
+
+  @override
+  String get cloudDisconnectConfirmMessage => "Automatic cloud work will be disabled. Your Qaza data will remain on this device.";
+
+  @override
+  String get cloudRecoveryAvailable => "A protected recovery snapshot of the previous local data is available.";
+
+  @override
+  String get cloudRecoverLocal => "Recover previous local data";
+
+  @override
+  String get cloudRecoveryConfirmTitle => "Recover previous local data?";
+
+  @override
+  String get cloudRecoveryConfirmMessage => "The saved local snapshot will replace the current application data on this device.";
+
+  @override
+  String get cloudAutomaticBackupRequiresConnection => "Connect Google before enabling automatic backup.";
+
+  @override
+  String get cloudBackupWorking => "Backing up…";
 }

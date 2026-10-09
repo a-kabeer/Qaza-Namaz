@@ -1379,5 +1379,32 @@
         "type": "String"
       }
     }
-  }
+  },
+  "cloudBackupTitle": "Cloud backup",
+  "cloudBackupDescription": "Keep a separate backup of your Qaza progress in your Google Drive app data.",
+  "cloudConnect": "Connect Google",
+  "cloudDisconnect": "Disconnect account",
+  "cloudConnected": "Connected",
+  "cloudNotConnected": "Connect a Google account to back up your progress.",
+  "cloudBackupNow": "Back up now",
+  "cloudAutomaticBackup": "Daily automatic backup",
+  "cloudLastBackup": "Last successful backup",
+  "cloudNeverBackedUp": "Not backed up yet",
+  "cloudBackupSucceeded": "Cloud backup/sync completed.",
+  "cloudBackupConflictTitle": "Different changes found",
+  "cloudBackupConflictMessage": "This device and Google Drive contain different progress. Choose which version to keep.",
+  "cloudKeepLocal": "Keep this device",
+  "cloudUseRemote": "Restore from Google Drive",
+  "cloudKeepLocalConfirmTitle": "Keep this device's progress?",
+  "cloudKeepLocalConfirmMessage": "A new cloud backup will be created from this device's data. The current remote backup will remain in its history.",
+  "cloudUseRemoteConfirmTitle": "Replace local progress?",
+  "cloudUseRemoteConfirmMessage": "This replaces the current local application data with the Google Drive backup. An encrypted local recovery snapshot will be kept first.",
+  "cloudDisconnectConfirmTitle": "Disconnect Google?",
+  "cloudDisconnectConfirmMessage": "Automatic cloud work will be disabled. Your Qaza data will remain on this device.",
+  "cloudRecoveryAvailable": "A protected recovery snapshot of the previous local data is available.",
+  "cloudRecoverLocal": "Recover previous local data",
+  "cloudRecoveryConfirmTitle": "Recover previous local data?",
+  "cloudRecoveryConfirmMessage": "The saved local snapshot will replace the current application data on this device.",
+  "cloudAutomaticBackupRequiresConnection": "Connect Google before enabling automatic backup.",
+  "cloudBackupWorking": "Backing up…"
 }
