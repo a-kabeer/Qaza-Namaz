@@ -83,7 +83,17 @@ or initializing Google authorization. Disconnect writes the cloud-disabled
 guard and disables the automatic preference before cancelling unique periodic
 work or signing out. The sync engine rechecks the cloud flag before remote reads,
 uploads and data replacement because WorkManager cancellation cannot guarantee
-that an already-running task is interrupted immediately.
+that an already-running task is interrupted immediately. The cadence is fixed
+to one day even if a caller supplies a shorter interval; Android may defer the
+work beyond the requested interval.
+
+Detected conflicts are persisted in adapter state and are exposed by the cloud
+sync provider after app relaunch. The Account Page presents an explicit action
+to reopen the conflict decision. Both automatic remote-only restores and
+user-confirmed remote restores save and read back a local recovery snapshot
+before import. If that snapshot cannot be verified, the restore is cancelled.
+The latest remote backup/version is rechecked immediately before replacing local
+data or publishing a keep-local conflict resolution.
 
 A first connection that discovers an existing Drive backup is always surfaced as
 a conflict, even if the local database revision is still at its initial value.
