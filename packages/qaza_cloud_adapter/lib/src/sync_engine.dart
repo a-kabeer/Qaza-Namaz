@@ -148,12 +148,19 @@ class CloudSyncEngine {
     // Every destructive restore, including remote-only background progression,
     // must preserve a verified copy of the current local database first.
     final recovery = await _phase1.exportBackup();
-    _parsePhase1Preview(recovery);
+    final recoveryPreview = _parsePhase1Preview(recovery);
     await _phase1.saveRecoverySnapshot(recovery);
     if (await _phase1.readRecoverySnapshot() != recovery) {
       throw const CloudAdapterException(
         'The local recovery snapshot could not be verified. Remote restore was cancelled.',
       );
+    }
+    // A local mutation may race with snapshot creation. Recompute rather than
+    // replacing a revision newer than the one used for the sync decision.
+    if (recoveryPreview.revision != localRevision ||
+        await _phase1.readDbRevision() != localRevision) {
+      await _state.clearPendingConflict();
+      return await sync(allowInteractive: allowInteractive);
     }
     if (!await _state.isCloudSyncEnabled()) {
       return CloudSyncResult.skipped(
@@ -190,6 +197,10 @@ class CloudSyncEngine {
     }
     if (!await _state.isCloudSyncEnabled()) {
       return CloudSyncResult.skipped('Cloud sync was disabled before restore.');
+    }
+    if (await _phase1.readDbRevision() != localRevision) {
+      await _state.clearPendingConflict();
+      return await sync(allowInteractive: allowInteractive);
     }
 
     await _phase1.importBackup(latest.backup.phase1BackupJson);
@@ -247,6 +258,11 @@ class CloudSyncEngine {
       case CloudConflictDecision.keepLocal:
         final localJson = await _phase1.exportBackup();
         final localPreview = _parsePhase1Preview(localJson);
+        if (localPreview.revision != currentLocalRevision ||
+            await _phase1.readDbRevision() != currentLocalRevision) {
+          await _state.clearPendingConflict();
+          return await sync(allowInteractive: allowInteractive);
+        }
         final backup = CloudBackup(
           lineage: CloudLineage(
             deviceId: deviceId,
@@ -275,6 +291,10 @@ class CloudSyncEngine {
             'Cloud sync was disabled before conflict upload.',
           );
         }
+        if (await _phase1.readDbRevision() != currentLocalRevision) {
+          await _state.clearPendingConflict();
+          return await sync(allowInteractive: allowInteractive);
+        }
         final written = await _remote.write(
           backup,
           allowInteractive: allowInteractive,
@@ -294,12 +314,17 @@ class CloudSyncEngine {
         // replacing current application data. Import is not attempted if this
         // snapshot fails to save.
         final recovery = await _phase1.exportBackup();
-        _parsePhase1Preview(recovery);
+        final recoveryPreview = _parsePhase1Preview(recovery);
         await _phase1.saveRecoverySnapshot(recovery);
         if (await _phase1.readRecoverySnapshot() != recovery) {
           throw const CloudAdapterException(
             'The local recovery snapshot could not be verified. Remote restore was cancelled.',
           );
+        }
+        if (recoveryPreview.revision != conflict.localRevision ||
+            await _phase1.readDbRevision() != conflict.localRevision) {
+          await _state.clearPendingConflict();
+          return await sync(allowInteractive: allowInteractive);
         }
         if (!await _state.isCloudSyncEnabled()) {
           return CloudSyncResult.skipped(
@@ -319,6 +344,10 @@ class CloudSyncEngine {
             'Cloud sync was disabled before conflict restore. '
             'The recovery snapshot remains available.',
           );
+        }
+        if (await _phase1.readDbRevision() != conflict.localRevision) {
+          await _state.clearPendingConflict();
+          return await sync(allowInteractive: allowInteractive);
         }
         await _phase1.importBackup(latest.backup.phase1BackupJson);
         final importedRevision = await _phase1.readDbRevision();
