@@ -86,24 +86,31 @@ class CloudSyncScheduler {
       );
     }
     await _state.setAutomaticSyncEnabled(true);
-    if (!_initialized) {
-      await _workmanager.initialize(initializeQazaCloudBackgroundDispatcher);
-      _initialized = true;
+    try {
+      if (!_initialized) {
+        await _workmanager.initialize(initializeQazaCloudBackgroundDispatcher);
+        _initialized = true;
+      }
+
+      final normalized = normalizeCloudSyncFrequency(frequency);
+      final inputData = <String, dynamic>{
+        if (serverClientId != null) 'server_client_id': serverClientId,
+      };
+
+      await _workmanager.registerPeriodicTask(
+        cloudSyncWorkerTaskName,
+        cloudSyncWorkerTaskName,
+        frequency: normalized,
+        inputData: inputData,
+        constraints: Constraints(networkType: NetworkType.connected),
+        existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
+      );
+    } catch (_) {
+      // A failed registration must not leave the UI claiming automatic backup
+      // is active when no periodic task could be registered.
+      await _state.setAutomaticSyncEnabled(false);
+      rethrow;
     }
-
-    final normalized = normalizeCloudSyncFrequency(frequency);
-    final inputData = <String, dynamic>{
-      if (serverClientId != null) 'server_client_id': serverClientId,
-    };
-
-    await _workmanager.registerPeriodicTask(
-      cloudSyncWorkerTaskName,
-      cloudSyncWorkerTaskName,
-      frequency: normalized,
-      inputData: inputData,
-      constraints: Constraints(networkType: NetworkType.connected),
-      existingWorkPolicy: ExistingPeriodicWorkPolicy.keep,
-    );
   }
 
   Future<void> cancel() async {

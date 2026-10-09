@@ -185,7 +185,17 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       final result = await _engine().restoreLocalRecoverySnapshot(
         confirmed: confirmed,
       );
-      return await _snapshotFromResult(result);
+      // Restoring a local safety snapshot is not a successful cloud backup.
+      // Preserve the actual last successful remote sync timestamp.
+      return await _snapshot(
+        result.kind == CloudSyncResultKind.downloaded
+            ? CloudSyncStatus.synced
+            : CloudSyncStatus.failed,
+        message: result.message,
+        conflict: result.conflict == null
+            ? null
+            : _toCoreConflict(result.conflict!),
+      );
     } catch (error) {
       return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     }

@@ -95,3 +95,35 @@ backup payloads to avoid recursive snapshots.
 The daily schedule is best-effort under Android WorkManager and is not an exact
 24-hour execution guarantee. Device OAuth/Drive testing and consent/privacy
 review remain release gates; CI cannot mark those manual checks as passed.
+
+
+## Owner setup checklist for Android OAuth and release
+
+1. In Google Cloud Console, select the project for this app and enable the
+   Google Drive API.
+2. Configure the OAuth consent screen and add the intended test users while
+   the app is in testing. Publish/review the consent screen before general
+   release when Google requires it.
+3. Create an OAuth client for the Android application using the cloud host's
+   application ID (`com.qaza_namaz.com`) and the SHA-1 certificate fingerprint
+   for the certificate that will sign the installed APK. Add the correct web
+   OAuth client ID as `GOOGLE_SERVER_CLIENT_ID`; do not put a client secret in
+   the app. If debug, CI, and production builds use different certificates,
+   register the corresponding Android OAuth clients/fingerprints as needed.
+4. Build the cloud host from `apps/qaza_app_cloud`. For local testing, supply
+   the web client ID as a Dart define. For GitHub Actions, set the protected
+   `GOOGLE_SERVER_CLIENT_ID` repository Actions secret. Provide the production
+   signing configuration privately if an installable release APK is required;
+   never commit `key.properties`, keystores, or passwords.
+5. Install the resulting host on a real Android device. Verify sign-in,
+   separate `drive.appdata` authorization, initial backup/restore, two-device
+   divergence, disconnect, app force-stop/relaunch, and daily WorkManager
+   execution. Capture results and logs with credentials/tokens redacted.
+6. Review the user-facing consent/backup explanation and the published privacy
+   policy. Confirm data purpose, retention/deletion expectations, account
+   disconnect behavior, and how the user restores or recovers local progress.
+
+These are release-gate actions, not assumptions: the repository cannot verify
+OAuth consent, the selected signing certificate, physical device behavior, or
+the privacy policy on the owner's behalf. Record each result as PASS, FAIL, or
+PENDING and do not enable production rollout while a required check is pending.
