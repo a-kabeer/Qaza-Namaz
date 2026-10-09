@@ -53,10 +53,14 @@ class CloudSyncEngine {
           'The last cloud backup is no longer available. Local data was not changed.',
         );
       }
-      return CloudSyncResult.noOp();
+      if (!localUnsynced) {
+        return CloudSyncResult.noOp();
+      }
+      // With no prior remote lineage, local changes initialize the first backup.
+      // Fall through to the upload path instead of incorrectly returning no-op.
     }
 
-    if (localUnsynced && remoteChanged) {
+    if (localUnsynced && remoteChanged && remote != null) {
       final localPreview = await _localPreview();
       return CloudSyncResult.conflict(
         CloudConflict(
@@ -100,16 +104,20 @@ class CloudSyncEngine {
       return CloudSyncResult.uploaded(backup);
     }
 
-    await _phase1.importBackup(remote.backup.phase1BackupJson);
+    final availableRemote = remote;
+    if (availableRemote == null) {
+      return CloudSyncResult.noOp();
+    }
+    await _phase1.importBackup(availableRemote.backup.phase1BackupJson);
     final importedLocalRevision = await _phase1.readDbRevision();
     await _state.writeCursor(
       CloudSyncCursor(
         lastSyncedLocalRevision: importedLocalRevision,
-        lastSyncedBackupId: remote.backup.lineage.backupId,
-        lastSyncedRemoteVersion: remote.remoteVersion,
+        lastSyncedBackupId: availableRemote.backup.lineage.backupId,
+        lastSyncedRemoteVersion: availableRemote.remoteVersion,
       ),
     );
-    return CloudSyncResult.downloaded(remote.backup);
+    return CloudSyncResult.downloaded(availableRemote.backup);
   }
 
   Future<CloudSyncResult> resolveConflict({
