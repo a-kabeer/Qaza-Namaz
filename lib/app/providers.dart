@@ -153,6 +153,10 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return database;
 });
 
+final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) {
+  return ref.watch(appDatabaseProvider).isCloudSetupChoiceComplete();
+});
+
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
   return DriftQazaLocalStore(database: ref.watch(appDatabaseProvider));
 });

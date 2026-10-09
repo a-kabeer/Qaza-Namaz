@@ -66,6 +66,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
           await _ensureMetaStoreSchema();
+          await _ensureCloudSetupChoiceSchema();
           await _ensureLocalRecoverySnapshotSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
@@ -121,6 +122,8 @@ class AppDatabase extends _$AppDatabase {
             await _ensureMetaStoreSchema();
           }
           if (from < 19) {
+            await _ensureMetaStoreSchema();
+            await _ensureCloudSetupChoiceSchema();
             await _ensureLocalRecoverySnapshotSchema();
           }
         },
@@ -149,6 +152,29 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+
+  Future<void> _ensureCloudSetupChoiceSchema() async {
+    await customStatement(
+      "INSERT OR IGNORE INTO meta_store (key, value) "
+      "VALUES ('cloud_setup_choice_complete', '0')",
+    );
+  }
+
+  Future<bool> isCloudSetupChoiceComplete() async {
+    final rows = await customSelect(
+      "SELECT value FROM meta_store "
+      "WHERE key = 'cloud_setup_choice_complete' LIMIT 1",
+    ).get();
+    return rows.isNotEmpty && rows.first.read<String>('value') == '1';
+  }
+
+  Future<void> markCloudSetupChoiceComplete() async {
+    await customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('cloud_setup_choice_complete', '1')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+    );
+  }
 
   /// Stores one encrypted, app-private recovery snapshot before a confirmed
   /// destructive restore. The table is excluded from normal export payloads.
