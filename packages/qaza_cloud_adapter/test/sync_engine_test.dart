@@ -409,15 +409,16 @@ void main() {
           ),
         );
 
-        final result = await CloudSyncEngine(
-          phase1: phase1,
-          remote: remote,
-          state: state,
-        ).resolveConflict(
-          conflict: _conflict(remote),
-          decision: CloudConflictDecision.useRemote,
-          confirmed: true,
-        );
+        final result =
+            await CloudSyncEngine(
+              phase1: phase1,
+              remote: remote,
+              state: state,
+            ).resolveConflict(
+              conflict: _conflict(remote),
+              decision: CloudConflictDecision.useRemote,
+              confirmed: true,
+            );
 
         expect(result.kind, CloudSyncResultKind.conflict);
         expect(phase1.saveRecoveryCount, 1);
