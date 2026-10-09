@@ -1019,5 +1019,10 @@
   "cloudRecoveryConfirmTitle": "پچھلا مقامی ڈیٹا بحال کریں؟",
   "cloudRecoveryConfirmMessage": "محفوظ مقامی اسنیپ شاٹ اس ڈیوائس کے موجودہ ایپ ڈیٹا کی جگہ لے گا۔",
   "cloudAutomaticBackupRequiresConnection": "خودکار بیک اپ فعال کرنے سے پہلے گوگل منسلک کریں۔",
-  "cloudBackupWorking": "بیک اپ ہو رہا ہے…"
+  "cloudBackupWorking": "بیک اپ ہو رہا ہے…",
+  "cloudSetupChoiceTitle": "اپنی پیش رفت محفوظ رکھیں",
+  "cloudSetupChoiceDescription": "آپ کی قضا کی پیش رفت اسی ڈیوائس پر محفوظ ہوتی ہے۔ آپ مقامی طور پر جاری رکھ سکتے ہیں یا مختلف ڈیوائسز پر بیک اپ اور بحالی کے لیے گوگل منسلک کر سکتے ہیں۔",
+  "cloudSetupUseGoogle": "گوگل سے منسلک کریں",
+  "cloudSetupContinueLocal": "اسی ڈیوائس پر جاری رکھیں",
+  "cloudConnectionFailed": "گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔"
 }

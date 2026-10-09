@@ -2508,4 +2508,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cloudBackupWorking => "Backing up…";
+
+  @override
+  String get cloudSetupChoiceTitle => "Keep your progress safe";
+
+  @override
+  String get cloudSetupChoiceDescription => "Your Qaza progress is saved on this device. You can continue locally or connect Google to back up and restore your progress across devices.";
+
+  @override
+  String get cloudSetupUseGoogle => "Connect Google";
+
+  @override
+  String get cloudSetupContinueLocal => "Continue on this device";
+
+  @override
+  String get cloudConnectionFailed => "Google connection could not be completed. Try again or continue locally.";
 }

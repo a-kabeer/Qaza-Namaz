@@ -2507,4 +2507,19 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get cloudBackupWorking => "بیک اپ ہو رہا ہے…";
+
+  @override
+  String get cloudSetupChoiceTitle => "اپنی پیش رفت محفوظ رکھیں";
+
+  @override
+  String get cloudSetupChoiceDescription => "آپ کی قضا کی پیش رفت اسی ڈیوائس پر محفوظ ہوتی ہے۔ آپ مقامی طور پر جاری رکھ سکتے ہیں یا مختلف ڈیوائسز پر بیک اپ اور بحالی کے لیے گوگل منسلک کر سکتے ہیں۔";
+
+  @override
+  String get cloudSetupUseGoogle => "گوگل سے منسلک کریں";
+
+  @override
+  String get cloudSetupContinueLocal => "اسی ڈیوائس پر جاری رکھیں";
+
+  @override
+  String get cloudConnectionFailed => "گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔";
 }

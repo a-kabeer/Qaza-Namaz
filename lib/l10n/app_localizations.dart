@@ -98,6 +98,11 @@ abstract class AppLocalizations {
     Locale('ur')
   ];
 
+  String get cloudSetupChoiceTitle;
+  String get cloudSetupChoiceDescription;
+  String get cloudSetupUseGoogle;
+  String get cloudSetupContinueLocal;
+  String get cloudConnectionFailed;
   String get cloudBackupTitle;
   String get cloudBackupDescription;
   String get cloudConnect;
