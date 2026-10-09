@@ -270,6 +270,45 @@ void main() {
       },
     );
 
+    test(
+      'remote-only restore recomputes if local progress changes during snapshot',
+      () async {
+        final phase1 = FakePhase1(
+          revision: 10,
+          bumpRevisionWhenSavingRecovery: true,
+        );
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-101',
+            baseBackupId: 'backup-100',
+            revision: 11,
+            modifiedAt: DateTime.utc(2026, 10, 9),
+            remoteVersion: '2',
+          ),
+        );
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
+
+        expect(result.kind, CloudSyncResultKind.conflict);
+        expect(phase1.saveRecoveryCount, 1);
+        expect(phase1.importCount, 0);
+        expect(state.pendingConflict!.remoteLineage.backupId, 'backup-101');
+      },
+    );
+
     test('local unsynced plus remote changed returns a conflict', () async {
       final phase1 = FakePhase1(revision: 12);
       final state = FakeState(
@@ -341,6 +380,49 @@ void main() {
         expect(display['remote_revision'], 11);
         expect(display['remote_backup_id'], 'backup-102');
         expect(display['remote_base_backup_id'], 'backup-100');
+      },
+    );
+
+    test(
+      'use-remote choice is rejected if local progress changes during snapshot',
+      () async {
+        final phase1 = FakePhase1(
+          revision: 12,
+          bumpRevisionWhenSavingRecovery: true,
+        );
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-102',
+            baseBackupId: 'backup-100',
+            revision: 11,
+            modifiedAt: DateTime.utc(2026, 10, 9, 0, 5),
+            remoteVersion: '3',
+          ),
+        );
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).resolveConflict(
+          conflict: _conflict(remote),
+          decision: CloudConflictDecision.useRemote,
+          confirmed: true,
+        );
+
+        expect(result.kind, CloudSyncResultKind.conflict);
+        expect(phase1.saveRecoveryCount, 1);
+        expect(phase1.importCount, 0);
+        expect(state.pendingConflict!.remoteLineage.backupId, 'backup-102');
       },
     );
 
@@ -556,10 +638,14 @@ CloudRemoteSnapshot _snapshot({
 }
 
 class FakePhase1 implements Phase1BackupSource {
-  FakePhase1({required int revision, this.hideRecoverySnapshot = false})
-    : _revision = revision;
+  FakePhase1({
+    required int revision,
+    this.hideRecoverySnapshot = false,
+    this.bumpRevisionWhenSavingRecovery = false,
+  }) : _revision = revision;
 
   final bool hideRecoverySnapshot;
+  final bool bumpRevisionWhenSavingRecovery;
 
   int _revision;
   int importCount = 0;
@@ -592,6 +678,7 @@ class FakePhase1 implements Phase1BackupSource {
   Future<void> saveRecoverySnapshot(String phase1BackupJson) async {
     saveRecoveryCount++;
     recoverySnapshot = phase1BackupJson;
+    if (bumpRevisionWhenSavingRecovery) _revision++;
   }
 
   @override
