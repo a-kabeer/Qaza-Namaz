@@ -48,7 +48,7 @@ class CloudSyncEngine {
     // explicit user decision, even when local revision looks pristine.
     if (cursor.lastSyncedBackupId == null && remote != null) {
       final localPreview = await _localPreview();
-      return CloudSyncResult.conflict(
+      return await _persistConflict(
         CloudConflict(
           localDeviceId: deviceId,
           localTimestamp: localPreview.timestamp,
@@ -68,11 +68,13 @@ class CloudSyncEngine {
               remote.backup.lineage.backupId != cursor.lastSyncedBackupId;
 
     if (!localUnsynced && !remoteChanged) {
+      await _state.clearPendingConflict();
       return CloudSyncResult.noOp();
     }
 
     if (remote == null) {
       if (cursor.lastSyncedBackupId != null) {
+        await _state.clearPendingConflict();
         return CloudSyncResult.remoteMissing(
           'The last cloud backup is no longer available. Local data was not changed.',
         );
@@ -86,7 +88,7 @@ class CloudSyncEngine {
 
     if (localUnsynced && remoteChanged && remote != null) {
       final localPreview = await _localPreview();
-      return CloudSyncResult.conflict(
+      return await _persistConflict(
         CloudConflict(
           localDeviceId: deviceId,
           localTimestamp: localPreview.timestamp,
@@ -130,27 +132,79 @@ class CloudSyncEngine {
           lastSyncedRemoteVersion: written.remoteVersion,
         ),
       );
+      await _state.clearPendingConflict();
       return CloudSyncResult.uploaded(backup);
     }
 
     final availableRemote = remote;
     if (availableRemote == null) {
+      await _state.clearPendingConflict();
       return CloudSyncResult.noOp();
     }
     if (!await _state.isCloudSyncEnabled()) {
       return CloudSyncResult.skipped('Cloud sync was disabled before restore.');
     }
-    // This path is only used after a previous sync lineage has been established.
-    await _phase1.importBackup(availableRemote.backup.phase1BackupJson);
+
+    // Every destructive restore, including remote-only background progression,
+    // must preserve a verified copy of the current local database first.
+    final recovery = await _phase1.exportBackup();
+    _parsePhase1Preview(recovery);
+    await _phase1.saveRecoverySnapshot(recovery);
+    if (await _phase1.readRecoverySnapshot() != recovery) {
+      throw const CloudAdapterException(
+        'The local recovery snapshot could not be verified. Remote restore was cancelled.',
+      );
+    }
+    if (!await _state.isCloudSyncEnabled()) {
+      return CloudSyncResult.skipped(
+        'Cloud sync was disabled before restore. The recovery snapshot remains available.',
+      );
+    }
+
+    // Remote state can change while the recovery snapshot is being written.
+    // Never apply a backup that is no longer the latest verified version.
+    final latest = await _remote.latest(allowInteractive: allowInteractive);
+    if (latest == null) {
+      await _state.clearPendingConflict();
+      return CloudSyncResult.remoteMissing(
+        'The remote backup disappeared before restore. Local data was not changed.',
+      );
+    }
+    if (latest.backup.lineage.backupId !=
+            availableRemote.backup.lineage.backupId ||
+        latest.remoteVersion != availableRemote.remoteVersion) {
+      final currentRevision = await _phase1.readDbRevision();
+      final localPreview = await _localPreview();
+      return await _persistConflict(
+        CloudConflict(
+          localDeviceId: deviceId,
+          localTimestamp: localPreview.timestamp,
+          localRevision: currentRevision,
+          localBaseBackupId: cursor.lastSyncedBackupId,
+          remoteLineage: latest.backup.lineage,
+          remoteTimestamp: latest.modifiedAt,
+          remoteVersion: latest.remoteVersion,
+          lastSyncedBackupId: cursor.lastSyncedBackupId,
+        ),
+      );
+    }
+    if (!await _state.isCloudSyncEnabled()) {
+      return CloudSyncResult.skipped(
+        'Cloud sync was disabled before restore.',
+      );
+    }
+
+    await _phase1.importBackup(latest.backup.phase1BackupJson);
     final importedLocalRevision = await _phase1.readDbRevision();
     await _state.writeCursor(
       CloudSyncCursor(
         lastSyncedLocalRevision: importedLocalRevision,
-        lastSyncedBackupId: availableRemote.backup.lineage.backupId,
-        lastSyncedRemoteVersion: availableRemote.remoteVersion,
+        lastSyncedBackupId: latest.backup.lineage.backupId,
+        lastSyncedRemoteVersion: latest.remoteVersion,
       ),
     );
-    return CloudSyncResult.downloaded(availableRemote.backup);
+    await _state.clearPendingConflict();
+    return CloudSyncResult.downloaded(latest.backup);
   }
 
   Future<CloudSyncResult> resolveConflict({
@@ -172,7 +226,9 @@ class CloudSyncEngine {
     final currentLocalRevision = await _phase1.readDbRevision();
     if (currentLocalRevision != conflict.localRevision ||
         cursor.lastSyncedBackupId != conflict.lastSyncedBackupId) {
-      throw const CloudConflictStaleException();
+      // Refresh the comparison rather than applying a stale user decision.
+      await _state.clearPendingConflict();
+      return await sync(allowInteractive: allowInteractive);
     }
 
     if (!await _state.isCloudSyncEnabled()) {
@@ -180,8 +236,11 @@ class CloudSyncEngine {
     }
     final remote = await _remote.latest(allowInteractive: allowInteractive);
     if (remote == null ||
-        remote.backup.lineage.backupId != conflict.remoteLineage.backupId) {
-      throw const CloudConflictStaleException();
+        remote.backup.lineage.backupId != conflict.remoteLineage.backupId ||
+        remote.remoteVersion != conflict.remoteVersion) {
+      // A stale conflict is recomputed; the old decision is never applied.
+      await _state.clearPendingConflict();
+      return await sync(allowInteractive: allowInteractive);
     }
 
     final deviceId = await _state.deviceId();
@@ -206,6 +265,20 @@ class CloudSyncEngine {
             'Cloud sync was disabled before conflict upload.',
           );
         }
+        final latest = await _remote.latest(
+          allowInteractive: allowInteractive,
+        );
+        if (latest == null ||
+            latest.backup.lineage.backupId != remote.backup.lineage.backupId ||
+            latest.remoteVersion != remote.remoteVersion) {
+          await _state.clearPendingConflict();
+          return await sync(allowInteractive: allowInteractive);
+        }
+        if (!await _state.isCloudSyncEnabled()) {
+          return CloudSyncResult.skipped(
+            'Cloud sync was disabled before conflict upload.',
+          );
+        }
         final written = await _remote.write(
           backup,
           allowInteractive: allowInteractive,
@@ -217,6 +290,7 @@ class CloudSyncEngine {
             lastSyncedRemoteVersion: written.remoteVersion,
           ),
         );
+        await _state.clearPendingConflict();
         return CloudSyncResult.uploaded(backup);
 
       case CloudConflictDecision.useRemote:
@@ -224,23 +298,45 @@ class CloudSyncEngine {
         // replacing current application data. Import is not attempted if this
         // snapshot fails to save.
         final recovery = await _phase1.exportBackup();
+        _parsePhase1Preview(recovery);
         await _phase1.saveRecoverySnapshot(recovery);
+        if (await _phase1.readRecoverySnapshot() != recovery) {
+          throw const CloudAdapterException(
+            'The local recovery snapshot could not be verified. Remote restore was cancelled.',
+          );
+        }
         if (!await _state.isCloudSyncEnabled()) {
           return CloudSyncResult.skipped(
             'Cloud sync was disabled before conflict restore. '
             'The recovery snapshot remains available.',
           );
         }
-        await _phase1.importBackup(remote.backup.phase1BackupJson);
+        final latest = await _remote.latest(
+          allowInteractive: allowInteractive,
+        );
+        if (latest == null ||
+            latest.backup.lineage.backupId != remote.backup.lineage.backupId ||
+            latest.remoteVersion != remote.remoteVersion) {
+          await _state.clearPendingConflict();
+          return await sync(allowInteractive: allowInteractive);
+        }
+        if (!await _state.isCloudSyncEnabled()) {
+          return CloudSyncResult.skipped(
+            'Cloud sync was disabled before conflict restore. '
+            'The recovery snapshot remains available.',
+          );
+        }
+        await _phase1.importBackup(latest.backup.phase1BackupJson);
         final importedRevision = await _phase1.readDbRevision();
         await _state.writeCursor(
           CloudSyncCursor(
             lastSyncedLocalRevision: importedRevision,
-            lastSyncedBackupId: remote.backup.lineage.backupId,
-            lastSyncedRemoteVersion: remote.remoteVersion,
+            lastSyncedBackupId: latest.backup.lineage.backupId,
+            lastSyncedRemoteVersion: latest.remoteVersion,
           ),
         );
-        return CloudSyncResult.downloaded(remote.backup);
+        await _state.clearPendingConflict();
+        return CloudSyncResult.downloaded(latest.backup);
     }
   }
 
@@ -258,6 +354,7 @@ class CloudSyncEngine {
     }
     await _phase1.importBackup(snapshot);
     await _phase1.clearRecoverySnapshot();
+    await _state.clearPendingConflict();
     final revision = await _phase1.readDbRevision();
     return CloudSyncResult.downloaded(
       CloudBackup(
@@ -271,6 +368,11 @@ class CloudSyncEngine {
         phase1BackupJson: snapshot,
       ),
     );
+  }
+
+  Future<CloudSyncResult> _persistConflict(CloudConflict conflict) async {
+    await _state.writePendingConflict(conflict);
+    return CloudSyncResult.conflict(conflict);
   }
 
   Future<_Phase1Preview> _localPreview() async {
