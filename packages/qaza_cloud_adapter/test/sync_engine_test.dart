@@ -179,7 +179,90 @@ void main() {
 
         expect(result.kind, CloudSyncResultKind.downloaded);
         expect(phase1.importCount, 1);
+        expect(phase1.saveRecoveryCount, 1);
+        expect(phase1.recoverySnapshot, isNotNull);
         expect(state.cursor!.lastSyncedBackupId, 'backup-101');
+      },
+    );
+
+    test(
+      'remote-only restore is cancelled when recovery snapshot cannot be verified',
+      () async {
+        final phase1 = FakePhase1(revision: 10, hideRecoverySnapshot: true);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-101',
+            baseBackupId: 'backup-100',
+            revision: 11,
+            modifiedAt: DateTime.utc(2026, 10, 9),
+            remoteVersion: '2',
+          ),
+        );
+
+        await expectLater(
+          CloudSyncEngine(phase1: phase1, remote: remote, state: state).sync(),
+          throwsA(isA<CloudAdapterException>()),
+        );
+
+        expect(phase1.saveRecoveryCount, 1);
+        expect(phase1.importCount, 0);
+        expect(state.cursor!.lastSyncedBackupId, 'backup-100');
+      },
+    );
+
+    test(
+      'remote-only restore surfaces a conflict if latest remote changes during snapshot',
+      () async {
+        final phase1 = FakePhase1(revision: 10);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final initial = _snapshot(
+          deviceId: 'device-A',
+          backupId: 'backup-101',
+          baseBackupId: 'backup-100',
+          revision: 11,
+          modifiedAt: DateTime.utc(2026, 10, 9),
+          remoteVersion: '2',
+        );
+        final latest = _snapshot(
+          deviceId: 'device-C',
+          backupId: 'backup-102',
+          baseBackupId: 'backup-101',
+          revision: 12,
+          modifiedAt: DateTime.utc(2026, 10, 9, 0, 1),
+          remoteVersion: '3',
+        );
+        final remote = FakeRemote(
+          latestSnapshot: initial,
+          latestSnapshots: <CloudRemoteSnapshot?>[initial, latest],
+        );
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
+
+        expect(result.kind, CloudSyncResultKind.conflict);
+        expect(result.conflict!.remoteLineage.backupId, 'backup-102');
+        expect(state.pendingConflict!.remoteLineage.backupId, 'backup-102');
+        expect(phase1.saveRecoveryCount, 1);
+        expect(phase1.importCount, 0);
       },
     );
 
@@ -417,7 +500,10 @@ CloudRemoteSnapshot _snapshot({
 }
 
 class FakePhase1 implements Phase1BackupSource {
-  FakePhase1({required int revision}) : _revision = revision;
+  FakePhase1({required int revision, this.hideRecoverySnapshot = false})
+    : _revision = revision;
+
+  final bool hideRecoverySnapshot;
 
   int _revision;
   int importCount = 0;
@@ -453,7 +539,8 @@ class FakePhase1 implements Phase1BackupSource {
   }
 
   @override
-  Future<String?> readRecoverySnapshot() async => recoverySnapshot;
+  Future<String?> readRecoverySnapshot() async =>
+      hideRecoverySnapshot ? null : recoverySnapshot;
 
   @override
   Future<void> clearRecoverySnapshot() async {
@@ -474,6 +561,7 @@ class FakeState implements CloudSyncStateStore {
   bool cloudEnabled;
   bool automaticEnabled;
   DateTime? lastSuccessfulAt;
+  CloudConflict? pendingConflict;
 
   @override
   Future<String> deviceId() async => deviceIdValue;
@@ -514,12 +602,29 @@ class FakeState implements CloudSyncStateStore {
   Future<void> setLastSuccessfulSyncAt(DateTime value) async {
     lastSuccessfulAt = value;
   }
+
+  @override
+  Future<CloudConflict?> readPendingConflict() async => pendingConflict;
+
+  @override
+  Future<void> writePendingConflict(CloudConflict conflict) async {
+    pendingConflict = conflict;
+  }
+
+  @override
+  Future<void> clearPendingConflict() async {
+    pendingConflict = null;
+  }
 }
 
 class FakeRemote implements CloudRemoteStore {
-  FakeRemote({required this.latestSnapshot});
+  FakeRemote({
+    required this.latestSnapshot,
+    this.latestSnapshots,
+  });
 
   CloudRemoteSnapshot? latestSnapshot;
+  final List<CloudRemoteSnapshot?>? latestSnapshots;
   CloudBackup? written;
   int writeCount = 0;
   int latestCount = 0;
@@ -527,6 +632,9 @@ class FakeRemote implements CloudRemoteStore {
   @override
   Future<CloudRemoteSnapshot?> latest({required bool allowInteractive}) async {
     latestCount++;
+    if (latestSnapshots != null && latestSnapshots!.isNotEmpty) {
+      latestSnapshot = latestSnapshots!.removeAt(0);
+    }
     return latestSnapshot;
   }
 
