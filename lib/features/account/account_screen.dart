@@ -401,10 +401,10 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     final lastBackup = _sync.lastSuccessAt == null
         ? l10n.cloudNeverBackedUp
         : '${MaterialLocalizations.of(context).formatMediumDate(
-              _sync.lastSuccessAt!.toLocal(),
-            )} ${MaterialLocalizations.of(context).formatTimeOfDay(
-              TimeOfDay.fromDateTime(_sync.lastSuccessAt!.toLocal()),
-            )}';
+            _sync.lastSuccessAt!.toLocal(),
+          )} ${MaterialLocalizations.of(context).formatTimeOfDay(
+            TimeOfDay.fromDateTime(_sync.lastSuccessAt!.toLocal()),
+          )}';
 
     return Card(
       key: const Key('account_cloud_backup_card'),

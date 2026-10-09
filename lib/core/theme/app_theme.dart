@@ -219,7 +219,8 @@ class AppTheme {
       displayMedium: _toUrdu(latin.displayMedium!, assetPackage: assetPackage),
       displaySmall: _toUrdu(latin.displaySmall!, assetPackage: assetPackage),
       headlineLarge: _toUrdu(latin.headlineLarge!, assetPackage: assetPackage),
-      headlineMedium: _toUrdu(latin.headlineMedium!, assetPackage: assetPackage),
+      headlineMedium:
+          _toUrdu(latin.headlineMedium!, assetPackage: assetPackage),
       headlineSmall: _toUrdu(latin.headlineSmall!, assetPackage: assetPackage),
       titleLarge: _toUrdu(latin.titleLarge!, assetPackage: assetPackage),
       titleMedium: _toUrdu(latin.titleMedium!, assetPackage: assetPackage),
