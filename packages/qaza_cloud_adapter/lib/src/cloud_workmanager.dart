@@ -18,6 +18,7 @@ Duration normalizeCloudSyncFrequency(Duration requested) {
   return requested < minimum ? minimum : requested;
 }
 
+@pragma('vm:entry-point')
 void initializeQazaCloudBackgroundDispatcher() {
   Workmanager().executeTask((task, inputData) async {
     WidgetsFlutterBinding.ensureInitialized();
