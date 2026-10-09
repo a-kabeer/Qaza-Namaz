@@ -26,7 +26,10 @@ void main() {
         ).sync();
 
         expect(result.kind, CloudSyncResultKind.conflict);
-        expect(state.pendingConflict!.remoteLineage.backupId, 'backup-existing');
+        expect(
+          state.pendingConflict!.remoteLineage.backupId,
+          'backup-existing',
+        );
         expect(phase1.importCount, 0);
         expect(remote.writeCount, 0);
       },
@@ -374,17 +377,16 @@ void main() {
           latestSnapshots: <CloudRemoteSnapshot?>[latestRemote],
         );
 
-        final result = await CloudSyncEngine(
-          phase1: phase1,
-          remote: remote,
-          state: state,
-        ).resolveConflict(
-          conflict: _conflict(
-            FakeRemote(latestSnapshot: staleRemote),
-          ),
-          decision: CloudConflictDecision.useRemote,
-          confirmed: true,
-        );
+        final result =
+            await CloudSyncEngine(
+              phase1: phase1,
+              remote: remote,
+              state: state,
+            ).resolveConflict(
+              conflict: _conflict(FakeRemote(latestSnapshot: staleRemote)),
+              decision: CloudConflictDecision.useRemote,
+              confirmed: true,
+            );
 
         expect(result.kind, CloudSyncResultKind.conflict);
         expect(result.conflict!.remoteLineage.backupId, 'backup-103');

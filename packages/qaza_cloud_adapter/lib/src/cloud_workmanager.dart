@@ -16,9 +16,7 @@ const String cloudSyncWorkerTaskName = 'qaza_namaz_cloud_periodic_sync';
 /// Product policy fixes automatic backup to daily regardless of caller input.
 /// Android may defer the interval; it is not an exact 24-hour deadline.
 Duration normalizeCloudSyncFrequency(Duration requested) =>
-    requested == const Duration(days: 1)
-        ? requested
-        : const Duration(days: 1);
+    requested == const Duration(days: 1) ? requested : const Duration(days: 1);
 
 @pragma('vm:entry-point')
 void initializeQazaCloudBackgroundDispatcher() {
