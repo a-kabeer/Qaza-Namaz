@@ -152,7 +152,6 @@ class _ResetQazaCounterRow extends ConsumerWidget {
   }
 }
 
-
 class _CloudBackupCard extends ConsumerStatefulWidget {
   const _CloudBackupCard({super.key});
 
@@ -247,7 +246,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     if (result.status == CloudSyncStatus.conflict && result.conflict != null) {
       await _resolveConflict(result.conflict!);
     } else if (result.status == CloudSyncStatus.synced && mounted) {
-      setState(() => _message = AppLocalizations.of(context).cloudBackupSucceeded);
+      setState(
+          () => _message = AppLocalizations.of(context).cloudBackupSucceeded);
     }
     if (mounted) setState(() => _busy = false);
   }
@@ -265,11 +265,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
             child: Text(l10n.commonCancel),
           ),
           TextButton(
-            onPressed: () => Navigator.pop(context, CloudConflictChoice.keepLocal),
+            onPressed: () =>
+                Navigator.pop(context, CloudConflictChoice.keepLocal),
             child: Text(l10n.cloudKeepLocal),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, CloudConflictChoice.useRemote),
+            onPressed: () =>
+                Navigator.pop(context, CloudConflictChoice.useRemote),
             child: Text(l10n.cloudUseRemote),
           ),
         ],
@@ -373,7 +375,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       _busy = true;
       _message = null;
     });
-    final result = await ref.read(cloudSyncProvider)
+    final result = await ref
+        .read(cloudSyncProvider)
         .restoreLocalRecoverySnapshot(confirmed: true);
     if (result.status == CloudSyncStatus.synced) {
       await _refreshAfterRestore();

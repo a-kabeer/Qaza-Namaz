@@ -98,39 +98,6 @@ abstract class AppLocalizations {
     Locale('ur')
   ];
 
-  String get cloudSetupChoiceTitle;
-  String get cloudSetupChoiceDescription;
-  String get cloudSetupUseGoogle;
-  String get cloudSetupContinueLocal;
-  String get cloudConnectionFailed;
-  String get cloudBackupTitle;
-  String get cloudBackupDescription;
-  String get cloudConnect;
-  String get cloudDisconnect;
-  String get cloudConnected;
-  String get cloudNotConnected;
-  String get cloudBackupNow;
-  String get cloudAutomaticBackup;
-  String get cloudLastBackup;
-  String get cloudNeverBackedUp;
-  String get cloudBackupSucceeded;
-  String get cloudBackupConflictTitle;
-  String get cloudBackupConflictMessage;
-  String get cloudKeepLocal;
-  String get cloudUseRemote;
-  String get cloudKeepLocalConfirmTitle;
-  String get cloudKeepLocalConfirmMessage;
-  String get cloudUseRemoteConfirmTitle;
-  String get cloudUseRemoteConfirmMessage;
-  String get cloudDisconnectConfirmTitle;
-  String get cloudDisconnectConfirmMessage;
-  String get cloudRecoveryAvailable;
-  String get cloudRecoverLocal;
-  String get cloudRecoveryConfirmTitle;
-  String get cloudRecoveryConfirmMessage;
-  String get cloudAutomaticBackupRequiresConnection;
-  String get cloudBackupWorking;
-
   /// Application name shown in the OS task switcher
   ///
   /// In en, this message translates to:
@@ -4229,6 +4196,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Local backup only. Your Qaza data stays on this device unless you explicitly export it.'**
   String get dataLocalOnlyNote;
+
+  /// No description provided for @cloudBackupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud backup'**
+  String get cloudBackupTitle;
+
+  /// No description provided for @cloudBackupDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep a separate backup of your Qaza progress in your Google Drive app data.'**
+  String get cloudBackupDescription;
+
+  /// No description provided for @cloudConnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google'**
+  String get cloudConnect;
+
+  /// No description provided for @cloudDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect account'**
+  String get cloudDisconnect;
+
+  /// No description provided for @cloudConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected'**
+  String get cloudConnected;
+
+  /// No description provided for @cloudNotConnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a Google account to back up your progress.'**
+  String get cloudNotConnected;
+
+  /// No description provided for @cloudBackupNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Back up now'**
+  String get cloudBackupNow;
+
+  /// No description provided for @cloudAutomaticBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily automatic backup'**
+  String get cloudAutomaticBackup;
+
+  /// No description provided for @cloudLastBackup.
+  ///
+  /// In en, this message translates to:
+  /// **'Last successful backup'**
+  String get cloudLastBackup;
+
+  /// No description provided for @cloudNeverBackedUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Not backed up yet'**
+  String get cloudNeverBackedUp;
+
+  /// No description provided for @cloudBackupSucceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'Cloud backup/sync completed.'**
+  String get cloudBackupSucceeded;
+
+  /// No description provided for @cloudBackupConflictTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Different changes found'**
+  String get cloudBackupConflictTitle;
+
+  /// No description provided for @cloudBackupConflictMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This device and Google Drive contain different progress. Choose which version to keep.'**
+  String get cloudBackupConflictMessage;
+
+  /// No description provided for @cloudKeepLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this device'**
+  String get cloudKeepLocal;
+
+  /// No description provided for @cloudUseRemote.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from Google Drive'**
+  String get cloudUseRemote;
+
+  /// No description provided for @cloudKeepLocalConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep this device\'s progress?'**
+  String get cloudKeepLocalConfirmTitle;
+
+  /// No description provided for @cloudKeepLocalConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'A new cloud backup will be created from this device\'s data. The current remote backup will remain in its history.'**
+  String get cloudKeepLocalConfirmMessage;
+
+  /// No description provided for @cloudUseRemoteConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace local progress?'**
+  String get cloudUseRemoteConfirmTitle;
+
+  /// No description provided for @cloudUseRemoteConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This replaces the current local application data with the Google Drive backup. An encrypted local recovery snapshot will be kept first.'**
+  String get cloudUseRemoteConfirmMessage;
+
+  /// No description provided for @cloudDisconnectConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect Google?'**
+  String get cloudDisconnectConfirmTitle;
+
+  /// No description provided for @cloudDisconnectConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatic cloud work will be disabled. Your Qaza data will remain on this device.'**
+  String get cloudDisconnectConfirmMessage;
+
+  /// No description provided for @cloudRecoveryAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'A protected recovery snapshot of the previous local data is available.'**
+  String get cloudRecoveryAvailable;
+
+  /// No description provided for @cloudRecoverLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Recover previous local data'**
+  String get cloudRecoverLocal;
+
+  /// No description provided for @cloudRecoveryConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recover previous local data?'**
+  String get cloudRecoveryConfirmTitle;
+
+  /// No description provided for @cloudRecoveryConfirmMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The saved local snapshot will replace the current application data on this device.'**
+  String get cloudRecoveryConfirmMessage;
+
+  /// No description provided for @cloudAutomaticBackupRequiresConnection.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google before enabling automatic backup.'**
+  String get cloudAutomaticBackupRequiresConnection;
+
+  /// No description provided for @cloudBackupWorking.
+  ///
+  /// In en, this message translates to:
+  /// **'Backing up…'**
+  String get cloudBackupWorking;
+
+  /// No description provided for @cloudSetupChoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your progress safe'**
+  String get cloudSetupChoiceTitle;
+
+  /// No description provided for @cloudSetupChoiceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Qaza progress is saved on this device. You can continue locally or connect Google to back up and restore your progress across devices.'**
+  String get cloudSetupChoiceDescription;
+
+  /// No description provided for @cloudSetupUseGoogle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect Google'**
+  String get cloudSetupUseGoogle;
+
+  /// No description provided for @cloudSetupContinueLocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue on this device'**
+  String get cloudSetupContinueLocal;
+
+  /// No description provided for @cloudConnectionFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google connection could not be completed. Try again or continue locally.'**
+  String get cloudConnectionFailed;
 }
 
 class _AppLocalizationsDelegate

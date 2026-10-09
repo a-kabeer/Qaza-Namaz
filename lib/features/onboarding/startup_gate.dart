@@ -80,7 +80,8 @@ class StartupGate extends ConsumerWidget {
                 loading: () => const SplashScreen(),
                 error: (_, __) => StartupProfileLoadErrorBoundary(
                   key: const Key('startup_cloud_setup_choice_error'),
-                  onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
+                  onRetry: () =>
+                      ref.invalidate(cloudSetupChoiceCompleteProvider),
                 ),
                 data: (completed) => completed
                     ? const WorkspaceShell()

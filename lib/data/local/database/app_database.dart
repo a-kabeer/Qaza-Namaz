@@ -152,7 +152,6 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-
   Future<void> _ensureCloudSetupChoiceSchema() async {
     await customStatement(
       "INSERT OR IGNORE INTO meta_store (key, value) "

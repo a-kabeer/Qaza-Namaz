@@ -2429,98 +2429,109 @@ class AppLocalizationsEn extends AppLocalizations {
       'Local backup only. Your Qaza data stays on this device unless you explicitly export it.';
 
   @override
-  String get cloudBackupTitle => "Cloud backup";
+  String get cloudBackupTitle => 'Cloud backup';
 
   @override
-  String get cloudBackupDescription => "Keep a separate backup of your Qaza progress in your Google Drive app data.";
+  String get cloudBackupDescription =>
+      'Keep a separate backup of your Qaza progress in your Google Drive app data.';
 
   @override
-  String get cloudConnect => "Connect Google";
+  String get cloudConnect => 'Connect Google';
 
   @override
-  String get cloudDisconnect => "Disconnect account";
+  String get cloudDisconnect => 'Disconnect account';
 
   @override
-  String get cloudConnected => "Connected";
+  String get cloudConnected => 'Connected';
 
   @override
-  String get cloudNotConnected => "Connect a Google account to back up your progress.";
+  String get cloudNotConnected =>
+      'Connect a Google account to back up your progress.';
 
   @override
-  String get cloudBackupNow => "Back up now";
+  String get cloudBackupNow => 'Back up now';
 
   @override
-  String get cloudAutomaticBackup => "Daily automatic backup";
+  String get cloudAutomaticBackup => 'Daily automatic backup';
 
   @override
-  String get cloudLastBackup => "Last successful backup";
+  String get cloudLastBackup => 'Last successful backup';
 
   @override
-  String get cloudNeverBackedUp => "Not backed up yet";
+  String get cloudNeverBackedUp => 'Not backed up yet';
 
   @override
-  String get cloudBackupSucceeded => "Cloud backup/sync completed.";
+  String get cloudBackupSucceeded => 'Cloud backup/sync completed.';
 
   @override
-  String get cloudBackupConflictTitle => "Different changes found";
+  String get cloudBackupConflictTitle => 'Different changes found';
 
   @override
-  String get cloudBackupConflictMessage => "This device and Google Drive contain different progress. Choose which version to keep.";
+  String get cloudBackupConflictMessage =>
+      'This device and Google Drive contain different progress. Choose which version to keep.';
 
   @override
-  String get cloudKeepLocal => "Keep this device";
+  String get cloudKeepLocal => 'Keep this device';
 
   @override
-  String get cloudUseRemote => "Restore from Google Drive";
+  String get cloudUseRemote => 'Restore from Google Drive';
 
   @override
-  String get cloudKeepLocalConfirmTitle => "Keep this device's progress?";
+  String get cloudKeepLocalConfirmTitle => 'Keep this device\'s progress?';
 
   @override
-  String get cloudKeepLocalConfirmMessage => "A new cloud backup will be created from this device's data. The current remote backup will remain in its history.";
+  String get cloudKeepLocalConfirmMessage =>
+      'A new cloud backup will be created from this device\'s data. The current remote backup will remain in its history.';
 
   @override
-  String get cloudUseRemoteConfirmTitle => "Replace local progress?";
+  String get cloudUseRemoteConfirmTitle => 'Replace local progress?';
 
   @override
-  String get cloudUseRemoteConfirmMessage => "This replaces the current local application data with the Google Drive backup. An encrypted local recovery snapshot will be kept first.";
+  String get cloudUseRemoteConfirmMessage =>
+      'This replaces the current local application data with the Google Drive backup. An encrypted local recovery snapshot will be kept first.';
 
   @override
-  String get cloudDisconnectConfirmTitle => "Disconnect Google?";
+  String get cloudDisconnectConfirmTitle => 'Disconnect Google?';
 
   @override
-  String get cloudDisconnectConfirmMessage => "Automatic cloud work will be disabled. Your Qaza data will remain on this device.";
+  String get cloudDisconnectConfirmMessage =>
+      'Automatic cloud work will be disabled. Your Qaza data will remain on this device.';
 
   @override
-  String get cloudRecoveryAvailable => "A protected recovery snapshot of the previous local data is available.";
+  String get cloudRecoveryAvailable =>
+      'A protected recovery snapshot of the previous local data is available.';
 
   @override
-  String get cloudRecoverLocal => "Recover previous local data";
+  String get cloudRecoverLocal => 'Recover previous local data';
 
   @override
-  String get cloudRecoveryConfirmTitle => "Recover previous local data?";
+  String get cloudRecoveryConfirmTitle => 'Recover previous local data?';
 
   @override
-  String get cloudRecoveryConfirmMessage => "The saved local snapshot will replace the current application data on this device.";
+  String get cloudRecoveryConfirmMessage =>
+      'The saved local snapshot will replace the current application data on this device.';
 
   @override
-  String get cloudAutomaticBackupRequiresConnection => "Connect Google before enabling automatic backup.";
+  String get cloudAutomaticBackupRequiresConnection =>
+      'Connect Google before enabling automatic backup.';
 
   @override
-  String get cloudBackupWorking => "Backing up…";
+  String get cloudBackupWorking => 'Backing up…';
 
   @override
-  String get cloudSetupChoiceTitle => "Keep your progress safe";
+  String get cloudSetupChoiceTitle => 'Keep your progress safe';
 
   @override
-  String get cloudSetupChoiceDescription => "Your Qaza progress is saved on this device. You can continue locally or connect Google to back up and restore your progress across devices.";
+  String get cloudSetupChoiceDescription =>
+      'Your Qaza progress is saved on this device. You can continue locally or connect Google to back up and restore your progress across devices.';
 
   @override
-  String get cloudSetupUseGoogle => "Connect Google";
+  String get cloudSetupUseGoogle => 'Connect Google';
 
   @override
-  String get cloudSetupContinueLocal => "Continue on this device";
+  String get cloudSetupContinueLocal => 'Continue on this device';
 
   @override
-  String get cloudConnectionFailed => "Google connection could not be completed. Try again or continue locally.";
+  String get cloudConnectionFailed =>
+      'Google connection could not be completed. Try again or continue locally.';
 }
