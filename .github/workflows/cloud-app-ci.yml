@@ -93,7 +93,10 @@ jobs:
         run: dart analyze
       - name: Check cloud host formatting
         working-directory: apps/qaza_app_cloud
-        run: dart format --output=none --set-exit-if-changed lib
+        run: dart format --output=none --set-exit-if-changed lib test
+      - name: Test cloud host composition
+        working-directory: apps/qaza_app_cloud
+        run: flutter test
       - name: Install and test adapter package
         working-directory: packages/qaza_cloud_adapter
         run: |
