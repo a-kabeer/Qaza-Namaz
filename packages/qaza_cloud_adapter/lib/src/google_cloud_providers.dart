@@ -105,12 +105,16 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   Future<CloudSyncSnapshot> status() async {
     final enabled = await _state.isCloudSyncEnabled();
     final automatic = await _state.isAutomaticSyncEnabled();
+    final pendingConflict = enabled ? await _state.readPendingConflict() : null;
     return CloudSyncSnapshot(
       status: !enabled
           ? CloudSyncStatus.disconnected
-          : (_syncing ? CloudSyncStatus.syncing : CloudSyncStatus.idle),
+          : pendingConflict != null
+              ? CloudSyncStatus.conflict
+              : (_syncing ? CloudSyncStatus.syncing : CloudSyncStatus.idle),
       automaticSyncEnabled: automatic,
       lastSuccessAt: await _state.lastSuccessfulSyncAt(),
+      conflict: pendingConflict == null ? null : _toCoreConflict(pendingConflict),
       hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
     );
   }
