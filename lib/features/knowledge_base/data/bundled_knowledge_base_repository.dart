@@ -1,5 +1,7 @@
 import 'package:flutter/services.dart';
 
+import '../../../core/assets/qaza_asset_bundle.dart';
+
 import '../domain/knowledge_article.dart';
 import '../domain/knowledge_category.dart';
 import '../domain/knowledge_query.dart';
@@ -33,8 +35,8 @@ class BundledKnowledgeBaseRepository implements KnowledgeBaseRepository {
     if (cached != null) return cached;
 
     final bundle = _bundle ?? rootBundle;
-    final english = await bundle.loadString(englishAssetPath);
-    final urdu = await bundle.loadString(urduAssetPath);
+    final english = await loadQazaAssetString(englishAssetPath, bundle: bundle);
+    final urdu = await loadQazaAssetString(urduAssetPath, bundle: bundle);
 
     final articles = _parser
         .parsePair(
