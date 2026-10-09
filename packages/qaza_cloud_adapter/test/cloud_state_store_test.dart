@@ -5,6 +5,17 @@ import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('automatic cloud backup cadence is fixed to daily', () {
+    expect(
+      normalizeCloudSyncFrequency(const Duration(minutes: 5)),
+      const Duration(days: 1),
+    );
+    expect(
+      normalizeCloudSyncFrequency(const Duration(hours: 1)),
+      const Duration(days: 1),
+    );
+  });
+
   setUp(() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
