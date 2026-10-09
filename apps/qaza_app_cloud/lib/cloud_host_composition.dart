@@ -1,6 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:qaza_namaz/app/providers.dart';
-import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
 
 /// Explicit dependency-injection boundary for the independently built cloud
