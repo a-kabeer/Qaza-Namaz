@@ -3,27 +3,30 @@ import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
 
 void main() {
   group('CloudSyncEngine', () {
-    test('uploads the initial local backup when no remote backup exists', () async {
-      final phase1 = FakePhase1(revision: 10);
-      final state = FakeState(deviceIdValue: 'device-A', cursor: null);
-      final remote = FakeRemote(latestSnapshot: null);
+    test(
+      'uploads the initial local backup when no remote backup exists',
+      () async {
+        final phase1 = FakePhase1(revision: 10);
+        final state = FakeState(deviceIdValue: 'device-A', cursor: null);
+        final remote = FakeRemote(latestSnapshot: null);
 
-      final result = await CloudSyncEngine(
-        phase1: phase1,
-        remote: remote,
-        state: state,
-      ).sync();
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
 
-      expect(result.kind, CloudSyncResultKind.uploaded);
-      expect(remote.writeCount, 1);
-      expect(remote.written!.lineage.baseBackupId, isNull);
-      expect(remote.written!.lineage.dbRevision, 10);
-      expect(
-        state.cursor!.lastSyncedBackupId,
-        remote.written!.lineage.backupId,
-      );
-      expect(state.cursor!.lastSyncedLocalRevision, 10);
-    });
+        expect(result.kind, CloudSyncResultKind.uploaded);
+        expect(remote.writeCount, 1);
+        expect(remote.written!.lineage.baseBackupId, isNull);
+        expect(remote.written!.lineage.dbRevision, 10);
+        expect(
+          state.cursor!.lastSyncedBackupId,
+          remote.written!.lineage.backupId,
+        );
+        expect(state.cursor!.lastSyncedLocalRevision, 10);
+      },
+    );
 
     test('different device IDs alone do not create a conflict', () async {
       final phase1 = FakePhase1(revision: 10);
