@@ -2414,7 +2414,7 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String dataImportRestoreSummary(
       int records, int accounts, int revision, String onboarding) {
-    return 'اس بیک اپ میں $records قضا ریکارڈ اور $accounts مقامی اکاؤنٹ ہیں۔\\n\\nبحال کرنے سے اس ڈیوائس کا موجودہ مقامی ڈیٹا منتخب بیک اپ سے بدل جائے گا۔ آپ کی ڈیوائس شناخت اسی ڈیوائس پر برقرار رہے گی۔\\n\\nبیک اپ ریویژن: $revision\\nآن بورڈنگ: $onboarding';
+    return 'اس بیک اپ میں $records قضا ریکارڈ اور $accounts مقامی اکاؤنٹ ہیں۔\n\nبحال کرنے سے اس ڈیوائس کا موجودہ مقامی ڈیٹا منتخب بیک اپ سے بدل جائے گا۔ آپ کی ڈیوائس شناخت اسی ڈیوائس پر برقرار رہے گی۔\n\nبیک اپ ریویژن: $revision\nآن بورڈنگ: $onboarding';
   }
 
   @override
