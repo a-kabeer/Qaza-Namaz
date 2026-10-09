@@ -26,6 +26,7 @@ void main() {
         ).sync();
 
         expect(result.kind, CloudSyncResultKind.conflict);
+        expect(state.pendingConflict!.remoteLineage.backupId, 'backup-existing');
         expect(phase1.importCount, 0);
         expect(remote.writeCount, 0);
       },
@@ -337,6 +338,59 @@ void main() {
         expect(display['remote_revision'], 11);
         expect(display['remote_backup_id'], 'backup-102');
         expect(display['remote_base_backup_id'], 'backup-100');
+      },
+    );
+
+    test(
+      'stale remote conflict is refreshed instead of applying old decision',
+      () async {
+        final phase1 = FakePhase1(revision: 12);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final staleRemote = _snapshot(
+          deviceId: 'device-A',
+          backupId: 'backup-102',
+          baseBackupId: 'backup-100',
+          revision: 11,
+          modifiedAt: DateTime.utc(2026, 10, 9, 0, 5),
+          remoteVersion: '3',
+        );
+        final latestRemote = _snapshot(
+          deviceId: 'device-C',
+          backupId: 'backup-103',
+          baseBackupId: 'backup-102',
+          revision: 13,
+          modifiedAt: DateTime.utc(2026, 10, 9, 0, 6),
+          remoteVersion: '4',
+        );
+        final remote = FakeRemote(
+          latestSnapshot: staleRemote,
+          latestSnapshots: <CloudRemoteSnapshot?>[latestRemote],
+        );
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).resolveConflict(
+          conflict: _conflict(
+            FakeRemote(latestSnapshot: staleRemote),
+          ),
+          decision: CloudConflictDecision.useRemote,
+          confirmed: true,
+        );
+
+        expect(result.kind, CloudSyncResultKind.conflict);
+        expect(result.conflict!.remoteLineage.backupId, 'backup-103');
+        expect(state.pendingConflict!.remoteLineage.backupId, 'backup-103');
+        expect(phase1.importCount, 0);
+        expect(phase1.saveRecoveryCount, 0);
       },
     );
 
