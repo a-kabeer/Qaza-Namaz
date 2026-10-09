@@ -32,6 +32,7 @@ import '../domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../domain/repositories/qaza_addition_repository.dart';
 import '../domain/repositories/user_profile_repository.dart';
+import '../domain/services/cloud_sync_contracts.dart';
 import '../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../domain/services/profile_rules.dart';
 import '../domain/services/qaza_plan_service.dart';
@@ -42,6 +43,16 @@ import '../domain/services/save_profile_use_case.dart';
 
 final appSnackbarServiceProvider = Provider<AppSnackbarService>(
   (_) => AppSnackbarService(messengerKey: appScaffoldMessengerKey),
+);
+
+/// Optional capabilities default to unavailable in the offline-only target.
+/// Cloud-enabled hosts override both providers from their composition root.
+final cloudAccountProvider = Provider<CloudAccountProvider>(
+  (ref) => const UnsupportedCloudAccountProvider(),
+);
+
+final cloudSyncProvider = Provider<CloudSyncProvider>(
+  (ref) => const UnsupportedCloudSyncProvider(),
 );
 
 final accountLocalStoreProvider = Provider<AccountLocalStore>((ref) {

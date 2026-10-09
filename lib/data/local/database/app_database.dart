@@ -55,7 +55,7 @@ class AppDatabase extends _$AppDatabase {
   /// Qaza records, additions, profile data, and completion markers are stored
   /// exclusively in the local encrypted SQLite database.
   @override
-  int get schemaVersion => 18;
+  int get schemaVersion => 19;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -66,6 +66,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
           await _ensureMetaStoreSchema();
+          await _ensureLocalRecoverySnapshotSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -119,6 +120,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 18) {
             await _ensureMetaStoreSchema();
           }
+          if (from < 19) {
+            await _ensureLocalRecoverySnapshotSchema();
+          }
         },
       );
 
@@ -143,6 +147,67 @@ class AppDatabase extends _$AppDatabase {
       "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
       "('db_revision', '1')",
     );
+  }
+
+
+  /// Stores one encrypted, app-private recovery snapshot before a confirmed
+  /// destructive restore. The table is excluded from normal export payloads.
+  Future<void> _ensureLocalRecoverySnapshotSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS local_recovery_snapshots (
+        snapshot_id TEXT NOT NULL PRIMARY KEY,
+        created_at TEXT NOT NULL,
+        payload_json TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> saveLocalRecoverySnapshot(
+    String payloadJson, {
+    DateTime? createdAt,
+  }) async {
+    if (payloadJson.trim().isEmpty) {
+      throw ArgumentError.value(payloadJson, 'payloadJson');
+    }
+    await transaction(() async {
+      await _ensureLocalRecoverySnapshotSchema();
+      await customStatement('DELETE FROM local_recovery_snapshots');
+      await customInsert(
+        'INSERT INTO local_recovery_snapshots '
+        '(snapshot_id, created_at, payload_json) VALUES (?, ?, ?)',
+        variables: [
+          Variable('latest'),
+          Variable((createdAt ?? DateTime.now()).toUtc().toIso8601String()),
+          Variable(payloadJson),
+        ],
+      );
+    });
+  }
+
+  Future<String?> readLocalRecoverySnapshot() async {
+    await _ensureLocalRecoverySnapshotSchema();
+    final rows = await customSelect(
+      'SELECT payload_json FROM local_recovery_snapshots '
+      "WHERE snapshot_id = 'latest' LIMIT 1",
+    ).get();
+    return rows.isEmpty ? null : rows.first.read<String>('payload_json');
+  }
+
+  Future<bool> hasLocalRecoverySnapshot() async {
+    final rows = await customSelect(
+      "SELECT 1 AS present FROM sqlite_master "
+      "WHERE type = 'table' AND name = 'local_recovery_snapshots' LIMIT 1",
+    ).get();
+    if (rows.isEmpty) return false;
+    final snapshots = await customSelect(
+      'SELECT 1 AS present FROM local_recovery_snapshots LIMIT 1',
+    ).get();
+    return snapshots.isNotEmpty;
+  }
+
+  Future<void> clearLocalRecoverySnapshot() async {
+    await _ensureLocalRecoverySnapshotSchema();
+    await customStatement('DELETE FROM local_recovery_snapshots');
   }
 
   Future<bool> isOnboardingCompleted() async {
