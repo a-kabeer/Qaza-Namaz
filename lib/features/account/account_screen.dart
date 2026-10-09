@@ -310,12 +310,28 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           confirmed: true,
         );
     if (!mounted) return;
+    if (useRemote && result.status == CloudSyncStatus.synced) {
+      await _refreshAfterRestore();
+      if (!mounted) return;
+    }
     setState(() {
       _sync = result;
       _message = result.status == CloudSyncStatus.synced
           ? l10n.cloudBackupSucceeded
           : result.message;
     });
+  }
+
+  Future<void> _refreshAfterRestore() async {
+    // Import replaces the active-account/session rows as well as Qaza data.
+    // Reload the session before rebuilding profile and repository providers.
+    await ref.read(accountSessionManagerProvider).refresh();
+    ref.invalidate(appRouteProvider);
+    ref.invalidate(userProfileProvider);
+    ref.invalidate(progressSummaryProvider);
+    ref.invalidate(qazaRepositoryProvider);
+    ref.invalidate(qazaAdditionRepositoryProvider);
+    ref.invalidate(qazaPlanRevisionRepositoryProvider);
   }
 
   Future<void> _toggleAutomaticBackup(bool enabled) async {
@@ -359,7 +375,10 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     });
     final result = await ref.read(cloudSyncProvider)
         .restoreLocalRecoverySnapshot(confirmed: true);
-    if (!mounted) return;
+    if (result.status == CloudSyncStatus.synced) {
+      await _refreshAfterRestore();
+      if (!mounted) return;
+    }
     setState(() {
       _sync = result;
       _message = result.status == CloudSyncStatus.synced
