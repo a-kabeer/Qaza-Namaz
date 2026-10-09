@@ -365,7 +365,18 @@ class CloudSyncEngine {
   }
 
   Future<CloudSyncResult> _persistConflict(CloudConflict conflict) async {
+    if (!await _state.isCloudSyncEnabled()) {
+      return CloudSyncResult.skipped(
+        'Cloud sync was disabled before saving the pending conflict.',
+      );
+    }
     await _state.writePendingConflict(conflict);
+    if (!await _state.isCloudSyncEnabled()) {
+      await _state.clearPendingConflict();
+      return CloudSyncResult.skipped(
+        'Cloud sync was disabled while saving the pending conflict.',
+      );
+    }
     return CloudSyncResult.conflict(conflict);
   }
 
