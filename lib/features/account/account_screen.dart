@@ -400,13 +400,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         : _account.email;
     final lastBackup = _sync.lastSuccessAt == null
         ? l10n.cloudNeverBackedUp
-        : MaterialLocalizations.of(context).formatMediumDate(
+        : '${MaterialLocalizations.of(context).formatMediumDate(
               _sync.lastSuccessAt!.toLocal(),
-            ) +
-            ' ' +
-            MaterialLocalizations.of(context).formatTimeOfDay(
+            )} ${MaterialLocalizations.of(context).formatTimeOfDay(
               TimeOfDay.fromDateTime(_sync.lastSuccessAt!.toLocal()),
-            );
+            )}';
 
     return Card(
       key: const Key('account_cloud_backup_card'),
@@ -431,7 +429,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                       const SizedBox(height: 4),
                       Text(
                         connected
-                            ? l10n.cloudConnected + ': ' + (displayName ?? '')
+                            ? '${l10n.cloudConnected}: ${displayName ?? ''}'
                             : l10n.cloudNotConnected,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
@@ -472,7 +470,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 title: Text(l10n.cloudAutomaticBackup),
               ),
               Text(
-                l10n.cloudLastBackup + ': ' + lastBackup,
+                '${l10n.cloudLastBackup}: $lastBackup',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               Align(
