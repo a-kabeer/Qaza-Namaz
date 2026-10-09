@@ -85,6 +85,9 @@ void main() {
 
       await tester.pumpWidget(_app(container));
 
+      expect(find.byKey(const Key('account_data_management')), findsNothing);
+      expect(find.byKey(const Key('account_reset_qaza_counter')), findsNothing);
+
       await tester.tap(find.text('English'));
       await tester.pumpAndSettle();
 
