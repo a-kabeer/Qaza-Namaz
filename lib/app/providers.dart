@@ -51,6 +51,17 @@ final cloudAccountProvider = Provider<CloudAccountProvider>(
   (ref) => const UnsupportedCloudAccountProvider(),
 );
 
+/// Runs lightweight account restoration once per app session. The cloud host
+/// starts it before routing; an onboarding screen can await the same future.
+final cloudAccountStartupRestoreProvider =
+    FutureProvider<CloudAccountSnapshot>((ref) {
+  final account = ref.watch(cloudAccountProvider);
+  if (!account.isSupported) {
+    return Future.value(const CloudAccountSnapshot.unavailable());
+  }
+  return account.restore();
+});
+
 final cloudSyncProvider = Provider<CloudSyncProvider>(
   (ref) => const UnsupportedCloudSyncProvider(),
 );

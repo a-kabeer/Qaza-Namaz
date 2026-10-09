@@ -25,6 +25,9 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     unawaited(ref.read(accountSessionManagerProvider.notifier).initialize());
+    // Lightweight restoration uses the same serialized Google gateway as
+    // explicit sign-in and never presents an interactive chooser at startup.
+    unawaited(ref.read(cloudAccountStartupRestoreProvider.future));
     unawaited(_configureLocalTimezone());
   }
 

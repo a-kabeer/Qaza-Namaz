@@ -25,7 +25,7 @@ class _CloudSetupChoiceScreenState
 
   Future<void> _restoreExistingAccount() async {
     try {
-      final account = await ref.read(cloudAccountProvider).restore();
+      final account = await ref.read(cloudAccountStartupRestoreProvider.future);
       if (account.isConnected && mounted) {
         await _completeChoice();
       }

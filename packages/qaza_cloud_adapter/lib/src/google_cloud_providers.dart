@@ -30,15 +30,16 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> restore() async {
     try {
-      final account = await _gateway.restoreLightweightAuthentication();
-      if (account == null) {
-        if (await _state.isCloudSyncEnabled()) {
-          await _scheduler.disconnect();
-        }
+      // Native Google session state is not itself application consent to cloud
+      // backup. Restore only when this installation has durably opted in.
+      if (!await _state.isCloudSyncEnabled()) {
         return const CloudAccountSnapshot.disconnected();
       }
-
-      await _state.setCloudSyncEnabled(true);
+      final account = await _gateway.restoreLightweightAuthentication();
+      if (account == null) {
+        await _scheduler.disconnect();
+        return const CloudAccountSnapshot.disconnected();
+      }
       if (await _state.isAutomaticSyncEnabled()) {
         await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
       }
