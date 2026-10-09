@@ -618,10 +618,7 @@ class FakeState implements CloudSyncStateStore {
 }
 
 class FakeRemote implements CloudRemoteStore {
-  FakeRemote({
-    required this.latestSnapshot,
-    this.latestSnapshots,
-  });
+  FakeRemote({required this.latestSnapshot, this.latestSnapshots});
 
   CloudRemoteSnapshot? latestSnapshot;
   final List<CloudRemoteSnapshot?>? latestSnapshots;

@@ -31,8 +31,7 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
       'qaza_cloud_adapter.automatic_sync_enabled_v1';
   static const _lastSuccessfulSyncAtKey =
       'qaza_cloud_adapter.last_successful_sync_at_v1';
-  static const _pendingConflictKey =
-      'qaza_cloud_adapter.pending_conflict_v1';
+  static const _pendingConflictKey = 'qaza_cloud_adapter.pending_conflict_v1';
 
   SharedPreferences? _preferences;
 

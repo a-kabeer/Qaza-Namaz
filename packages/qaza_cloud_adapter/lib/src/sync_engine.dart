@@ -189,9 +189,7 @@ class CloudSyncEngine {
       );
     }
     if (!await _state.isCloudSyncEnabled()) {
-      return CloudSyncResult.skipped(
-        'Cloud sync was disabled before restore.',
-      );
+      return CloudSyncResult.skipped('Cloud sync was disabled before restore.');
     }
 
     await _phase1.importBackup(latest.backup.phase1BackupJson);
@@ -265,9 +263,7 @@ class CloudSyncEngine {
             'Cloud sync was disabled before conflict upload.',
           );
         }
-        final latest = await _remote.latest(
-          allowInteractive: allowInteractive,
-        );
+        final latest = await _remote.latest(allowInteractive: allowInteractive);
         if (latest == null ||
             latest.backup.lineage.backupId != remote.backup.lineage.backupId ||
             latest.remoteVersion != remote.remoteVersion) {
@@ -311,9 +307,7 @@ class CloudSyncEngine {
             'The recovery snapshot remains available.',
           );
         }
-        final latest = await _remote.latest(
-          allowInteractive: allowInteractive,
-        );
+        final latest = await _remote.latest(allowInteractive: allowInteractive);
         if (latest == null ||
             latest.backup.lineage.backupId != remote.backup.lineage.backupId ||
             latest.remoteVersion != remote.remoteVersion) {

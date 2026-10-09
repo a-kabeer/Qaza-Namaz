@@ -110,11 +110,13 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       status: !enabled
           ? CloudSyncStatus.disconnected
           : pendingConflict != null
-              ? CloudSyncStatus.conflict
-              : (_syncing ? CloudSyncStatus.syncing : CloudSyncStatus.idle),
+          ? CloudSyncStatus.conflict
+          : (_syncing ? CloudSyncStatus.syncing : CloudSyncStatus.idle),
       automaticSyncEnabled: automatic,
       lastSuccessAt: await _state.lastSuccessfulSyncAt(),
-      conflict: pendingConflict == null ? null : _toCoreConflict(pendingConflict),
+      conflict: pendingConflict == null
+          ? null
+          : _toCoreConflict(pendingConflict),
       hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
     );
   }
