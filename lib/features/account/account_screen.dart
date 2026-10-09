@@ -61,7 +61,6 @@ class AccountScreen extends ConsumerWidget {
   }
 }
 
-
 class _AccountInfoCard extends StatelessWidget {
   const _AccountInfoCard({
     required this.icon,
