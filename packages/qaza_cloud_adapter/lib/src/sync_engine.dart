@@ -19,12 +19,18 @@ class CloudSyncEngine {
   final CloudSyncStateStore _state;
 
   Future<CloudSyncResult> sync({bool allowInteractive = false}) async {
+    if (!await _state.isCloudSyncEnabled()) {
+      return CloudSyncResult.skipped('Cloud sync is disabled.');
+    }
     final cursor = await _state.readCursor();
     final deviceId = await _state.deviceId();
     final localRevision = await _phase1.readDbRevision();
 
     CloudRemoteSnapshot? remote;
     try {
+      if (!await _state.isCloudSyncEnabled()) {
+        return CloudSyncResult.skipped('Cloud sync was disabled.');
+      }
       remote = await _remote.latest(allowInteractive: allowInteractive);
     } on CloudAuthorizationUnavailable catch (error) {
       return CloudSyncResult.skipped(error.message);
@@ -37,6 +43,24 @@ class CloudSyncEngine {
     final localUnsynced = cursor.lastSyncedLocalRevision == null
         ? localRevision > 1
         : localRevision > cursor.lastSyncedLocalRevision!;
+
+    // An initial connection that finds a remote backup always requires an
+    // explicit user decision, even when local revision looks pristine.
+    if (cursor.lastSyncedBackupId == null && remote != null) {
+      final localPreview = await _localPreview();
+      return CloudSyncResult.conflict(
+        CloudConflict(
+          localDeviceId: deviceId,
+          localTimestamp: localPreview.timestamp,
+          localRevision: localRevision,
+          localBaseBackupId: null,
+          remoteLineage: remote.backup.lineage,
+          remoteTimestamp: remote.modifiedAt,
+          remoteVersion: remote.remoteVersion,
+          lastSyncedBackupId: null,
+        ),
+      );
+    }
 
     final remoteChanged = cursor.lastSyncedBackupId == null
         ? remote != null
@@ -90,6 +114,9 @@ class CloudSyncEngine {
         phase1BackupJson: localJson,
       );
 
+      if (!await _state.isCloudSyncEnabled()) {
+        return CloudSyncResult.skipped('Cloud sync was disabled before upload.');
+      }
       final written = await _remote.write(
         backup,
         allowInteractive: allowInteractive,
@@ -108,6 +135,10 @@ class CloudSyncEngine {
     if (availableRemote == null) {
       return CloudSyncResult.noOp();
     }
+    if (!await _state.isCloudSyncEnabled()) {
+      return CloudSyncResult.skipped('Cloud sync was disabled before restore.');
+    }
+    // This path is only used after a previous sync lineage has been established.
     await _phase1.importBackup(availableRemote.backup.phase1BackupJson);
     final importedLocalRevision = await _phase1.readDbRevision();
     await _state.writeCursor(
@@ -126,6 +157,9 @@ class CloudSyncEngine {
     required bool confirmed,
     bool allowInteractive = true,
   }) async {
+    if (!await _state.isCloudSyncEnabled()) {
+      return CloudSyncResult.skipped('Cloud sync is disabled.');
+    }
     if (!confirmed) {
       throw const CloudAdapterException(
         'Explicit user confirmation is required before resolving a conflict.',
@@ -139,6 +173,9 @@ class CloudSyncEngine {
       throw const CloudConflictStaleException();
     }
 
+    if (!await _state.isCloudSyncEnabled()) {
+      return CloudSyncResult.skipped('Cloud sync was disabled.');
+    }
     final remote = await _remote.latest(allowInteractive: allowInteractive);
     if (remote == null ||
         remote.backup.lineage.backupId != conflict.remoteLineage.backupId) {
@@ -162,6 +199,11 @@ class CloudSyncEngine {
           phase1BackupJson: localJson,
         );
 
+        if (!await _state.isCloudSyncEnabled()) {
+          return CloudSyncResult.skipped(
+            'Cloud sync was disabled before conflict upload.',
+          );
+        }
         final written = await _remote.write(
           backup,
           allowInteractive: allowInteractive,
@@ -176,6 +218,17 @@ class CloudSyncEngine {
         return CloudSyncResult.uploaded(backup);
 
       case CloudConflictDecision.useRemote:
+        // Persist the old Phase 1 export in encrypted local SQLite before
+        // replacing current application data. Import is not attempted if this
+        // snapshot fails to save.
+        final recovery = await _phase1.exportBackup();
+        await _phase1.saveRecoverySnapshot(recovery);
+        if (!await _state.isCloudSyncEnabled()) {
+          return CloudSyncResult.skipped(
+            'Cloud sync was disabled before conflict restore. '
+            'The recovery snapshot remains available.',
+          );
+        }
         await _phase1.importBackup(remote.backup.phase1BackupJson);
         final importedRevision = await _phase1.readDbRevision();
         await _state.writeCursor(
@@ -187,6 +240,35 @@ class CloudSyncEngine {
         );
         return CloudSyncResult.downloaded(remote.backup);
     }
+  }
+
+  Future<CloudSyncResult> restoreLocalRecoverySnapshot({
+    required bool confirmed,
+  }) async {
+    if (!confirmed) {
+      throw const CloudAdapterException(
+        'Explicit confirmation is required before restoring the local recovery snapshot.',
+      );
+    }
+    final snapshot = await _phase1.readRecoverySnapshot();
+    if (snapshot == null) {
+      return CloudSyncResult.failed('No local recovery snapshot is available.');
+    }
+    await _phase1.importBackup(snapshot);
+    await _phase1.clearRecoverySnapshot();
+    final revision = await _phase1.readDbRevision();
+    return CloudSyncResult.downloaded(
+      CloudBackup(
+        lineage: CloudLineage(
+          deviceId: 'local-recovery',
+          backupId: 'local-recovery',
+          baseBackupId: null,
+          dbRevision: revision,
+          createdAt: DateTime.now().toUtc(),
+        ),
+        phase1BackupJson: snapshot,
+      ),
+    );
   }
 
   Future<_Phase1Preview> _localPreview() async {

@@ -3,6 +3,51 @@ import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
 
 void main() {
   group('CloudSyncEngine', () {
+    test('first connection with a remote backup requires an explicit decision', () async {
+      final phase1 = FakePhase1(revision: 1);
+      final state = FakeState(deviceIdValue: 'device-B', cursor: null);
+      final remote = FakeRemote(
+        latestSnapshot: _snapshot(
+          deviceId: 'device-A',
+          backupId: 'backup-existing',
+          baseBackupId: null,
+          revision: 9,
+          modifiedAt: DateTime.utc(2026, 10, 9),
+          remoteVersion: '1',
+        ),
+      );
+
+      final result = await CloudSyncEngine(
+        phase1: phase1,
+        remote: remote,
+        state: state,
+      ).sync();
+
+      expect(result.kind, CloudSyncResultKind.conflict);
+      expect(phase1.importCount, 0);
+      expect(remote.writeCount, 0);
+    });
+
+    test('disabled cloud state prevents remote reads and writes', () async {
+      final phase1 = FakePhase1(revision: 10);
+      final state = FakeState(
+        deviceIdValue: 'device-A',
+        cursor: null,
+        cloudEnabled: false,
+      );
+      final remote = FakeRemote(latestSnapshot: null);
+
+      final result = await CloudSyncEngine(
+        phase1: phase1,
+        remote: remote,
+        state: state,
+      ).sync();
+
+      expect(result.kind, CloudSyncResultKind.skipped);
+      expect(remote.latestCount, 0);
+      expect(remote.writeCount, 0);
+    });
+
     test(
       'uploads the initial local backup when no remote backup exists',
       () async {
@@ -282,6 +327,7 @@ void main() {
 
       expect(result.kind, CloudSyncResultKind.downloaded);
       expect(phase1.importCount, 1);
+      expect(phase1.saveRecoveryCount, 1);
       expect(state.cursor!.lastSyncedBackupId, 'backup-102');
       expect(state.cursor!.lastSyncedLocalRevision, 13);
     });
@@ -372,6 +418,8 @@ class FakePhase1 implements Phase1BackupSource {
 
   int _revision;
   int importCount = 0;
+  int saveRecoveryCount = 0;
+  String? recoverySnapshot;
 
   @override
   Future<int> readDbRevision() async => _revision;
@@ -394,13 +442,35 @@ class FakePhase1 implements Phase1BackupSource {
     importCount++;
     _revision++;
   }
+
+  @override
+  Future<void> saveRecoverySnapshot(String phase1BackupJson) async {
+    saveRecoveryCount++;
+    recoverySnapshot = phase1BackupJson;
+  }
+
+  @override
+  Future<String?> readRecoverySnapshot() async => recoverySnapshot;
+
+  @override
+  Future<void> clearRecoverySnapshot() async {
+    recoverySnapshot = null;
+  }
 }
 
 class FakeState implements CloudSyncStateStore {
-  FakeState({required this.deviceIdValue, required this.cursor});
+  FakeState({
+    required this.deviceIdValue,
+    required this.cursor,
+    this.cloudEnabled = true,
+    this.automaticEnabled = true,
+  });
 
   final String deviceIdValue;
   CloudSyncCursor? cursor;
+  bool cloudEnabled;
+  bool automaticEnabled;
+  DateTime? lastSuccessfulAt;
 
   @override
   Future<String> deviceId() async => deviceIdValue;
@@ -413,6 +483,34 @@ class FakeState implements CloudSyncStateStore {
   Future<void> writeCursor(CloudSyncCursor cursor) async {
     this.cursor = cursor;
   }
+
+  @override
+  Future<bool> isCloudSyncEnabled() async => cloudEnabled;
+
+  @override
+  Future<void> setCloudSyncEnabled(bool enabled) async {
+    cloudEnabled = enabled;
+    if (!enabled) automaticEnabled = false;
+  }
+
+  @override
+  Future<bool> isAutomaticSyncEnabled() async => automaticEnabled;
+
+  @override
+  Future<void> setAutomaticSyncEnabled(bool enabled) async {
+    if (enabled && !cloudEnabled) {
+      throw const CloudAdapterException('cloud disabled');
+    }
+    automaticEnabled = enabled;
+  }
+
+  @override
+  Future<DateTime?> lastSuccessfulSyncAt() async => lastSuccessfulAt;
+
+  @override
+  Future<void> setLastSuccessfulSyncAt(DateTime value) async {
+    lastSuccessfulAt = value;
+  }
 }
 
 class FakeRemote implements CloudRemoteStore {
@@ -421,10 +519,13 @@ class FakeRemote implements CloudRemoteStore {
   CloudRemoteSnapshot? latestSnapshot;
   CloudBackup? written;
   int writeCount = 0;
+  int latestCount = 0;
 
   @override
-  Future<CloudRemoteSnapshot?> latest({required bool allowInteractive}) async =>
-      latestSnapshot;
+  Future<CloudRemoteSnapshot?> latest({required bool allowInteractive}) async {
+    latestCount++;
+    return latestSnapshot;
+  }
 
   @override
   Future<CloudRemoteSnapshot> write(

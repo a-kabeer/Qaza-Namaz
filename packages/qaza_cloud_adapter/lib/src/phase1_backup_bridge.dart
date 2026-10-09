@@ -7,6 +7,9 @@ abstract interface class Phase1BackupSource {
   Future<int> readDbRevision();
   Future<String> exportBackup();
   Future<void> importBackup(String phase1BackupJson);
+  Future<void> saveRecoverySnapshot(String phase1BackupJson);
+  Future<String?> readRecoverySnapshot();
+  Future<void> clearRecoverySnapshot();
 }
 
 class LocalPhase1BackupSource implements Phase1BackupSource {
@@ -25,6 +28,18 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
   @override
   Future<void> importBackup(String phase1BackupJson) =>
       _backupService.importJson(phase1BackupJson);
+
+  @override
+  Future<void> saveRecoverySnapshot(String phase1BackupJson) =>
+      database.saveLocalRecoverySnapshot(phase1BackupJson);
+
+  @override
+  Future<String?> readRecoverySnapshot() =>
+      database.readLocalRecoverySnapshot();
+
+  @override
+  Future<void> clearRecoverySnapshot() =>
+      database.clearLocalRecoverySnapshot();
 }
 
 abstract interface class CloudRemoteStore {

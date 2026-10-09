@@ -29,13 +29,20 @@ void initializeQazaCloudBackgroundDispatcher() {
     }
 
     final serverClientId = inputData?['server_client_id'] as String?;
+    final state = SharedPreferencesCloudSyncStateStore();
+
+    // Must run before AppDatabase opening, Google authorization or network work.
+    if (!await state.isCloudSyncEnabled() ||
+        !await state.isAutomaticSyncEnabled()) {
+      return true;
+    }
+
     final appDatabase = AppDatabase();
     final phase1 = LocalPhase1BackupSource(appDatabase);
 
     try {
       final gateway = GoogleSignInGateway(serverClientId: serverClientId);
       final remote = GoogleDriveAppDataStore(gateway);
-      final state = SharedPreferencesCloudSyncStateStore();
       final engine = CloudSyncEngine(
         phase1: phase1,
         remote: remote,
@@ -55,16 +62,26 @@ void initializeQazaCloudBackgroundDispatcher() {
 }
 
 class CloudSyncScheduler {
-  CloudSyncScheduler({Workmanager? workmanager})
-    : _workmanager = workmanager ?? Workmanager();
+  CloudSyncScheduler({
+    Workmanager? workmanager,
+    CloudSyncStateStore? state,
+  })  : _workmanager = workmanager ?? Workmanager(),
+        _state = state ?? SharedPreferencesCloudSyncStateStore();
 
   final Workmanager _workmanager;
+  final CloudSyncStateStore _state;
   bool _initialized = false;
 
   Future<void> initializeAndSchedule({
     Duration frequency = const Duration(days: 1),
     String? serverClientId,
   }) async {
+    if (!await _state.isCloudSyncEnabled()) {
+      throw const CloudAdapterException(
+        'Connect a Google account before scheduling automatic backup.',
+      );
+    }
+    await _state.setAutomaticSyncEnabled(true);
     if (!_initialized) {
       await _workmanager.initialize(initializeQazaCloudBackgroundDispatcher);
       _initialized = true;
@@ -85,6 +102,16 @@ class CloudSyncScheduler {
     );
   }
 
-  Future<void> cancel() =>
-      _workmanager.cancelByUniqueName(cloudSyncWorkerTaskName);
+  Future<void> cancel() async {
+    // Persist the disabled state before cancelling unique periodic work.
+    await _state.setAutomaticSyncEnabled(false);
+    await _workmanager.cancelByUniqueName(cloudSyncWorkerTaskName);
+  }
+
+  Future<void> disconnect() async {
+    // The hard stop is durable before cancellation or account sign-out.
+    await _state.setCloudSyncEnabled(false);
+    await _state.setAutomaticSyncEnabled(false);
+    await _workmanager.cancelByUniqueName(cloudSyncWorkerTaskName);
+  }
 }
