@@ -1353,7 +1353,7 @@
     }
   },
   "dataImportRestored": "Backup restored successfully. {count} Qaza records restored.",
-  "dataImportRestoreSummary": "This backup contains {records} Qaza records and {accounts} local account(s).\\n\\nRestoring replaces the current local application data on this device. Your device identity remains on this device.\\n\\nBackup revision: {revision}\\nOnboarding: {onboarding}",
+  "dataImportRestoreSummary": "This backup contains {records} Qaza records and {accounts} local account(s).\n\nRestoring replaces the current local application data on this device. Your device identity remains on this device.\n\nBackup revision: {revision}\nOnboarding: {onboarding}",
   "dataImportOnboardingComplete": "completed",
   "dataImportOnboardingIncomplete": "not completed",
   "dataLocalOnlyNote": "Local backup only. Your Qaza data stays on this device unless you explicitly export it.",
