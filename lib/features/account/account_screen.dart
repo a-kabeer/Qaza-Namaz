@@ -473,6 +473,21 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 '${l10n.cloudLastBackup}: $lastBackup',
                 style: Theme.of(context).textTheme.bodySmall,
               ),
+              if (_sync.status == CloudSyncStatus.conflict &&
+                  _sync.conflict != null) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    key: const Key('account_resolve_pending_cloud_conflict'),
+                    onPressed: _busy
+                        ? null
+                        : () => _resolveConflict(_sync.conflict!),
+                    icon: const Icon(Icons.compare_arrows_rounded),
+                    label: Text(l10n.cloudBackupConflictTitle),
+                  ),
+                ),
+              ],
               Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: TextButton(
