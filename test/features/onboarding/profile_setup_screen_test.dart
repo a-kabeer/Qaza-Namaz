@@ -192,7 +192,7 @@ void main() {
   );
 
   testWidgets(
-    'zero-Qaza onboarding completes directly from Profile Setup without review or import',
+    'zero-Qaza onboarding refreshes a cached onboarding route after commit',
     (tester) async {
       final initialProfile = UserProfile(
         languageCode: 'en',
@@ -210,21 +210,32 @@ void main() {
       expect(calculatedPlan!.startDate, calculatedPlan.endDate);
       expect(calculatedPlan.totalWithWitr, 0);
 
+      // Reproduce a warm app process: StartupGate has already computed
+      // and cached the onboarding route before the successful database commit.
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          accountSessionManagerProvider.overrideWith((ref) => sessionManager),
+          activeLocalAccountIdStateProvider.overrideWith(
+            (ref) => UserProfile.localLedgerUserId,
+          ),
+          qazaPlanServiceProvider.overrideWithValue(
+            const QazaPlanService(),
+          ),
+          qazaPlanRevisionRepositoryProvider.overrideWithValue(
+            _FakeQazaPlanRevisionRepository(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      expect(
+        await container.read(appRouteProvider.future),
+        AppRoute.onboarding,
+      );
+
       await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            appDatabaseProvider.overrideWithValue(database),
-            accountSessionManagerProvider.overrideWith((ref) => sessionManager),
-            activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => UserProfile.localLedgerUserId,
-            ),
-            qazaPlanServiceProvider.overrideWithValue(
-              const QazaPlanService(),
-            ),
-            qazaPlanRevisionRepositoryProvider.overrideWithValue(
-              _FakeQazaPlanRevisionRepository(),
-            ),
-          ],
+        UncontrolledProviderScope(
+          container: container,
           child: MaterialApp(
             locale: const Locale('en'),
             localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -236,7 +247,6 @@ void main() {
           ),
         ),
       );
-
       await tester.pumpAndSettle();
 
       expect(find.byType(ProfileSetupScreen), findsOneWidget);
