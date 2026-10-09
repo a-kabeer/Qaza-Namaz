@@ -5,12 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:qaza_namaz/app/app.dart';
-import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/diagnostics/diagnostics.dart';
 import 'package:qaza_namaz/core/time/local_date_service.dart';
 import 'package:qaza_namaz/core/widgets/fatal_error_screen.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
+
+import 'cloud_host_composition.dart';
 
 const Duration _startupStepTimeout = Duration(seconds: 10);
 
@@ -96,26 +97,12 @@ Widget _cloudApp(
   String serverClientId,
 ) {
   return ProviderScope(
-    overrides: [
-      packageAssetNamespaceProvider.overrideWithValue('qaza_namaz'),
-      cloudAccountProvider.overrideWith(
-        (ref) => GoogleCloudAccountProvider(
-          gateway: gateway,
-          state: state,
-          scheduler: scheduler,
-          serverClientId: serverClientId.isEmpty ? null : serverClientId,
-        ),
-      ),
-      cloudSyncProvider.overrideWith(
-        (ref) => GoogleCloudSyncProvider(
-          database: ref.watch(appDatabaseProvider),
-          gateway: gateway,
-          state: state,
-          scheduler: scheduler,
-          serverClientId: serverClientId.isEmpty ? null : serverClientId,
-        ),
-      ),
-    ],
+    overrides: cloudHostProviderOverrides(
+      gateway: gateway,
+      state: state,
+      scheduler: scheduler,
+      serverClientId: serverClientId.isEmpty ? null : serverClientId,
+    ),
     child: const QazaNamazApp(),
   );
 }
