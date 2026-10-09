@@ -13,10 +13,10 @@ import 'sync_engine.dart';
 
 const String cloudSyncWorkerTaskName = 'qaza_namaz_cloud_periodic_sync';
 
-Duration normalizeCloudSyncFrequency(Duration requested) {
-  const minimum = Duration(minutes: 15);
-  return requested < minimum ? minimum : requested;
-}
+/// Product policy: automatic backup runs at most once per day. Android may
+/// defer this WorkManager interval; it is not an exact 24-hour deadline.
+Duration normalizeCloudSyncFrequency(Duration requested) =>
+    const Duration(days: 1);
 
 @pragma('vm:entry-point')
 void initializeQazaCloudBackgroundDispatcher() {
@@ -92,6 +92,7 @@ class CloudSyncScheduler {
         _initialized = true;
       }
 
+      // Keep the cadence daily even if a caller supplies a shorter interval.
       final normalized = normalizeCloudSyncFrequency(frequency);
       final inputData = <String, dynamic>{
         if (serverClientId != null) 'server_client_id': serverClientId,
