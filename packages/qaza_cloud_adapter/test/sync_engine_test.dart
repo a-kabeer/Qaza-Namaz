@@ -190,6 +190,49 @@ void main() {
     );
 
     test(
+      'disabling cloud while snapshot is saved prevents remote replacement',
+      () async {
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final phase1 = FakePhase1(
+          revision: 10,
+          onSaveRecoverySnapshot: () async {
+            state.cloudEnabled = false;
+            state.automaticEnabled = false;
+          },
+        );
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-101',
+            baseBackupId: 'backup-100',
+            revision: 11,
+            modifiedAt: DateTime.utc(2026, 10, 9),
+            remoteVersion: '2',
+          ),
+        );
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
+
+        expect(result.kind, CloudSyncResultKind.skipped);
+        expect(phase1.recoverySnapshot, isNotNull);
+        expect(remote.latestCount, 1);
+        expect(phase1.importCount, 0);
+        expect(state.cursor!.lastSyncedBackupId, 'backup-100');
+      },
+    );
+
+    test(
       'remote-only restore is cancelled when recovery snapshot cannot be verified',
       () async {
         final phase1 = FakePhase1(revision: 10, hideRecoverySnapshot: true);
@@ -643,10 +686,12 @@ class FakePhase1 implements Phase1BackupSource {
     required int revision,
     this.hideRecoverySnapshot = false,
     this.bumpRevisionWhenSavingRecovery = false,
+    this.onSaveRecoverySnapshot,
   }) : _revision = revision;
 
   final bool hideRecoverySnapshot;
   final bool bumpRevisionWhenSavingRecovery;
+  final Future<void> Function()? onSaveRecoverySnapshot;
 
   int _revision;
   int importCount = 0;
@@ -680,6 +725,7 @@ class FakePhase1 implements Phase1BackupSource {
     saveRecoveryCount++;
     recoverySnapshot = phase1BackupJson;
     if (bumpRevisionWhenSavingRecovery) _revision++;
+    await onSaveRecoverySnapshot?.call();
   }
 
   @override
