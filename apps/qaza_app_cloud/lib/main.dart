@@ -1,0 +1,76 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timezone/data/latest_all.dart' as tzdata;
+import 'package:qaza_namaz/app/app.dart';
+import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/widgets/fatal_error_screen.dart';
+import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  tzdata.initializeTimeZones();
+
+  const serverClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+  final gateway = GoogleSignInGateway(
+    serverClientId: serverClientId.isEmpty ? null : serverClientId,
+  );
+  final state = SharedPreferencesCloudSyncStateStore();
+  final scheduler = CloudSyncScheduler(state: state);
+
+  try {
+    await _initializeDatabase();
+  } catch (error) {
+    runApp(
+      FatalDatabaseErrorApp(
+        error: error,
+        onRetry: () async {
+          await _initializeDatabase();
+          runApp(_cloudApp(gateway, state, scheduler, serverClientId));
+        },
+      ),
+    );
+    return;
+  }
+
+  runApp(_cloudApp(gateway, state, scheduler, serverClientId));
+}
+
+Widget _cloudApp(
+  GoogleSignInGateway gateway,
+  SharedPreferencesCloudSyncStateStore state,
+  CloudSyncScheduler scheduler,
+  String serverClientId,
+) {
+  return ProviderScope(
+    overrides: [
+      cloudAccountProvider.overrideWith(
+        (ref) => GoogleCloudAccountProvider(
+          gateway: gateway,
+          state: state,
+          scheduler: scheduler,
+          serverClientId: serverClientId.isEmpty ? null : serverClientId,
+        ),
+      ),
+      cloudSyncProvider.overrideWith(
+        (ref) => GoogleCloudSyncProvider(
+          database: ref.watch(appDatabaseProvider),
+          gateway: gateway,
+          state: state,
+          scheduler: scheduler,
+          serverClientId: serverClientId.isEmpty ? null : serverClientId,
+        ),
+      ),
+    ],
+    child: const QazaNamazApp(),
+  );
+}
+
+Future<void> _initializeDatabase() async {
+  final database = AppDatabase();
+  try {
+    await database.readDbRevision();
+  } finally {
+    await database.close();
+  }
+}

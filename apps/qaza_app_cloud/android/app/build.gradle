@@ -1,0 +1,99 @@
+plugins {
+    id "com.android.application"
+    // No Kotlin Gradle Plugin: `android.builtInKotlin=true` means AGP 9
+    // compiles this module's Kotlin itself.
+    // The Flutter Gradle Plugin must be applied after the Android plugin.
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(localPropertiesFile.newReader("UTF-8"))
+}
+
+def flutterVersionCode = localProperties.getProperty("flutter.versionCode")
+if (flutterVersionCode == null) {
+    flutterVersionCode = "1"
+}
+
+def flutterVersionName = localProperties.getProperty("flutter.versionName")
+if (flutterVersionName == null) {
+    flutterVersionName = "1.0"
+}
+
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+def configuredStoreFile = keystoreProperties.getProperty("storeFile")
+def releaseStoreFile = configuredStoreFile ? rootProject.file(configuredStoreFile) : null
+def hasReleaseSigning = keystorePropertiesFile.exists() &&
+    keystoreProperties.getProperty("keyAlias") &&
+    keystoreProperties.getProperty("keyPassword") &&
+    keystoreProperties.getProperty("storePassword") &&
+    releaseStoreFile?.exists()
+
+android {
+    namespace = "com.qaza_namaz.com"
+    compileSdk = 36
+    ndkVersion = "28.2.13676358"
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+        coreLibraryDesugaringEnabled true
+    }
+
+    defaultConfig {
+        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/projects/installing#application-id).
+        applicationId = "com.qaza_namaz.com"
+        minSdkVersion = flutter.minSdkVersion
+        targetSdk = 36
+        versionCode = flutterVersionCode.toInteger()
+        versionName = flutterVersionName
+    }
+
+    signingConfigs {
+        release {
+            if (hasReleaseSigning) {
+                keyAlias keystoreProperties["keyAlias"]
+                keyPassword keystoreProperties["keyPassword"]
+                storeFile releaseStoreFile
+                storePassword keystoreProperties["storePassword"]
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.release
+            } else {
+                // Build an unsigned release artifact when production signing
+                // credentials are unavailable. Never fall back to debug
+                // signing for a release build.
+                signingConfig = null
+            }
+        }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+    }
+}
+
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'
+    // The app's native location settings bridge calls SettingsClient directly.
+    // Keep this aligned with the geolocator Android implementation.
+    implementation 'com.google.android.gms:play-services-location:21.2.0'
+}
+
+flutter {
+    source = "../.."
+}

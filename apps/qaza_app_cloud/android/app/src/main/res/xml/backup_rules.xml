@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+    <!-- Qaza data is sensitive. Allow cloud backup only when the Android
+         transport provides client-side encryption. -->
+    <include
+        domain="database"
+        path="qaza_namaz.sqlite"
+        requireFlags="clientSideEncryption" />
+</full-backup-content>
