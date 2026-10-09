@@ -11,6 +11,7 @@ dependencies:
     sdk: flutter
   flutter_riverpod: ^2.5.1
   timezone: ^0.11.1
+  flutter_timezone: ^5.1.0
   qaza_namaz:
     path: ../..
   qaza_cloud_adapter:
@@ -19,3 +20,8 @@ dependencies:
 flutter:
   uses-material-design: true
   generate: true
+
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
