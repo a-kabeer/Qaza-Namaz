@@ -1,0 +1,57 @@
+name: Phase 2 Cloud Adapter CI
+
+on:
+  push:
+    paths:
+      - 'packages/qaza_cloud_adapter/**'
+      - 'docs/PHASE_2_CLOUD_ADAPTER.md'
+      - '.github/workflows/phase2-cloud-adapter.yml'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'packages/qaza_cloud_adapter/**'
+      - 'docs/PHASE_2_CLOUD_ADAPTER.md'
+      - '.github/workflows/phase2-cloud-adapter.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: phase2-cloud-adapter-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  package:
+    name: Analyze and test isolated Phase 2 package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+
+      - name: Pub get
+        working-directory: packages/qaza_cloud_adapter
+        run: flutter pub get
+
+      - name: Phase 1 boundary policy
+        run: python3 tools/phase_boundary_check.py
+
+      - name: Analyze Phase 2 package
+        working-directory: packages/qaza_cloud_adapter
+        run: dart analyze
+
+      - name: Check Phase 2 formatting
+        working-directory: packages/qaza_cloud_adapter
+        run: dart format --output=none --set-exit-if-changed lib test
+
+      - name: Test Phase 2 package
+        working-directory: packages/qaza_cloud_adapter
+        run: flutter test
