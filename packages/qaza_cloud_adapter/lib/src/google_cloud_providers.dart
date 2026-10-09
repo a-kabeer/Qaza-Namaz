@@ -158,7 +158,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       }
       return await status();
     } catch (error) {
-      return _snapshot(CloudSyncStatus.failed, message: error.toString());
+      return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     }
   }
 
@@ -179,7 +179,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       );
       return await _snapshotFromResult(result);
     } catch (error) {
-      return _snapshot(CloudSyncStatus.failed, message: error.toString());
+      return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     }
   }
 
@@ -193,7 +193,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       );
       return _snapshotFromResult(result);
     } catch (error) {
-      return _snapshot(CloudSyncStatus.failed, message: error.toString());
+      return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     }
   }
 
