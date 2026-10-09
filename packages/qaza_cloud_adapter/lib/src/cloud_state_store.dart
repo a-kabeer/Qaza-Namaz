@@ -15,6 +15,9 @@ abstract interface class CloudSyncStateStore {
   Future<void> setAutomaticSyncEnabled(bool enabled);
   Future<DateTime?> lastSuccessfulSyncAt();
   Future<void> setLastSuccessfulSyncAt(DateTime value);
+  Future<CloudConflict?> readPendingConflict();
+  Future<void> writePendingConflict(CloudConflict conflict);
+  Future<void> clearPendingConflict();
 }
 
 class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
@@ -28,6 +31,8 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
       'qaza_cloud_adapter.automatic_sync_enabled_v1';
   static const _lastSuccessfulSyncAtKey =
       'qaza_cloud_adapter.last_successful_sync_at_v1';
+  static const _pendingConflictKey =
+      'qaza_cloud_adapter.pending_conflict_v1';
 
   SharedPreferences? _preferences;
 
@@ -88,6 +93,7 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
       // The worker checks both durable flags before opening local storage or
       // initializing Google authorization.
       await prefs.setBool(_automaticSyncEnabledKey, false);
+      await prefs.remove(_pendingConflictKey);
     }
   }
 
@@ -123,6 +129,40 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
       _lastSuccessfulSyncAtKey,
       value.toUtc().toIso8601String(),
     );
+  }
+
+  @override
+  Future<CloudConflict?> readPendingConflict() async {
+    final prefs = await _prefs;
+    final raw = prefs.getString(_pendingConflictKey);
+    if (raw == null || raw.isEmpty) return null;
+
+    dynamic decoded;
+    try {
+      decoded = jsonDecode(raw);
+    } catch (_) {
+      throw const CloudAdapterException(
+        'Stored pending cloud conflict is not valid JSON.',
+      );
+    }
+    if (decoded is! Map) {
+      throw const CloudAdapterException(
+        'Stored pending cloud conflict has an invalid root.',
+      );
+    }
+    return CloudConflict.fromJson(decoded);
+  }
+
+  @override
+  Future<void> writePendingConflict(CloudConflict conflict) async {
+    final prefs = await _prefs;
+    await prefs.setString(_pendingConflictKey, jsonEncode(conflict.toJson()));
+  }
+
+  @override
+  Future<void> clearPendingConflict() async {
+    final prefs = await _prefs;
+    await prefs.remove(_pendingConflictKey);
   }
 
   String _newDeviceId() {
