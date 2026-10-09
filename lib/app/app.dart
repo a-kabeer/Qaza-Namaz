@@ -46,11 +46,12 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
   @override
   Widget build(BuildContext context) {
     final locale = ref.watch(localeProvider);
+    final assetPackage = ref.watch(packageAssetNamespaceProvider);
     return MaterialApp(
       onGenerateTitle: (context) => AppLocalizations.of(context).appTitle,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.light(locale: locale),
-      darkTheme: AppTheme.dark(locale: locale),
+      theme: AppTheme.light(locale: locale, assetPackage: assetPackage),
+      darkTheme: AppTheme.dark(locale: locale, assetPackage: assetPackage),
       themeMode: ref.watch(themeModeProvider).materialMode,
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

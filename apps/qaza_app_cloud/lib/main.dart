@@ -97,6 +97,7 @@ Widget _cloudApp(
 ) {
   return ProviderScope(
     overrides: [
+      packageAssetNamespaceProvider.overrideWithValue('qaza_namaz'),
       cloudAccountProvider.overrideWith(
         (ref) => GoogleCloudAccountProvider(
           gateway: gateway,

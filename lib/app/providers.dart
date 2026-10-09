@@ -55,6 +55,10 @@ final cloudSyncProvider = Provider<CloudSyncProvider>(
   (ref) => const UnsupportedCloudSyncProvider(),
 );
 
+/// Prefix for assets/fonts owned by this package when embedded as a dependency.
+/// Null in the standalone offline app; the optional host sets `qaza_namaz`.
+final packageAssetNamespaceProvider = Provider<String?>((ref) => null);
+
 final accountLocalStoreProvider = Provider<AccountLocalStore>((ref) {
   return AccountLocalStore(database: ref.watch(appDatabaseProvider));
 });
