@@ -79,3 +79,11 @@ The protected `main` branch should require green CI and approved pull requests, 
 ## Dependency policy
 
 All direct dependencies in `pubspec.yaml` are explicitly constrained; no direct dependency uses `any`. Riverpod remains on its current major version for this milestone. A dedicated Riverpod 3 migration should be treated as a separate, planned change rather than mixed into security hardening.
+
+
+## Optional cloud-enabled host
+
+The default root application remains offline-only. The separately built
+`apps/qaza_app_cloud` host opts into the removable Google Drive adapter without
+adding cloud SDK dependencies to the offline target. See
+`docs/PHASE_2_CLOUD_ADAPTER.md` for configuration, build, and device QA gates.

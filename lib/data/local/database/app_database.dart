@@ -51,7 +51,7 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 18 is the current local-only database schema.
+  /// Schema version 19 is the current local-only database schema.
   /// Qaza records, additions, profile data, and completion markers are stored
   /// exclusively in the local encrypted SQLite database.
   @override

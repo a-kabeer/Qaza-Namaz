@@ -453,21 +453,21 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 l10n.cloudLastBackup + ': ' + lastBackup,
                 style: Theme.of(context).textTheme.bodySmall,
               ),
-              if (_sync.hasLocalRecoverySnapshot) ...[
-                const SizedBox(height: 10),
-                Text(l10n.cloudRecoveryAvailable),
-                TextButton.icon(
-                  onPressed: _busy ? null : _recoverLocalSnapshot,
-                  icon: const Icon(Icons.restore_rounded),
-                  label: Text(l10n.cloudRecoverLocal),
-                ),
-              ],
               Align(
                 alignment: AlignmentDirectional.centerEnd,
                 child: TextButton(
                   onPressed: _busy ? null : _disconnect,
                   child: Text(l10n.cloudDisconnect),
                 ),
+              ),
+            ],
+            if (_sync.hasLocalRecoverySnapshot) ...[
+              const SizedBox(height: 10),
+              Text(l10n.cloudRecoveryAvailable),
+              TextButton.icon(
+                onPressed: _busy ? null : _recoverLocalSnapshot,
+                icon: const Icon(Icons.restore_rounded),
+                label: Text(l10n.cloudRecoverLocal),
               ),
             ],
             if (_message != null && _message!.trim().isNotEmpty) ...[

@@ -49,8 +49,14 @@ void initializeQazaCloudBackgroundDispatcher() {
         state: state,
       );
       final result = await engine.sync(allowInteractive: false);
+      if (result.kind == CloudSyncResultKind.uploaded ||
+          result.kind == CloudSyncResultKind.downloaded) {
+        await state.setLastSuccessfulSyncAt(DateTime.now().toUtc());
+      }
 
-      return result.isSuccessful;
+      // A conflict needs a user choice, not an automatic WorkManager retry.
+      return result.kind != CloudSyncResultKind.failed &&
+          result.kind != CloudSyncResultKind.remoteMissing;
     } on CloudAdapterException {
       return true;
     } catch (_) {

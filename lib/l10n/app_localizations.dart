@@ -98,6 +98,34 @@ abstract class AppLocalizations {
     Locale('ur')
   ];
 
+  String get cloudBackupTitle;
+  String get cloudBackupDescription;
+  String get cloudConnect;
+  String get cloudDisconnect;
+  String get cloudConnected;
+  String get cloudNotConnected;
+  String get cloudBackupNow;
+  String get cloudAutomaticBackup;
+  String get cloudLastBackup;
+  String get cloudNeverBackedUp;
+  String get cloudBackupSucceeded;
+  String get cloudBackupConflictTitle;
+  String get cloudBackupConflictMessage;
+  String get cloudKeepLocal;
+  String get cloudUseRemote;
+  String get cloudKeepLocalConfirmTitle;
+  String get cloudKeepLocalConfirmMessage;
+  String get cloudUseRemoteConfirmTitle;
+  String get cloudUseRemoteConfirmMessage;
+  String get cloudDisconnectConfirmTitle;
+  String get cloudDisconnectConfirmMessage;
+  String get cloudRecoveryAvailable;
+  String get cloudRecoverLocal;
+  String get cloudRecoveryConfirmTitle;
+  String get cloudRecoveryConfirmMessage;
+  String get cloudAutomaticBackupRequiresConnection;
+  String get cloudBackupWorking;
+
   /// Application name shown in the OS task switcher
   ///
   /// In en, this message translates to:
