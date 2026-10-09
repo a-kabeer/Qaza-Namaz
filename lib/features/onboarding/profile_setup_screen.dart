@@ -155,6 +155,14 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
 
   void _navigateHome() {
     if (!mounted) return;
+
+    // StartupGate reads this provider once and keeps its result cached. An
+    // onboarding commit updates the database, but without invalidation a new
+    // StartupGate can still receive the stale AppRoute.onboarding value until
+    // the process restarts. Re-read the persisted completion flag before
+    // building the destination route.
+    ref.invalidate(appRouteProvider);
+
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(
         builder: (_) => const StartupGate(),
