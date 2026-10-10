@@ -9,6 +9,10 @@ void main() {
     expect(account.isSupported, isFalse);
     expect((await account.restore()).status, CloudAccountStatus.unavailable);
     expect(sync.isSupported, isFalse);
+    expect(
+      (await sync.discoverBackup()).status,
+      CloudBackupDiscoveryStatus.unavailable,
+    );
     expect((await sync.status()).status, CloudSyncStatus.unavailable);
   });
 }
