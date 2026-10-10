@@ -34,17 +34,26 @@ class GoogleSignInGateway {
     await _signIn.signOut();
   });
 
+  /// Reads the plugin's already-resolved account only.
+  ///
+  /// Do not call attemptLightweightAuthentication here: some Android plugin
+  /// states surface the account chooser, which is inappropriate during startup,
+  /// Account navigation, or a background task.
   Future<GoogleSignInAccount?> restoreLightweightAuthentication() =>
       _serialized(() async {
         await _initializeUnlocked();
-        return _signIn.attemptLightweightAuthentication();
+        return _signIn.currentUser;
       });
 
   Future<http.Client?> authorizeDrive({required bool allowInteractive}) =>
       _serialized(() async {
         await _initializeUnlocked();
 
-        var user = await _signIn.attemptLightweightAuthentication();
+        // Never invoke a lightweight-authentication attempt here. The Android
+        // implementation can present UI in edge cases, and this method is also
+        // used by WorkManager. Only an explicit interactive operation may call
+        // authenticate().
+        var user = _signIn.currentUser;
         if (user == null) {
           if (!allowInteractive) {
             throw const CloudAuthorizationUnavailable();
