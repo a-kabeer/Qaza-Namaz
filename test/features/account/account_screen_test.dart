@@ -22,10 +22,15 @@ Future<AccountSessionManager> _createSession(AppDatabase database) async {
   return manager;
 }
 
-Widget _app(ProviderContainer container, Widget home) {
+Widget _app(
+  ProviderContainer container,
+  Widget home, {
+  Locale? locale,
+}) {
   return UncontrolledProviderScope(
     container: container,
     child: MaterialApp(
+      locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       home: home,
@@ -109,7 +114,7 @@ void main() {
         status: CloudAccountStatus.connected,
         displayName: 'A Test User',
         email: 'user@example.com',
-        photoUrl: null,
+        photoUrl: 'https://example.invalid/profile.png',
       ),
     );
     final container = ProviderContainer(
@@ -131,6 +136,13 @@ void main() {
     expect(find.text('A Test User'), findsOneWidget);
     expect(find.text('user@example.com'), findsOneWidget);
     expect(find.text('Signed in with Google'), findsOneWidget);
+    final avatarImage = tester.widget<Image>(find.byType(Image));
+    expect(avatarImage.image, isA<NetworkImage>());
+    expect(
+      (avatarImage.image as NetworkImage).url,
+      'https://example.invalid/profile.png',
+    );
+    expect(find.byIcon(Icons.person_outline_rounded), findsOneWidget);
     expect(find.byKey(const Key('account_cloud_backup_card')), findsOneWidget);
 
     final profileY = tester
@@ -216,6 +228,39 @@ void main() {
     expect(find.text('Guest'), findsOneWidget);
     expect(find.text('Connected User'), findsNothing);
     expect(manager.activeAccount, isNotNull);
+  });
+
+
+  testWidgets('guest profile supports Urdu RTL layout', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final manager = await _createSession(database);
+    final container = ProviderContainer(
+      overrides: [
+        accountSessionManagerProvider.overrideWith((ref) => manager),
+        progressSummaryProvider.overrideWith(
+          (ref) async => QazaProgressSummary.empty(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(
+      _app(container, const AccountScreen(), locale: const Locale('ur')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('مہمان'), findsOneWidget);
+    expect(
+      find.text('آپ کی مقامی پیش رفت اسی ڈیوائس پر محفوظ رہتی ہے۔'),
+      findsOneWidget,
+    );
+    expect(
+      Directionality.of(
+        tester.element(find.byKey(const Key('account_google_profile_card'))),
+      ),
+      TextDirection.rtl,
+    );
   });
 
   testWidgets('Account owns data management and reset actions', (tester) async {
