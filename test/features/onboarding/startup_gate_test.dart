@@ -283,7 +283,9 @@ void main() {
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
     expect(find.text('simulated backup discovery failure'), findsOneWidget);
-    await tester.ensureVisible(find.text('Retry'));
+    // Retry is conditionally appended at the end of the lazy ListView,
+    // so it may not be built yet for ensureVisible to find it.
+    await tester.drag(find.byType(ListView), const Offset(0, -400));
     await tester.pumpAndSettle();
     expect(find.text('Retry'), findsOneWidget);
 
