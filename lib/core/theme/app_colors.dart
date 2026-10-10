@@ -15,8 +15,6 @@ class AppColors {
   static const chartCompleted = Color(0xFF22C55E);
   static const chartPending = Color(0xFFEF4444);
   static const chartTotal = Color(0xFFCBD5E1);
-  static const lightChartPrimary = Color(0xFF2E7D5B);
-  static const darkChartPrimary = Color(0xFF63D8A0);
   static const lightChartGrid = Color(0xFFE2E8F0);
   static const darkChartGrid = Color(0xFF29423A);
   static const lightChartTrack = Color(0xFFE8EDF0);
