@@ -16,7 +16,7 @@ void main() {
       isNot(contains(r"? '\${state.selected.length} selected'")),
     );
   });
-  test('pending Qaza completion is swipe-only in both directions', () {
+  test('pending records open details and preserve swipe completion', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -29,12 +29,15 @@ void main() {
         'secondaryBackground: const _CompletionSwipeBackground',
       ),
     );
-    expect(
-      source,
-      contains('l10n.qazaTrackerSwipeHint'),
-    );
+    expect(source, contains('l10n.qazaTrackerSwipeHint'));
     expect(source, contains('showQazaUndoFeedback('));
     expect(source, contains('onTap: onTap'));
+    expect(
+      source,
+      contains('class _PendingRecordDetails extends StatelessWidget'),
+    );
+    expect(source, contains("Key('qaza_pending_mark_completed')"));
+    expect(source, contains('canComplete: canAct'));
     expect(
       source,
       isNot(

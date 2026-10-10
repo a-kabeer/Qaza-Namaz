@@ -248,7 +248,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     final cell = Stack(
       alignment: Alignment.center,
       children: [
-        Container(
+        Ink(
+          key: Key('calendar_day_ink_$dayKey'),
           width: 34,
           height: 34,
           decoration: colors.background == null

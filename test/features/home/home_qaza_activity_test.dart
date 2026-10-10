@@ -960,4 +960,19 @@ void main() {
     );
     expect(previous.onPressed, isNotNull);
   });
+  testWidgets(
+    'monthly activity cells use ink-aware decorations for pressed feedback',
+    (tester) async {
+      await tester.pumpWidget(buildWidget());
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Monthly'));
+      await tester.pumpAndSettle();
+
+      final cell = tester.widget<Ink>(
+        find.byKey(const Key('home_qaza_activity_day_2026-9-30')),
+      );
+      expect(cell.decoration, isA<BoxDecoration>());
+      expect((cell.decoration! as BoxDecoration).border, isA<Border>());
+    },
+  );
 }

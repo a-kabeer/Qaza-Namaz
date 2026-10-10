@@ -320,12 +320,19 @@ class AppTheme {
     return baseTheme.copyWith(
       colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
+      // Keep custom ink reactions visible and consistent across the app while
+      // deriving their hue from the active light/dark color scheme.
+      splashColor: scheme.primary.withAlpha(24),
+      highlightColor: scheme.primary.withAlpha(12),
+      hoverColor: scheme.primary.withAlpha(12),
+      focusColor: scheme.primary.withAlpha(24),
       cardTheme: baseTheme.cardTheme.copyWith(
         color: scheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
           side: BorderSide(color: scheme.outlineVariant),
         ),
+        clipBehavior: Clip.antiAlias,
         margin: EdgeInsets.zero,
       ),
       textTheme: textTheme,
