@@ -174,9 +174,9 @@ class _GoogleProfileCard extends StatelessWidget {
                                     ),
                           errorBuilder: (context, error, stackTrace) =>
                               const Icon(
-                                Icons.person_outline_rounded,
-                                size: 30,
-                              ),
+                            Icons.person_outline_rounded,
+                            size: 30,
+                          ),
                         ),
                       ),
               ),
