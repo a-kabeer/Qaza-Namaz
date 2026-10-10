@@ -47,6 +47,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         status: CloudAccountStatus.connected,
         displayName: account.displayName,
         email: account.email,
+        photoUrl: account.photoUrl,
       );
     } catch (error) {
       return CloudAccountSnapshot.failed(error.toString());
@@ -65,6 +66,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         status: CloudAccountStatus.connected,
         displayName: account.displayName,
         email: account.email,
+        photoUrl: account.photoUrl,
       );
     } catch (error) {
       return CloudAccountSnapshot.failed(error.toString());
