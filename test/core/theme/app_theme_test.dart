@@ -30,6 +30,8 @@ void main() {
       expect(theme.cardTheme.clipBehavior, Clip.antiAlias);
       expect(theme.splashColor, scheme.primary.withAlpha(24));
       expect(theme.highlightColor, scheme.primary.withAlpha(12));
+      expect(theme.hoverColor, scheme.primary.withAlpha(12));
+      expect(theme.focusColor, scheme.primary.withAlpha(24));
       expect(theme.dialogTheme.backgroundColor, scheme.surfaceContainerHigh);
       expect(
         theme.bottomSheetTheme.backgroundColor,
