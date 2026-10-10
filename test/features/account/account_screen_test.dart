@@ -88,7 +88,8 @@ void main() {
     expect(find.text('This device'), findsNothing);
     expect(find.text('Your data is stored on this device'), findsNothing);
     expect(find.text('Keep your progress safe'), findsNothing);
-    expect(find.byKey(const Key('account_google_profile_card')), findsOneWidget);
+    expect(
+        find.byKey(const Key('account_google_profile_card')), findsOneWidget);
     expect(find.text('Guest'), findsOneWidget);
     expect(find.text('Your local progress remains on this device.'),
         findsOneWidget);
@@ -142,7 +143,8 @@ void main() {
     expect(find.text('Connect Google'), findsNothing);
   });
 
-  testWidgets('connected profile safely falls back when Google fields are absent', (
+  testWidgets(
+      'connected profile safely falls back when Google fields are absent', (
     tester,
   ) async {
     final database = AppDatabase(NativeDatabase.memory());

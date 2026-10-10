@@ -114,8 +114,8 @@ class _GoogleProfileCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final account = accountState.valueOrNull;
     final connected = account?.isConnected ?? false;
-    final unavailable = accountState.hasError ||
-        account?.status == CloudAccountStatus.failed;
+    final unavailable =
+        accountState.hasError || account?.status == CloudAccountStatus.failed;
     final rawName = account?.displayName?.trim();
     final rawEmail = account?.email?.trim();
     final displayName = rawName?.isNotEmpty == true
@@ -141,9 +141,8 @@ class _GoogleProfileCard extends StatelessWidget {
                 ? l10n.accountProfileUnavailableDetail
                 : l10n.accountGuestContinueMessage;
     final photoUrl = connected ? _safeGooglePhotoUrl(account?.photoUrl) : null;
-    final avatarLabel = connected
-        ? '$displayName, ${l10n.accountGoogleAuth}'
-        : title;
+    final avatarLabel =
+        connected ? '$displayName, ${l10n.accountGoogleAuth}' : title;
 
     return Card(
       key: const Key('account_google_profile_card'),
@@ -175,9 +174,9 @@ class _GoogleProfileCard extends StatelessWidget {
                                     ),
                           errorBuilder: (context, error, stackTrace) =>
                               const Icon(
-                                Icons.person_outline_rounded,
-                                size: 30,
-                              ),
+                            Icons.person_outline_rounded,
+                            size: 30,
+                          ),
                         ),
                       ),
               ),
@@ -223,9 +222,7 @@ String? _safeGooglePhotoUrl(String? value) {
   final raw = value?.trim();
   if (raw == null || raw.isEmpty) return null;
   final uri = Uri.tryParse(raw);
-  if (uri == null ||
-      uri.scheme.toLowerCase() != 'https' ||
-      uri.host.isEmpty) {
+  if (uri == null || uri.scheme.toLowerCase() != 'https' || uri.host.isEmpty) {
     return null;
   }
   return raw;

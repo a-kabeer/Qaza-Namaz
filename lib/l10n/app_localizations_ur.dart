@@ -646,10 +646,14 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get accountTitle => 'اکاؤنٹ';
+
   @override
-  String get accountProfileChecking => 'گوگل اکاؤنٹ کی حالت معلوم کی جا رہی ہے…';
+  String get accountProfileChecking =>
+      'گوگل اکاؤنٹ کی حالت معلوم کی جا رہی ہے…';
+
   @override
   String get accountProfileUnavailable => 'گوگل اکاؤنٹ کی حالت دستیاب نہیں';
+
   @override
   String get accountProfileUnavailableDetail =>
       'آپ کے قضا ریکارڈ اس ڈیوائس پر دستیاب رہیں گے۔';

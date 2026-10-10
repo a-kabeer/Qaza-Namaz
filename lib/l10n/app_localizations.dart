@@ -1165,8 +1165,23 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account'**
   String get accountTitle;
+
+  /// No description provided for @accountProfileChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking Google account…'**
   String get accountProfileChecking;
+
+  /// No description provided for @accountProfileUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Google account status unavailable'**
   String get accountProfileUnavailable;
+
+  /// No description provided for @accountProfileUnavailableDetail.
+  ///
+  /// In en, this message translates to:
+  /// **'Your Qaza records remain available on this device.'**
   String get accountProfileUnavailableDetail;
 
   /// No description provided for @accountGuest.

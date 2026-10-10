@@ -646,10 +646,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountTitle => 'Account';
+
   @override
   String get accountProfileChecking => 'Checking Google account…';
+
   @override
   String get accountProfileUnavailable => 'Google account status unavailable';
+
   @override
   String get accountProfileUnavailableDetail =>
       'Your Qaza records remain available on this device.';
