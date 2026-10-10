@@ -198,6 +198,16 @@ void main() {
         '70%',
       );
 
+      // Pump an intermediate frame to exercise the active chart transition.
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_overall_percent')),
+            )
+            .data,
+        '70%',
+      );
       await tester.pumpAndSettle();
     },
   );
