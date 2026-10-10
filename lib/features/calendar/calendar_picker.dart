@@ -258,12 +258,13 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                   shape: BoxShape.circle,
                   color: colors.background,
                 ),
-          alignment: Alignment.center,
-          child: Text(
-            date.day.toString(),
-            style: textStyle?.copyWith(
-              color: colors.foreground,
-              fontWeight: colors.bold ? FontWeight.w700 : null,
+          child: Center(
+            child: Text(
+              date.day.toString(),
+              style: textStyle?.copyWith(
+                color: colors.foreground,
+                fontWeight: colors.bold ? FontWeight.w700 : null,
+              ),
             ),
           ),
         ),
