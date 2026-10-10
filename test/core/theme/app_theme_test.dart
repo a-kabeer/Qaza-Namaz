@@ -1,8 +1,12 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/theme/app_theme.dart';
 import 'package:qaza_namaz/core/widgets/progress_widgets.dart';
+import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
+import 'package:qaza_namaz/features/home/widgets/home_overall_progress.dart';
+import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
   group('AppTheme semantic surfaces', () {
@@ -117,4 +121,33 @@ void main() {
       },
     );
   }
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'overall progress donut uses ColorScheme.primary in $brightness mode',
+      (tester) async {
+        final theme =
+            brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light();
+
+        await tester.pumpWidget(
+          MaterialApp(
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            locale: const Locale('en'),
+            theme: theme,
+            home: Scaffold(
+              body: HomeOverallProgress(
+                progress: const QazaProgress(pending: 5, completed: 5),
+                onDetails: () {},
+              ),
+            ),
+          ),
+        );
+
+        final chart = tester.widget<PieChart>(find.byType(PieChart));
+        expect(chart.data.sections.first.color, theme.colorScheme.primary);
+      },
+    );
+  }
+
 }
