@@ -15,15 +15,15 @@ class SplashScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Container(
-                width: 88,
-                height: 88,
-                decoration: BoxDecoration(
-                  color: scheme.primary.withValues(alpha: .10),
-                  borderRadius: BorderRadius.circular(26),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/branding/qaza_namaz_logo.png',
+                  width: 88,
+                  height: 88,
+                  fit: BoxFit.cover,
+                  filterQuality: FilterQuality.high,
                 ),
-                child:
-                    Icon(Icons.mosque_rounded, size: 48, color: scheme.primary),
               ),
               const SizedBox(height: 20),
               Text(AppLocalizations.of(context).appTitle,

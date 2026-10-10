@@ -26,6 +26,8 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   generate: true
+  assets:
+    - assets/branding/qaza_namaz_logo.png
 
 hooks:
   user_defines:
