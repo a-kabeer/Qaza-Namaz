@@ -54,6 +54,18 @@ void initializeQazaCloudBackgroundDispatcher() {
         await state.setLastSuccessfulSyncAt(DateTime.now().toUtc());
       }
 
+      // A missing token/account in a background isolate must never trigger an
+      // account picker. Persist a reconnect hint without disabling cloud sync
+      // or erasing the user's daily-backup preference.
+      if (result.kind == CloudSyncResultKind.skipped &&
+          (result.message?.toLowerCase().contains('authorization') ?? false)) {
+        await state.setReconnectRequired(true);
+      } else if (result.kind != CloudSyncResultKind.skipped &&
+          result.kind != CloudSyncResultKind.failed &&
+          result.kind != CloudSyncResultKind.remoteMissing) {
+        await state.setReconnectRequired(false);
+      }
+
       // A conflict needs a user choice, not an automatic WorkManager retry.
       return result.kind != CloudSyncResultKind.failed &&
           result.kind != CloudSyncResultKind.remoteMissing;
