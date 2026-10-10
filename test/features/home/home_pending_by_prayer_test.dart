@@ -47,8 +47,7 @@ Widget _app({required Widget child, required ProviderContainer container}) {
 }
 
 void main() {
-  testWidgets('whole Pending by Prayer card opens unfiltered Qaza workspace',
-      (tester) async {
+  testWidgets('View all opens the unfiltered Qaza workspace', (tester) async {
     final container = ProviderContainer(
       overrides: [
         enabledPrayerTypesProvider.overrideWithValue(
@@ -68,15 +67,45 @@ void main() {
 
     expect(
       find.byKey(const Key('home_pending_by_prayer_view_all')),
-      findsNothing,
+      findsOneWidget,
     );
+    await tester.tap(find.byKey(const Key('home_pending_by_prayer_view_all')));
 
-    await tester.tap(find.byKey(const Key('home_pending_by_prayer_tap')));
     expect(
       container.read(workspaceDestinationProvider),
       WorkspaceDestination.qaza,
     );
     expect(container.read(qazaTrackerFilterRequestProvider), isNull);
+  });
+
+  testWidgets('prayer rows have comfortable spacing and slim progress bars',
+      (tester) async {
+    final container = ProviderContainer(
+      overrides: [
+        enabledPrayerTypesProvider.overrideWithValue(
+          const [PrayerType.fajr, PrayerType.zuhr],
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      _app(
+        container: container,
+        child: HomePendingByPrayer(summary: _summary()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final prayerRow = tester.getSize(
+      find.byKey(const Key('home_pending_prayer_fajr')),
+    );
+    final progressBar = tester.getSize(
+      find.byKey(const Key('home_pending_bar_fajr')),
+    );
+
+    expect(prayerRow.height, greaterThanOrEqualTo(72));
+    expect(progressBar.height, 6);
   });
 
   testWidgets('tapping a prayer keeps the existing prayer and pending filter',
