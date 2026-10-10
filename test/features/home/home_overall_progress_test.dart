@@ -174,9 +174,11 @@ void main() {
 
       expect(chart(tester).data.sections[0].value, 0.2);
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_overall_percent')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_overall_percent')),
+            )
+            .data,
         '20%',
       );
 
@@ -188,9 +190,11 @@ void main() {
       expect(chart(tester).data.sections[0].value, 0.7);
       expect(chart(tester).data.sections[1].value, closeTo(0.3, 0.00001));
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_overall_percent')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_overall_percent')),
+            )
+            .data,
         '70%',
       );
 
