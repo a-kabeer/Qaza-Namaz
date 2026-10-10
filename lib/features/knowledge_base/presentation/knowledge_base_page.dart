@@ -257,7 +257,7 @@ class _ArticleCard extends StatelessWidget {
         child: Card(
           margin: const EdgeInsets.only(bottom: 10),
           child: InkWell(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(16),
             onTap: onTap,
             child: Padding(
               padding: const EdgeInsets.all(16),
