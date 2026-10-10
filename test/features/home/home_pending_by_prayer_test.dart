@@ -73,7 +73,9 @@ void main() {
       find.byKey(const Key('home_pending_by_prayer_view_all')),
       findsNothing,
     );
-    await tester.tap(find.byKey(const Key('home_pending_by_prayer_tap')));
+    // Tap the header rather than a prayer row: this should use the card's
+    // unfiltered Pending navigation.
+    await tester.tap(find.byKey(const Key('home_pending_by_prayer_title')));
 
     expect(
       container.read(workspaceDestinationProvider),
@@ -115,7 +117,7 @@ void main() {
     expect(progressBar.height, 6);
   });
 
-  testWidgets('tapping a prayer row also opens unfiltered pending Qaza',
+  testWidgets('tapping a prayer row opens Pending filtered to that prayer',
       (tester) async {
     final container = ProviderContainer(
       overrides: [
@@ -140,7 +142,7 @@ void main() {
     expect(container.read(workspaceDestinationProvider),
         WorkspaceDestination.qaza);
     expect(request?.status, QazaStatusFilter.pending);
-    expect(request?.prayer, isNull);
+    expect(request?.prayer, PrayerType.fajr);
     expect(request?.additionId, isNull);
   });
 }

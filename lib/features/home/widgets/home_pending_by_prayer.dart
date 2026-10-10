@@ -49,6 +49,7 @@ class HomePendingByPrayer extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
+                      key: const Key('home_pending_by_prayer_title'),
                       l10n.homePendingByPrayer,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -122,6 +123,8 @@ class HomePendingByPrayer extends ConsumerWidget {
                     prayer: pendingPrayers[index],
                     progress: summary.byPrayer[pendingPrayers[index]]!.progress,
                     charts: charts,
+                    onTap: () =>
+                        openQazaForPrayer(ref, pendingPrayers[index]),
                   ),
                   if (index < pendingPrayers.length - 1)
                     const Divider(height: 1, indent: 52),
@@ -140,11 +143,13 @@ class _PrayerPendingBar extends StatelessWidget {
     required this.prayer,
     required this.progress,
     required this.charts,
+    required this.onTap,
   });
 
   final PrayerType prayer;
   final QazaProgress progress;
   final AppChartColors charts;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -161,13 +166,16 @@ class _PrayerPendingBar extends StatelessWidget {
       key: Key('home_pending_prayer_semantics_${prayer.name}'),
       container: true,
       label: '$prayerLabel, $pendingLabel ${l10n.homePending}',
-      child: Padding(
+      child: InkWell(
         key: Key('home_pending_prayer_${prayer.name}'),
-        padding: const EdgeInsets.symmetric(
-          horizontal: 4,
-          vertical: 10,
-        ),
-        child: Column(
+        borderRadius: BorderRadius.circular(12),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 10,
+          ),
+          child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Row(
@@ -230,6 +238,7 @@ class _PrayerPendingBar extends StatelessWidget {
               ),
             ),
           ],
+          ),
         ),
       ),
     );
