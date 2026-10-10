@@ -107,6 +107,29 @@ The daily schedule is best-effort under Android WorkManager and is not an exact
 review remain release gates; CI cannot mark those manual checks as passed.
 
 
+### Non-interactive Google restoration and worker authorization
+
+Startup routing and Account navigation must not invoke
+`attemptLightweightAuthentication()`, `authenticate()`, or Drive scope
+consent automatically. The gateway reads only an account already resolved in
+the current process and keeps cached name/email/photo as display-only metadata.
+Cached metadata is not evidence that Google Drive authorization remains valid.
+
+Drive authorization from an automatic WorkManager task is strictly
+non-interactive. If the current account or `drive.appdata` authorization is
+unavailable, the worker skips that run and persists a reconnect-required flag;
+it does not open a native account picker, disable the user's cloud opt-in, erase
+the daily schedule, or mark the run successful. The Account Page then offers an
+explicit Connect/Reconnect action. Only user-initiated Connect/Backup Now
+operations may request interactive authentication or Drive-scope consent.
+
+A background isolate may not have a usable, already-resolved account after app
+process recreation. In that situation automatic backup can be skipped until the
+user reconnects; the implementation intentionally prioritizes never presenting
+authentication UI from WorkManager over claiming unattended backup is
+guaranteed. Automatic backup remains best-effort and must be verified on an
+Android device with the configured OAuth client.
+
 ## Owner setup checklist for Android OAuth and release
 
 1. In Google Cloud Console, select the project for this app and enable the
