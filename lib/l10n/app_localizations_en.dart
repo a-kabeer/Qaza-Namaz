@@ -2289,7 +2289,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get qazaTrackerSwipeHint =>
-      'Swipe left or right to complete. Long press to select.';
+      'Tap for details. Swipe left or right to complete. Long press to select.';
 
   @override
   String get qazaMarkSelectedPendingTitle => 'Mark selected as Pending?';
