@@ -975,5 +975,4 @@ void main() {
       expect((cell.decoration! as BoxDecoration).border, isA<Border>());
     },
   );
-
 }
