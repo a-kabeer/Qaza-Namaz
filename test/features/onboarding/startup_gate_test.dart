@@ -283,6 +283,8 @@ void main() {
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
     expect(find.text('simulated backup discovery failure'), findsOneWidget);
+    await tester.ensureVisible(find.text('Retry'));
+    await tester.pumpAndSettle();
     expect(find.text('Retry'), findsOneWidget);
 
     await _tapVisible(
