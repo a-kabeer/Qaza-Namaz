@@ -231,7 +231,7 @@ String? _safeGooglePhotoUrl(String? value) {
   return raw;
 }
 
-class _ResetQazaCounterRowclass _ResetQazaCounterRow extends ConsumerWidget {
+class _ResetQazaCounterRow extends ConsumerWidget {
   const _ResetQazaCounterRow();
 
   @override
