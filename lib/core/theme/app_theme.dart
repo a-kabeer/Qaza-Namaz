@@ -324,6 +324,8 @@ class AppTheme {
       // deriving their hue from the active light/dark color scheme.
       splashColor: scheme.primary.withAlpha(24),
       highlightColor: scheme.primary.withAlpha(12),
+      hoverColor: scheme.primary.withAlpha(12),
+      focusColor: scheme.primary.withAlpha(24),
       cardTheme: baseTheme.cardTheme.copyWith(
         color: scheme.surfaceContainerLow,
         shape: RoundedRectangleBorder(
