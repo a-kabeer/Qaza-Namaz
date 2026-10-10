@@ -1,5 +1,3 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -154,7 +152,7 @@ class _CloudSetupChoiceScreenState
       if (_accountConnected || _cloudAttempted) {
         try {
           await ref.read(cloudAccountProvider).disconnect();
-        } catch (error) {
+        } catch (_) {
           // Failed interactive sign-in must not trap the user on this screen.
           // If a session had actually connected, require disconnect to finish.
           if (_accountConnected) rethrow;
