@@ -128,6 +128,33 @@ void main() {
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getString(LocaleNotifier.storageKey), 'ur');
     expect(find.text('اپنی پیش رفت محفوظ رکھیں'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    expect(find.byType(CloudSetupChoiceScreen), findsNothing);
+  });
+
+  testWidgets(
+      'existing installations with completed onboarding bypass first-run choice',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    await database.setOnboardingCompletedInTransaction(true);
+    final container = await _container(
+      database: database,
+      cloudEnabled: true,
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CloudSetupChoiceScreen), findsNothing);
+    expect(
+      await database.isCloudSetupChoiceComplete(),
+      isTrue,
+    );
   });
 
   testWidgets('offline startup retains standalone language selection',
