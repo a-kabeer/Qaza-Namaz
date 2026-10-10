@@ -54,6 +54,7 @@ flutter:
   assets:
     - assets/knowledge_base/content/qaza_masail_mugalat_en.json
     - assets/knowledge_base/content/qaza_masail_mugalat_ur.json
+    - assets/branding/qaza_namaz_logo.png
     - assets/data/geonames_cities15000.tsv
   fonts:
     # Noto Nastaliq Urdu, SIL Open Font License 1.1 (assets/fonts/OFL.txt).
