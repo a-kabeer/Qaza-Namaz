@@ -176,68 +176,68 @@ class _PrayerPendingBar extends StatelessWidget {
             vertical: 10,
           ),
           child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: prayerColor.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(12),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: prayerColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      homePrayerIcon(prayer),
+                      size: 22,
+                      color: prayerColor,
+                    ),
                   ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    homePrayerIcon(prayer),
-                    size: 22,
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      prayerLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        pendingLabel,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        l10n.homePending,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 52, end: 4),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    key: Key('home_pending_bar_${prayer.name}'),
+                    value: fraction,
+                    minHeight: 6,
+                    backgroundColor: charts.track,
                     color: prayerColor,
                   ),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    prayerLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      pendingLabel,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      l10n.homePending,
-                      style: theme.textTheme.bodySmall,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Padding(
-              padding: const EdgeInsetsDirectional.only(start: 52, end: 4),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(999),
-                child: LinearProgressIndicator(
-                  key: Key('home_pending_bar_${prayer.name}'),
-                  value: fraction,
-                  minHeight: 6,
-                  backgroundColor: charts.track,
-                  color: prayerColor,
-                ),
               ),
-            ),
-          ],
+            ],
           ),
         ),
       ),
