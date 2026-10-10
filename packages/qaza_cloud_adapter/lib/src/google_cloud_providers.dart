@@ -117,6 +117,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         photoUrl: account.photoUrl,
       );
       await _state.setCloudSyncEnabled(true);
+      await _state.setReconnectRequired(false);
       if (await _state.isAutomaticSyncEnabled()) {
         await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
       }
@@ -197,12 +198,16 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   Future<CloudSyncSnapshot> status() async {
     final enabled = await _state.isCloudSyncEnabled();
     final automatic = await _state.isAutomaticSyncEnabled();
+    final reconnectRequired =
+        enabled && await _state.isReconnectRequired();
     final pendingConflict = enabled ? await _state.readPendingConflict() : null;
     return CloudSyncSnapshot(
       status: !enabled
           ? CloudSyncStatus.disconnected
           : pendingConflict != null
           ? CloudSyncStatus.conflict
+          : reconnectRequired
+          ? CloudSyncStatus.reconnectRequired
           : (_syncing ? CloudSyncStatus.syncing : CloudSyncStatus.idle),
       automaticSyncEnabled: automatic,
       lastSuccessAt: await _state.lastSuccessfulSyncAt(),
