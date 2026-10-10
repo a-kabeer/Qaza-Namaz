@@ -75,6 +75,7 @@ enum CloudSyncStatus {
   conflict,
   failed,
   disabled,
+  reconnectRequired,
 }
 
 enum CloudConflictChoice { keepLocal, useRemote }
