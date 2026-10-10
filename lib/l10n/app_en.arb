@@ -1253,7 +1253,7 @@
   "qazaTrackerHistoryTooltip": "Qaza History",
   "qazaTrackerAdditionProgress": "Addition progress",
   "qazaTrackerSelectionHint": "Tap to select or unselect.",
-  "qazaTrackerSwipeHint": "Swipe left or right to complete. Long press to select.",
+  "qazaTrackerSwipeHint": "Tap for details. Swipe left or right to complete. Long press to select.",
   "qazaMarkSelectedPendingTitle": "Mark selected as Pending?",
   "qazaMarkSelectedPendingMessage": "{count} completed Qaza records will return to Pending and will no longer count as completed.",
   "@qazaMarkSelectedPendingMessage": {

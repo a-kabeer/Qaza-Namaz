@@ -866,7 +866,7 @@
   "qazaTrackerHistoryTooltip": "قضا کی تاریخ",
   "qazaTrackerAdditionProgress": "قضا اضافے کی پیش رفت",
   "qazaTrackerSelectionHint": "منتخب یا غیر منتخب کرنے کے لیے ٹچ کریں۔",
-  "qazaTrackerSwipeHint": "مکمل کرنے کے لیے دائیں یا بائیں سوائپ کریں۔ منتخب کرنے کے لیے دیر تک دبائیں۔",
+  "qazaTrackerSwipeHint": "تفصیل دیکھنے کے لیے ٹیپ کریں۔ مکمل کرنے کے لیے دائیں یا بائیں سوائپ کریں۔ منتخب کرنے کے لیے دیر تک دبائیں۔",
   "qazaMarkSelectedPendingTitle": "منتخب قضا کو زیرِ التوا کریں؟",
   "qazaMarkSelectedPendingMessage": "{count} مکمل قضا دوبارہ زیرِ التوا ہو جائیں گی اور مکمل شدہ شمار نہیں ہوں گی۔",
   "@qazaMarkSelectedPendingMessage": {

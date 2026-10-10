@@ -644,6 +644,7 @@ class _DeletedActions extends ConsumerWidget {
                     '${_date(context, item.lastOriginalDate!)}';
         return Card(
           margin: const EdgeInsets.only(bottom: 12),
+          clipBehavior: Clip.antiAlias,
           child: ListTile(
             leading: const CircleAvatar(
               child: Icon(Icons.delete_outline_rounded),

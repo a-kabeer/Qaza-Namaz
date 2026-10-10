@@ -2288,7 +2288,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get qazaTrackerSwipeHint =>
-      'مکمل کرنے کے لیے دائیں یا بائیں سوائپ کریں۔ منتخب کرنے کے لیے دیر تک دبائیں۔';
+      'تفصیل دیکھنے کے لیے ٹیپ کریں۔ مکمل کرنے کے لیے دائیں یا بائیں سوائپ کریں۔ منتخب کرنے کے لیے دیر تک دبائیں۔';
 
   @override
   String get qazaMarkSelectedPendingTitle => 'منتخب قضا کو زیرِ التوا کریں؟';

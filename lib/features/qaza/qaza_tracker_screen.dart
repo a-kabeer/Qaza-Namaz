@@ -356,6 +356,30 @@ class _PendingTrackerBody extends ConsumerWidget {
     return false;
   }
 
+  Future<void> _openDetails(
+    BuildContext context,
+    WidgetRef ref,
+    QazaRecord record, {
+    required bool canComplete,
+  }) async {
+    await showModalBottomSheet<void>(
+      context: context,
+      showDragHandle: true,
+      useSafeArea: true,
+      isScrollControlled: true,
+      builder: (sheetContext) => _PendingRecordDetails(
+        record: record,
+        canComplete: canComplete,
+        onComplete: canComplete
+            ? () async {
+                Navigator.of(sheetContext).pop();
+                await _completeSingle(context, ref, record);
+              }
+            : null,
+      ),
+    );
+  }
+
   Future<void> _completeSelected(BuildContext context, WidgetRef ref) async {
     final l10n = AppLocalizations.of(context);
     final count = state.selected.length;
@@ -486,7 +510,14 @@ class _PendingTrackerBody extends ConsumerWidget {
                         ? (record.status == QazaStatus.pending && !restricted
                             ? () => controller.toggleSelection(record.id)
                             : null)
-                        : null,
+                        : () => _openDetails(
+                              context,
+                              ref,
+                              record,
+                              canComplete: canAct &&
+                                  !state.completing &&
+                                  !state.recordMutating,
+                            ),
                     onLongPress:
                         record.status == QazaStatus.pending && !restricted
                             ? () => controller.enterSelectionMode(record.id)
@@ -608,7 +639,8 @@ class _RecordRow extends StatelessWidget {
 
     final tile = Semantics(
       selected: selected,
-      button: false,
+      button: onTap != null,
+      enabled: onTap != null,
       label:
           '${record.prayerType.localizedLabel(l10n)}, $originalDate, $hijriDate',
       hint: record.status == QazaStatus.pending
@@ -687,6 +719,79 @@ class _RecordRow extends StatelessWidget {
       ),
       confirmDismiss: (_) => onSwipeComplete!(),
       child: tile,
+    );
+  }
+}
+
+class _PendingRecordDetails extends StatelessWidget {
+  const _PendingRecordDetails({
+    required this.record,
+    required this.canComplete,
+    required this.onComplete,
+  });
+
+  final QazaRecord record;
+  final bool canComplete;
+  final Future<void> Function()? onComplete;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  record.prayerType.localizedLabel(l10n),
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+              IconButton(
+                key: const Key('qaza_pending_details_close'),
+                tooltip: l10n.commonClose,
+                onPressed: () => Navigator.of(context).pop(),
+                icon: const Icon(Icons.close_rounded),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            l10n.qazaOriginalDateLabel,
+            style: theme.textTheme.labelMedium,
+          ),
+          Text(
+            DateFormatters.formatGregorianDatePadded(record.originalDate),
+          ),
+          Text(l10n.formatHijriDate(record.originalDate)),
+          const SizedBox(height: 12),
+          Text(
+            l10n.statusPending,
+            style: theme.textTheme.labelLarge?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          if (canComplete && onComplete != null) ...[
+            const SizedBox(height: 20),
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                key: const Key('qaza_pending_mark_completed'),
+                onPressed: () => onComplete!(),
+                child: Text(l10n.qazaCompleteCount(1)),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

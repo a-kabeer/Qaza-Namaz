@@ -248,7 +248,8 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     final cell = Stack(
       alignment: Alignment.center,
       children: [
-        Container(
+        Ink(
+          key: Key('calendar_day_ink_$dayKey'),
           width: 34,
           height: 34,
           decoration: colors.background == null
@@ -257,12 +258,13 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
                   shape: BoxShape.circle,
                   color: colors.background,
                 ),
-          alignment: Alignment.center,
-          child: Text(
-            date.day.toString(),
-            style: textStyle?.copyWith(
-              color: colors.foreground,
-              fontWeight: colors.bold ? FontWeight.w700 : null,
+          child: Center(
+            child: Text(
+              date.day.toString(),
+              style: textStyle?.copyWith(
+                color: colors.foreground,
+                fontWeight: colors.bold ? FontWeight.w700 : null,
+              ),
             ),
           ),
         ),
