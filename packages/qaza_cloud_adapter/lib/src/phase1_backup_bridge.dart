@@ -6,6 +6,10 @@ import 'cloud_models.dart';
 abstract interface class Phase1BackupSource {
   Future<int> readDbRevision();
   Future<String> exportBackup();
+
+  /// Validates a remote payload without applying it to the local database.
+  Future<void> validateBackup(String phase1BackupJson);
+
   Future<void> importBackup(String phase1BackupJson);
   Future<void> saveRecoverySnapshot(String phase1BackupJson);
   Future<String?> readRecoverySnapshot();
@@ -24,6 +28,11 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
 
   @override
   Future<String> exportBackup() => _backupService.exportJson();
+
+  @override
+  Future<void> validateBackup(String phase1BackupJson) async {
+    await _backupService.analyzeImport(phase1BackupJson);
+  }
 
   @override
   Future<void> importBackup(String phase1BackupJson) =>
