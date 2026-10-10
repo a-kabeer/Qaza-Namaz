@@ -18,6 +18,8 @@ class HomePendingByPrayer extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final l10n = AppLocalizations.of(context);
     final charts = AppChartColors.of(context);
     final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
@@ -26,58 +28,114 @@ class HomePendingByPrayer extends ConsumerWidget {
           (prayer) => (summary.byPrayer[prayer]?.progress.pending ?? 0) > 0,
         )
         .toList(growable: false);
+    final totalPending = pendingPrayers.fold<int>(
+      0,
+      (total, prayer) => total + summary.byPrayer[prayer]!.progress.pending,
+    );
 
     return Card(
       key: const Key('home_pending_by_prayer'),
-      child: InkWell(
-        key: const Key('home_pending_by_prayer_tap'),
-        onTap: () => openQazaAll(ref),
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      l10n.homePendingByPrayer,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.homePendingByPrayer,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ],
-              ),
-              if (pendingPrayers.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                ),
+                const SizedBox(width: 12),
+                Container(
+                  constraints: const BoxConstraints(minWidth: 58),
+                  decoration: BoxDecoration(
+                    color: scheme.surfaceContainerHighest,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.check_circle_outline_rounded,
-                        size: 20,
-                        color: charts.completed,
-                      ),
-                      const SizedBox(width: 8),
                       Text(
-                        l10n.completeNoPendingTitle,
-                        key: const Key('home_pending_by_prayer_empty'),
+                        DateFormatters.formatCount(totalPending),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        l10n.homePending,
+                        style: theme.textTheme.bodySmall,
                       ),
                     ],
                   ),
-                )
-              else
-                for (final prayer in pendingPrayers)
-                  _PrayerPendingBar(
-                    prayer: prayer,
-                    progress: summary.byPrayer[prayer]!.progress,
-                    charts: charts,
-                    onTap: () => openQazaForPrayer(ref, prayer),
-                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            if (pendingPrayers.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.check_circle_outline_rounded,
+                      size: 22,
+                      color: charts.completed,
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        l10n.completeNoPendingTitle,
+                        key: const Key('home_pending_by_prayer_empty'),
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else ...[
+              for (var index = 0; index < pendingPrayers.length; index++) ...[
+                _PrayerPendingBar(
+                  prayer: pendingPrayers[index],
+                  progress: summary.byPrayer[pendingPrayers[index]]!.progress,
+                  charts: charts,
+                  onTap: () => openQazaForPrayer(ref, pendingPrayers[index]),
+                ),
+                if (index < pendingPrayers.length - 1)
+                  const Divider(height: 1, indent: 52),
+              ],
+              const Divider(height: 1, indent: 52),
             ],
-          ),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: TextButton.icon(
+                key: const Key('home_pending_by_prayer_view_all'),
+                onPressed: () => openQazaAll(ref),
+                icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+                label: Text(l10n.homeViewAll),
+                style: TextButton.styleFrom(
+                  minimumSize: const Size(0, 44),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 10,
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -106,6 +164,7 @@ class _PrayerPendingBar extends StatelessWidget {
         : (progress.pending / progress.total).clamp(0.0, 1.0).toDouble();
     final prayerLabel = prayer.localizedLabel(l10n);
     final pendingLabel = DateFormatters.formatCount(progress.pending);
+    final prayerColor = charts.forPrayer(prayer);
 
     return Semantics(
       key: Key('home_pending_prayer_semantics_${prayer.name}'),
@@ -113,57 +172,80 @@ class _PrayerPendingBar extends StatelessWidget {
       label: '$prayerLabel, $pendingLabel ${l10n.homePending}',
       child: InkWell(
         key: Key('home_pending_prayer_${prayer.name}'),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
-          child: Row(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 10,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              SizedBox(
-                width: 28,
-                child: Icon(
-                  homePrayerIcon(prayer),
-                  size: 20,
-                  color: charts.forPrayer(prayer),
-                ),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: prayerColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    alignment: Alignment.center,
+                    child: Icon(
+                      homePrayerIcon(prayer),
+                      size: 22,
+                      color: prayerColor,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      prayerLabel,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        pendingLabel,
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        l10n.homePending,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(width: 4),
+                  Icon(
+                    Icons.chevron_right_rounded,
+                    size: 20,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              SizedBox(
-                width: 74,
-                child: Text(
-                  prayerLabel,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
+              const SizedBox(height: 10),
+              Padding(
+                padding: const EdgeInsetsDirectional.only(start: 52, end: 4),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(999),
                   child: LinearProgressIndicator(
                     key: Key('home_pending_bar_${prayer.name}'),
                     value: fraction,
-                    minHeight: 10,
+                    minHeight: 6,
                     backgroundColor: charts.track,
-                    color: charts.forPrayer(prayer),
+                    color: prayerColor,
                   ),
                 ),
-              ),
-              const SizedBox(width: 10),
-              SizedBox(
-                width: 44,
-                child: Text(
-                  pendingLabel,
-                  textAlign: TextAlign.end,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              const Icon(
-                Icons.chevron_right_rounded,
-                size: 20,
               ),
             ],
           ),
