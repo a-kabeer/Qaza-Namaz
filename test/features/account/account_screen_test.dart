@@ -37,9 +37,8 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets(
-    'account omits redundant device and progress intro cards',
-    (tester) async {
+  testWidgets('account omits redundant device and progress intro cards',
+      (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = await _createSession(database);
     final container = ProviderContainer(
