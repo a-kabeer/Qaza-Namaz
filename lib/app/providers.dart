@@ -381,6 +381,16 @@ class LocaleNotifier extends Notifier<Locale> {
     state = resolved;
   }
 
+  /// Persists a selected locale without changing the currently previewed UI.
+  ///
+  /// This lets the initial screen serialize preference writes without an
+  /// older queued write briefly reverting a newer language selection.
+  Future<void> persist(Locale locale) async {
+    final resolved = resolve(locale.languageCode);
+    if (resolved == null) return;
+    await _persist(resolved);
+  }
+
   Future<void> set(Locale locale) async {
     final resolved = resolve(locale.languageCode);
     if (resolved == null) return;
