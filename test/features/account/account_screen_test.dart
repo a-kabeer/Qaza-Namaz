@@ -329,7 +329,6 @@ void main() {
     expect(find.byKey(const Key('account_data_management')), findsNothing);
     expect(find.byKey(const Key('account_reset_qaza_counter')), findsNothing);
   });
-
   testWidgets(
     'cached Google identity is shown as reconnect required without signing in',
     (tester) async {
