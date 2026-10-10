@@ -29,7 +29,7 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+**/build/
 
 # Symbolication related
 app.*.symbols
@@ -45,3 +45,6 @@ app.*.map.json
 # Screenshots pulled off a device during QA are not part of the app.
 /*.png
 /screenshot*.png
+
+
+**/.kotlin/
