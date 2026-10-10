@@ -84,9 +84,11 @@ void main() {
         expect(current.data.sections[0].value, scenario.done);
         expect(current.data.sections[1].value, 1 - scenario.done);
         expect(
-          tester.widget<Text>(
-            find.byKey(const Key('home_overall_percent')),
-          ).data,
+          tester
+              .widget<Text>(
+                find.byKey(const Key('home_overall_percent')),
+              )
+              .data,
           scenario.label,
         );
 
@@ -116,9 +118,11 @@ void main() {
 
       expect(chart(tester).duration, Duration.zero);
       expect(
-        tester.widget<Text>(
-          find.byKey(const Key('home_overall_percent')),
-        ).data,
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_overall_percent')),
+            )
+            .data,
         '40%',
       );
     },
