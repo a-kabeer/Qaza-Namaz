@@ -1149,7 +1149,10 @@ class _ActivityDayCell extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(10),
-        child: Container(
+        child: Ink(
+          key: Key(
+            'home_qaza_activity_day_${day.date.year}-${day.date.month}-${day.date.day}',
+          ),
           decoration: BoxDecoration(
             color: fill,
             borderRadius: BorderRadius.circular(10),
