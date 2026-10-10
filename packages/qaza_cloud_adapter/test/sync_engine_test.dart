@@ -50,8 +50,9 @@ void main() {
       expect(state.pendingConflict, isNull);
     });
 
-    test('discovery rejects incompatible backup without modifying local data',
-        () async {
+    test(
+      'discovery rejects incompatible backup without modifying local data',
+      () async {
       final phase1 = FakePhase1(revision: 1, rejectBackup: true);
       final state = FakeState(deviceIdValue: 'device-B', cursor: null);
       final remote = FakeRemote(
