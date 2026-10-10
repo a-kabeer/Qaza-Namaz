@@ -3,6 +3,80 @@ import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
 
 void main() {
   group('CloudSyncEngine', () {
+    test('discovery with no remote backup is read-only', () async {
+      final phase1 = FakePhase1(revision: 4);
+      final state = FakeState(deviceIdValue: 'device-A', cursor: null);
+      final remote = FakeRemote(latestSnapshot: null);
+
+      final result = await CloudSyncEngine(
+        phase1: phase1,
+        remote: remote,
+        state: state,
+      ).discoverBackup();
+
+      expect(result.kind, CloudBackupDiscoveryKind.noBackup);
+      expect(remote.latestCount, 1);
+      expect(remote.writeCount, 0);
+      expect(phase1.importCount, 0);
+      expect(phase1.saveRecoveryCount, 0);
+      expect(state.pendingConflict, isNull);
+    });
+
+    test('discovery returns a remote backup without importing it', () async {
+      final phase1 = FakePhase1(revision: 1);
+      final state = FakeState(deviceIdValue: 'device-B', cursor: null);
+      final remote = FakeRemote(
+        latestSnapshot: _snapshot(
+          deviceId: 'device-A',
+          backupId: 'backup-existing',
+          baseBackupId: null,
+          revision: 9,
+          modifiedAt: DateTime.utc(2026, 10, 9),
+          remoteVersion: '1',
+        ),
+      );
+
+      final result = await CloudSyncEngine(
+        phase1: phase1,
+        remote: remote,
+        state: state,
+      ).discoverBackup();
+
+      expect(result.kind, CloudBackupDiscoveryKind.found);
+      expect(result.conflict?.remoteLineage.backupId, 'backup-existing');
+      expect(remote.writeCount, 0);
+      expect(phase1.importCount, 0);
+      expect(phase1.saveRecoveryCount, 0);
+      expect(state.pendingConflict, isNull);
+    });
+
+    test('discovery rejects incompatible backup without modifying local data',
+        () async {
+      final phase1 = FakePhase1(revision: 1, rejectBackup: true);
+      final state = FakeState(deviceIdValue: 'device-B', cursor: null);
+      final remote = FakeRemote(
+        latestSnapshot: _snapshot(
+          deviceId: 'device-A',
+          backupId: 'backup-invalid',
+          baseBackupId: null,
+          revision: 9,
+          modifiedAt: DateTime.utc(2026, 10, 9),
+          remoteVersion: '1',
+        ),
+      );
+
+      final result = await CloudSyncEngine(
+        phase1: phase1,
+        remote: remote,
+        state: state,
+      ).discoverBackup();
+
+      expect(result.kind, CloudBackupDiscoveryKind.invalidBackup);
+      expect(remote.writeCount, 0);
+      expect(phase1.importCount, 0);
+      expect(phase1.saveRecoveryCount, 0);
+    });
+
     test(
       'first connection with a remote backup requires an explicit decision',
       () async {
@@ -684,11 +758,13 @@ CloudRemoteSnapshot _snapshot({
 class FakePhase1 implements Phase1BackupSource {
   FakePhase1({
     required int revision,
+    this.rejectBackup = false,
     this.hideRecoverySnapshot = false,
     this.bumpRevisionWhenSavingRecovery = false,
     this.onSaveRecoverySnapshot,
   }) : _revision = revision;
 
+  final bool rejectBackup;
   final bool hideRecoverySnapshot;
   final bool bumpRevisionWhenSavingRecovery;
   final Future<void> Function()? onSaveRecoverySnapshot;
@@ -713,6 +789,13 @@ class FakePhase1 implements Phase1BackupSource {
   "data": {}
 }
 ''';
+
+  @override
+  Future<void> validateBackup(String phase1BackupJson) async {
+    if (rejectBackup) {
+      throw StateError('incompatible test backup');
+    }
+  }
 
   @override
   Future<void> importBackup(String phase1BackupJson) async {
