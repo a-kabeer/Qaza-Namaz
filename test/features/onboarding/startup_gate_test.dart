@@ -5,7 +5,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 import 'package:qaza_namaz/features/onboarding/cloud_setup_choice_screen.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
@@ -332,7 +334,12 @@ void main() {
       'existing installations with completed onboarding bypass first-run choice',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
-    await database.setOnboardingCompletedInTransaction(true);
+    final accountStore = AccountLocalStore(database: database);
+    await accountStore.ensureInitialized();
+    await accountStore.saveProfileLocalOnly(
+      UserProfile.localLedgerUserId,
+      const UserProfile(onboardingCompleted: true),
+    );
     final container = await _container(
       database: database,
       cloudEnabled: true,
