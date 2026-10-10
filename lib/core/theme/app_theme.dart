@@ -325,7 +325,10 @@ class AppTheme {
       scaffoldBackgroundColor: scheme.surface,
       cardTheme: baseTheme.cardTheme.copyWith(
         color: scheme.surfaceContainerLow,
-        side: BorderSide(color: scheme.outlineVariant),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
         margin: EdgeInsets.zero,
       ),
       textTheme: textTheme,
