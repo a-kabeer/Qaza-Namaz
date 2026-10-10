@@ -50,19 +50,21 @@ void main() {
 
       final daySeven = find.text('7').last;
       final daySevenText = tester.widget<Text>(daySeven);
-      final daySevenInk = tester.widget<Ink>(
-        find.byKey(const Key('calendar_day_ink_2026-09-07')),
+      final daySevenInkFinder = find.byKey(
+        const Key('calendar_day_ink_2026-09-07'),
       );
-      expect(daySevenInk.decoration, isA<BoxDecoration>());
-      expect(
-        (daySevenInk.decoration! as BoxDecoration).shape,
-        BoxShape.circle,
-      );
+      expect(daySevenInkFinder, findsOneWidget);
       final scheme = Theme.of(tester.element(daySeven)).colorScheme;
       expect(daySevenText.style?.color, scheme.onSurface);
 
       await tester.tap(daySeven);
       await tester.pump();
+      final selectedDayInk = tester.widget<Ink>(daySevenInkFinder);
+      expect(selectedDayInk.decoration, isA<BoxDecoration>());
+      expect(
+        (selectedDayInk.decoration! as BoxDecoration).shape,
+        BoxShape.circle,
+      );
       await tester.tap(find.text('15').last);
       await tester.pump();
 
