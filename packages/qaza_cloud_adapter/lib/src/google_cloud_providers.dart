@@ -46,6 +46,24 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       if (await _state.isAutomaticSyncEnabled()) {
         await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
       }
+
+      // Reading currentUser is passive; unlike
+      // attemptLightweightAuthentication, it never asks Android to show UI.
+      final account = await _gateway.currentAccount();
+      if (account != null) {
+        await _persistAccountProfile(
+          displayName: account.displayName,
+          email: account.email,
+          photoUrl: account.photoUrl,
+        );
+        return CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          displayName: account.displayName,
+          email: account.email,
+          photoUrl: account.photoUrl,
+        );
+      }
+
       final preferences = await SharedPreferences.getInstance();
       String? readValue(String key) {
         final value = preferences.getString(key)?.trim();
