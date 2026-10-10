@@ -102,8 +102,9 @@ void main() {
     testWidgets(
       'progress ring uses ColorScheme.primary in $brightness mode',
       (tester) async {
-        final theme =
-            brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light();
+        final theme = brightness == Brightness.dark
+            ? AppTheme.dark()
+            : AppTheme.light();
 
         await tester.pumpWidget(
           MaterialApp(
@@ -126,8 +127,9 @@ void main() {
     testWidgets(
       'overall progress donut uses ColorScheme.primary in $brightness mode',
       (tester) async {
-        final theme =
-            brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light();
+        final theme = brightness == Brightness.dark
+            ? AppTheme.dark()
+            : AppTheme.light();
 
         await tester.pumpWidget(
           MaterialApp(
@@ -149,4 +151,5 @@ void main() {
       },
     );
   }
+
 }

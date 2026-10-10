@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 /// Chart-only colors that are intentionally outside Material's semantic
 /// ColorScheme because each prayer series must remain visually stable across
 /// light and dark themes.
+///
+/// Generic progress accents such as rings and overall-progress charts should
+/// read `ColorScheme.primary` instead of duplicating primary tokens here.
 class AppColors {
   const AppColors._();
 
