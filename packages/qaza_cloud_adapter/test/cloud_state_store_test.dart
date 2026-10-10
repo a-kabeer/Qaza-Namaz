@@ -25,6 +25,7 @@ void main() {
 
     expect(await state.isCloudSyncEnabled(), isFalse);
     expect(await state.isAutomaticSyncEnabled(), isFalse);
+    expect(await state.isReconnectRequired(), isFalse);
     expect(await state.lastSuccessfulSyncAt(), isNull);
   });
 
@@ -33,12 +34,15 @@ void main() {
 
     await state.setCloudSyncEnabled(true);
     await state.setAutomaticSyncEnabled(true);
+    await state.setReconnectRequired(true);
     expect(await state.isAutomaticSyncEnabled(), isTrue);
+    expect(await state.isReconnectRequired(), isTrue);
 
     await state.setCloudSyncEnabled(false);
 
     expect(await state.isCloudSyncEnabled(), isFalse);
     expect(await state.isAutomaticSyncEnabled(), isFalse);
+    expect(await state.isReconnectRequired(), isFalse);
   });
 
   test('automatic sync cannot be enabled when cloud is disabled', () async {
@@ -47,6 +51,18 @@ void main() {
     await expectLater(
       state.setAutomaticSyncEnabled(true),
       throwsA(isA<CloudAdapterException>()),
+    );
+  });
+
+  test('reconnect-required flag survives state-store recreation', () async {
+    final state = SharedPreferencesCloudSyncStateStore();
+
+    await state.setCloudSyncEnabled(true);
+    await state.setReconnectRequired(true);
+
+    expect(
+      await SharedPreferencesCloudSyncStateStore().isReconnectRequired(),
+      isTrue,
     );
   });
 
