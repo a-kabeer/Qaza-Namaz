@@ -339,7 +339,6 @@ class LocaleNotifier extends Notifier<Locale> {
 
   @override
   Locale build() {
-    Future.microtask(restore);
     final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
     return resolve(systemLocale.languageCode) ?? fallback;
   }
@@ -368,20 +367,27 @@ class LocaleNotifier extends Notifier<Locale> {
     state = resolved;
   }
 
-  void set(Locale locale) {
+  Future<void> set(Locale locale) async {
     final resolved = resolve(locale.languageCode);
     if (resolved == null) return;
     state = resolved;
-    _persist(resolved);
+    await _persist(resolved);
   }
 
   Future<void> _persist(Locale locale) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(storageKey, locale.languageCode);
-    } catch (_) {}
+    final prefs = await SharedPreferences.getInstance();
+    final saved = await prefs.setString(storageKey, locale.languageCode);
+    if (!saved) {
+      throw StateError('The selected language could not be saved.');
+    }
   }
 }
 
 final localeProvider =
     NotifierProvider<LocaleNotifier, Locale>(LocaleNotifier.new);
+
+/// StartupGate awaits this before rendering interactive onboarding or account
+/// choice, avoiding a transient system-locale screen on a saved-language launch.
+final localeRestorationProvider = FutureProvider<void>((ref) async {
+  await ref.read(localeProvider.notifier).restore();
+});
