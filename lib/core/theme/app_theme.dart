@@ -402,6 +402,10 @@ class AppTypography extends ThemeExtension<AppTypography> {
   }
 }
 
+/// Chart-specific roles for prayer-series identity, status, grid and track.
+///
+/// Generic accents are intentionally not duplicated here: progress indicators
+/// and the overall-progress chart use the active `ColorScheme.primary`.
 @immutable
 class AppChartColors extends ThemeExtension<AppChartColors> {
   const AppChartColors({
