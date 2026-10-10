@@ -414,7 +414,9 @@ class CloudBackupDiscoveryResult {
   });
 
   factory CloudBackupDiscoveryResult.noBackup() =>
-      const CloudBackupDiscoveryResult._(kind: CloudBackupDiscoveryKind.noBackup);
+      const CloudBackupDiscoveryResult._(
+        kind: CloudBackupDiscoveryKind.noBackup,
+      );
 
   factory CloudBackupDiscoveryResult.found(CloudConflict conflict) =>
       CloudBackupDiscoveryResult._(
