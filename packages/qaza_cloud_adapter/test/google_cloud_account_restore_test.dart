@@ -43,7 +43,7 @@ void main() {
       expect(snapshot.isConnected, isFalse);
       expect(snapshot.displayName, 'Saved Google User');
       expect(snapshot.email, 'saved@example.com');
-      expect(gateway.restoreCalls, 0);
+      expect(gateway.currentAccountCalls, 1);
       expect(scheduler.disconnectCalls, 0);
       expect(scheduler.initializeCalls, 1);
       expect(await state.isCloudSyncEnabled(), isTrue);
@@ -64,7 +64,7 @@ void main() {
     final snapshot = await provider.restore();
 
     expect(snapshot.status, CloudAccountStatus.disconnected);
-    expect(gateway.restoreCalls, 0);
+    expect(gateway.currentAccountCalls, 0);
     expect(scheduler.disconnectCalls, 0);
     expect(scheduler.initializeCalls, 0);
   });
@@ -73,12 +73,12 @@ void main() {
 class _CountingGateway extends GoogleSignInGateway {
   _CountingGateway() : super();
 
-  int restoreCalls = 0;
+  int currentAccountCalls = 0;
 
   @override
-  Future<GoogleSignInAccount?> restoreLightweightAuthentication() async {
-    restoreCalls++;
-    throw StateError('Authentication must not be attempted during restore.');
+  Future<GoogleSignInAccount?> currentAccount() async {
+    currentAccountCalls++;
+    return null;
   }
 }
 
