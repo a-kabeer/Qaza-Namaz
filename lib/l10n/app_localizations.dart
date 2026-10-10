@@ -3989,7 +3989,7 @@ abstract class AppLocalizations {
   /// No description provided for @qazaTrackerSwipeHint.
   ///
   /// In en, this message translates to:
-  /// **'Swipe left or right to complete. Long press to select.'**
+  /// **'Tap for details. Swipe left or right to complete. Long press to select.'**
   String get qazaTrackerSwipeHint;
 
   /// No description provided for @qazaMarkSelectedPendingTitle.
