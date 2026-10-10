@@ -15,21 +15,20 @@ import 'splash_screen.dart';
 class StartupGate extends ConsumerWidget {
   const StartupGate({super.key});
 
-  Widget _cloudDestination(WidgetRef ref) {
-    final choice = ref.watch(cloudSetupChoiceCompleteProvider);
-    return choice.when(
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final localeRestore = ref.watch(localeRestorationProvider);
+    return localeRestore.when(
       loading: () => const SplashScreen(),
       error: (_, __) => StartupProfileLoadErrorBoundary(
-        key: const Key('startup_cloud_setup_choice_error'),
-        onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
+        key: const Key('startup_locale_restore_error'),
+        onRetry: () => ref.invalidate(localeRestorationProvider),
       ),
-      data: (completed) =>
-          completed ? const WorkspaceShell() : const CloudSetupChoiceScreen(),
+      data: (_) => _buildAfterLocaleRestore(ref),
     );
   }
 
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget _buildAfterLocaleRestore(WidgetRef ref) {
     final session = ref.watch(accountSessionManagerProvider);
 
     if (session.state.phase == AccountSessionPhase.loading) {
@@ -44,6 +43,30 @@ class StartupGate extends ConsumerWidget {
       );
     }
 
+    final cloudEnabled = ref.watch(cloudAccountProvider).isSupported &&
+        ref.watch(cloudSyncProvider).isSupported;
+
+    if (cloudEnabled) {
+      final choice = ref.watch(cloudSetupChoiceCompleteProvider);
+      return choice.when(
+        loading: () => const SplashScreen(),
+        error: (_, __) => StartupProfileLoadErrorBoundary(
+          key: const Key('startup_cloud_setup_choice_error'),
+          onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
+        ),
+        data: (completed) => completed
+            ? _profileDestination(ref, cloudEnabled: true)
+            : const CloudSetupChoiceScreen(),
+      );
+    }
+
+    return _profileDestination(ref, cloudEnabled: false);
+  }
+
+  Widget _profileDestination(
+    WidgetRef ref, {
+    required bool cloudEnabled,
+  }) {
     final routeAsync = ref.watch(appRouteProvider);
     return routeAsync.when(
       loading: () => const SplashScreen(),
@@ -62,7 +85,11 @@ class StartupGate extends ConsumerWidget {
           data: (profile) {
             if (route == AppRoute.onboarding) {
               if (profile == null) {
-                return const LanguageSelectionScreen();
+                return cloudEnabled
+                    ? ProfileSetupScreen(
+                        languageCode: ref.read(localeProvider).languageCode,
+                      )
+                    : const LanguageSelectionScreen();
               }
               return ProfileSetupScreen(
                 languageCode: ref.read(localeProvider).languageCode,
@@ -71,7 +98,11 @@ class StartupGate extends ConsumerWidget {
             }
 
             if (profile == null) {
-              return const LanguageSelectionScreen();
+              return cloudEnabled
+                  ? ProfileSetupScreen(
+                      languageCode: ref.read(localeProvider).languageCode,
+                    )
+                  : const LanguageSelectionScreen();
             }
 
             final validation = ProfileRules.validate(
@@ -85,16 +116,14 @@ class StartupGate extends ConsumerWidget {
               );
             }
 
-            if (ref.watch(cloudAccountProvider).isSupported &&
-                ref.watch(cloudSyncProvider).isSupported) {
-              // Restore the saved cloud session before routing the cloud host.
-              // The gateway serializes this lightweight operation with sign-in;
-              // failures still allow local use and never force account choice.
+            if (cloudEnabled) {
+              // Restore the saved cloud session before entering the workspace.
+              // The gateway serializes restoration with interactive auth.
               final restoration = ref.watch(cloudAccountStartupRestoreProvider);
               return restoration.when(
                 loading: () => const SplashScreen(),
-                error: (_, __) => _cloudDestination(ref),
-                data: (_) => _cloudDestination(ref),
+                error: (_, __) => const WorkspaceShell(),
+                data: (_) => const WorkspaceShell(),
               );
             }
 
