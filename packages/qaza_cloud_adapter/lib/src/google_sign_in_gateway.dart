@@ -20,6 +20,7 @@ class GoogleSignInGateway {
   final GoogleSignIn _signIn;
 
   bool _initialized = false;
+  GoogleSignInAccount? _resolvedAccount;
   Future<void> _tail = Future<void>.value();
 
   Future<void> initialize() => _serialized<void>(() async {
@@ -32,15 +33,16 @@ class GoogleSignInGateway {
   Future<void> signOut() => _serialized(() async {
     await _initializeUnlocked();
     await _signIn.signOut();
+    _resolvedAccount = null;
   });
 
-  /// Reads only an account that is already resolved in this process.
-  ///
-  /// This deliberately does not call attemptLightweightAuthentication: some
-  /// Android plugin states surface an account chooser during passive restore.
+  /// Reads only an account that was resolved by an explicit sign-in in this
+  /// gateway instance. There is intentionally no plugin "current user" getter
+  /// in google_sign_in 7.x, and we do not attempt lightweight auth here because
+  /// passive restoration has been observed to open UI on Android.
   Future<GoogleSignInAccount?> currentAccount() => _serialized(() async {
     await _initializeUnlocked();
-    return _signIn.currentUser;
+    return _resolvedAccount;
   });
 
   /// Kept as a compatibility alias; this is now a read-only lookup.
@@ -55,7 +57,7 @@ class GoogleSignInGateway {
         // implementation can present UI in edge cases, and this method is also
         // used by WorkManager. Only an explicit interactive operation may call
         // authenticate().
-        var user = _signIn.currentUser;
+        var user = _resolvedAccount;
         if (user == null) {
           if (!allowInteractive) {
             throw const CloudAuthorizationUnavailable();
@@ -100,7 +102,9 @@ class GoogleSignInGateway {
         'through the current Google Sign-In API.',
       );
     }
-    return _signIn.authenticate();
+    final account = await _signIn.authenticate();
+    _resolvedAccount = account;
+    return account;
   }
 
   Future<T> _serialized<T>(Future<T> Function() action) async {
