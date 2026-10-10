@@ -42,10 +42,10 @@ class _CloudSetupChoiceScreenState
     // changes cannot complete out of order in SharedPreferences.
     ref.read(localeProvider.notifier).preview(locale);
     _languagePersistence = _languagePersistence
-        .then((_) => ref.read(localeProvider.notifier).set(locale))
+        .then((_) => ref.read(localeProvider.notifier).persist(locale))
         .catchError((Object error) {
-      if (mounted) setState(() => _error = error.toString());
-    });
+          if (mounted) setState(() => _error = error.toString());
+        });
   }
 
   Future<void> _persistSelectedLanguage() async {
@@ -64,10 +64,12 @@ class _CloudSetupChoiceScreenState
         _accountConnected = true;
         await _discoverBackup();
       } else if (account.status == CloudAccountStatus.failed) {
+        _cloudAttempted = true;
         setState(() => _error = account.message ??
             AppLocalizations.of(context).cloudConnectionFailed);
       }
     } catch (error) {
+      _cloudAttempted = true;
       if (mounted) setState(() => _error = error.toString());
     } finally {
       if (mounted) setState(() => _working = false);
@@ -371,7 +373,9 @@ class _CloudSetupChoiceScreenState
                 const SizedBox(height: 24),
                 FilledButton.icon(
                   key: const Key('cloud_setup_connect_google'),
-                  onPressed: _working ? null : _connectGoogle,
+                  onPressed: _working || _accountConnected
+                      ? null
+                      : _connectGoogle,
                   icon: _working
                       ? const SizedBox(
                           width: 18,
