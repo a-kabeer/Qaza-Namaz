@@ -14,6 +14,14 @@ import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeCloudAccountProvider implements CloudAccountProvider {
+  _FakeCloudAccountProvider({
+    this.signInResult = const CloudAccountSnapshot(
+      status: CloudAccountStatus.connected,
+    ),
+  });
+
+  final CloudAccountSnapshot signInResult;
+
   @override
   bool get isSupported => true;
 
@@ -22,20 +30,25 @@ class _FakeCloudAccountProvider implements CloudAccountProvider {
       const CloudAccountSnapshot.disconnected();
 
   @override
-  Future<CloudAccountSnapshot> signIn() async =>
-      const CloudAccountSnapshot(status: CloudAccountStatus.connected);
+  Future<CloudAccountSnapshot> signIn() async => signInResult;
 
   @override
   Future<void> disconnect() async {}
 }
 
 class _FakeCloudSyncProvider implements CloudSyncProvider {
+  _FakeCloudSyncProvider({
+    this.discoveryResult = const CloudBackupDiscoverySnapshot.noBackup(),
+  });
+
+  final CloudBackupDiscoverySnapshot discoveryResult;
+
   @override
   bool get isSupported => true;
 
   @override
   Future<CloudBackupDiscoverySnapshot> discoverBackup() async =>
-      const CloudBackupDiscoverySnapshot.noBackup();
+      discoveryResult;
 
   @override
   Future<CloudSyncSnapshot> status() async =>
@@ -81,13 +94,27 @@ Widget _app(ProviderContainer container) {
 Future<ProviderContainer> _container({
   required AppDatabase database,
   required bool cloudEnabled,
+  CloudAccountSnapshot? signInResult,
+  CloudBackupDiscoverySnapshot? discoveryResult,
 }) async {
   final container = ProviderContainer(
     overrides: [
       appDatabaseProvider.overrideWithValue(database),
       if (cloudEnabled) ...[
-        cloudAccountProvider.overrideWithValue(_FakeCloudAccountProvider()),
-        cloudSyncProvider.overrideWithValue(_FakeCloudSyncProvider()),
+        cloudAccountProvider.overrideWithValue(
+          _FakeCloudAccountProvider(
+            signInResult: signInResult ??
+                const CloudAccountSnapshot(
+                  status: CloudAccountStatus.connected,
+                ),
+          ),
+        ),
+        cloudSyncProvider.overrideWithValue(
+          _FakeCloudSyncProvider(
+            discoveryResult: discoveryResult ??
+                const CloudBackupDiscoverySnapshot.noBackup(),
+          ),
+        ),
       ],
     ],
   );
@@ -129,10 +156,149 @@ void main() {
     expect(preferences.getString(LocaleNotifier.storageKey), 'ur');
     expect(find.text('اپنی پیش رفت محفوظ رکھیں'), findsOneWidget);
 
+    await tester.tap(find.byKey(const Key('cloud_setup_language_en')));
+    await tester.pumpAndSettle();
+    expect(find.text('Choose your language'), findsOneWidget);
+    expect(
+      (await SharedPreferences.getInstance())
+          .getString(LocaleNotifier.storageKey),
+      'en',
+    );
+
+    await tester.tap(find.byKey(const Key('cloud_setup_language_ur')));
+    await tester.pumpAndSettle();
+    expect(
+      (await SharedPreferences.getInstance())
+          .getString(LocaleNotifier.storageKey),
+      'ur',
+    );
+
     await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
     await tester.pumpAndSettle();
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
     expect(find.byType(CloudSetupChoiceScreen), findsNothing);
+  });
+
+  testWidgets('Google sign-in with no backup opens onboarding in selected language',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final container = await _container(
+      database: database,
+      cloudEnabled: true,
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('cloud_setup_language_ur')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('cloud_setup_connect_google')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CloudSetupChoiceScreen), findsNothing);
+    expect(find.byType(LanguageSelectionScreen), findsNothing);
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    expect(find.text('اپنا پروفائل مکمل کریں'), findsOneWidget);
+  });
+
+  testWidgets('sign-in failure keeps local continuation available', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final container = await _container(
+      database: database,
+      cloudEnabled: true,
+      signInResult: const CloudAccountSnapshot(
+        status: CloudAccountStatus.failed,
+        message: 'simulated sign-in failure',
+      ),
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('cloud_setup_language_ur')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('cloud_setup_connect_google')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
+    expect(find.text('simulated sign-in failure'), findsOneWidget);
+    expect(
+      (await SharedPreferences.getInstance())
+          .getString(LocaleNotifier.storageKey),
+      'ur',
+    );
+
+    await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    expect(find.byType(LanguageSelectionScreen), findsNothing);
+    expect(await database.isOnboardingCompleted(), isFalse);
+  });
+
+  testWidgets('backup discovery failure is recoverable without forcing onboarding',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final container = await _container(
+      database: database,
+      cloudEnabled: true,
+      discoveryResult: const CloudBackupDiscoverySnapshot.failed(
+        'simulated backup discovery failure',
+      ),
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('cloud_setup_connect_google')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
+    expect(find.text('simulated backup discovery failure'), findsOneWidget);
+    expect(find.text('Retry'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
+    await tester.pumpAndSettle();
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+    expect(await database.isOnboardingCompleted(), isFalse);
+  });
+
+  testWidgets('a discovered backup offers explicit restore before onboarding',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final container = await _container(
+      database: database,
+      cloudEnabled: true,
+      discoveryResult: CloudBackupDiscoverySnapshot.backupFound(
+        CloudConflictInfo(
+          localDeviceId: 'local-device',
+          localTimestamp: DateTime.utc(2026, 10, 10),
+          localRevision: 1,
+          localBaseBackupId: null,
+          remoteDeviceId: 'remote-device',
+          remoteTimestamp: DateTime.utc(2026, 10, 9),
+          remoteRevision: 7,
+          remoteBackupId: 'backup-7',
+          remoteBaseBackupId: null,
+          lastSyncedBackupId: null,
+          remoteVersion: '1',
+        ),
+      ),
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('cloud_setup_connect_google')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
+    expect(find.byKey(const Key('cloud_setup_restore_backup')), findsOneWidget);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
   });
 
   testWidgets(
