@@ -145,9 +145,8 @@ class _GoogleProfileCard extends StatelessWidget {
                 : unavailable
                     ? l10n.accountProfileUnavailableDetail
                     : l10n.accountGuestContinueMessage;
-    final photoUrl = identityAvailable
-        ? _safeGooglePhotoUrl(account?.photoUrl)
-        : null;
+    final photoUrl =
+        identityAvailable ? _safeGooglePhotoUrl(account?.photoUrl) : null;
     final avatarLabel =
         connected ? '$displayName, ${l10n.accountGoogleAuth}' : title;
 

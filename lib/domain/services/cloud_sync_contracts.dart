@@ -40,8 +40,8 @@ class CloudAccountSnapshot {
     this.displayName,
     this.email,
     this.photoUrl,
-  }) : status = CloudAccountStatus.reconnectRequired,
-       message = null;
+  })  : status = CloudAccountStatus.reconnectRequired,
+        message = null;
 
   const CloudAccountSnapshot.failed(String value)
       : status = CloudAccountStatus.failed,
@@ -241,7 +241,8 @@ class UnsupportedCloudSyncProvider implements CloudSyncProvider {
   @override
   Future<CloudBackupDiscoverySnapshot> discoverBackup({
     bool allowInteractive = false,
-  }) async => const CloudBackupDiscoverySnapshot.unavailable();
+  }) async =>
+      const CloudBackupDiscoverySnapshot.unavailable();
 
   @override
   Future<CloudSyncSnapshot> status() async =>

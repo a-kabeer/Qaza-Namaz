@@ -371,5 +371,4 @@ void main() {
       expect(find.byKey(const Key('account_daily_cloud_backup')), findsNothing);
     },
   );
-
 }
