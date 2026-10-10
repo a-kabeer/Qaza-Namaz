@@ -152,7 +152,13 @@ class _CloudSetupChoiceScreenState
       // discovered backup, stop cloud scheduling and disconnect before routing
       // to local onboarding. The remote backup is left untouched.
       if (_accountConnected || _cloudAttempted) {
-        await ref.read(cloudAccountProvider).disconnect();
+        try {
+          await ref.read(cloudAccountProvider).disconnect();
+        } catch (error) {
+          // Failed interactive sign-in must not trap the user on this screen.
+          // If a session had actually connected, require disconnect to finish.
+          if (_accountConnected) rethrow;
+        }
         _accountConnected = false;
       }
       await _completeChoice();
@@ -199,10 +205,17 @@ class _CloudSetupChoiceScreenState
           );
       if (!mounted) return;
 
-      if (result.status != CloudSyncStatus.synced) {
-        setState(() {
-          _error = result.message ?? l10n.cloudConnectionFailed;
-        });
+      if (result.status != CloudSyncStatus.synced ||
+          !result.restoredRemoteBackup) {
+        if (result.status == CloudSyncStatus.synced) {
+          // A stale conflict may have been recomputed into an upload/no-op.
+          // Rediscover instead of treating that as a successful restoration.
+          await _discoverBackup();
+        } else if (mounted) {
+          setState(() {
+            _error = result.message ?? l10n.cloudConnectionFailed;
+          });
+        }
         return;
       }
 
