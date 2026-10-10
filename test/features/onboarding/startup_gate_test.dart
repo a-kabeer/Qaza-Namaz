@@ -49,7 +49,9 @@ class _FakeCloudSyncProvider implements CloudSyncProvider {
   bool get isSupported => true;
 
   @override
-  Future<CloudBackupDiscoverySnapshot> discoverBackup() async =>
+  Future<CloudBackupDiscoverySnapshot> discoverBackup({
+    bool allowInteractive = false,
+  }) async =>
       discoveryResult;
 
   @override
