@@ -835,6 +835,7 @@ class FakeState implements CloudSyncStateStore {
   CloudSyncCursor? cursor;
   bool cloudEnabled;
   bool automaticEnabled;
+  bool reconnectRequired = false;
   DateTime? lastSuccessfulAt;
   CloudConflict? pendingConflict;
 
@@ -856,7 +857,18 @@ class FakeState implements CloudSyncStateStore {
   @override
   Future<void> setCloudSyncEnabled(bool enabled) async {
     cloudEnabled = enabled;
-    if (!enabled) automaticEnabled = false;
+    if (!enabled) {
+      automaticEnabled = false;
+      reconnectRequired = false;
+    }
+  }
+
+  @override
+  Future<bool> isReconnectRequired() async => reconnectRequired;
+
+  @override
+  Future<void> setReconnectRequired(bool required) async {
+    reconnectRequired = required && cloudEnabled;
   }
 
   @override
