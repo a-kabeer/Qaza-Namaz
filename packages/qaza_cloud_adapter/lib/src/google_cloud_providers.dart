@@ -279,6 +279,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       conflict: result.conflict == null
           ? null
           : _toCoreConflict(result.conflict!),
+      restoredRemoteBackup: result.kind == CloudSyncResultKind.downloaded,
     );
   }
 
@@ -301,6 +302,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     CloudSyncStatus status, {
     String? message,
     CloudConflictInfo? conflict,
+    bool restoredRemoteBackup = false,
   }) async => CloudSyncSnapshot(
     status: status,
     automaticSyncEnabled: await _state.isAutomaticSyncEnabled(),
@@ -308,5 +310,6 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     message: message,
     conflict: conflict,
     hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
+    restoredRemoteBackup: restoredRemoteBackup,
   );
 }
