@@ -398,6 +398,47 @@ class CloudConflict {
   }
 }
 
+enum CloudBackupDiscoveryKind {
+  noBackup,
+  found,
+  invalidBackup,
+  failed,
+}
+
+/// Read-only remote lookup result. It never applies or uploads application data.
+class CloudBackupDiscoveryResult {
+  const CloudBackupDiscoveryResult._({
+    required this.kind,
+    this.conflict,
+    this.message,
+  });
+
+  factory CloudBackupDiscoveryResult.noBackup() =>
+      const CloudBackupDiscoveryResult._(kind: CloudBackupDiscoveryKind.noBackup);
+
+  factory CloudBackupDiscoveryResult.found(CloudConflict conflict) =>
+      CloudBackupDiscoveryResult._(
+        kind: CloudBackupDiscoveryKind.found,
+        conflict: conflict,
+      );
+
+  factory CloudBackupDiscoveryResult.invalidBackup(String message) =>
+      CloudBackupDiscoveryResult._(
+        kind: CloudBackupDiscoveryKind.invalidBackup,
+        message: message,
+      );
+
+  factory CloudBackupDiscoveryResult.failed(String message) =>
+      CloudBackupDiscoveryResult._(
+        kind: CloudBackupDiscoveryKind.failed,
+        message: message,
+      );
+
+  final CloudBackupDiscoveryKind kind;
+  final CloudConflict? conflict;
+  final String? message;
+}
+
 class CloudSyncResult {
   const CloudSyncResult._({
     required this.kind,
