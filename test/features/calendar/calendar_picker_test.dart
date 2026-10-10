@@ -50,6 +50,14 @@ void main() {
 
       final daySeven = find.text('7').last;
       final daySevenText = tester.widget<Text>(daySeven);
+      final daySevenInk = tester.widget<Ink>(
+        find.byKey(const Key('calendar_day_ink_2026-09-07')),
+      );
+      expect(daySevenInk.decoration, isA<BoxDecoration>());
+      expect(
+        (daySevenInk.decoration! as BoxDecoration).shape,
+        BoxShape.circle,
+      );
       final scheme = Theme.of(tester.element(daySeven)).colorScheme;
       expect(daySevenText.style?.color, scheme.onSurface);
 
