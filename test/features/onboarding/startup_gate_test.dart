@@ -77,6 +77,16 @@ class _FakeCloudSyncProvider implements CloudSyncProvider {
       const CloudSyncSnapshot.disconnected();
 }
 
+Future<void> _tapVisible(
+  WidgetTester tester,
+  Finder finder,
+) async {
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+  await tester.pumpAndSettle();
+}
+
 Widget _app(ProviderContainer container) {
   return UncontrolledProviderScope(
     container: container,
@@ -173,8 +183,10 @@ void main() {
       'ur',
     );
 
-    await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
-    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_continue_local')),
+    );
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
     expect(find.byType(CloudSetupChoiceScreen), findsNothing);
   });
@@ -195,8 +207,10 @@ void main() {
 
     await tester.tap(find.byKey(const Key('cloud_setup_language_ur')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('cloud_setup_connect_google')));
-    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_connect_google')),
+    );
 
     expect(find.byType(CloudSetupChoiceScreen), findsNothing);
     expect(find.byType(LanguageSelectionScreen), findsNothing);
@@ -222,8 +236,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('cloud_setup_language_ur')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('cloud_setup_connect_google')));
-    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_connect_google')),
+    );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
     expect(find.text('simulated sign-in failure'), findsOneWidget);
@@ -233,8 +249,10 @@ void main() {
       'ur',
     );
 
-    await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
-    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_continue_local')),
+    );
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
     expect(find.byType(LanguageSelectionScreen), findsNothing);
     expect(await database.isOnboardingCompleted(), isFalse);
@@ -256,15 +274,19 @@ void main() {
 
     await tester.pumpWidget(_app(container));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('cloud_setup_connect_google')));
-    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_connect_google')),
+    );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
     expect(find.text('simulated backup discovery failure'), findsOneWidget);
     expect(find.text('Retry'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
-    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_continue_local')),
+    );
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
     expect(await database.isOnboardingCompleted(), isFalse);
   });
@@ -296,8 +318,10 @@ void main() {
 
     await tester.pumpWidget(_app(container));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('cloud_setup_connect_google')));
-    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_connect_google')),
+    );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
     expect(find.byKey(const Key('cloud_setup_restore_backup')), findsOneWidget);
@@ -313,6 +337,7 @@ void main() {
       database: database,
       cloudEnabled: true,
     );
+    expect(await database.isOnboardingCompleted(), isTrue);
     addTearDown(container.dispose);
     addTearDown(database.close);
 
