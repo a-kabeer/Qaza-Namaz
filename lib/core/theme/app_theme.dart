@@ -8,10 +8,10 @@ import 'app_colors.dart';
 
 /// Central application theme.
 ///
-/// The only source of Material styling for the application. Colour, type,
-/// shape and elevation tokens are taken from the Qaza Namaz "Serene Sanctuary"
-/// palette: fresh greens, sage neutrals, a soft purple accent, semantic
-/// feedback colors, and Noto Serif / Manrope typography.
+/// The only source of Material styling for the application. Color, type,
+/// shape and elevation tokens use neutral surfaces, a blue primary, violet
+/// secondary accents, semantic feedback colors, and Noto Serif / Manrope
+/// typography.
 class AppTheme {
   static const _subThemesData = FlexSubThemesData(
     defaultRadius: 12,
@@ -129,35 +129,55 @@ class AppTheme {
     );
   }
 
-  static const _lightSurface = Color(0xFFFAFDF9);
-  static const _lightOnSurface = Color(0xFF0F172A);
-  static const _lightPrimary = Color(0xFF2E7D5B);
-  static const _lightPrimaryContainer = Color(0xFFD8F0E4);
-  static const _lightOnPrimaryContainer = Color(0xFF0F5132);
-  static const _lightSecondary = Color(0xFF6B8576);
-  static const _lightSecondaryContainer = Color(0xFFEAF5EE);
-  static const _lightOnSecondaryContainer = Color(0xFF2E7D5B);
-  static const _lightTertiary = Color(0xFFA78BFA);
-  static const _lightOnTertiary = Color(0xFF5B21B6);
-  static const _lightTertiaryContainer = Color(0xFFEDE9FE);
+  // Neutral light surfaces.
+  static const _lightSurface = Color(0xFFF7F8FA);
+  static const _lightCard = Color(0xFFFFFFFF);
+  static const _lightOnSurface = Color(0xFF111827);
+  static const _lightOnSurfaceVariant = Color(0xFF6B7280);
+  static const _lightSurfaceContainer = Color(0xFFF3F4F6);
+  static const _lightSurfaceContainerHigh = Color(0xFFEFF1F5);
+  static const _lightSurfaceContainerHighest = Color(0xFFE5E7EB);
+  static const _lightOutline = Color(0xFFD1D5DB);
+  static const _lightOutlineVariant = Color(0xFFE5E7EB);
+
+  // Brand and container roles.
+  static const _lightPrimary = Color(0xFF2563EB);
+  static const _lightPrimaryContainer = Color(0xFFDBEAFE);
+  static const _lightOnPrimaryContainer = Color(0xFF1E40AF);
+  static const _lightSecondary = Color(0xFF7C3AED);
+  static const _lightSecondaryContainer = Color(0xFFEDE9FE);
+  static const _lightOnSecondaryContainer = Color(0xFF5B21B6);
+  static const _lightTertiary = Color(0xFF6D28D9);
+  static const _lightOnTertiary = Color(0xFFFFFFFF);
+  static const _lightTertiaryContainer = Color(0xFFF5F3FF);
   static const _lightOnTertiaryContainer = Color(0xFF5B21B6);
   static const _lightError = Color(0xFFEF4444);
   static const _lightErrorContainer = Color(0x1FEF4444);
 
-  static const _darkSurface = Color(0xFF081612);
-  static const _darkOnSurface = Color(0xFFF1F8F4);
-  static const _darkPrimary = Color(0xFF63D8A0);
-  static const _darkOnPrimary = Color(0xFF073B27);
-  static const _darkPrimaryContainer = Color(0xFF185B3F);
-  static const _darkOnPrimaryContainer = Color(0xFFB8F1D1);
-  static const _darkSecondary = Color(0xFF8FAF9F);
-  static const _darkOnSecondary = Color(0xFF10251E);
-  static const _darkSecondaryContainer = Color(0xFF29483B);
-  static const _darkOnSecondaryContainer = Color(0xFFD5E9DF);
-  static const _darkTertiary = Color(0xFFB59AFF);
-  static const _darkOnTertiary = Color(0xFF35116F);
-  static const _darkTertiaryContainer = Color(0xFF4B2A91);
-  static const _darkOnTertiaryContainer = Color(0xFFE8DEFF);
+  // Neutral dark surfaces.
+  static const _darkSurface = Color(0xFF09090B);
+  static const _darkCard = Color(0xFF18181B);
+  static const _darkOnSurface = Color(0xFFFAFAFA);
+  static const _darkOnSurfaceVariant = Color(0xFFA1A1AA);
+  static const _darkSurfaceContainer = Color(0xFF1F1F23);
+  static const _darkSurfaceContainerHigh = Color(0xFF27272A);
+  static const _darkSurfaceContainerHighest = Color(0xFF3F3F46);
+  static const _darkOutline = Color(0xFF52525B);
+  static const _darkOutlineVariant = Color(0xFF27272A);
+
+  // Brand and container roles.
+  static const _darkPrimary = Color(0xFF60A5FA);
+  static const _darkOnPrimary = Color(0xFF09090B);
+  static const _darkPrimaryContainer = Color(0xFF1E3A5F);
+  static const _darkOnPrimaryContainer = Color(0xFFDBEAFE);
+  static const _darkSecondary = Color(0xFFC4B5FD);
+  static const _darkOnSecondary = Color(0xFF09090B);
+  static const _darkSecondaryContainer = Color(0xFF3B2463);
+  static const _darkOnSecondaryContainer = Color(0xFFEDE9FE);
+  static const _darkTertiary = Color(0xFFA5B4FC);
+  static const _darkOnTertiary = Color(0xFF1E1B4B);
+  static const _darkTertiaryContainer = Color(0xFF312E81);
+  static const _darkOnTertiaryContainer = Color(0xFFE0E7FF);
   static const _darkError = Color(0xFFFF6B61);
   static const _darkOnError = Color(0xFF5A0000);
   static const _darkErrorContainer = Color(0xFF7F1D1D);
@@ -262,13 +282,35 @@ class AppTheme {
     );
   }
 
+  /// Replaces generated surface roles with stable app-owned design tokens.
+  static ColorScheme _withSurfaceTokens(
+    ColorScheme scheme,
+    Brightness brightness,
+  ) {
+    final isDark = brightness == Brightness.dark;
+    return scheme.copyWith(
+      surface: isDark ? _darkSurface : _lightSurface,
+      onSurface: isDark ? _darkOnSurface : _lightOnSurface,
+      onSurfaceVariant: isDark ? _darkOnSurfaceVariant : _lightOnSurfaceVariant,
+      surfaceContainerLowest: isDark ? _darkSurface : _lightCard,
+      surfaceContainerLow: isDark ? _darkCard : _lightCard,
+      surfaceContainer: isDark ? _darkSurfaceContainer : _lightSurfaceContainer,
+      surfaceContainerHigh:
+          isDark ? _darkSurfaceContainerHigh : _lightSurfaceContainerHigh,
+      surfaceContainerHighest:
+          isDark ? _darkSurfaceContainerHighest : _lightSurfaceContainerHighest,
+      outline: isDark ? _darkOutline : _lightOutline,
+      outlineVariant: isDark ? _darkOutlineVariant : _lightOutlineVariant,
+    );
+  }
+
   static ThemeData _base(
     ThemeData baseTheme,
     Brightness brightness, {
     required bool urdu,
     String? assetPackage,
   }) {
-    final scheme = baseTheme.colorScheme;
+    final scheme = _withSurfaceTokens(baseTheme.colorScheme, brightness);
     final typography = AppTypography(
       latin: _latinTextTheme(scheme),
       urdu: _urduTextTheme(scheme, assetPackage: assetPackage),
@@ -276,8 +318,16 @@ class AppTheme {
     final textTheme = typography.forScript(urduScript: urdu);
 
     return baseTheme.copyWith(
+      colorScheme: scheme,
       scaffoldBackgroundColor: scheme.surface,
-      cardTheme: baseTheme.cardTheme.copyWith(margin: EdgeInsets.zero),
+      cardTheme: baseTheme.cardTheme.copyWith(
+        color: scheme.surfaceContainerLow,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+          side: BorderSide(color: scheme.outlineVariant),
+        ),
+        margin: EdgeInsets.zero,
+      ),
       textTheme: textTheme,
       appBarTheme: baseTheme.appBarTheme.copyWith(
         centerTitle: false,

@@ -8,6 +8,18 @@ import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/features/home/widgets/home_overall_progress.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
+double _contrastRatio(Color foreground, Color background) {
+  final foregroundLuminance = foreground.computeLuminance();
+  final backgroundLuminance = background.computeLuminance();
+  final lighter = foregroundLuminance > backgroundLuminance
+      ? foregroundLuminance
+      : backgroundLuminance;
+  final darker = foregroundLuminance > backgroundLuminance
+      ? backgroundLuminance
+      : foregroundLuminance;
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
 void main() {
   group('AppTheme semantic surfaces', () {
     void expectSemanticRoles(ThemeData theme) {
@@ -38,15 +50,40 @@ void main() {
     });
   });
 
-  group('Appearance-preserving palette contract', () {
-    test('keeps the current green primary and surface colors', () {
+  group('Blue-violet palette contract', () {
+    test('uses the approved neutral surfaces and brand colors', () {
       final light = AppTheme.light();
       final dark = AppTheme.dark();
 
-      expect(light.colorScheme.primary, const Color(0xFF2E7D5B));
-      expect(light.scaffoldBackgroundColor, const Color(0xFFFAFDF9));
-      expect(dark.colorScheme.primary, const Color(0xFF63D8A0));
-      expect(dark.scaffoldBackgroundColor, const Color(0xFF081612));
+      expect(light.scaffoldBackgroundColor, const Color(0xFFF7F8FA));
+      expect(light.cardTheme.color, const Color(0xFFFFFFFF));
+      expect(light.colorScheme.surface, const Color(0xFFF7F8FA));
+      expect(light.colorScheme.primary, const Color(0xFF2563EB));
+      expect(light.colorScheme.secondary, const Color(0xFF7C3AED));
+      expect(light.colorScheme.onPrimary, Colors.white);
+      expect(light.colorScheme.onSecondary, Colors.white);
+
+      expect(dark.scaffoldBackgroundColor, const Color(0xFF09090B));
+      expect(dark.cardTheme.color, const Color(0xFF18181B));
+      expect(dark.colorScheme.surface, const Color(0xFF09090B));
+      expect(dark.colorScheme.primary, const Color(0xFF60A5FA));
+      expect(dark.colorScheme.secondary, const Color(0xFFC4B5FD));
+      expect(dark.colorScheme.onPrimary, const Color(0xFF09090B));
+      expect(dark.colorScheme.onSecondary, const Color(0xFF09090B));
+    });
+
+    test('brand button foregrounds meet WCAG AA normal-text contrast', () {
+      final light = AppTheme.light().colorScheme;
+      final dark = AppTheme.dark().colorScheme;
+
+      expect(_contrastRatio(light.onPrimary, light.primary),
+          greaterThanOrEqualTo(4.5));
+      expect(_contrastRatio(light.onSecondary, light.secondary),
+          greaterThanOrEqualTo(4.5));
+      expect(_contrastRatio(dark.onPrimary, dark.primary),
+          greaterThanOrEqualTo(4.5));
+      expect(_contrastRatio(dark.onSecondary, dark.secondary),
+          greaterThanOrEqualTo(4.5));
     });
   });
 
