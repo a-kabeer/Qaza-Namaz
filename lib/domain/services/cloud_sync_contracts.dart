@@ -3,7 +3,13 @@
 /// These ports contain no cloud SDK imports or network behavior. The offline
 /// application supplies unsupported implementations; cloud hosts inject
 /// concrete adapters through Riverpod.
-enum CloudAccountStatus { unavailable, disconnected, connected, failed }
+enum CloudAccountStatus {
+  unavailable,
+  disconnected,
+  connected,
+  reconnectRequired,
+  failed,
+}
 
 class CloudAccountSnapshot {
   const CloudAccountSnapshot({
@@ -27,6 +33,15 @@ class CloudAccountSnapshot {
         email = null,
         photoUrl = null,
         message = null;
+
+  /// A locally cached identity is display-only until the user reconnects.
+  /// It must never be treated as proof that Drive authorization is available.
+  const CloudAccountSnapshot.reconnectRequired({
+    this.displayName,
+    this.email,
+    this.photoUrl,
+  }) : status = CloudAccountStatus.reconnectRequired,
+       message = null;
 
   const CloudAccountSnapshot.failed(String value)
       : status = CloudAccountStatus.failed,
@@ -182,7 +197,9 @@ class CloudBackupDiscoverySnapshot {
 
 abstract interface class CloudSyncProvider {
   bool get isSupported;
-  Future<CloudBackupDiscoverySnapshot> discoverBackup();
+  Future<CloudBackupDiscoverySnapshot> discoverBackup({
+    bool allowInteractive = false,
+  });
   Future<CloudSyncSnapshot> status();
   Future<CloudSyncSnapshot> backupNow();
   Future<CloudSyncSnapshot> setAutomaticSyncEnabled(bool enabled);
@@ -221,8 +238,9 @@ class UnsupportedCloudSyncProvider implements CloudSyncProvider {
   bool get isSupported => false;
 
   @override
-  Future<CloudBackupDiscoverySnapshot> discoverBackup() async =>
-      const CloudBackupDiscoverySnapshot.unavailable();
+  Future<CloudBackupDiscoverySnapshot> discoverBackup({
+    bool allowInteractive = false,
+  }) async => const CloudBackupDiscoverySnapshot.unavailable();
 
   @override
   Future<CloudSyncSnapshot> status() async =>
