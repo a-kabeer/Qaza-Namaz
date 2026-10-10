@@ -290,18 +290,14 @@ class AppTheme {
     return scheme.copyWith(
       surface: isDark ? _darkSurface : _lightSurface,
       onSurface: isDark ? _darkOnSurface : _lightOnSurface,
-      onSurfaceVariant:
-          isDark ? _darkOnSurfaceVariant : _lightOnSurfaceVariant,
+      onSurfaceVariant: isDark ? _darkOnSurfaceVariant : _lightOnSurfaceVariant,
       surfaceContainerLowest: isDark ? _darkSurface : _lightCard,
       surfaceContainerLow: isDark ? _darkCard : _lightCard,
-      surfaceContainer:
-          isDark ? _darkSurfaceContainer : _lightSurfaceContainer,
-      surfaceContainerHigh: isDark
-          ? _darkSurfaceContainerHigh
-          : _lightSurfaceContainerHigh,
-      surfaceContainerHighest: isDark
-          ? _darkSurfaceContainerHighest
-          : _lightSurfaceContainerHighest,
+      surfaceContainer: isDark ? _darkSurfaceContainer : _lightSurfaceContainer,
+      surfaceContainerHigh:
+          isDark ? _darkSurfaceContainerHigh : _lightSurfaceContainerHigh,
+      surfaceContainerHighest:
+          isDark ? _darkSurfaceContainerHighest : _lightSurfaceContainerHighest,
       outline: isDark ? _darkOutline : _lightOutline,
       outlineVariant: isDark ? _darkOutlineVariant : _lightOutlineVariant,
     );
