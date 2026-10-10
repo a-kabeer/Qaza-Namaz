@@ -44,8 +44,8 @@ class _CloudSetupChoiceScreenState
     _languagePersistence = _languagePersistence
         .then((_) => ref.read(localeProvider.notifier).persist(locale))
         .catchError((Object error) {
-          if (mounted) setState(() => _error = error.toString());
-        });
+      if (mounted) setState(() => _error = error.toString());
+    });
   }
 
   Future<void> _persistSelectedLanguage() async {
@@ -57,8 +57,7 @@ class _CloudSetupChoiceScreenState
     if (!mounted || _working) return;
     setState(() => _working = true);
     try {
-      final account =
-          await ref.read(cloudAccountStartupRestoreProvider.future);
+      final account = await ref.read(cloudAccountStartupRestoreProvider.future);
       if (!mounted) return;
       if (account.isConnected) {
         _accountConnected = true;
@@ -316,8 +315,8 @@ class _CloudSetupChoiceScreenState
                               ? l10n.languageUrdu
                               : l10n.languageEnglish,
                         ),
-                        selected: locale.languageCode ==
-                            _selectedLocale.languageCode,
+                        selected:
+                            locale.languageCode == _selectedLocale.languageCode,
                         onSelected: _working
                             ? null
                             : (selected) {
@@ -373,9 +372,8 @@ class _CloudSetupChoiceScreenState
                 const SizedBox(height: 24),
                 FilledButton.icon(
                   key: const Key('cloud_setup_connect_google'),
-                  onPressed: _working || _accountConnected
-                      ? null
-                      : _connectGoogle,
+                  onPressed:
+                      _working || _accountConnected ? null : _connectGoogle,
                   icon: _working
                       ? const SizedBox(
                           width: 18,

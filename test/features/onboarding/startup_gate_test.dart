@@ -179,7 +179,8 @@ void main() {
     expect(find.byType(CloudSetupChoiceScreen), findsNothing);
   });
 
-  testWidgets('Google sign-in with no backup opens onboarding in selected language',
+  testWidgets(
+      'Google sign-in with no backup opens onboarding in selected language',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final container = await _container(
@@ -203,7 +204,8 @@ void main() {
     expect(find.text('اپنا پروفائل مکمل کریں'), findsOneWidget);
   });
 
-  testWidgets('sign-in failure keeps local continuation available', (tester) async {
+  testWidgets('sign-in failure keeps local continuation available',
+      (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final container = await _container(
       database: database,
@@ -238,7 +240,8 @@ void main() {
     expect(await database.isOnboardingCompleted(), isFalse);
   });
 
-  testWidgets('backup discovery failure is recoverable without forcing onboarding',
+  testWidgets(
+      'backup discovery failure is recoverable without forcing onboarding',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final container = await _container(
