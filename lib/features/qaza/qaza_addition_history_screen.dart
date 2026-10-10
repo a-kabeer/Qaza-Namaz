@@ -266,6 +266,7 @@ class _RecentAdditions extends StatelessWidget {
         return _RecentAdditionCard(
           key: ValueKey(item.addition.id),
           item: item,
+          controller: controller,
         );
       },
     );
@@ -276,9 +277,11 @@ class _RecentAdditionCard extends StatefulWidget {
   const _RecentAdditionCard({
     super.key,
     required this.item,
+    required this.controller,
   });
 
   final QazaAdditionListItem item;
+  final QazaAdditionHistoryController controller;
 
   @override
   State<_RecentAdditionCard> createState() => _RecentAdditionCardState();
@@ -287,8 +290,13 @@ class _RecentAdditionCard extends StatefulWidget {
 class _RecentAdditionCardState extends State<_RecentAdditionCard> {
   bool _datesExpanded = false;
 
-  void _openDetail() {
-    openQazaAdditionDetail(context, widget.item.addition.id);
+  Future<void> _openDetail() async {
+    await openQazaAdditionDetail(context, widget.item.addition.id);
+    if (!mounted) return;
+
+    // The history route stays mounted beneath the detail/records routes, so
+    // reload its aggregate counts after returning from the detail screen.
+    await widget.controller.refresh();
   }
 
   @override
