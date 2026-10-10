@@ -168,8 +168,26 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return database;
 });
 
-final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) {
-  return ref.watch(appDatabaseProvider).isCloudSetupChoiceComplete();
+final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
+  final database = ref.watch(appDatabaseProvider);
+  if (await database.isCloudSetupChoiceComplete()) return true;
+
+  // Migration compatibility: installations from before the explicit choice
+  // marker existed must not be forced back through first-run account choice.
+  // Check durable onboarding metadata directly rather than relying on a routed
+  // provider that may be cached while StartupGate itself is initializing.
+  if (await database.isOnboardingCompleted()) {
+    await database.markCloudSetupChoiceComplete();
+    return true;
+  }
+
+  final profile = await ref.read(userProfileProvider.future);
+  if (profile != null) {
+    await database.markCloudSetupChoiceComplete();
+    return true;
+  }
+
+  return false;
 });
 
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
@@ -339,7 +357,6 @@ class LocaleNotifier extends Notifier<Locale> {
 
   @override
   Locale build() {
-    Future.microtask(restore);
     final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
     return resolve(systemLocale.languageCode) ?? fallback;
   }
@@ -368,20 +385,37 @@ class LocaleNotifier extends Notifier<Locale> {
     state = resolved;
   }
 
-  void set(Locale locale) {
+  /// Persists a selected locale without changing the currently previewed UI.
+  ///
+  /// This lets the initial screen serialize preference writes without an
+  /// older queued write briefly reverting a newer language selection.
+  Future<void> persist(Locale locale) async {
+    final resolved = resolve(locale.languageCode);
+    if (resolved == null) return;
+    await _persist(resolved);
+  }
+
+  Future<void> set(Locale locale) async {
     final resolved = resolve(locale.languageCode);
     if (resolved == null) return;
     state = resolved;
-    _persist(resolved);
+    await _persist(resolved);
   }
 
   Future<void> _persist(Locale locale) async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(storageKey, locale.languageCode);
-    } catch (_) {}
+    final prefs = await SharedPreferences.getInstance();
+    final saved = await prefs.setString(storageKey, locale.languageCode);
+    if (!saved) {
+      throw StateError('The selected language could not be saved.');
+    }
   }
 }
 
 final localeProvider =
     NotifierProvider<LocaleNotifier, Locale>(LocaleNotifier.new);
+
+/// StartupGate awaits this before rendering interactive onboarding or account
+/// choice, avoiding a transient system-locale screen on a saved-language launch.
+final localeRestorationProvider = FutureProvider<void>((ref) async {
+  await ref.read(localeProvider.notifier).restore();
+});

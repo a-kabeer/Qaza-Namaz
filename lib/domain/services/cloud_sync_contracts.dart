@@ -95,6 +95,7 @@ class CloudSyncSnapshot {
     this.message,
     this.conflict,
     this.hasLocalRecoverySnapshot = false,
+    this.restoredRemoteBackup = false,
   });
 
   const CloudSyncSnapshot.unavailable()
@@ -103,7 +104,8 @@ class CloudSyncSnapshot {
         lastSuccessAt = null,
         message = null,
         conflict = null,
-        hasLocalRecoverySnapshot = false;
+        hasLocalRecoverySnapshot = false,
+        restoredRemoteBackup = false;
 
   const CloudSyncSnapshot.disconnected()
       : status = CloudSyncStatus.disconnected,
@@ -111,7 +113,8 @@ class CloudSyncSnapshot {
         lastSuccessAt = null,
         message = null,
         conflict = null,
-        hasLocalRecoverySnapshot = false;
+        hasLocalRecoverySnapshot = false,
+        restoredRemoteBackup = false;
 
   final CloudSyncStatus status;
   final bool automaticSyncEnabled;
@@ -119,10 +122,62 @@ class CloudSyncSnapshot {
   final String? message;
   final CloudConflictInfo? conflict;
   final bool hasLocalRecoverySnapshot;
+
+  /// True only when the operation actually imported a remote cloud backup.
+  /// A generic "synced" status can also mean that local data was uploaded.
+  final bool restoredRemoteBackup;
+}
+
+enum CloudBackupDiscoveryStatus {
+  unavailable,
+  noBackup,
+  backupFound,
+  invalidBackup,
+  failed,
+}
+
+/// Read-only remote lookup result. A found backup carries the conflict snapshot
+/// needed by the existing explicit restore flow.
+class CloudBackupDiscoverySnapshot {
+  const CloudBackupDiscoverySnapshot({
+    required this.status,
+    this.conflict,
+    this.message,
+  });
+
+  const CloudBackupDiscoverySnapshot.unavailable()
+      : status = CloudBackupDiscoveryStatus.unavailable,
+        conflict = null,
+        message = null;
+
+  const CloudBackupDiscoverySnapshot.noBackup()
+      : status = CloudBackupDiscoveryStatus.noBackup,
+        conflict = null,
+        message = null;
+
+  const CloudBackupDiscoverySnapshot.backupFound(CloudConflictInfo value)
+      : status = CloudBackupDiscoveryStatus.backupFound,
+        conflict = value,
+        message = null;
+
+  const CloudBackupDiscoverySnapshot.invalidBackup(String value)
+      : status = CloudBackupDiscoveryStatus.invalidBackup,
+        conflict = null,
+        message = value;
+
+  const CloudBackupDiscoverySnapshot.failed(String value)
+      : status = CloudBackupDiscoveryStatus.failed,
+        conflict = null,
+        message = value;
+
+  final CloudBackupDiscoveryStatus status;
+  final CloudConflictInfo? conflict;
+  final String? message;
 }
 
 abstract interface class CloudSyncProvider {
   bool get isSupported;
+  Future<CloudBackupDiscoverySnapshot> discoverBackup();
   Future<CloudSyncSnapshot> status();
   Future<CloudSyncSnapshot> backupNow();
   Future<CloudSyncSnapshot> setAutomaticSyncEnabled(bool enabled);
@@ -159,6 +214,10 @@ class UnsupportedCloudSyncProvider implements CloudSyncProvider {
 
   @override
   bool get isSupported => false;
+
+  @override
+  Future<CloudBackupDiscoverySnapshot> discoverBackup() async =>
+      const CloudBackupDiscoverySnapshot.unavailable();
 
   @override
   Future<CloudSyncSnapshot> status() async =>
