@@ -398,12 +398,7 @@ class CloudConflict {
   }
 }
 
-enum CloudBackupDiscoveryKind {
-  noBackup,
-  found,
-  invalidBackup,
-  failed,
-}
+enum CloudBackupDiscoveryKind { noBackup, found, invalidBackup, failed }
 
 /// Read-only remote lookup result. It never applies or uploads application data.
 class CloudBackupDiscoveryResult {

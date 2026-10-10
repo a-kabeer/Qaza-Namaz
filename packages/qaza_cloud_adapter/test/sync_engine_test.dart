@@ -53,30 +53,31 @@ void main() {
     test(
       'discovery rejects incompatible backup without modifying local data',
       () async {
-      final phase1 = FakePhase1(revision: 1, rejectBackup: true);
-      final state = FakeState(deviceIdValue: 'device-B', cursor: null);
-      final remote = FakeRemote(
-        latestSnapshot: _snapshot(
-          deviceId: 'device-A',
-          backupId: 'backup-invalid',
-          baseBackupId: null,
-          revision: 9,
-          modifiedAt: DateTime.utc(2026, 10, 9),
-          remoteVersion: '1',
-        ),
-      );
+        final phase1 = FakePhase1(revision: 1, rejectBackup: true);
+        final state = FakeState(deviceIdValue: 'device-B', cursor: null);
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-invalid',
+            baseBackupId: null,
+            revision: 9,
+            modifiedAt: DateTime.utc(2026, 10, 9),
+            remoteVersion: '1',
+          ),
+        );
 
-      final result = await CloudSyncEngine(
-        phase1: phase1,
-        remote: remote,
-        state: state,
-      ).discoverBackup();
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).discoverBackup();
 
-      expect(result.kind, CloudBackupDiscoveryKind.invalidBackup);
-      expect(remote.writeCount, 0);
-      expect(phase1.importCount, 0);
-      expect(phase1.saveRecoveryCount, 0);
-    });
+        expect(result.kind, CloudBackupDiscoveryKind.invalidBackup);
+        expect(remote.writeCount, 0);
+        expect(phase1.importCount, 0);
+        expect(phase1.saveRecoveryCount, 0);
+      },
+    );
 
     test(
       'first connection with a remote backup requires an explicit decision',
