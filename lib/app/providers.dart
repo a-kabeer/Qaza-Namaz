@@ -174,11 +174,15 @@ final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
 
   // Migration compatibility: installations from before the explicit choice
   // marker existed must not be forced back through first-run account choice.
-  // A completed onboarding marker or an existing profile proves this is not a
-  // genuinely new installation. Persist the inferred completion once.
-  final route = await ref.read(appRouteProvider.future);
+  // Check durable onboarding metadata directly rather than relying on a routed
+  // provider that may be cached while StartupGate itself is initializing.
+  if (await database.isOnboardingCompleted()) {
+    await database.markCloudSetupChoiceComplete();
+    return true;
+  }
+
   final profile = await ref.read(userProfileProvider.future);
-  if (route == AppRoute.home || profile != null) {
+  if (profile != null) {
     await database.markCloudSetupChoiceComplete();
     return true;
   }
