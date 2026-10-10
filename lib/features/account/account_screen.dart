@@ -9,12 +9,56 @@ import '../../l10n/app_localizations.dart';
 import '../data_management/qaza_data_management_screen.dart';
 import '../settings/qaza_reset_controller.dart';
 
-class AccountScreen extends ConsumerWidget {
+class AccountScreen extends ConsumerStatefulWidget {
   const AccountScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<AccountScreen> createState() => _AccountScreenState();
+}
+
+class _AccountScreenState extends ConsumerState<AccountScreen> {
+  AsyncValue<CloudAccountSnapshot> _accountSnapshot = const AsyncLoading();
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.microtask(_restoreCloudAccount);
+  }
+
+  Future<void> _restoreCloudAccount() async {
+    final accountProvider = ref.read(cloudAccountProvider);
+    if (!accountProvider.isSupported) {
+      if (mounted) {
+        setState(
+          () => _accountSnapshot =
+              const AsyncData(CloudAccountSnapshot.unavailable()),
+        );
+      }
+      return;
+    }
+
+    try {
+      final account = await accountProvider.restore();
+      if (!mounted) return;
+      setState(() => _accountSnapshot = AsyncData(account));
+    } catch (error) {
+      if (!mounted) return;
+      setState(
+        () => _accountSnapshot =
+            AsyncData(CloudAccountSnapshot.failed(error.toString())),
+      );
+    }
+  }
+
+  void _setAccountSnapshot(CloudAccountSnapshot account) {
+    if (!mounted) return;
+    setState(() => _accountSnapshot = AsyncData(account));
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+
     void open(Widget screen) {
       Navigator.push(
         context,
@@ -22,14 +66,25 @@ class AccountScreen extends ConsumerWidget {
       );
     }
 
+    final account = _accountSnapshot.valueOrNull ??
+        const CloudAccountSnapshot.disconnected();
+    final cloudSupported = ref.watch(cloudAccountProvider).isSupported &&
+        ref.watch(cloudSyncProvider).isSupported;
+
     return AppScaffold(
       title: l10n.accountTitle,
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 12, 20, 28),
         children: [
-          if (ref.watch(cloudAccountProvider).isSupported &&
-              ref.watch(cloudSyncProvider).isSupported) ...[
-            const _CloudBackupCard(key: Key('account_cloud_backup')),
+          _GoogleProfileCard(accountState: _accountSnapshot),
+          const SizedBox(height: 12),
+          if (cloudSupported) ...[
+            _CloudBackupCard(
+              key: const Key('account_cloud_backup'),
+              accountSnapshot: account,
+              accountLoading: _accountSnapshot.isLoading,
+              onAccountChanged: _setAccountSnapshot,
+            ),
             const SizedBox(height: 16),
           ],
           Card(
@@ -49,7 +104,134 @@ class AccountScreen extends ConsumerWidget {
   }
 }
 
-class _ResetQazaCounterRow extends ConsumerWidget {
+class _GoogleProfileCard extends StatelessWidget {
+  const _GoogleProfileCard({required this.accountState});
+
+  final AsyncValue<CloudAccountSnapshot> accountState;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final account = accountState.valueOrNull;
+    final connected = account?.isConnected ?? false;
+    final unavailable = accountState.hasError ||
+        account?.status == CloudAccountStatus.failed;
+    final rawName = account?.displayName?.trim();
+    final rawEmail = account?.email?.trim();
+    final displayName = rawName?.isNotEmpty == true
+        ? rawName!
+        : rawEmail?.isNotEmpty == true
+            ? rawEmail!
+            : l10n.accountNotAvailable;
+    final email = rawEmail?.isNotEmpty == true && rawEmail != displayName
+        ? rawEmail
+        : null;
+    final title = accountState.isLoading
+        ? l10n.accountProfileChecking
+        : connected
+            ? displayName
+            : unavailable
+                ? l10n.accountProfileUnavailable
+                : l10n.accountGuest;
+    final subtitle = accountState.isLoading
+        ? ''
+        : connected
+            ? l10n.accountSignedInWithGoogle
+            : unavailable
+                ? l10n.accountProfileUnavailableDetail
+                : l10n.accountGuestContinueMessage;
+    final photoUrl = connected ? _safeGooglePhotoUrl(account?.photoUrl) : null;
+    final avatarLabel = connected
+        ? '$displayName, ${l10n.accountGoogleAuth}'
+        : title;
+
+    return Card(
+      key: const Key('account_google_profile_card'),
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Row(
+          children: [
+            Semantics(
+              label: avatarLabel,
+              image: true,
+              child: CircleAvatar(
+                radius: 28,
+                backgroundColor:
+                    Theme.of(context).colorScheme.secondaryContainer,
+                child: photoUrl == null
+                    ? const Icon(Icons.person_outline_rounded, size: 30)
+                    : ClipOval(
+                        child: Image.network(
+                          photoUrl,
+                          width: 56,
+                          height: 56,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, progress) =>
+                              progress == null
+                                  ? child
+                                  : const Icon(
+                                      Icons.person_outline_rounded,
+                                      size: 30,
+                                    ),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                                Icons.person_outline_rounded,
+                                size: 30,
+                              ),
+                        ),
+                      ),
+              ),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  if (email != null) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      email,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                  if (subtitle.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+String? _safeGooglePhotoUrl(String? value) {
+  final raw = value?.trim();
+  if (raw == null || raw.isEmpty) return null;
+  final uri = Uri.tryParse(raw);
+  if (uri == null ||
+      uri.scheme.toLowerCase() != 'https' ||
+      uri.host.isEmpty) {
+    return null;
+  }
+  return raw;
+}
+
+class _ResetQazaCounterRowclass _ResetQazaCounterRow extends ConsumerWidget {
   const _ResetQazaCounterRow();
 
   @override
@@ -88,14 +270,22 @@ class _ResetQazaCounterRow extends ConsumerWidget {
 }
 
 class _CloudBackupCard extends ConsumerStatefulWidget {
-  const _CloudBackupCard({super.key});
+  const _CloudBackupCard({
+    super.key,
+    required this.accountSnapshot,
+    required this.accountLoading,
+    required this.onAccountChanged,
+  });
+
+  final CloudAccountSnapshot accountSnapshot;
+  final bool accountLoading;
+  final ValueChanged<CloudAccountSnapshot> onAccountChanged;
 
   @override
   ConsumerState<_CloudBackupCard> createState() => _CloudBackupCardState();
 }
 
 class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
-  CloudAccountSnapshot _account = const CloudAccountSnapshot.disconnected();
   CloudSyncSnapshot _sync = const CloudSyncSnapshot.disconnected();
   bool _busy = false;
   String? _message;
@@ -107,13 +297,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   }
 
   Future<void> _refresh() async {
-    final account = await ref.read(cloudAccountProvider).restore();
     final sync = await ref.read(cloudSyncProvider).status();
     if (!mounted) return;
     setState(() {
-      _account = account;
       _sync = sync;
-      _message = account.message ?? sync.message;
+      _message = widget.accountSnapshot.message ?? sync.message;
     });
   }
 
@@ -125,8 +313,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     final account = await ref.read(cloudAccountProvider).signIn();
     final sync = await ref.read(cloudSyncProvider).status();
     if (!mounted) return;
+    widget.onAccountChanged(account);
     setState(() {
-      _account = account;
       _sync = sync;
       _message = account.message ?? sync.message;
       _busy = false;
@@ -159,7 +347,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     });
     try {
       await ref.read(cloudAccountProvider).disconnect();
-      await _refresh();
+      widget.onAccountChanged(const CloudAccountSnapshot.disconnected());
+      final sync = await ref.read(cloudSyncProvider).status();
+      if (!mounted) return;
+      setState(() {
+        _sync = sync;
+        _message = sync.message;
+      });
     } catch (error) {
       if (mounted) setState(() => _message = error.toString());
     } finally {
@@ -329,10 +523,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final connected = _account.isConnected;
-    final displayName = _account.displayName?.trim().isNotEmpty == true
-        ? _account.displayName!.trim()
-        : _account.email;
+    final connected = widget.accountSnapshot.isConnected;
+    final displayName =
+        widget.accountSnapshot.displayName?.trim().isNotEmpty == true
+            ? widget.accountSnapshot.displayName!.trim()
+            : widget.accountSnapshot.email?.trim();
     final lastBackup = _sync.lastSuccessAt == null
         ? l10n.cloudNeverBackedUp
         : '${MaterialLocalizations.of(context).formatMediumDate(
@@ -364,7 +559,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                       const SizedBox(height: 4),
                       Text(
                         connected
-                            ? '${l10n.cloudConnected}: ${displayName ?? ''}'
+                            ? displayName == null || displayName.isEmpty
+                                ? l10n.cloudConnected
+                                : '${l10n.cloudConnected}: $displayName'
                             : l10n.cloudNotConnected,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
@@ -374,7 +571,18 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               ],
             ),
             const SizedBox(height: 12),
-            if (!connected)
+            if (widget.accountLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(
+                  child: SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  ),
+                ),
+              )
+            else if (!connected)
               FilledButton.icon(
                 onPressed: _busy ? null : _connect,
                 icon: const Icon(Icons.login_rounded),
@@ -445,7 +653,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 _message!,
                 style: TextStyle(
                   color: _sync.status == CloudSyncStatus.failed ||
-                          _account.status == CloudAccountStatus.failed
+                          widget.accountSnapshot.status ==
+                              CloudAccountStatus.failed
                       ? Theme.of(context).colorScheme.error
                       : Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

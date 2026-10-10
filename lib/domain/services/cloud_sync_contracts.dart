@@ -10,6 +10,7 @@ class CloudAccountSnapshot {
     required this.status,
     this.displayName,
     this.email,
+    this.photoUrl,
     this.message,
   });
 
@@ -17,23 +18,27 @@ class CloudAccountSnapshot {
       : status = CloudAccountStatus.unavailable,
         displayName = null,
         email = null,
+        photoUrl = null,
         message = null;
 
   const CloudAccountSnapshot.disconnected()
       : status = CloudAccountStatus.disconnected,
         displayName = null,
         email = null,
+        photoUrl = null,
         message = null;
 
   const CloudAccountSnapshot.failed(String value)
       : status = CloudAccountStatus.failed,
         displayName = null,
         email = null,
+        photoUrl = null,
         message = value;
 
   final CloudAccountStatus status;
   final String? displayName;
   final String? email;
+  final String? photoUrl;
   final String? message;
 
   bool get isConnected => status == CloudAccountStatus.connected;

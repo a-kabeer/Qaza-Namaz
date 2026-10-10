@@ -1165,6 +1165,9 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Account'**
   String get accountTitle;
+  String get accountProfileChecking;
+  String get accountProfileUnavailable;
+  String get accountProfileUnavailableDetail;
 
   /// No description provided for @accountGuest.
   ///
