@@ -567,7 +567,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                       Text(
                         widget.accountLoading
                             ? l10n.accountProfileChecking
-                            : _sync.status == CloudSyncStatus.reconnectRequired
+                            : _sync.status ==
+                                    CloudSyncStatus.reconnectRequired
                                 ? l10n.cloudNotConnected
                                 : connected
                                     ? displayName == null || displayName.isEmpty
