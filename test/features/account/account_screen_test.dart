@@ -40,30 +40,31 @@ void main() {
   testWidgets(
     'account omits redundant device and progress intro cards',
     (tester) async {
-    final database = AppDatabase(NativeDatabase.memory());
-    final manager = await _createSession(database);
-    final container = ProviderContainer(
-      overrides: [
-        accountSessionManagerProvider.overrideWith((ref) => manager),
-        progressSummaryProvider.overrideWith(
-          (ref) async => QazaProgressSummary.empty(),
-        ),
-      ],
-    );
-    addTearDown(container.dispose);
-    addTearDown(database.close);
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final container = ProviderContainer(
+        overrides: [
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
 
-    await tester.pumpWidget(_app(container, const AccountScreen()));
-    await tester.pump();
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pump();
 
-    expect(find.text('This device'), findsNothing);
-    expect(find.text('Your data is stored on this device'), findsNothing);
-    expect(find.text('Keep your progress safe'), findsNothing);
-    expect(find.text('Account'), findsOneWidget);
-    expect(find.text('Continue with Google'), findsNothing);
-    expect(find.text('Automatic backup'), findsNothing);
-    expect(find.text('Sign out'), findsNothing);
-  });
+      expect(find.text('This device'), findsNothing);
+      expect(find.text('Your data is stored on this device'), findsNothing);
+      expect(find.text('Keep your progress safe'), findsNothing);
+      expect(find.text('Account'), findsOneWidget);
+      expect(find.text('Continue with Google'), findsNothing);
+      expect(find.text('Automatic backup'), findsNothing);
+      expect(find.text('Sign out'), findsNothing);
+    },
+  );
 
   testWidgets('Account owns data management and reset actions', (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
