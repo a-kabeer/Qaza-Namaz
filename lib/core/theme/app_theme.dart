@@ -282,6 +282,7 @@ class AppTheme {
     );
   }
 
+  /// Replaces generated surface roles with stable app-owned design tokens.
   static ColorScheme _withSurfaceTokens(
     ColorScheme scheme,
     Brightness brightness,
