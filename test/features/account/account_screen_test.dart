@@ -59,12 +59,19 @@ class _FakeCloudAccountProvider extends UnsupportedCloudAccountProvider {
 }
 
 class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
+  _FakeCloudSyncProvider({
+    this.snapshot = const CloudSyncSnapshot(
+      status: CloudSyncStatus.disconnected,
+    ),
+  });
+
+  final CloudSyncSnapshot snapshot;
+
   @override
   bool get isSupported => true;
 
   @override
-  Future<CloudSyncSnapshot> status() async =>
-      const CloudSyncSnapshot(status: CloudSyncStatus.disconnected);
+  Future<CloudSyncSnapshot> status() async => snapshot;
 }
 
 void main() {
@@ -322,4 +329,47 @@ void main() {
     expect(find.byKey(const Key('account_data_management')), findsNothing);
     expect(find.byKey(const Key('account_reset_qaza_counter')), findsNothing);
   });
+  testWidgets(
+    'cached Google identity is shown as reconnect required without signing in',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot.reconnectRequired(
+          displayName: 'Saved User',
+          email: 'saved@example.com',
+          photoUrl: 'https://example.invalid/saved.png',
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith(
+            (ref) => _FakeCloudSyncProvider(
+              snapshot: const CloudSyncSnapshot(
+                status: CloudSyncStatus.reconnectRequired,
+                automaticSyncEnabled: true,
+              ),
+            ),
+          ),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Saved User'), findsOneWidget);
+      expect(find.text('saved@example.com'), findsOneWidget);
+      expect(find.text('Signed in with Google'), findsNothing);
+      expect(find.text('Connect Google'), findsOneWidget);
+      expect(find.byKey(const Key('account_daily_cloud_backup')), findsNothing);
+    },
+  );
+
 }
