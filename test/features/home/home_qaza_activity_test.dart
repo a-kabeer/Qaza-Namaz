@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/utils/chart_animation_policy.dart';
 import 'package:qaza_namaz/domain/entities/qaza_activity.dart';
 import 'package:qaza_namaz/features/home/providers/home_providers.dart';
 import 'package:qaza_namaz/features/home/widgets/home_qaza_activity.dart';
@@ -75,7 +76,10 @@ void main() {
     );
   }
 
-  Widget buildInteractiveWidget(QazaActivityPeriod period) {
+  Widget buildInteractiveWidget(
+    QazaActivityPeriod period, {
+    bool disableAnimations = false,
+  }) {
     return ProviderScope(
       overrides: [
         homeLocalDateProvider.overrideWithValue(period.today),
@@ -93,9 +97,16 @@ void main() {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
           useMaterial3: true,
         ),
-        home: const Scaffold(
-          body: SingleChildScrollView(
-            child: HomeQazaActivity(),
+        home: Builder(
+          builder: (context) => MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              disableAnimations: disableAnimations,
+            ),
+            child: const Scaffold(
+              body: SingleChildScrollView(
+                child: HomeQazaActivity(),
+              ),
+            ),
           ),
         ),
       ),
@@ -149,6 +160,62 @@ void main() {
         chart.data.titlesData.leftTitles.sideTitles.interval,
         20,
       );
+    },
+  );
+
+  testWidgets(
+    'weekly and yearly bar charts use the shared animation policy',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 9, 30),
+        completedOnWednesday: 2,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      var chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_week_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      expect(chart.duration, ChartAnimationPolicy.duration);
+      expect(chart.curve, ChartAnimationPolicy.curve);
+
+      await tester.tap(find.text('Yearly'));
+      await tester.pumpAndSettle();
+
+      chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_year_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      expect(chart.duration, ChartAnimationPolicy.duration);
+      expect(chart.curve, ChartAnimationPolicy.curve);
+      expect(chart.data.barGroups, hasLength(12));
+    },
+  );
+
+  testWidgets(
+    'bar chart transitions are disabled when reduced animations are requested',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 9, 30),
+        completedOnWednesday: 2,
+      );
+      await tester.pumpWidget(
+        buildInteractiveWidget(period, disableAnimations: true),
+      );
+      await tester.pumpAndSettle();
+
+      final chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_week_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      expect(chart.duration, Duration.zero);
     },
   );
 

@@ -8,6 +8,7 @@ import '../../../app/providers.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/constants/prayer_types.dart';
+import '../../../core/utils/chart_animation_policy.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../domain/entities/qaza_activity.dart';
 import '../../../domain/services/qaza_activity_service.dart';
@@ -874,6 +875,8 @@ class _ActivityBarChart extends StatelessWidget {
                 ),
             ],
           ),
+          duration: ChartAnimationPolicy.durationFor(context),
+          curve: ChartAnimationPolicy.curve,
         ),
       ),
     );
