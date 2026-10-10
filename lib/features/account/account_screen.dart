@@ -555,11 +555,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        connected
-                            ? displayName == null || displayName.isEmpty
-                                ? l10n.cloudConnected
-                                : '${l10n.cloudConnected}: $displayName'
-                            : l10n.cloudNotConnected,
+                        widget.accountLoading
+                            ? l10n.accountProfileChecking
+                            : connected
+                                ? displayName == null || displayName.isEmpty
+                                    ? l10n.cloudConnected
+                                    : '${l10n.cloudConnected}: $displayName'
+                                : l10n.cloudNotConnected,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
