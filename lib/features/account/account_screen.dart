@@ -305,8 +305,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     if (!mounted) return;
     setState(() {
       _sync = sync;
-      _message = widget.accountSnapshot.status ==
-              CloudAccountStatus.reconnectRequired
+      _message = sync.status == CloudSyncStatus.reconnectRequired ||
+              widget.accountSnapshot.status ==
+                  CloudAccountStatus.reconnectRequired
           ? AppLocalizations.of(context).accountProfileUnavailableDetail
           : widget.accountSnapshot.message ?? sync.message;
     });
@@ -567,11 +568,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                       Text(
                         widget.accountLoading
                             ? l10n.accountProfileChecking
-                            : connected
-                                ? displayName == null || displayName.isEmpty
-                                    ? l10n.cloudConnected
-                                    : '${l10n.cloudConnected}: $displayName'
-                                : l10n.cloudNotConnected,
+                            : _sync.status == CloudSyncStatus.reconnectRequired
+                                ? l10n.cloudNotConnected
+                                : connected
+                                    ? displayName == null || displayName.isEmpty
+                                        ? l10n.cloudConnected
+                                        : '${l10n.cloudConnected}: $displayName'
+                                    : l10n.cloudNotConnected,
                         style: Theme.of(context).textTheme.bodyMedium,
                       ),
                     ],
@@ -591,7 +594,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                   ),
                 ),
               )
-            else if (!connected)
+            else if (_sync.status == CloudSyncStatus.reconnectRequired ||
+                !connected)
               FilledButton.icon(
                 onPressed: _busy ? null : _connect,
                 icon: const Icon(Icons.login_rounded),
