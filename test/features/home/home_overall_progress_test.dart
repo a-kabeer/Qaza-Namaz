@@ -128,6 +128,76 @@ void main() {
     },
   );
 
+  testWidgets(
+    'donut arc and percentage update together when progress changes',
+    (tester) async {
+      var progress = const QazaProgress(pending: 8, completed: 2);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: const Locale('en'),
+          theme: ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+            useMaterial3: true,
+          ),
+          home: StatefulBuilder(
+            builder: (context, setState) => Scaffold(
+              body: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    HomeOverallProgress(
+                      progress: progress,
+                      onDetails: () {},
+                    ),
+                    TextButton(
+                      key: const Key('update_overall_progress'),
+                      onPressed: () {
+                        setState(() {
+                          progress = const QazaProgress(
+                            pending: 3,
+                            completed: 7,
+                          );
+                        });
+                      },
+                      child: const Text('Update progress'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(chart(tester).data.sections[0].value, 0.2);
+      expect(
+        tester.widget<Text>(
+          find.byKey(const Key('home_overall_percent')),
+        ).data,
+        '20%',
+      );
+
+      await tester.tap(find.byKey(const Key('update_overall_progress')));
+      await tester.pump();
+
+      expect(chart(tester).duration, ChartAnimationPolicy.duration);
+      expect(chart(tester).curve, ChartAnimationPolicy.curve);
+      expect(chart(tester).data.sections[0].value, 0.7);
+      expect(chart(tester).data.sections[1].value, closeTo(0.3, 0.00001));
+      expect(
+        tester.widget<Text>(
+          find.byKey(const Key('home_overall_percent')),
+        ).data,
+        '70%',
+      );
+
+      await tester.pumpAndSettle();
+    },
+  );
+
   testWidgets('donut chart colors adapt to both theme brightnesses', (
     tester,
   ) async {
