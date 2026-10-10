@@ -168,8 +168,22 @@ final appDatabaseProvider = Provider<AppDatabase>((ref) {
   return database;
 });
 
-final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) {
-  return ref.watch(appDatabaseProvider).isCloudSetupChoiceComplete();
+final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
+  final database = ref.watch(appDatabaseProvider);
+  if (await database.isCloudSetupChoiceComplete()) return true;
+
+  // Migration compatibility: installations from before the explicit choice
+  // marker existed must not be forced back through first-run account choice.
+  // A completed onboarding marker or an existing profile proves this is not a
+  // genuinely new installation. Persist the inferred completion once.
+  final route = await ref.read(appRouteProvider.future);
+  final profile = await ref.read(userProfileProvider.future);
+  if (route == AppRoute.home || profile != null) {
+    await database.markCloudSetupChoiceComplete();
+    return true;
+  }
+
+  return false;
 });
 
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
