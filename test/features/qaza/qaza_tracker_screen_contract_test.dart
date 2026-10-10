@@ -32,7 +32,10 @@ void main() {
     expect(source, contains('l10n.qazaTrackerSwipeHint'));
     expect(source, contains('showQazaUndoFeedback('));
     expect(source, contains('onTap: onTap'));
-    expect(source, contains('class _PendingRecordDetails extends StatelessWidget'));
+    expect(
+      source,
+      contains('class _PendingRecordDetails extends StatelessWidget'),
+    );
     expect(source, contains("Key('qaza_pending_mark_completed')"));
     expect(source, contains('canComplete: canAct'));
     expect(
