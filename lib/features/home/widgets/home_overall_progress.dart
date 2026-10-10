@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/chart_animation_policy.dart';
 import '../../../core/utils/date_formatters.dart';
 import '../../../domain/entities/qaza_progress.dart';
 import '../../../l10n/app_localizations.dart';
@@ -115,6 +116,7 @@ class _OverviewDonut extends StatelessWidget {
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final charts = AppChartColors.of(context);
+    final chartProgress = progress.clamp(0.0, 1.0).toDouble();
 
     return SizedBox(
       key: const Key('home_overall_donut'),
@@ -130,23 +132,24 @@ class _OverviewDonut extends StatelessWidget {
               startDegreeOffset: -90,
               sections: [
                 PieChartSectionData(
-                  value: progress.clamp(0.0, 1.0).toDouble(),
+                  value: chartProgress,
                   color: scheme.primary,
                   radius: 16,
                   showTitle: false,
                 ),
                 PieChartSectionData(
-                  value: (1 - progress).clamp(0.0, 1.0).toDouble(),
+                  value: 1 - chartProgress,
                   color: charts.track,
                   radius: 16,
                   showTitle: false,
                 ),
               ],
             ),
-            duration: Duration.zero,
+            duration: ChartAnimationPolicy.durationFor(context),
+            curve: ChartAnimationPolicy.curve,
           ),
           Text(
-            '${(progress * 100).round()}%',
+            '${(chartProgress * 100).round()}%',
             key: const Key('home_overall_percent'),
             style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                   fontWeight: FontWeight.w700,
