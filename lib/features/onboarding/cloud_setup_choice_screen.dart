@@ -62,6 +62,11 @@ class _CloudSetupChoiceScreenState
       if (account.isConnected) {
         _accountConnected = true;
         await _discoverBackup();
+      } else if (account.status == CloudAccountStatus.reconnectRequired) {
+        // There is an existing cloud opt-in, even though this process has no
+        // resolved account. If the user explicitly chooses local-only setup,
+        // _continueLocally must also stop that existing scheduled sync.
+        _cloudAttempted = true;
       } else if (account.status == CloudAccountStatus.failed) {
         _cloudAttempted = true;
         setState(() => _error = account.message ??
