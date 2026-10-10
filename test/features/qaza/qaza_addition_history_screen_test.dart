@@ -90,6 +90,19 @@ void main() {
     expect(source, contains('AnimatedSize('));
   });
 
+  test('History refreshes after returning from addition details', () {
+    final source = File('lib/features/qaza/qaza_addition_history_screen.dart')
+        .readAsStringSync();
+
+    final openDetail = source.indexOf(
+      'await openQazaAdditionDetail(context, widget.item.addition.id);',
+    );
+    final refresh = source.indexOf('await widget.controller.refresh();');
+
+    expect(openDetail, greaterThanOrEqualTo(0));
+    expect(refresh, greaterThan(openDetail));
+  });
+
   test('Add Qaza selection summary reuses the shared date helper', () {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
