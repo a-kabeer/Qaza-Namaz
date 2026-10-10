@@ -18,6 +18,60 @@ class CloudSyncEngine {
   final CloudRemoteStore _remote;
   final CloudSyncStateStore _state;
 
+  /// Finds a remote backup without uploading, importing, or changing the sync
+  /// cursor. The returned candidate must still pass resolveConflict's identity
+  /// checks and explicit confirmation before any local replacement.
+  Future<CloudBackupDiscoveryResult> discoverBackup({
+    bool allowInteractive = true,
+  }) async {
+    if (!await _state.isCloudSyncEnabled()) {
+      return CloudBackupDiscoveryResult.failed('Cloud sync is disabled.');
+    }
+
+    CloudRemoteSnapshot? remote;
+    try {
+      remote = await _remote.latest(allowInteractive: allowInteractive);
+    } catch (error) {
+      return CloudBackupDiscoveryResult.failed(
+        'Cloud backup discovery failed: $error',
+      );
+    }
+    if (remote == null) return CloudBackupDiscoveryResult.noBackup();
+
+    try {
+      // This validates required tables, rows and schema compatibility without
+      // importing or mutating the local database.
+      await _phase1.validateBackup(remote.backup.phase1BackupJson);
+    } catch (error) {
+      return CloudBackupDiscoveryResult.invalidBackup(
+        'The cloud backup is invalid or incompatible: $error',
+      );
+    }
+
+    try {
+      final cursor = await _state.readCursor();
+      final deviceId = await _state.deviceId();
+      final localRevision = await _phase1.readDbRevision();
+      final localPreview = await _localPreview();
+      return CloudBackupDiscoveryResult.found(
+        CloudConflict(
+          localDeviceId: deviceId,
+          localTimestamp: localPreview.timestamp,
+          localRevision: localRevision,
+          localBaseBackupId: cursor.lastSyncedBackupId,
+          remoteLineage: remote.backup.lineage,
+          remoteTimestamp: remote.modifiedAt,
+          remoteVersion: remote.remoteVersion,
+          lastSyncedBackupId: cursor.lastSyncedBackupId,
+        ),
+      );
+    } catch (error) {
+      return CloudBackupDiscoveryResult.failed(
+        'Could not prepare a safe backup restore: $error',
+      );
+    }
+  }
+
   Future<CloudSyncResult> sync({bool allowInteractive = false}) async {
     if (!await _state.isCloudSyncEnabled()) {
       return CloudSyncResult.skipped('Cloud sync is disabled.');
