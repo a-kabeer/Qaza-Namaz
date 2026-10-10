@@ -230,7 +230,6 @@ void main() {
     expect(manager.activeAccount, isNotNull);
   });
 
-
   testWidgets('guest profile supports Urdu RTL layout', (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = await _createSession(database);
