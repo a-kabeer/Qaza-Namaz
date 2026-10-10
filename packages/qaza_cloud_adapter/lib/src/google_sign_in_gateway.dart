@@ -34,16 +34,18 @@ class GoogleSignInGateway {
     await _signIn.signOut();
   });
 
-  /// Reads the plugin's already-resolved account only.
+  /// Reads only an account that is already resolved in this process.
   ///
-  /// Do not call attemptLightweightAuthentication here: some Android plugin
-  /// states surface the account chooser, which is inappropriate during startup,
-  /// Account navigation, or a background task.
+  /// This deliberately does not call attemptLightweightAuthentication: some
+  /// Android plugin states surface an account chooser during passive restore.
+  Future<GoogleSignInAccount?> currentAccount() => _serialized(() async {
+    await _initializeUnlocked();
+    return _signIn.currentUser;
+  });
+
+  /// Kept as a compatibility alias; this is now a read-only lookup.
   Future<GoogleSignInAccount?> restoreLightweightAuthentication() =>
-      _serialized(() async {
-        await _initializeUnlocked();
-        return _signIn.currentUser;
-      });
+      currentAccount();
 
   Future<http.Client?> authorizeDrive({required bool allowInteractive}) =>
       _serialized(() async {
