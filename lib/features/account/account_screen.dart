@@ -114,6 +114,9 @@ class _GoogleProfileCard extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final account = accountState.valueOrNull;
     final connected = account?.isConnected ?? false;
+    final reconnectRequired =
+        account?.status == CloudAccountStatus.reconnectRequired;
+    final identityAvailable = connected || reconnectRequired;
     final unavailable =
         accountState.hasError || account?.status == CloudAccountStatus.failed;
     final rawName = account?.displayName?.trim();
@@ -128,7 +131,7 @@ class _GoogleProfileCard extends StatelessWidget {
         : null;
     final title = accountState.isLoading
         ? l10n.accountProfileChecking
-        : connected
+        : identityAvailable
             ? displayName
             : unavailable
                 ? l10n.accountProfileUnavailable
@@ -137,10 +140,14 @@ class _GoogleProfileCard extends StatelessWidget {
         ? ''
         : connected
             ? l10n.accountSignedInWithGoogle
-            : unavailable
+            : reconnectRequired
                 ? l10n.accountProfileUnavailableDetail
-                : l10n.accountGuestContinueMessage;
-    final photoUrl = connected ? _safeGooglePhotoUrl(account?.photoUrl) : null;
+                : unavailable
+                    ? l10n.accountProfileUnavailableDetail
+                    : l10n.accountGuestContinueMessage;
+    final photoUrl = identityAvailable
+        ? _safeGooglePhotoUrl(account?.photoUrl)
+        : null;
     final avatarLabel =
         connected ? '$displayName, ${l10n.accountGoogleAuth}' : title;
 
@@ -298,7 +305,10 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     if (!mounted) return;
     setState(() {
       _sync = sync;
-      _message = widget.accountSnapshot.message ?? sync.message;
+      _message = widget.accountSnapshot.status ==
+              CloudAccountStatus.reconnectRequired
+          ? AppLocalizations.of(context).accountProfileUnavailableDetail
+          : widget.accountSnapshot.message ?? sync.message;
     });
   }
 
