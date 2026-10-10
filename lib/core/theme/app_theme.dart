@@ -402,6 +402,10 @@ class AppTypography extends ThemeExtension<AppTypography> {
   }
 }
 
+/// Chart-specific roles for prayer-series identity, status, grid and track.
+///
+/// Generic accents are intentionally not duplicated here: progress indicators
+/// and the overall-progress chart use the active `ColorScheme.primary`.
 @immutable
 class AppChartColors extends ThemeExtension<AppChartColors> {
   const AppChartColors({
@@ -414,7 +418,6 @@ class AppChartColors extends ThemeExtension<AppChartColors> {
     required this.completed,
     required this.pending,
     required this.total,
-    required this.primary,
     required this.grid,
     required this.track,
   });
@@ -428,7 +431,6 @@ class AppChartColors extends ThemeExtension<AppChartColors> {
   final Color completed;
   final Color pending;
   final Color total;
-  final Color primary;
   final Color grid;
   final Color track;
 
@@ -445,7 +447,6 @@ class AppChartColors extends ThemeExtension<AppChartColors> {
     completed: AppColors.chartCompleted,
     pending: AppColors.chartPending,
     total: AppColors.chartTotal,
-    primary: AppColors.lightChartPrimary,
     grid: AppColors.lightChartGrid,
     track: AppColors.lightChartTrack,
   );
@@ -460,7 +461,6 @@ class AppChartColors extends ThemeExtension<AppChartColors> {
     completed: AppColors.chartCompleted,
     pending: AppColors.chartPending,
     total: AppColors.chartTotal,
-    primary: AppColors.darkChartPrimary,
     grid: AppColors.darkChartGrid,
     track: AppColors.darkChartTrack,
   );
@@ -489,7 +489,6 @@ class AppChartColors extends ThemeExtension<AppChartColors> {
     Color? completed,
     Color? pending,
     Color? total,
-    Color? primary,
     Color? grid,
     Color? track,
   }) =>
@@ -503,7 +502,6 @@ class AppChartColors extends ThemeExtension<AppChartColors> {
         completed: completed ?? this.completed,
         pending: pending ?? this.pending,
         total: total ?? this.total,
-        primary: primary ?? this.primary,
         grid: grid ?? this.grid,
         track: track ?? this.track,
       );
@@ -523,7 +521,6 @@ class AppChartColors extends ThemeExtension<AppChartColors> {
       completed: mix(completed, other.completed),
       pending: mix(pending, other.pending),
       total: mix(total, other.total),
-      primary: mix(primary, other.primary),
       grid: mix(grid, other.grid),
       track: mix(track, other.track),
     );

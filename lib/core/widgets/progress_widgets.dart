@@ -27,7 +27,7 @@ class ProgressRing extends StatelessWidget {
             value: progress,
             strokeWidth: strokeWidth,
             backgroundColor: charts.track,
-            color: charts.primary,
+            color: scheme.primary,
           ),
           Text(
             '${(progress * 100).round()}%',
