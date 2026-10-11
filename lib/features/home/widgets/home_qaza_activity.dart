@@ -980,7 +980,7 @@ class _InlineMonthlyDetail extends ConsumerWidget {
                         key: const Key('home_activity_selected_day_details'),
                         range: _ActivityRange.monthly,
                         anchor: normalizedMonth,
-                        selectedDay: selectedDay,
+                        selectedDay: selectedDay!,
                       ),
                     ),
             ),
