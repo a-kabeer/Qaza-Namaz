@@ -13,6 +13,6 @@ The application keeps the actual GPS latitude/longitude for `source=current`; th
 
 ## Attribution
 
-GeoNames data is licensed under CC BY 4.0. The application displays the attribution exposed by `geonames_offline` in Settings > About.
+GeoNames data is licensed under CC BY 4.0. The application displays the attribution exposed by `geonames_offline` in the dedicated Settings > About > Licenses screen.
 
 The `geonames_offline` package documentation requires downstream applications that ship its data to display its attribution.
