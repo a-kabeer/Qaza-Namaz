@@ -734,7 +734,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 contentPadding: EdgeInsets.zero,
                 value: _sync.automaticSyncEnabled,
                 onChanged: _busy ? null : _toggleAutomaticBackup,
-                title: Text(_isUrdu ? 'خودکار بیک اپ' : 'Automatic backup'),
+                title: Text(l10n.cloudAutomaticBackup),
               ),
               const SizedBox(height: 4),
               DropdownButtonFormField<CloudBackupFrequency>(
