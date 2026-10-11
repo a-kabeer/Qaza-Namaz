@@ -125,11 +125,12 @@ the active runtime's HTTP client. If Drive returns HTTP 401, the native token
 cache is cleared so the next attempt can request a replacement.
 
 Account restoration declares the connection ready only after Drive authorization
-has been obtained non-interactively. Cached name/email/photo are display
-metadata, not proof of authentication. The authorization API uses the default
-account selected during foreground Google sign-in; because its response does
-not itself include account identity, the UI must not infer account identity
-from the cached fields alone.
+has been obtained non-interactively. On Android, the native request explicitly
+targets the previously connected email using Android's account selector, then
+validates the returned access token and exact Drive scope. The cached email is
+only an account selector; cached name/email/photo never prove authorization by
+themselves. Real-device testing must verify that the Google account selected
+during initial sign-in is the one used by the background authorization request.
 
 If the native authorization client reports that a resolution is needed, the
 worker skips without opening UI and persists reconnect-required. It preserves
