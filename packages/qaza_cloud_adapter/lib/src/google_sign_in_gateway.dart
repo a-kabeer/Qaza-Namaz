@@ -63,13 +63,20 @@ class GoogleSignInGateway {
         await _initializeUnlocked();
 
         // WorkManager runs in a separate Flutter engine and cannot depend on
-        // this gateway's in-memory GoogleSignInAccount. On Android, ask the
-        // native Identity AuthorizationClient for an already-granted token.
-        // That API can refresh its native token cache; if authorization needs
-        // a resolution, the native plugin reports it without launching UI.
-        if (!allowInteractive &&
-            defaultTargetPlatform == TargetPlatform.android) {
-          return _authorizeDriveSilentlyOnAndroid();
+        // this gateway's in-memory GoogleSignInAccount. A foreground caller
+        // can also be a fresh runtime (for example, Backup Now after relaunch).
+        // Try the native authorization path first whenever this runtime has no
+        // account object, or when interaction is forbidden. A valid existing
+        // grant then works without another sign-in sheet.
+        if (defaultTargetPlatform == TargetPlatform.android &&
+            (!allowInteractive || _resolvedAccount == null)) {
+          try {
+            return await _authorizeDriveSilentlyOnAndroid();
+          } on CloudAuthorizationUnavailable {
+            // A foreground user action may now complete authentication or
+            // consent. Background callers must never fall through to UI.
+            if (!allowInteractive) rethrow;
+          }
         }
 
         var user = _resolvedAccount;
