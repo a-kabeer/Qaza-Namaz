@@ -99,7 +99,8 @@ void main() {
     expect(source, contains('static const double _timeWidth = 82;'));
     expect(source, contains('width: _countdownWidth'));
     expect(source, contains('width: _timeWidth'));
-    expect(source, contains('restricted ? _buildRestrictedContent('));
+    expect(source, contains('child: restricted'));
+    expect(source, contains('? _buildRestrictedContent('));
     expect(source, contains('fit: BoxFit.scaleDown'));
     expect(source, contains('margin: EdgeInsets.zero'));
     expect(source, contains('this.icon'));
