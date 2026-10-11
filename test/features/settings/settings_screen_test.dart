@@ -198,6 +198,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.textContaining('Noto Nastaliq Urdu'), findsWidgets);
+      expect(find.textContaining('SQLite3MultipleCiphers'), findsWidgets);
     },
   );
 }
