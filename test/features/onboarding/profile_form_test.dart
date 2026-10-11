@@ -250,6 +250,7 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
   testWidgets(
     'DOB field expands and collapses the inline selector',
     (tester) async {
@@ -289,4 +290,59 @@ void main() {
       expect(find.byType(AlertDialog), findsNothing);
     },
   );
+
+  testWidgets(
+    'DOB cancel discards unconfirmed changes',
+    (tester) async {
+      final originalDob = DateTime(2000, 2, 29);
+      UserProfile? changed;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: UserProfile(
+                languageCode: 'en',
+                dateOfBirth: originalDob,
+              ),
+              onChanged: (profile) => changed = profile,
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_dob')),
+        300,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.tap(find.byKey(const Key('profile_dob')));
+      await tester.pumpAndSettle();
+
+      final yearFinder = find.byKey(const Key('profile_dob_year'));
+      await tester.ensureVisible(yearFinder);
+      await tester.tap(yearFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('2001').last);
+      await tester.pumpAndSettle();
+
+      final cancelFinder = find.byKey(const Key('profile_dob_cancel'));
+      await tester.ensureVisible(cancelFinder);
+      await tester.tap(cancelFinder);
+      await tester.pumpAndSettle();
+
+      expect(changed, isNull);
+      expect(find.text('29/02/2000'), findsOneWidget);
+      expect(
+        find.byKey(const Key('profile_dob_picker_panel')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
 }
