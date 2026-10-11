@@ -40,8 +40,16 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       if (!await _state.isCloudSyncEnabled()) {
         return const CloudAccountSnapshot.disconnected();
       }
+      // An unset preference means no user choice has been saved. Default to
+      // ON for connected accounts, but preserve an explicit persisted OFF.
+      if (!await _state.hasAutomaticSyncPreference()) {
+        await _state.setAutomaticSyncEnabled(true);
+      }
       if (await _state.isAutomaticSyncEnabled()) {
-        await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
+        await _scheduler.initializeAndSchedule(
+          frequency: (await _state.backupFrequency()).interval,
+          serverClientId: serverClientId,
+        );
       }
 
       final account = await _gateway.currentAccount();
@@ -150,6 +158,8 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> signIn() async {
     try {
+      final automaticPreferenceConfigured = await _state
+          .hasAutomaticSyncPreference();
       final account = await _gateway.authenticate();
 
       // Do not mark cloud backup connected until the specific Drive app-data
@@ -165,8 +175,14 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       );
       await _state.setCloudSyncEnabled(true);
       await _state.setReconnectRequired(false);
+      if (!automaticPreferenceConfigured) {
+        await _state.setAutomaticSyncEnabled(true);
+      }
       if (await _state.isAutomaticSyncEnabled()) {
-        await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
+        await _scheduler.initializeAndSchedule(
+          frequency: (await _state.backupFrequency()).interval,
+          serverClientId: serverClientId,
+        );
       }
       return CloudAccountSnapshot(
         status: CloudAccountStatus.connected,
@@ -248,6 +264,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   Future<CloudSyncSnapshot> status() async {
     final enabled = await _state.isCloudSyncEnabled();
     final automatic = await _state.isAutomaticSyncEnabled();
+    final frequency = await _state.backupFrequency();
     final reconnectRequired = enabled && await _state.isReconnectRequired();
     final pendingConflict = enabled ? await _state.readPendingConflict() : null;
     return CloudSyncSnapshot(
@@ -259,6 +276,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           ? CloudSyncStatus.reconnectRequired
           : (_syncing ? CloudSyncStatus.syncing : CloudSyncStatus.idle),
       automaticSyncEnabled: automatic,
+      backupFrequency: frequency,
       lastSuccessAt: await _state.lastSuccessfulSyncAt(),
       conflict: pendingConflict == null
           ? null
@@ -268,7 +286,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   }
 
   @override
-  Future<CloudSyncSnapshot> backupNow() async {
+  Future<CloudSyncSnapshot> backupNow({
+    CloudBackupProgressCallback? onProgress,
+  }) async {
     if (!await _state.isCloudSyncEnabled()) {
       return await _snapshot(
         CloudSyncStatus.disconnected,
@@ -277,10 +297,24 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     }
 
     _syncing = true;
+    CloudBackupProgress? latestProgress;
     try {
-      return await _snapshotFromResult(
-        await _engine().sync(allowInteractive: true),
+      final result = await _engine().sync(
+        allowInteractive: true,
+        onProgress: (progress) {
+          latestProgress = progress;
+          onProgress?.call(progress);
+        },
       );
+      // Show 100% only after the engine's upload and sync-cursor update succeed.
+      if (result.kind == CloudSyncResultKind.uploaded &&
+          latestProgress != null &&
+          latestProgress!.totalBytes > 0) {
+        onProgress?.call(
+          CloudBackupProgress.completed(totalBytes: latestProgress!.totalBytes),
+        );
+      }
+      return await _snapshotFromResult(result);
     } catch (error) {
       return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     } finally {
@@ -299,9 +333,31 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
                 'Connect a Google account before enabling automatic backup.',
           );
         }
-        await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
+        await _scheduler.initializeAndSchedule(
+          frequency: (await _state.backupFrequency()).interval,
+          serverClientId: serverClientId,
+        );
       } else {
         await _scheduler.cancel();
+      }
+      return await status();
+    } catch (error) {
+      return await _snapshot(CloudSyncStatus.failed, message: error.toString());
+    }
+  }
+
+  @override
+  Future<CloudSyncSnapshot> setAutomaticBackupFrequency(
+    CloudBackupFrequency frequency,
+  ) async {
+    try {
+      await _state.setBackupFrequency(frequency);
+      if (await _state.isCloudSyncEnabled() &&
+          await _state.isAutomaticSyncEnabled()) {
+        await _scheduler.initializeAndSchedule(
+          frequency: frequency.interval,
+          serverClientId: serverClientId,
+        );
       }
       return await status();
     } catch (error) {
@@ -314,7 +370,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     required CloudConflictInfo conflict,
     required CloudConflictChoice choice,
     required bool confirmed,
+    CloudBackupProgressCallback? onProgress,
   }) async {
+    CloudBackupProgress? latestProgress;
     try {
       final result = await _engine().resolveConflict(
         conflict: _toAdapterConflict(conflict),
@@ -323,7 +381,18 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
             : CloudConflictDecision.useRemote,
         confirmed: confirmed,
         allowInteractive: true,
+        onProgress: (progress) {
+          latestProgress = progress;
+          onProgress?.call(progress);
+        },
       );
+      if (result.kind == CloudSyncResultKind.uploaded &&
+          latestProgress != null &&
+          latestProgress!.totalBytes > 0) {
+        onProgress?.call(
+          CloudBackupProgress.completed(totalBytes: latestProgress!.totalBytes),
+        );
+      }
       return await _snapshotFromResult(result);
     } catch (error) {
       return await _snapshot(CloudSyncStatus.failed, message: error.toString());
@@ -425,6 +494,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   }) async => CloudSyncSnapshot(
     status: status,
     automaticSyncEnabled: await _state.isAutomaticSyncEnabled(),
+    backupFrequency: await _state.backupFrequency(),
     lastSuccessAt: await _state.lastSuccessfulSyncAt(),
     message: message,
     conflict: conflict,

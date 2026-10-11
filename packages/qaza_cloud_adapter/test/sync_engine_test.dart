@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
+import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 void main() {
   group('CloudSyncEngine', () {
@@ -132,17 +133,18 @@ void main() {
     });
 
     test(
-      'uploads the initial local backup when no remote backup exists',
+      'uploads the initial local backup and forwards progress events',
       () async {
         final phase1 = FakePhase1(revision: 10);
         final state = FakeState(deviceIdValue: 'device-A', cursor: null);
         final remote = FakeRemote(latestSnapshot: null);
+        final progress = <CloudBackupProgress>[];
 
         final result = await CloudSyncEngine(
           phase1: phase1,
           remote: remote,
           state: state,
-        ).sync();
+        ).sync(onProgress: progress.add);
 
         expect(result.kind, CloudSyncResultKind.uploaded);
         expect(remote.writeCount, 1);
@@ -153,6 +155,14 @@ void main() {
           remote.written!.lineage.backupId,
         );
         expect(state.cursor!.lastSyncedLocalRevision, 10);
+        expect(progress.first.stage, CloudBackupProgressStage.preparing);
+        expect(
+          progress.any(
+            (item) => item.stage == CloudBackupProgressStage.uploading,
+          ),
+          isTrue,
+        );
+        expect(progress.last.sentBytes, progress.last.totalBytes);
       },
     );
 
@@ -835,6 +845,8 @@ class FakeState implements CloudSyncStateStore {
   CloudSyncCursor? cursor;
   bool cloudEnabled;
   bool automaticEnabled;
+  bool automaticPreferenceConfigured = true;
+  CloudBackupFrequency frequency = CloudBackupFrequency.daily;
   bool reconnectRequired = false;
   DateTime? lastSuccessfulAt;
   CloudConflict? pendingConflict;
@@ -858,7 +870,6 @@ class FakeState implements CloudSyncStateStore {
   Future<void> setCloudSyncEnabled(bool enabled) async {
     cloudEnabled = enabled;
     if (!enabled) {
-      automaticEnabled = false;
       reconnectRequired = false;
     }
   }
@@ -875,11 +886,24 @@ class FakeState implements CloudSyncStateStore {
   Future<bool> isAutomaticSyncEnabled() async => automaticEnabled;
 
   @override
+  Future<bool> hasAutomaticSyncPreference() async =>
+      automaticPreferenceConfigured;
+
+  @override
+  Future<CloudBackupFrequency> backupFrequency() async => frequency;
+
+  @override
+  Future<void> setBackupFrequency(CloudBackupFrequency frequency) async {
+    this.frequency = frequency;
+  }
+
+  @override
   Future<void> setAutomaticSyncEnabled(bool enabled) async {
     if (enabled && !cloudEnabled) {
       throw const CloudAdapterException('cloud disabled');
     }
     automaticEnabled = enabled;
+    automaticPreferenceConfigured = true;
   }
 
   @override
@@ -926,9 +950,20 @@ class FakeRemote implements CloudRemoteStore {
   Future<CloudRemoteSnapshot> write(
     CloudBackup backup, {
     required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
   }) async {
     writeCount++;
     written = backup;
+    final totalBytes = backup.toJsonString().length;
+    onProgress?.call(
+      CloudBackupProgress.uploading(sentBytes: 0, totalBytes: totalBytes),
+    );
+    onProgress?.call(
+      CloudBackupProgress.uploading(
+        sentBytes: totalBytes,
+        totalBytes: totalBytes,
+      ),
+    );
     latestSnapshot = CloudRemoteSnapshot(
       fileId: 'file-' + backup.lineage.backupId,
       remoteVersion: 'new-version',

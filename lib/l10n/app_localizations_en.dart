@@ -2510,7 +2510,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudBackupNow => 'Back up now';
 
   @override
-  String get cloudAutomaticBackup => 'Daily automatic backup';
+  String get cloudAutomaticBackup => 'Automatic backup';
 
   @override
   String get cloudLastBackup => 'Last successful backup';

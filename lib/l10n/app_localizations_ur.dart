@@ -2511,7 +2511,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get cloudBackupNow => 'ابھی بیک اپ کریں';
 
   @override
-  String get cloudAutomaticBackup => 'روزانہ خودکار بیک اپ';
+  String get cloudAutomaticBackup => 'خودکار بیک اپ';
 
   @override
   String get cloudLastBackup => 'آخری کامیاب بیک اپ';

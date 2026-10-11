@@ -4344,7 +4344,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudAutomaticBackup.
   ///
   /// In en, this message translates to:
-  /// **'Daily automatic backup'**
+  /// **'Automatic backup'**
   String get cloudAutomaticBackup;
 
   /// No description provided for @cloudLastBackup.

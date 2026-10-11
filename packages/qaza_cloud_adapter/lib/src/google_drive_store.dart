@@ -1,10 +1,42 @@
 import 'dart:convert';
 
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 import 'cloud_models.dart';
 import 'google_sign_in_gateway.dart';
 import 'phase1_backup_bridge.dart';
+
+/// Streams the serialized backup in chunks and reports bytes consumed by
+/// the HTTP request body. These are stream-consumption updates, not a server
+/// acknowledgement; callers must wait for the remote write response to show
+/// 100% completion.
+Stream<List<int>> cloudUploadProgressStream(
+  List<int> bytes, {
+  CloudBackupProgressCallback? onProgress,
+}) async* {
+  // About 100 updates for large backups, but several updates for small payloads.
+  final chunkSize = bytes.length < 16 * 1024
+      ? 1024
+      : (bytes.length / 100).ceil().clamp(1024, 16 * 1024).toInt();
+  onProgress?.call(
+    CloudBackupProgress.uploading(sentBytes: 0, totalBytes: bytes.length),
+  );
+  var offset = 0;
+  while (offset < bytes.length) {
+    final end = offset + chunkSize < bytes.length
+        ? offset + chunkSize
+        : bytes.length;
+    yield bytes.sublist(offset, end);
+    offset = end;
+    onProgress?.call(
+      CloudBackupProgress.uploading(
+        sentBytes: offset,
+        totalBytes: bytes.length,
+      ),
+    );
+  }
+}
 
 class GoogleDriveAppDataStore implements CloudRemoteStore {
   GoogleDriveAppDataStore(this._auth);
@@ -74,6 +106,7 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
   Future<CloudRemoteSnapshot> write(
     CloudBackup backup, {
     required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
   }) async {
     return _withDrive<CloudRemoteSnapshot>(
       allowInteractive: allowInteractive,
@@ -94,7 +127,7 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
               'db_revision': backup.lineage.dbRevision.toString(),
             },
           uploadMedia: drive.Media(
-            Stream<List<int>>.value(bytes),
+            cloudUploadProgressStream(bytes, onProgress: onProgress),
             bytes.length,
             contentType: 'application/json',
           ),

@@ -1,5 +1,6 @@
 import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 import 'cloud_models.dart';
 
@@ -56,5 +57,6 @@ abstract interface class CloudRemoteStore {
   Future<CloudRemoteSnapshot> write(
     CloudBackup backup, {
     required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
   });
 }

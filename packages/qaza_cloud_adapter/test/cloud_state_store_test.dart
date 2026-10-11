@@ -1,18 +1,23 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
+import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('automatic cloud backup cadence is fixed to daily', () {
+  test('automatic backup cadence supports all selectable frequencies', () {
     expect(
-      normalizeCloudSyncFrequency(const Duration(minutes: 5)),
+      normalizeCloudSyncFrequency(const Duration(days: 1)),
       const Duration(days: 1),
     );
     expect(
-      normalizeCloudSyncFrequency(const Duration(hours: 1)),
-      const Duration(days: 1),
+      normalizeCloudSyncFrequency(const Duration(days: 7)),
+      const Duration(days: 7),
+    );
+    expect(
+      normalizeCloudSyncFrequency(const Duration(days: 30)),
+      const Duration(days: 30),
     );
   });
 
@@ -25,11 +30,13 @@ void main() {
 
     expect(await state.isCloudSyncEnabled(), isFalse);
     expect(await state.isAutomaticSyncEnabled(), isFalse);
+    expect(await state.hasAutomaticSyncPreference(), isFalse);
+    expect(await state.backupFrequency(), CloudBackupFrequency.daily);
     expect(await state.isReconnectRequired(), isFalse);
     expect(await state.lastSuccessfulSyncAt(), isNull);
   });
 
-  test('disabling cloud durably disables automatic sync', () async {
+  test('disabling cloud preserves the saved automatic backup choice', () async {
     final state = SharedPreferencesCloudSyncStateStore();
 
     await state.setCloudSyncEnabled(true);
@@ -41,7 +48,7 @@ void main() {
     await state.setCloudSyncEnabled(false);
 
     expect(await state.isCloudSyncEnabled(), isFalse);
-    expect(await state.isAutomaticSyncEnabled(), isFalse);
+    expect(await state.isAutomaticSyncEnabled(), isTrue);
     expect(await state.isReconnectRequired(), isFalse);
   });
 
@@ -60,6 +67,28 @@ void main() {
     await expectLater(
       state.setAutomaticSyncEnabled(true),
       throwsA(isA<CloudAdapterException>()),
+    );
+  });
+
+  test('explicit OFF is distinguishable from an unset preference', () async {
+    final state = SharedPreferencesCloudSyncStateStore();
+
+    expect(await state.hasAutomaticSyncPreference(), isFalse);
+    await state.setCloudSyncEnabled(true);
+    await state.setAutomaticSyncEnabled(false);
+
+    final restored = SharedPreferencesCloudSyncStateStore();
+    expect(await restored.hasAutomaticSyncPreference(), isTrue);
+    expect(await restored.isAutomaticSyncEnabled(), isFalse);
+  });
+
+  test('backup frequency persists across state-store recreation', () async {
+    final state = SharedPreferencesCloudSyncStateStore();
+    await state.setBackupFrequency(CloudBackupFrequency.monthly);
+
+    expect(
+      await SharedPreferencesCloudSyncStateStore().backupFrequency(),
+      CloudBackupFrequency.monthly,
     );
   });
 
