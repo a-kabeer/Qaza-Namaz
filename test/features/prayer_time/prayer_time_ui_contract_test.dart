@@ -22,6 +22,37 @@ void main() {
     expect(card, contains('softWrap: false'));
   });
 
+  test('Prayer Time focus restricted range cannot wrap', () {
+    final source =
+        File('lib/features/prayer_time/presentation/prayer_time_page.dart')
+            .readAsStringSync();
+    final start =
+        source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
+    final end = source.indexOf(
+      'class _PrayerSchedule extends StatelessWidget {',
+      start,
+    );
+
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+
+    final card = source.substring(start, end);
+    final timeTextIndex = card.indexOf('Text(\n                time,');
+    expect(timeTextIndex, greaterThanOrEqualTo(0));
+
+    final wrapperStart = card.lastIndexOf('          SizedBox(', timeTextIndex);
+    expect(wrapperStart, greaterThanOrEqualTo(0));
+    final rangeLayout = card.substring(wrapperStart, timeTextIndex);
+    expect(rangeLayout, contains('width: double.infinity'));
+    expect(rangeLayout, contains('FittedBox('));
+    expect(rangeLayout, contains('fit: BoxFit.scaleDown'));
+
+    final rangeTextEnd = card.indexOf('style:', timeTextIndex);
+    final rangeText = card.substring(timeTextIndex, rangeTextEnd);
+    expect(rangeText, contains('maxLines: 1'));
+    expect(rangeText, contains('softWrap: false'));
+  });
+
   test(
       'Qibla summary replaces the large bearing value with the shared compass visualization',
       () {
