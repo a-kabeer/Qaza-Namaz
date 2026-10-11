@@ -84,7 +84,7 @@ void main() {
     });
   });
 
-  group('Blue-violet palette contract', () {
+  group('Teal palette contract', () {
     test('uses the approved neutral surfaces and brand colors', () {
       final light = AppTheme.light();
       final dark = AppTheme.dark();
@@ -92,16 +92,32 @@ void main() {
       expect(light.scaffoldBackgroundColor, const Color(0xFFF7F8FA));
       expect(light.cardTheme.color, const Color(0xFFFFFFFF));
       expect(light.colorScheme.surface, const Color(0xFFF7F8FA));
-      expect(light.colorScheme.primary, const Color(0xFF2563EB));
-      expect(light.colorScheme.secondary, const Color(0xFF7C3AED));
+      expect(light.colorScheme.primary, const Color(0xFF01485A));
+      expect(light.colorScheme.secondary, const Color(0xFF2F7782));
+      expect(light.colorScheme.primaryContainer, const Color(0xFFD6EBEE));
+      expect(light.colorScheme.onPrimaryContainer, const Color(0xFF123F49));
+      expect(light.colorScheme.secondaryContainer, const Color(0xFFDCEFF1));
+      expect(light.colorScheme.onSecondaryContainer, const Color(0xFF174D56));
+      expect(light.colorScheme.tertiary, const Color(0xFF386F78));
+      expect(light.colorScheme.onTertiary, Colors.white);
+      expect(light.colorScheme.tertiaryContainer, const Color(0xFFE6F3F4));
+      expect(light.colorScheme.onTertiaryContainer, const Color(0xFF174D56));
       expect(light.colorScheme.onPrimary, Colors.white);
       expect(light.colorScheme.onSecondary, Colors.white);
 
       expect(dark.scaffoldBackgroundColor, const Color(0xFF09090B));
       expect(dark.cardTheme.color, const Color(0xFF18181B));
       expect(dark.colorScheme.surface, const Color(0xFF09090B));
-      expect(dark.colorScheme.primary, const Color(0xFF60A5FA));
-      expect(dark.colorScheme.secondary, const Color(0xFFC4B5FD));
+      expect(dark.colorScheme.primary, const Color(0xFF78BCC5));
+      expect(dark.colorScheme.secondary, const Color(0xFFB6DCE0));
+      expect(dark.colorScheme.primaryContainer, const Color(0xFF16434B));
+      expect(dark.colorScheme.onPrimaryContainer, const Color(0xFFD6EBEE));
+      expect(dark.colorScheme.secondaryContainer, const Color(0xFF1B4147));
+      expect(dark.colorScheme.onSecondaryContainer, const Color(0xFFDCEFF1));
+      expect(dark.colorScheme.tertiary, const Color(0xFF91CDD4));
+      expect(dark.colorScheme.onTertiary, const Color(0xFF0E3036));
+      expect(dark.colorScheme.tertiaryContainer, const Color(0xFF20474D));
+      expect(dark.colorScheme.onTertiaryContainer, const Color(0xFFE2F3F4));
       expect(dark.colorScheme.onPrimary, const Color(0xFF09090B));
       expect(dark.colorScheme.onSecondary, const Color(0xFF09090B));
     });
@@ -118,6 +134,23 @@ void main() {
           greaterThanOrEqualTo(4.5));
       expect(_contrastRatio(dark.onSecondary, dark.secondary),
           greaterThanOrEqualTo(4.5));
+
+      // Container and tertiary pairs also need readable normal-text contrast.
+      for (final pair in <(Color, Color)>[
+        (light.onPrimaryContainer, light.primaryContainer),
+        (light.onSecondaryContainer, light.secondaryContainer),
+        (light.onTertiary, light.tertiary),
+        (light.onTertiaryContainer, light.tertiaryContainer),
+        (dark.onPrimaryContainer, dark.primaryContainer),
+        (dark.onSecondaryContainer, dark.secondaryContainer),
+        (dark.onTertiary, dark.tertiary),
+        (dark.onTertiaryContainer, dark.tertiaryContainer),
+      ]) {
+        expect(
+          _contrastRatio(pair.$1, pair.$2),
+          greaterThanOrEqualTo(4.5),
+        );
+      }
     });
   });
 
