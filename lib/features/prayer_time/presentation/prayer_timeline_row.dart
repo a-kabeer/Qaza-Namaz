@@ -58,52 +58,133 @@ class PrayerTimelineRow extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: active ? FontWeight.w700 : FontWeight.w600,
-                        color: labelColor,
-                      ),
-                ),
-              ),
-              SizedBox(
-                width: _countdownWidth,
-                child: Text(
-                  countdown ?? '',
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: countdownColor,
-                      ),
-                ),
-              ),
-              SizedBox(
-                width: _timeWidth,
-                child: Align(
-                  alignment: AlignmentDirectional.centerEnd,
-                  child: Text(
-                    time,
-                    maxLines: 1,
-                    overflow: TextOverflow.clip,
-                    textAlign: TextAlign.end,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                          color: timeColor,
-                        ),
-                  ),
-                ),
-              ),
-            ],
+          padding: EdgeInsets.symmetric(
+            horizontal: restricted ? 10 : 14,
+            vertical: 10,
           ),
+          child: restricted
+              ? _buildRestrictedContent(
+                  context,
+                  labelColor: labelColor,
+                  timeColor: timeColor,
+                  countdownColor: countdownColor,
+                )
+              : Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                              fontWeight:
+                                  active ? FontWeight.w700 : FontWeight.w600,
+                              color: labelColor,
+                            ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: _countdownWidth,
+                      child: Text(
+                        countdown ?? '',
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w800,
+                                  color: countdownColor,
+                                ),
+                      ),
+                    ),
+                    SizedBox(
+                      width: _timeWidth,
+                      child: Align(
+                        alignment: AlignmentDirectional.centerEnd,
+                        child: Text(
+                          time,
+                          maxLines: 1,
+                          overflow: TextOverflow.clip,
+                          textAlign: TextAlign.end,
+                          style:
+                              Theme.of(context).textTheme.titleSmall?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                    color: timeColor,
+                                  ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
         ),
       ),
+    );
+  }
+
+  /// Compact three-column layout for the active restriction row.
+  ///
+  /// The interval and countdown stay on one line. FittedBox only scales them
+  /// down on narrow screens so the end of the interval is not clipped.
+  Widget _buildRestrictedContent(
+    BuildContext context, {
+    required Color labelColor,
+    required Color timeColor,
+    required Color countdownColor,
+  }) {
+    final textTheme = Theme.of(context).textTheme;
+
+    return Row(
+      children: [
+        Expanded(
+          flex: 3,
+          child: Text(
+            name,
+            maxLines: 1,
+            softWrap: false,
+            overflow: TextOverflow.ellipsis,
+            style: textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              color: labelColor,
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          flex: 3,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.center,
+            child: Text(
+              countdown ?? '',
+              maxLines: 1,
+              softWrap: false,
+              style: textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w800,
+                color: countdownColor,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 6),
+        Expanded(
+          flex: 6,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: AlignmentDirectional.centerEnd,
+            child: Text(
+              time,
+              maxLines: 1,
+              softWrap: false,
+              textAlign: TextAlign.end,
+              style: textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w700,
+                color: timeColor,
+                fontFeatures: const [FontFeature.tabularFigures()],
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -245,11 +326,16 @@ class RestrictedTimeTimelineRow extends ConsumerWidget {
     return PrayerTimelineRow(
       key: const Key('restricted_time_timeline_row'),
       name: _label(AppLocalizations.of(context), active.type),
-      time: _formatTime(
+      time: '${_formatTime(
         context,
-        active.displayAt.toUtc(),
+        active.startsAt.toUtc(),
         snapshot.location.timezoneId,
-      ),
+      )} – ${_formatTime(
+        context,
+        active.endsAt.toUtc(),
+        snapshot.location.timezoneId,
+      )}',
+      restricted: true,
       countdown: DateFormatters.formatDurationHhMmSs(remaining),
       active: true,
       onTap: onTap,
