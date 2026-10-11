@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/utils/date_formatters.dart';
+import '../../domain/entities/user_profile.dart';
+import '../../domain/services/profile_rules.dart';
 import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../../l10n/app_localizations.dart';
 
@@ -20,18 +22,30 @@ class ProfileQazaChangeDialogResult {
 Future<ProfileQazaChangeDialogResult?> showProfileQazaChangeDialog({
   required BuildContext context,
   required FutureOr<ProfileQazaPlanPreview> preview,
+  UserProfile? previousProfile,
+  UserProfile? newProfile,
 }) {
   return showDialog<ProfileQazaChangeDialogResult>(
     context: context,
     barrierDismissible: false,
-    builder: (_) => _ProfileQazaChangeDialog(preview: preview),
+    builder: (_) => _ProfileQazaChangeDialog(
+      preview: preview,
+      previousProfile: previousProfile,
+      newProfile: newProfile,
+    ),
   );
 }
 
 class _ProfileQazaChangeDialog extends StatefulWidget {
-  const _ProfileQazaChangeDialog({required this.preview});
+  const _ProfileQazaChangeDialog({
+    required this.preview,
+    this.previousProfile,
+    this.newProfile,
+  });
 
   final FutureOr<ProfileQazaPlanPreview> preview;
+  final UserProfile? previousProfile;
+  final UserProfile? newProfile;
 
   @override
   State<_ProfileQazaChangeDialog> createState() =>
@@ -103,6 +117,8 @@ class _ProfileQazaChangeDialogState extends State<_ProfileQazaChangeDialog> {
                 ? _ErrorContent(message: l10n.profileQazaReviewError)
                 : _ProfileQazaReviewContent(
                     preview: _resolvedPreview!,
+                    previousProfile: widget.previousProfile,
+                    newProfile: widget.newProfile,
                   ),
       ),
       actions: [
@@ -142,9 +158,15 @@ class _ProfileQazaChangeDialogState extends State<_ProfileQazaChangeDialog> {
 }
 
 class _ProfileQazaReviewContent extends StatelessWidget {
-  const _ProfileQazaReviewContent({required this.preview});
+  const _ProfileQazaReviewContent({
+    required this.preview,
+    this.previousProfile,
+    this.newProfile,
+  });
 
   final ProfileQazaPlanPreview preview;
+  final UserProfile? previousProfile;
+  final UserProfile? newProfile;
 
   @override
   Widget build(BuildContext context) {
@@ -163,6 +185,13 @@ class _ProfileQazaReviewContent extends StatelessWidget {
               color: colorScheme.onSurfaceVariant,
             ),
           ),
+          if (previousProfile != null && newProfile != null) ...[
+            const SizedBox(height: 20),
+            _ChangedAssumptions(
+              previousProfile: previousProfile!,
+              newProfile: newProfile!,
+            ),
+          ],
           const SizedBox(height: 24),
           _PlanSummary(
             title: l10n.profileQazaPreviousTotal,
@@ -466,4 +495,167 @@ DateTime _lastPlanDate(DateTime start, DateTime? end) {
 
   final last = end.subtract(const Duration(days: 1));
   return last.isBefore(start) ? start : last;
+}
+
+class _ChangedAssumptions extends StatelessWidget {
+  const _ChangedAssumptions({
+    required this.previousProfile,
+    required this.newProfile,
+  });
+
+  final UserProfile previousProfile;
+  final UserProfile newProfile;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    final colors = theme.colorScheme;
+    final changes = <({String label, String oldValue, String newValue})>[];
+
+    if (previousProfile.gender != newProfile.gender) {
+      changes.add((
+        label: l10n.profileGender,
+        oldValue: _genderLabel(l10n, previousProfile.gender),
+        newValue: _genderLabel(l10n, newProfile.gender),
+      ));
+    }
+    if (previousProfile.madhab != newProfile.madhab) {
+      changes.add((
+        label: l10n.profileMadhab,
+        oldValue: _madhabLabel(l10n, previousProfile.madhab),
+        newValue: _madhabLabel(l10n, newProfile.madhab),
+      ));
+    }
+    if (!_sameDate(previousProfile.dateOfBirth, newProfile.dateOfBirth)) {
+      changes.add((
+        label: l10n.profileDateOfBirth,
+        oldValue: _dateLabel(previousProfile.dateOfBirth),
+        newValue: _dateLabel(newProfile.dateOfBirth),
+      ));
+    }
+    if (previousProfile.pubertyAge != newProfile.pubertyAge) {
+      changes.add((
+        label: l10n.profilePubertyAge,
+        oldValue: _ageLabel(l10n, previousProfile.pubertyAge),
+        newValue: _ageLabel(l10n, newProfile.pubertyAge),
+      ));
+    }
+    if (previousProfile.startPrayingAge != newProfile.startPrayingAge) {
+      changes.add((
+        label: l10n.profileStartPrayingAge,
+        oldValue: _ageLabel(l10n, previousProfile.startPrayingAge),
+        newValue: _ageLabel(l10n, newProfile.startPrayingAge),
+      ));
+    }
+    if (ProfileRules.effectiveWitr(previousProfile) !=
+        ProfileRules.effectiveWitr(newProfile)) {
+      changes.add((
+        label: l10n.profileWitr,
+        oldValue: ProfileRules.effectiveWitr(previousProfile)
+            ? l10n.profileWitrIncluded
+            : l10n.profileWitrExcluded,
+        newValue: ProfileRules.effectiveWitr(newProfile)
+            ? l10n.profileWitrIncluded
+            : l10n.profileWitrExcluded,
+      ));
+    }
+
+    if (changes.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          l10n.profileQazaAssumptionsChanged,
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          l10n.profileQazaAssumptionsHint,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: colors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        for (final change in changes)
+          Container(
+            width: double.infinity,
+            margin: const EdgeInsets.only(bottom: 8),
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: colors.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  change.label,
+                  style: theme.textTheme.labelLarge,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        change.oldValue,
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ),
+                    const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 6),
+                      child: Icon(Icons.arrow_forward, size: 16),
+                    ),
+                    Expanded(
+                      child: Text(
+                        change.newValue,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+      ],
+    );
+  }
+
+  static String _genderLabel(AppLocalizations l10n, Gender? gender) {
+    return switch (gender) {
+      Gender.male => l10n.profileMale,
+      Gender.female => l10n.profileFemale,
+      null => '—',
+    };
+  }
+
+  static String _madhabLabel(AppLocalizations l10n, Madhab? madhab) {
+    return switch (madhab) {
+      Madhab.hanafi => l10n.profileHanafi,
+      Madhab.shafi => l10n.profileShafi,
+      Madhab.maliki => l10n.profileMaliki,
+      Madhab.hanbali => l10n.profileHanbali,
+      Madhab.other => l10n.profileOther,
+      null => '—',
+    };
+  }
+
+  static String _dateLabel(DateTime? value) =>
+      value == null ? '—' : DateFormatters.formatGregorianFull(value);
+
+  static String _ageLabel(AppLocalizations l10n, int? value) =>
+      value == null ? '—' : l10n.profileAgeYears(value);
+
+  static bool _sameDate(DateTime? first, DateTime? second) {
+    if (first == null || second == null) return first == second;
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
+  }
 }
