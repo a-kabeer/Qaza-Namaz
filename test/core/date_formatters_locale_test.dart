@@ -37,7 +37,8 @@ void main() {
       final urduScript = RegExp(r'[\u0600-\u06FF]');
 
       expect(DateFormatters.formatGregorianFull(date), matches(urduScript));
-      expect(DateFormatters.formatGregorianDatePadded(date), matches(urduScript));
+      expect(
+          DateFormatters.formatGregorianDatePadded(date), matches(urduScript));
       expect(
         DateFormatters.formatGregorianWeekdayShortFull(date),
         matches(urduScript),
