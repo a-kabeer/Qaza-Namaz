@@ -38,6 +38,53 @@ void main() {
     expect(reset.selectionScope, isNull);
     expect(reset.selected, isEmpty);
   });
+  test('Pending selection closes when the last prayer is unchecked', () {
+    const state = QazaTrackerState(
+      statusFilter: QazaStatusFilter.pending,
+      selectionMode: true,
+      selectionScope: QazaSelectionScope.pending,
+      selected: {'record-1'},
+    );
+
+    final updated = state.copyWithSelection(const <String>{});
+
+    expect(updated.selected, isEmpty);
+    expect(updated.selectionMode, isFalse);
+    expect(updated.selectionScope, isNull);
+    expect(updated.statusFilter, QazaStatusFilter.pending);
+  });
+
+  test('Completed selection closes when the last prayer is unchecked', () {
+    const state = QazaTrackerState(
+      statusFilter: QazaStatusFilter.completed,
+      selectionMode: true,
+      selectionScope: QazaSelectionScope.completed,
+      selected: {'record-1'},
+    );
+
+    final updated = state.copyWithSelection(const <String>{});
+
+    expect(updated.selected, isEmpty);
+    expect(updated.selectionMode, isFalse);
+    expect(updated.selectionScope, isNull);
+    expect(updated.statusFilter, QazaStatusFilter.completed);
+  });
+
+  test('Selection mode stays active while any prayers remain selected', () {
+    const state = QazaTrackerState(
+      statusFilter: QazaStatusFilter.pending,
+      selectionMode: true,
+      selectionScope: QazaSelectionScope.pending,
+      selected: {'record-1', 'record-2'},
+    );
+
+    final updated = state.copyWithSelection({'record-2'});
+
+    expect(updated.selected, {'record-2'});
+    expect(updated.selectionMode, isTrue);
+    expect(updated.selectionScope, QazaSelectionScope.pending);
+  });
+
   test('Sort direction is part of shared tracker state', () {
     const initial = QazaTrackerState();
     expect(initial.sortOrder, QazaSortOrder.oldestFirst);
