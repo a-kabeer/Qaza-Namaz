@@ -54,10 +54,14 @@ Destructive conflict resolution requires confirmed: true. The two supported expl
 
 The adapter never silently overwrites unsynced local data.
 
-## Background synchronization
+## Session restoration and background synchronization
 
-CloudSyncScheduler.initializeAndSchedule() registers one periodic task with ExistingPeriodicWorkPolicy.keep and enforces Android's 15-minute minimum interval.
+CloudSyncScheduler.initializeAndSchedule() registers one daily periodic task with ExistingPeriodicWorkPolicy.keep. Android may defer execution; this is not an exact 24-hour deadline.
 
-The worker performs non-interactive authorization only. A no-op returns success and does not cancel or replace periodic work.
+On Android, the package registers a small native plugin that calls Google Play services' Identity AuthorizationClient from the current application context. A fresh WorkManager Flutter engine can therefore request a token for the already-granted drive.appdata scope without relying on a GoogleSignInAccount held in Dart memory. If Google returns a pending resolution or the scope is no longer granted, the plugin reports that interaction is required and never launches that resolution from the worker. Access tokens are passed to the requesting Dart runtime only; they are not persisted in SharedPreferences.
+
+Account restoration reports connected only after the required Drive scope is obtained non-interactively. A missing grant sets reconnect-required while preserving the user's cloud and automatic-backup preferences. An HTTP 401 clears the native token cache so a later run can request a fresh token.
+
+These behaviours require Android device validation with the configured OAuth client. The native request explicitly targets the previously connected email through Android's account selector, then validates a newly returned token and the exact Drive scope. The email is used only to select the account; the fresh token and granted scope—not cached profile fields—establish authorization.
 
 Phase 1 does not initialize WorkManager, Google Sign-In, Drive, or any cloud service. A Phase 2-enabled host opts in by importing this package and calling the scheduler from a separate composition root.

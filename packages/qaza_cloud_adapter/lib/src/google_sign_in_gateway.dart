@@ -1,10 +1,19 @@
 import 'dart:async';
 
 import 'package:extension_google_sign_in_as_googleapis_auth/extension_google_sign_in_as_googleapis_auth.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'cloud_models.dart';
+
+const MethodChannel _backgroundAuthorizationChannel = MethodChannel(
+  'qaza_cloud_adapter/google_drive_authorization',
+);
+const String _cachedAccountEmailKey =
+    'qaza_cloud_adapter.cached_account_email_v1';
 
 class GoogleSignInGateway {
   GoogleSignInGateway({
@@ -30,22 +39,24 @@ class GoogleSignInGateway {
   Future<GoogleSignInAccount> authenticate() =>
       _serialized(() => _authenticateUnlocked());
 
+  /// Revokes the app's Google authorization as well as signing out. The
+  /// cloud provider calls this only after automatic work has been disabled.
   Future<void> signOut() => _serialized(() async {
     await _initializeUnlocked();
-    await _signIn.signOut();
+    await _signIn.disconnect();
     _resolvedAccount = null;
   });
 
-  /// Reads only an account that was resolved by an explicit sign-in in this
-  /// gateway instance. There is intentionally no plugin "current user" getter
-  /// in google_sign_in 7.x, and we do not attempt lightweight auth here because
-  /// passive restoration has been observed to open UI on Android.
+  /// Returns an account resolved by this runtime's explicit sign-in flow.
+  ///
+  /// Google Sign-In 7.x has no synchronous current-user getter. Cached profile
+  /// metadata is deliberately not used to manufacture an authenticated account.
   Future<GoogleSignInAccount?> currentAccount() => _serialized(() async {
     await _initializeUnlocked();
     return _resolvedAccount;
   });
 
-  /// Kept as a compatibility alias; this is now a read-only lookup.
+  /// Compatibility alias retained for existing call sites.
   Future<GoogleSignInAccount?> restoreLightweightAuthentication() =>
       currentAccount();
 
@@ -53,10 +64,23 @@ class GoogleSignInGateway {
       _serialized(() async {
         await _initializeUnlocked();
 
-        // Never invoke a lightweight-authentication attempt here. The Android
-        // implementation can present UI in edge cases, and this method is also
-        // used by WorkManager. Only an explicit interactive operation may call
-        // authenticate().
+        // WorkManager runs in a separate Flutter engine and cannot depend on
+        // this gateway's in-memory GoogleSignInAccount. A foreground caller
+        // can also be a fresh runtime (for example, Backup Now after relaunch).
+        // Try the native authorization path first whenever this runtime has no
+        // account object, or when interaction is forbidden. A valid existing
+        // grant then works without another sign-in sheet.
+        if (defaultTargetPlatform == TargetPlatform.android &&
+            (!allowInteractive || _resolvedAccount == null)) {
+          try {
+            return await _authorizeDriveSilentlyOnAndroid();
+          } on CloudAuthorizationUnavailable {
+            // A foreground user action may now complete authentication or
+            // consent. Background callers must never fall through to UI.
+            if (!allowInteractive) rethrow;
+          }
+        }
+
         var user = _resolvedAccount;
         if (user == null) {
           if (!allowInteractive) {
@@ -84,6 +108,74 @@ class GoogleSignInGateway {
           scopes: const <String>[cloudDriveScope],
         );
       });
+
+  Future<http.Client> _authorizeDriveSilentlyOnAndroid() async {
+    final preferences = await SharedPreferences.getInstance();
+    final expectedEmail = preferences.getString(_cachedAccountEmailKey)?.trim();
+    if (expectedEmail == null || expectedEmail.isEmpty) {
+      throw const CloudAuthorizationUnavailable(
+        'Google Drive authorization cannot be restored because the previously '
+        'connected account could not be identified. Open Settings → Account '
+        'and reconnect Google.',
+      );
+    }
+
+    final response = await _backgroundAuthorizationChannel
+        .invokeMapMethod<String, Object?>(
+          'authorizeDriveSilently',
+          <String, Object?>{'accountEmail': expectedEmail},
+        );
+    final status = response?['status'];
+
+    if (status == 'interactionRequired') {
+      throw const CloudAuthorizationUnavailable(
+        'Google Drive authorization needs attention. Open Settings → Account '
+        'and reconnect Google.',
+      );
+    }
+
+    if (status != 'authorized') {
+      final message = response?['message'];
+      throw CloudAdapterException(
+        message is String && message.trim().isNotEmpty
+            ? message
+            : 'Google Drive authorization is temporarily unavailable.',
+      );
+    }
+
+    final accessToken = response?['accessToken'];
+    final rawScopes = response?['grantedScopes'];
+    final grantedScopes = rawScopes is List
+        ? rawScopes.whereType<String>().toSet()
+        : <String>{};
+
+    if (accessToken is! String ||
+        accessToken.isEmpty ||
+        !grantedScopes.contains(cloudDriveScope)) {
+      throw const CloudAuthorizationUnavailable(
+        'Google Drive authorization is not available for the backup scope.',
+      );
+    }
+
+    // The OAuth token remains in memory only. It is neither logged nor written
+    // to SharedPreferences. Clear the native cache if Drive rejects the token;
+    // the next scheduled run will ask the native SDK for a fresh one.
+    return _NativeBearerTokenClient(
+      accessToken,
+      onUnauthorized: () => _clearNativeToken(accessToken),
+    );
+  }
+
+  Future<void> _clearNativeToken(String accessToken) async {
+    try {
+      await _backgroundAuthorizationChannel.invokeMethod<void>(
+        'clearAuthorizationToken',
+        <String, Object?>{'accessToken': accessToken},
+      );
+    } catch (_) {
+      // A cache-clear failure must not mask the original Drive API response.
+    }
+  }
 
   Future<void> _initializeUnlocked() async {
     if (_initialized) return;
@@ -117,5 +209,34 @@ class GoogleSignInGateway {
     } finally {
       done.complete();
     }
+  }
+}
+
+class _NativeBearerTokenClient extends http.BaseClient {
+  _NativeBearerTokenClient(
+    this._accessToken, {
+    required Future<void> Function() onUnauthorized,
+  }) : _onUnauthorized = onUnauthorized;
+
+  final String _accessToken;
+  final Future<void> Function() _onUnauthorized;
+  final http.Client _inner = http.Client();
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    request.headers['authorization'] = 'Bearer $_accessToken';
+    final response = await _inner.send(request);
+    if (response.statusCode == 401) {
+      // Google documents that a cached access token can become invalid before
+      // its nominal expiry. Clearing it allows the next authorization request
+      // to fetch a replacement without persisting the token locally.
+      unawaited(_onUnauthorized());
+    }
+    return response;
+  }
+
+  @override
+  void close() {
+    _inner.close();
   }
 }

@@ -37,9 +37,6 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> restore() async {
     try {
-      // Restore display metadata only. Cached identity is not proof of Drive
-      // authorization, and an unavailable native session must not disable the
-      // user's opt-in or automatic-backup preference.
       if (!await _state.isCloudSyncEnabled()) {
         return const CloudAccountSnapshot.disconnected();
       }
@@ -47,34 +44,49 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
       }
 
-      // Reading currentUser is passive; unlike
-      // attemptLightweightAuthentication, it never asks Android to show UI.
       final account = await _gateway.currentAccount();
-      if (account != null) {
-        await _persistAccountProfile(
-          displayName: account.displayName,
-          email: account.email,
-          photoUrl: account.photoUrl,
-        );
-        return CloudAccountSnapshot(
-          status: CloudAccountStatus.connected,
-          displayName: account.displayName,
-          email: account.email,
-          photoUrl: account.photoUrl,
-        );
-      }
+      try {
+        // Connection is reported only after the required Drive scope can be
+        // obtained non-interactively. On Android this call uses the native
+        // Identity AuthorizationClient, including after process recreation.
+        final client = await _gateway.authorizeDrive(allowInteractive: false);
+        client?.close();
+        await _state.setReconnectRequired(false);
 
-      final preferences = await SharedPreferences.getInstance();
-      String? readValue(String key) {
-        final value = preferences.getString(key)?.trim();
-        return value == null || value.isEmpty ? null : value;
-      }
+        if (account != null) {
+          await _persistAccountProfile(
+            displayName: account.displayName,
+            email: account.email,
+            photoUrl: account.photoUrl,
+          );
+          return CloudAccountSnapshot(
+            status: CloudAccountStatus.connected,
+            displayName: account.displayName,
+            email: account.email,
+            photoUrl: account.photoUrl,
+          );
+        }
 
-      return CloudAccountSnapshot.reconnectRequired(
-        displayName: readValue(_cachedDisplayNameKey),
-        email: readValue(_cachedEmailKey),
-        photoUrl: readValue(_cachedPhotoUrlKey),
-      );
+        // A new Flutter runtime has no GoogleSignInAccount object. A successful
+        // native Drive authorization independently proves that the default
+        // account has a usable backup grant; cached fields are display-only.
+        return await _cachedProfileSnapshot(reconnectRequired: false);
+      } on CloudAuthorizationUnavailable {
+        await _state.setReconnectRequired(true);
+        if (account != null) {
+          await _persistAccountProfile(
+            displayName: account.displayName,
+            email: account.email,
+            photoUrl: account.photoUrl,
+          );
+          return CloudAccountSnapshot.reconnectRequired(
+            displayName: account.displayName,
+            email: account.email,
+            photoUrl: account.photoUrl,
+          );
+        }
+        return await _cachedProfileSnapshot(reconnectRequired: true);
+      }
     } catch (error) {
       return CloudAccountSnapshot.failed(error.toString());
     }
@@ -107,10 +119,45 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     await preferences.remove(_cachedPhotoUrlKey);
   }
 
+  Future<CloudAccountSnapshot> _cachedProfileSnapshot({
+    required bool reconnectRequired,
+  }) async {
+    final preferences = await SharedPreferences.getInstance();
+    String? readValue(String key) {
+      final value = preferences.getString(key)?.trim();
+      return value == null || value.isEmpty ? null : value;
+    }
+
+    final displayName = readValue(_cachedDisplayNameKey);
+    final email = readValue(_cachedEmailKey);
+    final photoUrl = readValue(_cachedPhotoUrlKey);
+    if (reconnectRequired) {
+      return CloudAccountSnapshot.reconnectRequired(
+        displayName: displayName,
+        email: email,
+        photoUrl: photoUrl,
+      );
+    }
+
+    return CloudAccountSnapshot(
+      status: CloudAccountStatus.connected,
+      displayName: displayName,
+      email: email,
+      photoUrl: photoUrl,
+    );
+  }
+
   @override
   Future<CloudAccountSnapshot> signIn() async {
     try {
       final account = await _gateway.authenticate();
+
+      // Do not mark cloud backup connected until the specific Drive app-data
+      // scope is authorized. This call follows the explicit Connect/Reconnect
+      // action, so a required consent resolution may be presented safely.
+      final client = await _gateway.authorizeDrive(allowInteractive: true);
+      client?.close();
+
       await _persistAccountProfile(
         displayName: account.displayName,
         email: account.email,
@@ -128,6 +175,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         photoUrl: account.photoUrl,
       );
     } catch (error) {
+      if (await _state.isCloudSyncEnabled()) {
+        await _state.setReconnectRequired(true);
+      }
       return CloudAccountSnapshot.failed(error.toString());
     }
   }

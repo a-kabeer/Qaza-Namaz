@@ -107,28 +107,43 @@ The daily schedule is best-effort under Android WorkManager and is not an exact
 review remain release gates; CI cannot mark those manual checks as passed.
 
 
-### Non-interactive Google restoration and worker authorization
+### Persistent Google session and non-interactive worker authorization
 
-Startup routing and Account navigation must not invoke
-`attemptLightweightAuthentication()`, `authenticate()`, or Drive scope
-consent automatically. The gateway reads only an account already resolved in
-the current process and keeps cached name/email/photo as display-only metadata.
-Cached metadata is not evidence that Google Drive authorization remains valid.
+Startup and Account navigation must not initiate interactive sign-in or launch
+Drive-consent UI. The Dart gateway uses Google Sign-In 7.x for explicit
+foreground authentication and the selected account's authorization client for
+foreground scope consent.
 
-Drive authorization from an automatic WorkManager task is strictly
-non-interactive. If the current account or `drive.appdata` authorization is
-unavailable, the worker skips that run and persists a reconnect-required flag;
-it does not open a native account picker, disable the user's cloud opt-in, erase
-the daily schedule, or mark the run successful. The Account Page then offers an
-explicit Connect/Reconnect action. Only user-initiated Connect/Backup Now
-operations may request interactive authentication or Drive-scope consent.
+For Android background synchronization, the adapter's registered native plugin
+uses Google Play services' Identity AuthorizationClient with the application
+context. The worker requests the already-granted `drive.appdata` scope in each
+new Flutter engine rather than depending on an in-memory Dart account. If the
+authorization result requires a resolution, the plugin reports
+`interactionRequired` and never launches the pending intent. No access or
+refresh token is written to SharedPreferences; an access token exists only in
+the active runtime's HTTP client. If Drive returns HTTP 401, the native token
+cache is cleared so the next attempt can request a replacement.
 
-A background isolate may not have a usable, already-resolved account after app
-process recreation. In that situation automatic backup can be skipped until the
-user reconnects; the implementation intentionally prioritizes never presenting
-authentication UI from WorkManager over claiming unattended backup is
-guaranteed. Automatic backup remains best-effort and must be verified on an
-Android device with the configured OAuth client.
+Account restoration declares the connection ready only after Drive authorization
+has been obtained non-interactively. On Android, the native request explicitly
+targets the previously connected email using Android's account selector, then
+validates the returned access token and exact Drive scope. The cached email is
+only an account selector; cached name/email/photo never prove authorization by
+themselves. Real-device testing must verify that the Google account selected
+during initial sign-in is the one used by the background authorization request.
+
+If the native authorization client reports that a resolution is needed, the
+worker skips without opening UI and persists reconnect-required. It preserves
+the user's cloud and automatic-backup preferences and keeps the periodic work
+registered. The Account Page offers an explicit Connect/Reconnect action to
+resolve missing consent. Successful restoration clears the reconnect-required
+flag and retains the existing sync cursor and conflict safeguards.
+
+This is a supported implementation path, not a substitute for release
+validation: real Android device testing with the configured OAuth client must
+prove that the previously selected default account and granted Drive scope can
+be used after process recreation. WorkManager remains best-effort and does not
+guarantee an exact daily execution time.
 
 ## Owner setup checklist for Android OAuth and release
 
