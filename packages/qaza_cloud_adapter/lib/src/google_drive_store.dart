@@ -131,7 +131,11 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
     List<int> bytes, {
     CloudBackupProgressCallback? onProgress,
   }) async* {
-    const chunkSize = 16 * 1024;
+    // About 100 updates for large backups, but still several updates for
+    // small JSON payloads that would otherwise fit in a single 16 KiB chunk.
+    final chunkSize = bytes.length < 16 * 1024
+        ? 1024
+        : (bytes.length / 100).ceil().clamp(1024, 16 * 1024).toInt();
     onProgress?.call(
       CloudBackupProgress.uploading(sentBytes: 0, totalBytes: bytes.length),
     );
