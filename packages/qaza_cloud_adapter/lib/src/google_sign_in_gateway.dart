@@ -135,7 +135,10 @@ class GoogleSignInGateway {
     // The OAuth token remains in memory only. It is neither logged nor written
     // to SharedPreferences. Clear the native cache if Drive rejects the token;
     // the next scheduled run will ask the native SDK for a fresh one.
-    return _NativeBearerTokenClient(accessToken);
+    return _NativeBearerTokenClient(
+      accessToken,
+      onUnauthorized: () => _clearNativeToken(accessToken),
+    );
   }
 
   Future<void> _clearNativeToken(String accessToken) async {
@@ -185,9 +188,13 @@ class GoogleSignInGateway {
 }
 
 class _NativeBearerTokenClient extends http.BaseClient {
-  _NativeBearerTokenClient(this._accessToken);
+  _NativeBearerTokenClient(
+    this._accessToken, {
+    required Future<void> Function() onUnauthorized,
+  }) : _onUnauthorized = onUnauthorized;
 
   final String _accessToken;
+  final Future<void> Function() _onUnauthorized;
   final http.Client _inner = http.Client();
 
   @override
@@ -198,9 +205,7 @@ class _NativeBearerTokenClient extends http.BaseClient {
       // Google documents that a cached access token can become invalid before
       // its nominal expiry. Clearing it allows the next authorization request
       // to fetch a replacement without persisting the token locally.
-      unawaited(
-        GoogleSignInGateway()._clearNativeToken(_accessToken),
-      );
+      unawaited(_onUnauthorized());
     }
     return response;
   }
