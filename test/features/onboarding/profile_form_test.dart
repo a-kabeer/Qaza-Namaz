@@ -147,9 +147,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.byKey(const Key('profile_dob_picker_dialog')),
+        find.byKey(const Key('profile_dob_picker_panel')),
         findsOneWidget,
       );
+      expect(find.byType(AlertDialog), findsNothing);
       expect(find.text('Day'), findsOneWidget);
       expect(find.text('Month'), findsOneWidget);
       expect(find.text('Year'), findsOneWidget);
@@ -162,6 +163,7 @@ void main() {
         hasLength(29),
       );
 
+      await tester.ensureVisible(yearFinder);
       await tester.tap(yearFinder);
       await tester.pumpAndSettle();
       await tester.tap(find.text('2001').last);
@@ -172,6 +174,7 @@ void main() {
         hasLength(28),
       );
 
+      await tester.ensureVisible(monthFinder);
       await tester.tap(monthFinder);
       await tester.pumpAndSettle();
       await tester.tap(find.text('March').last);
@@ -182,9 +185,15 @@ void main() {
         hasLength(31),
       );
 
-      await tester.tap(find.byKey(const Key('profile_dob_confirm')));
+      final confirmFinder = find.byKey(const Key('profile_dob_confirm'));
+      await tester.ensureVisible(confirmFinder);
+      await tester.tap(confirmFinder);
       await tester.pumpAndSettle();
       expect(changed?.dateOfBirth, DateTime(2001, 3, 28));
+      expect(
+        find.byKey(const Key('profile_dob_picker_panel')),
+        findsNothing,
+      );
       expect(tester.takeException(), isNull);
     },
   );
@@ -217,6 +226,11 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('profile_dob')));
       await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('profile_dob_picker_panel')),
+        findsOneWidget,
+      );
+      expect(find.byType(AlertDialog), findsNothing);
 
       final day = tester.widget<DropdownButton<int>>(
         find.byKey(const Key('profile_dob_day')),
@@ -233,6 +247,156 @@ void main() {
       expect(month.items, hasLength(today.month));
       expect(day.value, today.day);
       expect(day.items, hasLength(today.day));
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'DOB field expands and collapses the inline selector',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: const UserProfile(languageCode: 'en'),
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_dob')),
+        300,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.tap(find.byKey(const Key('profile_dob')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('profile_dob_picker_panel')),
+        findsOneWidget,
+      );
+
+      await tester.ensureVisible(find.byKey(const Key('profile_dob')));
+      await tester.tap(find.byKey(const Key('profile_dob')));
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const Key('profile_dob_picker_panel')),
+        findsNothing,
+      );
+      expect(find.byType(AlertDialog), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'DOB cancel discards unconfirmed changes',
+    (tester) async {
+      final originalDob = DateTime(2000, 2, 29);
+      UserProfile? changed;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: UserProfile(
+                languageCode: 'en',
+                dateOfBirth: originalDob,
+              ),
+              onChanged: (profile) => changed = profile,
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_dob')),
+        300,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.tap(find.byKey(const Key('profile_dob')));
+      await tester.pumpAndSettle();
+
+      final yearFinder = find.byKey(const Key('profile_dob_year'));
+      await tester.ensureVisible(yearFinder);
+      await tester.tap(yearFinder);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('2001').last);
+      await tester.pumpAndSettle();
+
+      final cancelFinder = find.byKey(const Key('profile_dob_cancel'));
+      await tester.ensureVisible(cancelFinder);
+      await tester.tap(cancelFinder);
+      await tester.pumpAndSettle();
+
+      expect(changed, isNull);
+      expect(find.text('29/02/2000'), findsOneWidget);
+      expect(
+        find.byKey(const Key('profile_dob_picker_panel')),
+        findsNothing,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'DOB selector defaults to a valid date when no DOB is saved',
+    (tester) async {
+      final today = LocalDateService.today();
+      final defaultYear = today.year - 18;
+      final lastDayInDefaultMonth =
+          DateTime(defaultYear, today.month + 1, 0).day;
+      final defaultDay = today.day <= lastDayInDefaultMonth
+          ? today.day
+          : lastDayInDefaultMonth;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: const UserProfile(languageCode: 'en'),
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_dob')),
+        300,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.tap(find.byKey(const Key('profile_dob')));
+      await tester.pumpAndSettle();
+
+      final day = tester.widget<DropdownButton<int>>(
+        find.byKey(const Key('profile_dob_day')),
+      );
+      final month = tester.widget<DropdownButton<int>>(
+        find.byKey(const Key('profile_dob_month')),
+      );
+      final year = tester.widget<DropdownButton<int>>(
+        find.byKey(const Key('profile_dob_year')),
+      );
+
+      expect(year.value, defaultYear);
+      expect(month.value, today.month);
+      expect(day.value, defaultDay);
+      expect(day.items, hasLength(lastDayInDefaultMonth));
+      expect(
+        find.byKey(const Key('profile_dob_picker_panel')),
+        findsOneWidget,
+      );
+      expect(find.byType(AlertDialog), findsNothing);
       expect(tester.takeException(), isNull);
     },
   );
