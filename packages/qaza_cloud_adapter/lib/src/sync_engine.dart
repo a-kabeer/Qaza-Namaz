@@ -221,7 +221,10 @@ class CloudSyncEngine {
     if (recoveryPreview.revision != localRevision ||
         await _phase1.readDbRevision() != localRevision) {
       await _state.clearPendingConflict();
-      return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+      return await sync(
+        allowInteractive: allowInteractive,
+        onProgress: onProgress,
+      );
     }
     if (!await _state.isCloudSyncEnabled()) {
       return CloudSyncResult.skipped(
@@ -261,7 +264,10 @@ class CloudSyncEngine {
     }
     if (await _phase1.readDbRevision() != localRevision) {
       await _state.clearPendingConflict();
-      return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+      return await sync(
+        allowInteractive: allowInteractive,
+        onProgress: onProgress,
+      );
     }
 
     await _phase1.importBackup(latest.backup.phase1BackupJson);
@@ -299,7 +305,10 @@ class CloudSyncEngine {
         cursor.lastSyncedBackupId != conflict.lastSyncedBackupId) {
       // Refresh the comparison rather than applying a stale user decision.
       await _state.clearPendingConflict();
-      return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+      return await sync(
+        allowInteractive: allowInteractive,
+        onProgress: onProgress,
+      );
     }
 
     if (!await _state.isCloudSyncEnabled()) {
@@ -311,7 +320,10 @@ class CloudSyncEngine {
         remote.remoteVersion != conflict.remoteVersion) {
       // A stale conflict is recomputed; the old decision is never applied.
       await _state.clearPendingConflict();
-      return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+      return await sync(
+        allowInteractive: allowInteractive,
+        onProgress: onProgress,
+      );
     }
 
     final deviceId = await _state.deviceId();
@@ -324,7 +336,10 @@ class CloudSyncEngine {
         if (localPreview.revision != currentLocalRevision ||
             await _phase1.readDbRevision() != currentLocalRevision) {
           await _state.clearPendingConflict();
-          return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+          return await sync(
+            allowInteractive: allowInteractive,
+            onProgress: onProgress,
+          );
         }
         final backup = CloudBackup(
           lineage: CloudLineage(
@@ -347,7 +362,10 @@ class CloudSyncEngine {
             latest.backup.lineage.backupId != remote.backup.lineage.backupId ||
             latest.remoteVersion != remote.remoteVersion) {
           await _state.clearPendingConflict();
-          return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+          return await sync(
+            allowInteractive: allowInteractive,
+            onProgress: onProgress,
+          );
         }
         if (!await _state.isCloudSyncEnabled()) {
           return CloudSyncResult.skipped(
@@ -356,7 +374,10 @@ class CloudSyncEngine {
         }
         if (await _phase1.readDbRevision() != currentLocalRevision) {
           await _state.clearPendingConflict();
-          return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+          return await sync(
+            allowInteractive: allowInteractive,
+            onProgress: onProgress,
+          );
         }
         final written = await _remote.write(
           backup,
@@ -388,7 +409,10 @@ class CloudSyncEngine {
         if (recoveryPreview.revision != conflict.localRevision ||
             await _phase1.readDbRevision() != conflict.localRevision) {
           await _state.clearPendingConflict();
-          return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+          return await sync(
+            allowInteractive: allowInteractive,
+            onProgress: onProgress,
+          );
         }
         if (!await _state.isCloudSyncEnabled()) {
           return CloudSyncResult.skipped(
@@ -401,7 +425,10 @@ class CloudSyncEngine {
             latest.backup.lineage.backupId != remote.backup.lineage.backupId ||
             latest.remoteVersion != remote.remoteVersion) {
           await _state.clearPendingConflict();
-          return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+          return await sync(
+            allowInteractive: allowInteractive,
+            onProgress: onProgress,
+          );
         }
         if (!await _state.isCloudSyncEnabled()) {
           return CloudSyncResult.skipped(
@@ -411,7 +438,10 @@ class CloudSyncEngine {
         }
         if (await _phase1.readDbRevision() != conflict.localRevision) {
           await _state.clearPendingConflict();
-          return await sync(allowInteractive: allowInteractive, onProgress: onProgress);
+          return await sync(
+            allowInteractive: allowInteractive,
+            onProgress: onProgress,
+          );
         }
         await _phase1.importBackup(latest.backup.phase1BackupJson);
         final importedRevision = await _phase1.readDbRevision();

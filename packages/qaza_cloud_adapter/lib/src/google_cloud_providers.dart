@@ -158,8 +158,8 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> signIn() async {
     try {
-      final automaticPreferenceConfigured =
-          await _state.hasAutomaticSyncPreference();
+      final automaticPreferenceConfigured = await _state
+          .hasAutomaticSyncPreference();
       final account = await _gateway.authenticate();
 
       // Do not mark cloud backup connected until the specific Drive app-data

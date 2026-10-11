@@ -7,12 +7,18 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   test('automatic backup cadence supports all selectable frequencies', () {
-    expect(normalizeCloudSyncFrequency(const Duration(days: 1)),
-        const Duration(days: 1));
-    expect(normalizeCloudSyncFrequency(const Duration(days: 7)),
-        const Duration(days: 7));
-    expect(normalizeCloudSyncFrequency(const Duration(days: 30)),
-        const Duration(days: 30));
+    expect(
+      normalizeCloudSyncFrequency(const Duration(days: 1)),
+      const Duration(days: 1),
+    );
+    expect(
+      normalizeCloudSyncFrequency(const Duration(days: 7)),
+      const Duration(days: 7),
+    );
+    expect(
+      normalizeCloudSyncFrequency(const Duration(days: 30)),
+      const Duration(days: 30),
+    );
   });
 
   setUp(() {

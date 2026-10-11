@@ -35,8 +35,7 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   static const _cloudEnabledKey = 'qaza_cloud_adapter.cloud_enabled_v1';
   static const _automaticSyncEnabledKey =
       'qaza_cloud_adapter.automatic_sync_enabled_v1';
-  static const _backupFrequencyKey =
-      'qaza_cloud_adapter.backup_frequency_v1';
+  static const _backupFrequencyKey = 'qaza_cloud_adapter.backup_frequency_v1';
   static const _reconnectRequiredKey =
       'qaza_cloud_adapter.reconnect_required_v1';
   static const _lastSuccessfulSyncAtKey =
