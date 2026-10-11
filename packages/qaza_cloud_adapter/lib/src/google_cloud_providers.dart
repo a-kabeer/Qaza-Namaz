@@ -297,10 +297,26 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     }
 
     _syncing = true;
+    CloudBackupProgress? latestProgress;
     try {
-      return await _snapshotFromResult(
-        await _engine().sync(allowInteractive: true, onProgress: onProgress),
+      final result = await _engine().sync(
+        allowInteractive: true,
+        onProgress: (progress) {
+          latestProgress = progress;
+          onProgress?.call(progress);
+        },
       );
+      // Show 100% only after the engine's upload and sync-cursor update succeed.
+      if (result.kind == CloudSyncResultKind.uploaded &&
+          latestProgress != null &&
+          latestProgress!.totalBytes > 0) {
+        onProgress?.call(
+          CloudBackupProgress.completed(
+            totalBytes: latestProgress!.totalBytes,
+          ),
+        );
+      }
+      return await _snapshotFromResult(result);
     } catch (error) {
       return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     } finally {
@@ -358,6 +374,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     required bool confirmed,
     CloudBackupProgressCallback? onProgress,
   }) async {
+    CloudBackupProgress? latestProgress;
     try {
       final result = await _engine().resolveConflict(
         conflict: _toAdapterConflict(conflict),
@@ -366,8 +383,20 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
             : CloudConflictDecision.useRemote,
         confirmed: confirmed,
         allowInteractive: true,
-        onProgress: onProgress,
+        onProgress: (progress) {
+          latestProgress = progress;
+          onProgress?.call(progress);
+        },
       );
+      if (result.kind == CloudSyncResultKind.uploaded &&
+          latestProgress != null &&
+          latestProgress!.totalBytes > 0) {
+        onProgress?.call(
+          CloudBackupProgress.completed(
+            totalBytes: latestProgress!.totalBytes,
+          ),
+        );
+      }
       return await _snapshotFromResult(result);
     } catch (error) {
       return await _snapshot(CloudSyncStatus.failed, message: error.toString());
