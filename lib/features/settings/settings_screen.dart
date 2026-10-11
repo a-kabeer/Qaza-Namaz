@@ -37,9 +37,9 @@ class SettingsScreen extends ConsumerWidget {
         await ref.read(localeProvider.notifier).set(resolved);
       } catch (_) {
         if (!context.mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(AppLocalizations.of(context).errorStorage)),
-        );
+        ref
+            .read(appSnackbarServiceProvider)
+            .error(AppLocalizations.of(context).errorStorage);
       }
     }
 

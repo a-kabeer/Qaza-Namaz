@@ -1,10 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart' as date_symbols;
 import 'package:intl/intl.dart' as intl;
 
 import 'package:qaza_namaz/core/utils/date_formatters.dart';
 
 void main() {
   String? originalLocale;
+
+  setUpAll(() async {
+    await date_symbols.initializeDateFormatting('ur');
+  });
 
   setUp(() {
     originalLocale = intl.Intl.defaultLocale;
