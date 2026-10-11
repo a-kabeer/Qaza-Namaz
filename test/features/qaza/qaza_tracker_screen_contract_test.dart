@@ -37,7 +37,8 @@ void main() {
       contains('class _PendingRecordDetails extends StatelessWidget'),
     );
     expect(source, contains("Key('qaza_pending_mark_completed')"));
-    expect(source, contains('canComplete: canAct'));
+    expect(source, contains('canComplete: canComplete'));
+    expect(source, contains('final canComplete = canAct &&'));
     expect(
       source,
       isNot(
@@ -674,7 +675,8 @@ void main() {
 
     expect(source, isNot(contains('final showGroup =')));
     expect(source, isNot(contains('_groupLabel(completedAt)')));
-    expect(source, contains('return _CompletedRecordRow('));
+    expect(source, contains('return _QazaStackedTile('));
+    expect(source, contains('_CompletedRecordRow('));
   });
 
   test('Completed date labels are localized in English and Urdu', () {
