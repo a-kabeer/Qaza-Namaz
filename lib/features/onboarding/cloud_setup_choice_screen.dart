@@ -285,10 +285,15 @@ class _CloudSetupChoiceScreenState
               padding: const EdgeInsets.all(24),
               shrinkWrap: true,
               children: [
-                Icon(
-                  Icons.nightlight_round,
-                  size: 56,
-                  color: theme.colorScheme.primary,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.asset(
+                    'assets/branding/qaza_namaz_logo.png',
+                    width: 88,
+                    height: 88,
+                    fit: BoxFit.cover,
+                    filterQuality: FilterQuality.high,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Text(
