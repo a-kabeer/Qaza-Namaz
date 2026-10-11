@@ -145,6 +145,32 @@ void main() {
     );
   }
 
+  void pressChartGroup(BarChart chart, int index) {
+    final callback = chart.data.barTouchData.touchCallback;
+    expect(callback, isNotNull);
+    final group = chart.data.barGroups[index];
+    final rod = group.barRods.first;
+    callback!(
+      FlTapDownEvent(
+        TapDownDetails(kind: PointerDeviceKind.touch),
+      ),
+      BarTouchResponse(
+        touchLocation: Offset.zero,
+        touchChartCoordinate: Offset.zero,
+        spot: BarTouchedSpot(
+          group,
+          index,
+          rod,
+          0,
+          null,
+          -1,
+          FlSpot(group.x.toDouble(), rod.toY),
+          Offset.zero,
+        ),
+      ),
+    );
+  }
+
   testWidgets(
     'shows Weekly, Monthly and Yearly without rolling ranges',
     (tester) async {
@@ -211,7 +237,7 @@ void main() {
           matching: find.byType(BarChart),
         ),
       );
-      tapChartGroup(chart, 0);
+      pressChartGroup(chart, 0);
       await tester.pumpAndSettle();
 
       final tooltipFinder =
@@ -225,7 +251,7 @@ void main() {
           matching: find.byType(BarChart),
         ),
       );
-      tapChartGroup(chart, 3);
+      pressChartGroup(chart, 3);
       await tester.pumpAndSettle();
 
       final tallBarPosition = tester.getTopLeft(tooltipFinder);
@@ -288,7 +314,7 @@ void main() {
           matching: find.byType(BarChart),
         ),
       );
-      tapChartGroup(chart, 0);
+      pressChartGroup(chart, 0);
       await tester.pumpAndSettle();
 
       final tooltipFinder =
@@ -302,7 +328,7 @@ void main() {
           matching: find.byType(BarChart),
         ),
       );
-      tapChartGroup(chart, 8);
+      pressChartGroup(chart, 8);
       await tester.pumpAndSettle();
 
       final tallBarPosition = tester.getTopLeft(tooltipFinder);
