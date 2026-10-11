@@ -70,7 +70,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         // A new Flutter runtime has no GoogleSignInAccount object. A successful
         // native Drive authorization independently proves that the default
         // account has a usable backup grant; cached fields are display-only.
-        return _cachedProfileSnapshot(reconnectRequired: false);
+        return await _cachedProfileSnapshot(reconnectRequired: false);
       } on CloudAuthorizationUnavailable {
         await _state.setReconnectRequired(true);
         if (account != null) {
@@ -85,7 +85,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
             photoUrl: account.photoUrl,
           );
         }
-        return _cachedProfileSnapshot(reconnectRequired: true);
+        return await _cachedProfileSnapshot(reconnectRequired: true);
       }
     } catch (error) {
       return CloudAccountSnapshot.failed(error.toString());
