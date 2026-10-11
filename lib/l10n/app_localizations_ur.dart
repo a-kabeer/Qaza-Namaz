@@ -1755,6 +1755,29 @@ class AppLocalizationsUr extends AppLocalizations {
   String get profileSave => 'تبدیلیاں محفوظ کریں';
 
   @override
+  String get profileEdit => 'پروفائل میں ترمیم کریں';
+
+  @override
+  String profileAgeYears(int count) => '$count سال';
+
+  @override
+  String get profileDiscardChangesTitle => 'غیر محفوظ تبدیلیاں مسترد کریں؟';
+
+  @override
+  String get profileDiscardChangesMessage =>
+      'آپ کی تبدیلیاں محفوظ نہیں ہوئیں۔ کیا آپ انہیں مسترد کرکے ترمیم سے باہر نکلنا چاہتے ہیں؟';
+
+  @override
+  String get profileDiscardChangesAction => 'تبدیلیاں مسترد کریں';
+
+  @override
+  String get profileQazaAssumptionsChanged => 'پروفائل میں کی جانے والی تبدیلیاں';
+
+  @override
+  String get profileQazaAssumptionsHint =>
+      'قضا پلان لاگو کرنے سے پہلے پچھلی اور نئی قدروں کا جائزہ لیں۔';
+
+  @override
   String get profileQazaPlanChangedTitle => 'قضا پلان اپ ڈیٹ ہوگا';
 
   @override
