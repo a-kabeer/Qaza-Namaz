@@ -105,8 +105,9 @@ class GoogleSignInGateway {
     final expectedEmail = preferences.getString(_cachedAccountEmailKey)?.trim();
     if (expectedEmail == null || expectedEmail.isEmpty) {
       throw const CloudAuthorizationUnavailable(
-        'The previously connected Google account could not be identified. '
-        'Open Settings → Account and reconnect Google.',
+        'Google Drive authorization cannot be restored because the previously '
+        'connected account could not be identified. Open Settings → Account '
+        'and reconnect Google.',
       );
     }
 
@@ -119,7 +120,7 @@ class GoogleSignInGateway {
 
     if (status == 'interactionRequired') {
       throw const CloudAuthorizationUnavailable(
-        'Google Drive permission needs attention. Open Settings → Account '
+        'Google Drive authorization needs attention. Open Settings → Account '
         'and reconnect Google.',
       );
     }
