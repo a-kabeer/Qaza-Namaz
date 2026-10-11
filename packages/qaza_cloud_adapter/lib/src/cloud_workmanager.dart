@@ -118,8 +118,7 @@ class CloudSyncScheduler {
       // status. Re-register only for a new schedule, or a cadence change.
       final normalized = normalizeCloudSyncFrequency(frequency);
       final preferences = await SharedPreferences.getInstance();
-      if (preferences.getInt(_scheduledFrequencyDaysKey) ==
-          normalized.inDays) {
+      if (preferences.getInt(_scheduledFrequencyDaysKey) == normalized.inDays) {
         return;
       }
       final inputData = <String, dynamic>{
