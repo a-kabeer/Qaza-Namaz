@@ -29,8 +29,9 @@ abstract final class AppSnackBarPolicy {
         : SnackBarAction(
             label: action.label,
             onPressed: action.onPressed,
-            textColor: snackTheme.actionTextColor,
-            disabledTextColor: snackTheme.disabledActionTextColor,
+            textColor: snackTheme.actionTextColor ?? scheme.inversePrimary,
+            disabledTextColor: snackTheme.disabledActionTextColor ??
+                scheme.inversePrimary.withAlpha(128),
           );
 
     return SnackBar(
@@ -192,8 +193,12 @@ class _AppSnackbarContent extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final snackTheme = theme.snackBarTheme;
-    final foreground = snackTheme.contentTextStyle?.color ??
-        theme.colorScheme.onInverseSurface;
+    final contentStyle = snackTheme.contentTextStyle ??
+        theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onInverseSurface,
+        );
+    final foreground =
+        contentStyle?.color ?? theme.colorScheme.onInverseSurface;
 
     return Row(
       children: [
@@ -202,7 +207,7 @@ class _AppSnackbarContent extends StatelessWidget {
         Expanded(
           child: Text(
             message,
-            style: snackTheme.contentTextStyle,
+            style: contentStyle,
           ),
         ),
       ],
