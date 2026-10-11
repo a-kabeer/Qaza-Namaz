@@ -162,10 +162,7 @@ void main() {
           ),
           isTrue,
         );
-        expect(
-          progress.last.sentBytes,
-          progress.last.totalBytes,
-        );
+        expect(progress.last.sentBytes, progress.last.totalBytes);
       },
     );
 
