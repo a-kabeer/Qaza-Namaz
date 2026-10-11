@@ -1711,6 +1711,15 @@ class AppLocalizationsUr extends AppLocalizations {
   String get profileDateOfBirth => 'تاریخ پیدائش';
 
   @override
+  String get profileDobDay => 'دن';
+
+  @override
+  String get profileDobMonth => 'مہینہ';
+
+  @override
+  String get profileDobYear => 'سال';
+
+  @override
   String get profileSelectDate => 'تاریخ منتخب کریں';
 
   @override
