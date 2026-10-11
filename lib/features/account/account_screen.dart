@@ -292,6 +292,31 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   CloudSyncSnapshot _sync = const CloudSyncSnapshot.disconnected();
   bool _busy = false;
   String? _message;
+  CloudBackupProgress? _backupProgress;
+
+  bool get _isUrdu => Localizations.localeOf(context).languageCode == 'ur';
+
+  String _frequencyLabel(CloudBackupFrequency frequency) {
+    if (_isUrdu) {
+      return switch (frequency) {
+        CloudBackupFrequency.daily => 'روزانہ',
+        CloudBackupFrequency.weekly => 'ہفتہ وار',
+        CloudBackupFrequency.monthly => 'ماہانہ (ہر 30 دن)',
+      };
+    }
+    return switch (frequency) {
+      CloudBackupFrequency.daily => 'Daily',
+      CloudBackupFrequency.weekly => 'Weekly',
+      CloudBackupFrequency.monthly => 'Monthly (every 30 days)',
+    };
+  }
+
+  String _formatBackupMb(int bytes) => (bytes / 1000000).toStringAsFixed(2);
+
+  void _publishBackupProgress(CloudBackupProgress progress) {
+    if (!mounted) return;
+    setState(() => _backupProgress = progress);
+  }
 
   @override
   void initState() {
@@ -372,20 +397,34 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     setState(() {
       _busy = true;
       _message = null;
+      _backupProgress = null;
     });
-    final result = await ref.read(cloudSyncProvider).backupNow();
-    if (!mounted) return;
-    setState(() {
-      _sync = result;
-      _message = result.message;
-    });
-    if (result.status == CloudSyncStatus.conflict && result.conflict != null) {
-      await _resolveConflict(result.conflict!);
-    } else if (result.status == CloudSyncStatus.synced && mounted) {
-      setState(
-          () => _message = AppLocalizations.of(context).cloudBackupSucceeded);
+    try {
+      final result = await ref.read(cloudSyncProvider).backupNow(
+            onProgress: _publishBackupProgress,
+          );
+      if (!mounted) return;
+      setState(() {
+        _sync = result;
+        _message = result.message;
+      });
+      if (result.status == CloudSyncStatus.conflict && result.conflict != null) {
+        await _resolveConflict(result.conflict!);
+      } else if (result.status == CloudSyncStatus.synced && mounted) {
+        setState(
+          () => _message = AppLocalizations.of(context).cloudBackupSucceeded,
+        );
+      }
+    } catch (error) {
+      if (mounted) setState(() => _message = error.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _backupProgress = null;
+        });
+      }
     }
-    if (mounted) setState(() => _busy = false);
   }
 
   Future<void> _resolveConflict(CloudConflictInfo conflict) async {
@@ -446,6 +485,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           conflict: conflict,
           choice: choice,
           confirmed: true,
+          onProgress: _publishBackupProgress,
         );
     if (!mounted) return;
     if (useRemote && result.status == CloudSyncStatus.synced) {
@@ -479,6 +519,22 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     });
     final result =
         await ref.read(cloudSyncProvider).setAutomaticSyncEnabled(enabled);
+    if (!mounted) return;
+    setState(() {
+      _sync = result;
+      _message = result.message;
+      _busy = false;
+    });
+  }
+
+  Future<void> _changeBackupFrequency(CloudBackupFrequency frequency) async {
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    final result = await ref
+        .read(cloudSyncProvider)
+        .setAutomaticBackupFrequency(frequency);
     if (!mounted) return;
     setState(() {
       _sync = result;
@@ -617,12 +673,84 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                   ),
                 ),
               ),
+              if (_backupProgress != null) ...[
+                const SizedBox(height: 12),
+                Builder(
+                  builder: (context) {
+                    final progress = _backupProgress!;
+                    final preparing =
+                        progress.stage == CloudBackupProgressStage.preparing;
+                    final fraction = progress.totalBytes <= 0
+                        ? 0.0
+                        : (progress.sentBytes / progress.totalBytes)
+                            .clamp(0.0, 0.99)
+                            .toDouble();
+                    final percent = progress.totalBytes <= 0
+                        ? 0
+                        : (progress.sentBytes * 100 / progress.totalBytes)
+                            .floor()
+                            .clamp(0, 99);
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          preparing
+                              ? (_isUrdu
+                                  ? 'بیک اپ تیار کیا جا رہا ہے…'
+                                  : 'Preparing backup…')
+                              : (_isUrdu
+                                  ? 'گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے'
+                                  : 'Uploading backup to Google Drive'),
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                        const SizedBox(height: 6),
+                        LinearProgressIndicator(
+                          value: preparing ? null : fraction,
+                        ),
+                        if (!preparing) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            '${_formatBackupMb(progress.sentBytes)} MB / '
+                            '${_formatBackupMb(progress.totalBytes)} MB · '
+                            '$percent%',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ],
+                      ],
+                    );
+                  },
+                ),
+              ],
               SwitchListTile(
                 key: const Key('account_daily_cloud_backup'),
                 contentPadding: EdgeInsets.zero,
                 value: _sync.automaticSyncEnabled,
                 onChanged: _busy ? null : _toggleAutomaticBackup,
-                title: Text(l10n.cloudAutomaticBackup),
+                title: Text(_isUrdu ? 'خودکار بیک اپ' : 'Automatic backup'),
+              ),
+              const SizedBox(height: 4),
+              DropdownButtonFormField<CloudBackupFrequency>(
+                key: const Key('account_cloud_backup_frequency'),
+                value: _sync.backupFrequency,
+                decoration: InputDecoration(
+                  labelText: _isUrdu ? 'بیک اپ کی فریکوئنسی' : 'Backup frequency',
+                ),
+                items: CloudBackupFrequency.values
+                    .map(
+                      (frequency) => DropdownMenuItem<CloudBackupFrequency>(
+                        value: frequency,
+                        child: Text(_frequencyLabel(frequency)),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _busy
+                    ? null
+                    : (frequency) {
+                        if (frequency != null &&
+                            frequency != _sync.backupFrequency) {
+                          _changeBackupFrequency(frequency);
+                        }
+                      },
               ),
               Text(
                 '${l10n.cloudLastBackup}: $lastBackup',
