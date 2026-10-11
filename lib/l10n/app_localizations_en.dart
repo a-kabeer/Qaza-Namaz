@@ -1758,6 +1758,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileSave => 'Save Changes';
 
   @override
+  String get profileEdit => 'Edit profile';
+
+  @override
+  String profileAgeYears(int count) =>
+      count == 1 ? '$count year' : '$count years';
+
+  @override
+  String get profileDiscardChangesTitle => 'Discard unsaved changes?';
+
+  @override
+  String get profileDiscardChangesMessage =>
+      'Your edits have not been saved. Discard them and leave edit mode?';
+
+  @override
+  String get profileDiscardChangesAction => 'Discard changes';
+
+  @override
+  String get profileQazaAssumptionsChanged => 'Profile values being changed';
+
+  @override
+  String get profileQazaAssumptionsHint =>
+      'Review the previous and new values before applying this Qaza plan.';
+
+  @override
   String get profileQazaPlanChangedTitle => 'Qaza plan will be updated';
 
   @override

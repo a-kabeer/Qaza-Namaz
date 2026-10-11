@@ -3050,6 +3050,20 @@ abstract class AppLocalizations {
   /// **'Save Changes'**
   String get profileSave;
 
+  String get profileEdit;
+
+  String profileAgeYears(int count);
+
+  String get profileDiscardChangesTitle;
+
+  String get profileDiscardChangesMessage;
+
+  String get profileDiscardChangesAction;
+
+  String get profileQazaAssumptionsChanged;
+
+  String get profileQazaAssumptionsHint;
+
   /// No description provided for @profileQazaPlanChangedTitle.
   ///
   /// In en, this message translates to:

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/core/calendar/hijri_date_service.dart';
+import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/services/profile_qaza_plan_reconciliation_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
 import 'package:qaza_namaz/features/settings/profile_qaza_change_dialog.dart';
@@ -52,7 +53,11 @@ ProfileQazaPlanPreview _preview({
   );
 }
 
-Widget _host(FutureOr<ProfileQazaPlanPreview> preview) {
+Widget _host(
+  FutureOr<ProfileQazaPlanPreview> preview, {
+  UserProfile? previousProfile,
+  UserProfile? newProfile,
+}) {
   return MaterialApp(
     localizationsDelegates: AppLocalizations.localizationsDelegates,
     supportedLocales: AppLocalizations.supportedLocales,
@@ -63,6 +68,8 @@ Widget _host(FutureOr<ProfileQazaPlanPreview> preview) {
             onPressed: () => showProfileQazaChangeDialog(
               context: context,
               preview: preview,
+              previousProfile: previousProfile,
+              newProfile: newProfile,
             ),
             child: const Text('Open'),
           ),
@@ -111,6 +118,42 @@ void main() {
       expect(find.text('24'), findsOneWidget);
       expect(find.byKey(const Key('profile_qaza_cancel')), findsOneWidget);
       expect(find.byKey(const Key('profile_qaza_apply')), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'profile Qaza review lists changed calculation assumptions',
+    (tester) async {
+      final previousProfile = UserProfile(
+        gender: Gender.female,
+        madhab: Madhab.hanafi,
+        dateOfBirth: DateTime(1990, 1, 1),
+        pubertyAge: 9,
+        startPrayingAge: 10,
+        witrIncluded: true,
+        onboardingCompleted: true,
+      );
+      final newProfile = previousProfile.copyWith(
+        dateOfBirth: DateTime(1992, 1, 1),
+      );
+
+      await tester.pumpWidget(
+        _host(
+          _preview(),
+          previousProfile: previousProfile,
+          newProfile: newProfile,
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      final l10n = AppLocalizations.of(
+        tester.element(find.byKey(const Key('profile_qaza_apply'))),
+      );
+      expect(find.text(l10n.profileQazaAssumptionsChanged), findsOneWidget);
+      expect(find.text(l10n.profileDateOfBirth), findsOneWidget);
+      expect(find.text('1 January 1990'), findsOneWidget);
+      expect(find.text('1 January 1992'), findsOneWidget);
     },
   );
 

@@ -606,6 +606,20 @@
   "profileWitrExcluded": "شامل نہیں",
   "profileSubmit": "جاری رکھیں",
   "profileSave": "تبدیلیاں محفوظ کریں",
+  "profileEdit": "پروفائل میں ترمیم کریں",
+  "profileAgeYears": "{count} سال",
+  "@profileAgeYears": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileDiscardChangesTitle": "غیر محفوظ تبدیلیاں مسترد کریں؟",
+  "profileDiscardChangesMessage": "آپ کی تبدیلیاں محفوظ نہیں ہوئیں۔ کیا آپ انہیں مسترد کرکے ترمیم سے باہر نکلنا چاہتے ہیں؟",
+  "profileDiscardChangesAction": "تبدیلیاں مسترد کریں",
+  "profileQazaAssumptionsChanged": "پروفائل میں کی جانے والی تبدیلیاں",
+  "profileQazaAssumptionsHint": "قضا پلان لاگو کرنے سے پہلے پچھلی اور نئی قدروں کا جائزہ لیں۔",
   "profileQazaPlanChangedTitle": "قضا پلان اپ ڈیٹ ہوگا",
   "profileQazaPlanSummary": "آپ کی پروفائل میں تبدیلی سے حساب شدہ قضا پلان بدلتا ہے۔",
   "profileQazaReviewError": "قضا پلان کا جائزہ تیار نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
