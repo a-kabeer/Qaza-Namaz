@@ -10,6 +10,7 @@ import '../../../core/widgets/app_scaffold.dart';
 import '../../../core/widgets/prayer_visuals.dart';
 import '../../../l10n/app_localizations.dart';
 import '../application/prayer_time_providers.dart';
+import '../application/current_prayer_state.dart';
 import '../application/qibla_providers.dart';
 import '../domain/prayer_location.dart';
 import '../domain/prayer_time.dart';
@@ -307,15 +308,25 @@ class _PrayerTimeContent extends ConsumerWidget {
     final location = tz.getLocation(snapshot.location.timezoneId);
     final localNow = tz.TZDateTime.from(now, location);
     final displayDate = DateTime(localNow.year, localNow.month, localNow.day);
-    final contentSchedule =
-        snapshot.today.date == displayDate ? snapshot.today : snapshot.tomorrow;
-
-    if (contentSchedule.date != displayDate) {
+    // Refresh if either cached date is stale, not just when the schedule
+    // selected for display differs from today. At midnight the cached
+    // "tomorrow" can match today while the following day's schedule is absent.
+    if (!prayerTimeSnapshotCoversDate(snapshot, displayDate)) {
       Future.microtask(
         () => ref
             .read(prayerTimeControllerProvider.notifier)
             .refreshForDateIfNeeded(displayDate),
       );
+    }
+
+    final contentSchedule = snapshot.today.date == displayDate
+        ? snapshot.today
+        : snapshot.tomorrow.date == displayDate
+            ? snapshot.tomorrow
+            : null;
+    // Never render a stale day's prayer rows as though they belong to today.
+    if (contentSchedule == null) {
+      return const Center(child: CircularProgressIndicator());
     }
 
     final currentPrayer = current?.current;
