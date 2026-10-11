@@ -350,7 +350,24 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
   @override
   void didUpdateWidget(covariant _PendingTrackerBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.trackerState, widget.trackerState)) {
+    final previous = oldWidget.trackerState;
+    final current = widget.trackerState;
+    final filtersChanged = previous.statusFilter != current.statusFilter ||
+        previous.sortOrder != current.sortOrder ||
+        previous.prayerFilter != current.prayerFilter ||
+        previous.from != current.from ||
+        previous.to != current.to ||
+        previous.additionId != current.additionId;
+    final selectionChanged = previous.selectionMode != current.selectionMode ||
+        previous.selectionScope != current.selectionScope;
+    final refreshStarted = !previous.refreshing && current.refreshing;
+    final expandedRecordRemoved = _expandedRecordId != null &&
+        !current.records.any((record) => record.id == _expandedRecordId);
+
+    if (filtersChanged ||
+        selectionChanged ||
+        refreshStarted ||
+        expandedRecordRemoved) {
       _expandedRecordId = null;
     }
   }
@@ -942,7 +959,24 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
   @override
   void didUpdateWidget(covariant _CompletedTrackerBody oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (!identical(oldWidget.trackerState, widget.trackerState)) {
+    final previous = oldWidget.trackerState;
+    final current = widget.trackerState;
+    final filtersChanged = previous.statusFilter != current.statusFilter ||
+        previous.sortOrder != current.sortOrder ||
+        previous.prayerFilter != current.prayerFilter ||
+        previous.from != current.from ||
+        previous.to != current.to ||
+        previous.additionId != current.additionId;
+    final selectionChanged = previous.selectionMode != current.selectionMode ||
+        previous.selectionScope != current.selectionScope;
+    final refreshStarted = !previous.refreshing && current.refreshing;
+    final expandedRecordRemoved = _expandedRecordId != null &&
+        !current.records.any((record) => record.id == _expandedRecordId);
+
+    if (filtersChanged ||
+        selectionChanged ||
+        refreshStarted ||
+        expandedRecordRemoved) {
       _expandedRecordId = null;
     }
   }
