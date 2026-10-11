@@ -158,20 +158,22 @@ void main() {
     },
   );
 
-  testWidgets('bundled software notices are registered for the licence catalogue',
-      (tester) async {
-    registerAppLicenses();
-    final registeredNotices = StringBuffer();
-    await for (final entry in LicenseRegistry.licenses) {
-      registeredNotices.writeln(entry.packages.join('\\n'));
-      for (final paragraph in entry.paragraphs) {
-        registeredNotices.writeln(paragraph.text);
+  testWidgets(
+    'bundled software notices are registered for the licence catalogue',
+    (tester) async {
+      registerAppLicenses();
+      final registeredNotices = StringBuffer();
+      await for (final entry in LicenseRegistry.licenses) {
+        registeredNotices.writeln(entry.packages.join('\n'));
+        for (final paragraph in entry.paragraphs) {
+          registeredNotices.writeln(paragraph.text);
+        }
       }
-    }
 
-    expect(registeredNotices.toString(), contains('Noto Nastaliq Urdu'));
-    expect(registeredNotices.toString(), contains('SQLite3MultipleCiphers'));
-  });
+      expect(registeredNotices.toString(), contains('Noto Nastaliq Urdu'));
+      expect(registeredNotices.toString(), contains('SQLite3MultipleCiphers'));
+    },
+  );
 
   testWidgets(
     'About removes the GeoNames row and keeps attribution under Licenses',
