@@ -389,7 +389,7 @@ void main() {
         source.split('\n').firstWhere((line) => line.contains('itemCount:'));
     expect(
       itemCountLine,
-      contains('widget.trackerState.loadingMore ? 1 : 0'),
+      contains('itemCount: widget.trackerState.records.length +'),
     );
   });
 
