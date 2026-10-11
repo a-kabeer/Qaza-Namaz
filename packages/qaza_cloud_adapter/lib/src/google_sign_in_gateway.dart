@@ -5,12 +5,15 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'cloud_models.dart';
 
 const MethodChannel _backgroundAuthorizationChannel = MethodChannel(
   'qaza_cloud_adapter/google_drive_authorization',
 );
+const String _cachedAccountEmailKey =
+    'qaza_cloud_adapter.cached_account_email_v1';
 
 class GoogleSignInGateway {
   GoogleSignInGateway({
@@ -98,8 +101,20 @@ class GoogleSignInGateway {
       });
 
   Future<http.Client> _authorizeDriveSilentlyOnAndroid() async {
+    final preferences = await SharedPreferences.getInstance();
+    final expectedEmail = preferences.getString(_cachedAccountEmailKey)?.trim();
+    if (expectedEmail == null || expectedEmail.isEmpty) {
+      throw const CloudAuthorizationUnavailable(
+        'The previously connected Google account could not be identified. '
+        'Open Settings → Account and reconnect Google.',
+      );
+    }
+
     final response = await _backgroundAuthorizationChannel
-        .invokeMapMethod<String, Object?>('authorizeDriveSilently');
+        .invokeMapMethod<String, Object?>(
+          'authorizeDriveSilently',
+          <String, Object?>{'accountEmail': expectedEmail},
+        );
     final status = response?['status'];
 
     if (status == 'interactionRequired') {
