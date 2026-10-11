@@ -231,13 +231,13 @@ void main() {
       final tallBarPosition = tester.getTopLeft(tooltipFinder);
       expect(tallBarPosition.dy, shortBarPosition.dy);
       expect(tallBarPosition.dx, greaterThan(shortBarPosition.dx));
+      final tooltipValue = tester.widget<Text>(
+        find.byKey(const Key('home_activity_fixed_tooltip_value')),
+      );
+      expect(tooltipValue.data, '108');
       expect(
-        tester
-            .widget<Text>(
-              find.byKey(const Key('home_activity_fixed_tooltip_value')),
-            )
-            .data,
-        '108',
+        tooltipValue.style?.color,
+        Theme.of(tester.element(tooltipFinder)).colorScheme.onSurface,
       );
 
       final tooltipBox = tester.widget<DecoratedBox>(tooltipFinder);
