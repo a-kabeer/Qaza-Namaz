@@ -62,6 +62,6 @@ On Android, the package registers a small native plugin that calls Google Play s
 
 Account restoration reports connected only after the required Drive scope is obtained non-interactively. A missing grant sets reconnect-required while preserving the user's cloud and automatic-backup preferences. An HTTP 401 clears the native token cache so a later run can request a fresh token.
 
-These behaviours require Android device validation with the configured OAuth client. A native authorization result proves access to the default account selected during Google sign-in, but it does not itself return the account's identity; cached display fields remain presentation metadata rather than authentication evidence.
+These behaviours require Android device validation with the configured OAuth client. The native request explicitly targets the previously connected email through Android's account selector, then validates a newly returned token and the exact Drive scope. The email is used only to select the account; the fresh token and granted scope—not cached profile fields—establish authorization.
 
 Phase 1 does not initialize WorkManager, Google Sign-In, Drive, or any cloud service. A Phase 2-enabled host opts in by importing this package and calling the scheduler from a separate composition root.
