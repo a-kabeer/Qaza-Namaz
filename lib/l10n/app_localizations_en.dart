@@ -1995,11 +1995,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prayerTimeLocationData => 'Location data';
 
   @override
-  String get prayerTimeLocationDataAttribution =>
-      'City data © GeoNames, licensed under CC BY 4.0.';
-
-  @override
-  @override
   String get settingsLicensesSoftwareTitle => 'Open-source software licences';
 
   @override
@@ -2013,6 +2008,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLicensesGeoNamesSubtitle =>
       'Attribution for the offline city and place catalogue.';
 
+  @override
+  String get prayerTimeLocationDataAttribution =>
+      'City data © GeoNames, licensed under CC BY 4.0.';
+
+  @override
   String get prayerTimeUpdated => 'Updated';
 
   @override

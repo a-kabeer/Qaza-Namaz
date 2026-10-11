@@ -1993,11 +1993,6 @@ class AppLocalizationsUr extends AppLocalizations {
   String get prayerTimeLocationData => 'مقام کا ڈیٹا';
 
   @override
-  String get prayerTimeLocationDataAttribution =>
-      'شہری ڈیٹا © GeoNames، CC BY 4.0 کے تحت لائسنس یافتہ ہے۔';
-
-  @override
-  @override
   String get settingsLicensesSoftwareTitle => 'اوپن سورس سافٹ ویئر کے لائسنس';
 
   @override
@@ -2011,6 +2006,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsLicensesGeoNamesSubtitle =>
       'آف لائن شہروں اور مقامات کے ڈیٹا کی نسبت۔';
 
+  @override
+  String get prayerTimeLocationDataAttribution =>
+      'شہری ڈیٹا © GeoNames، CC BY 4.0 کے تحت لائسنس یافتہ ہے۔';
+
+  @override
   String get prayerTimeUpdated => 'اپ ڈیٹ';
 
   @override
