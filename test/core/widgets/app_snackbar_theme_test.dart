@@ -46,18 +46,21 @@ void main() {
 
         final snackbar = tester.widget<SnackBar>(find.byType(SnackBar));
         final scheme = theme.colorScheme;
-        expect(snackbar.backgroundColor, scheme.inverseSurface);
-        expect(snackbar.action?.textColor, scheme.inversePrimary);
+        expect(snackbar.backgroundColor, scheme.surfaceContainerHigh);
+        expect(snackbar.action?.textColor, scheme.primary);
 
         final message = tester.widget<Text>(find.text('Qaza completed'));
-        expect(message.style?.color, scheme.onInverseSurface);
+        expect(message.style?.color, scheme.onSurface);
 
         final icon = tester.widget<Icon>(
           find.byIcon(Icons.check_circle_outline_rounded),
         );
-        expect(icon.color, scheme.onInverseSurface);
+        expect(icon.color, scheme.onSurface);
 
-        await tester.tap(find.text('Undo'));
+        final action = tester.widget<SnackBarAction>(
+          find.byType(SnackBarAction),
+        );
+        action.onPressed();
         await tester.pump();
         expect(undoPressed, isTrue);
       },

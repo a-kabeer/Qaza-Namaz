@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/theme/app_theme.dart';
 import 'package:qaza_namaz/core/widgets/app_snackbar.dart';
 import 'package:qaza_namaz/domain/services/qaza_undo_service.dart';
 
@@ -176,6 +177,56 @@ void main() {
       expect(invoked, isTrue);
     });
   });
+
+  for (final brightness in Brightness.values) {
+    testWidgets(
+      'Undo Snackbar follows the $brightness theme surface colors',
+      (tester) async {
+        final theme =
+            brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light();
+        final messengerKey = GlobalKey<AppScaffoldMessengerState>();
+        var undoInvoked = false;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: theme,
+            builder: (context, child) => AppScaffoldMessenger(
+              key: messengerKey,
+              child: child!,
+            ),
+            home: const Scaffold(body: SizedBox.shrink()),
+          ),
+        );
+
+        AppSnackbarService(messengerKey: messengerKey).undo(
+          message: 'Qaza completed',
+          actionLabel: 'Undo',
+          onUndo: () => undoInvoked = true,
+        );
+        await tester.pump(const Duration(milliseconds: 300));
+
+        final scheme = theme.colorScheme;
+        final snack = tester.widget<SnackBar>(find.byType(SnackBar));
+        expect(snack.backgroundColor, scheme.surfaceContainerHigh);
+        expect(snack.action?.textColor, scheme.primary);
+
+        final message = tester.widget<Text>(find.text('Qaza completed'));
+        expect(message.style?.color, scheme.onSurface);
+
+        final icon = tester.widget<Icon>(
+          find.byIcon(Icons.check_circle_outline_rounded),
+        );
+        expect(icon.color, scheme.onSurface);
+
+        final action = tester.widget<SnackBarAction>(
+          find.byType(SnackBarAction),
+        );
+        action.onPressed();
+        await tester.pump();
+        expect(undoInvoked, isTrue);
+      },
+    );
+  }
 
   group('Qaza Undo domain timeout', () {
     test('expiry is independent of visual Snackbar lifetime', () {

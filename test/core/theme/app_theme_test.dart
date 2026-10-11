@@ -37,12 +37,21 @@ void main() {
         theme.bottomSheetTheme.backgroundColor,
         scheme.surfaceContainerHigh,
       );
-      expect(theme.snackBarTheme.backgroundColor, scheme.inverseSurface);
+      expect(
+        theme.snackBarTheme.backgroundColor,
+        scheme.surfaceContainerHigh,
+      );
+      expect(
+        theme.snackBarTheme.backgroundColor,
+        theme.brightness == Brightness.dark
+            ? isNot(scheme.surface)
+            : isNot(scheme.inverseSurface),
+      );
       expect(
         theme.snackBarTheme.contentTextStyle?.color,
-        scheme.onInverseSurface,
+        scheme.onSurface,
       );
-      expect(theme.snackBarTheme.actionTextColor, scheme.inversePrimary);
+      expect(theme.snackBarTheme.actionTextColor, scheme.primary);
       expect(
         _contrastRatio(
           theme.snackBarTheme.contentTextStyle!.color!,

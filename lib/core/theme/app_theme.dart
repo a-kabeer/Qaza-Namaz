@@ -389,15 +389,14 @@ class AppTheme {
         ),
       ),
       snackBarTheme: baseTheme.snackBarTheme.copyWith(
-        // SnackBars use inverse-surface semantics in both brightness modes.
-        // Declare every foreground role so Undo and other actions do not fall
-        // back to platform defaults that can lose contrast against this surface.
-        backgroundColor: scheme.inverseSurface,
+        // Snackbar surfaces follow the selected app theme rather than using
+        // inverse colors, so light mode stays light and dark mode stays dark.
+        backgroundColor: scheme.surfaceContainerHigh,
         contentTextStyle: textTheme.bodyMedium?.copyWith(
-          color: scheme.onInverseSurface,
+          color: scheme.onSurface,
         ),
-        actionTextColor: scheme.inversePrimary,
-        disabledActionTextColor: scheme.inversePrimary.withAlpha(128),
+        actionTextColor: scheme.primary,
+        disabledActionTextColor: scheme.primary.withAlpha(128),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
         ),

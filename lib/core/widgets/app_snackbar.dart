@@ -29,15 +29,16 @@ abstract final class AppSnackBarPolicy {
         : SnackBarAction(
             label: action.label,
             onPressed: action.onPressed,
-            textColor: snackTheme.actionTextColor ?? scheme.inversePrimary,
+            textColor: snackTheme.actionTextColor ?? scheme.primary,
             disabledTextColor: snackTheme.disabledActionTextColor ??
-                scheme.inversePrimary.withAlpha(128),
+                scheme.primary.withAlpha(128),
           );
 
     return SnackBar(
       key: snackBar.key,
       content: snackBar.content,
-      backgroundColor: snackTheme.backgroundColor ?? scheme.inverseSurface,
+      backgroundColor:
+          snackTheme.backgroundColor ?? scheme.surfaceContainerHigh,
       elevation: snackTheme.elevation ?? 6,
       width: snackTheme.width,
       shape: snackTheme.shape ??
@@ -195,10 +196,9 @@ class _AppSnackbarContent extends StatelessWidget {
     final snackTheme = theme.snackBarTheme;
     final contentStyle = snackTheme.contentTextStyle ??
         theme.textTheme.bodyMedium?.copyWith(
-          color: theme.colorScheme.onInverseSurface,
+          color: theme.colorScheme.onSurface,
         );
-    final foreground =
-        contentStyle?.color ?? theme.colorScheme.onInverseSurface;
+    final foreground = contentStyle?.color ?? theme.colorScheme.onSurface;
 
     return Row(
       children: [
