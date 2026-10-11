@@ -352,8 +352,9 @@ void main() {
       final defaultYear = today.year - 18;
       final lastDayInDefaultMonth =
           DateTime(defaultYear, today.month + 1, 0).day;
-      final defaultDay =
-          today.day <= lastDayInDefaultMonth ? today.day : lastDayInDefaultMonth;
+      final defaultDay = today.day <= lastDayInDefaultMonth
+          ? today.day
+          : lastDayInDefaultMonth;
 
       await tester.pumpWidget(
         MaterialApp(
