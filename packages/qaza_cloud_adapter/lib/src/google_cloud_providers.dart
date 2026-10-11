@@ -311,9 +311,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           latestProgress != null &&
           latestProgress!.totalBytes > 0) {
         onProgress?.call(
-          CloudBackupProgress.completed(
-            totalBytes: latestProgress!.totalBytes,
-          ),
+          CloudBackupProgress.completed(totalBytes: latestProgress!.totalBytes),
         );
       }
       return await _snapshotFromResult(result);
@@ -392,9 +390,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           latestProgress != null &&
           latestProgress!.totalBytes > 0) {
         onProgress?.call(
-          CloudBackupProgress.completed(
-            totalBytes: latestProgress!.totalBytes,
-          ),
+          CloudBackupProgress.completed(totalBytes: latestProgress!.totalBytes),
         );
       }
       return await _snapshotFromResult(result);
