@@ -323,8 +323,10 @@ class _TrackerContent extends StatelessWidget {
         ),
         Expanded(
           child: state.statusFilter == QazaStatusFilter.completed
-              ? _CompletedTrackerBody(trackerState: state, controller: controller)
-              : _PendingTrackerBody(trackerState: state, controller: controller),
+              ? _CompletedTrackerBody(
+                  trackerState: state, controller: controller)
+              : _PendingTrackerBody(
+                  trackerState: state, controller: controller),
         ),
       ],
     );
@@ -341,7 +343,8 @@ class _PendingTrackerBody extends ConsumerStatefulWidget {
   final QazaTrackerController controller;
 
   @override
-  ConsumerState<_PendingTrackerBody> createState() => _PendingTrackerBodyState();
+  ConsumerState<_PendingTrackerBody> createState() =>
+      _PendingTrackerBodyState();
 }
 
 class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
@@ -527,8 +530,8 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
                           _RecordRow(
                             key: Key('qaza_record_row_${record.id}'),
                             record: record,
-                            selected:
-                                widget.trackerState.selected.contains(record.id),
+                            selected: widget.trackerState.selected
+                                .contains(record.id),
                             selectionMode: widget.trackerState.selectionMode,
                             expanded: expanded,
                             busy: widget.trackerState.completing ||
@@ -546,21 +549,18 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
                                           expanded ? null : record.id;
                                     });
                                   },
-                            onLongPress:
-                                record.status == QazaStatus.pending &&
-                                        !restricted
-                                    ? () =>
-                                        controller.enterSelectionMode(record.id)
-                                    : null,
-                            onSwipeComplete:
-                                widget.trackerState.selectionMode ||
-                                        record.status != QazaStatus.pending ||
-                                        !canAct ||
-                                        widget.trackerState.completing ||
-                                        widget.trackerState.recordMutating
-                                    ? null
-                                    : () =>
-                                        _completeSingle(context, ref, record),
+                            onLongPress: record.status == QazaStatus.pending &&
+                                    !restricted
+                                ? () => controller.enterSelectionMode(record.id)
+                                : null,
+                            onSwipeComplete: widget
+                                        .trackerState.selectionMode ||
+                                    record.status != QazaStatus.pending ||
+                                    !canAct ||
+                                    widget.trackerState.completing ||
+                                    widget.trackerState.recordMutating
+                                ? null
+                                : () => _completeSingle(context, ref, record),
                           ),
                           if (expanded)
                             _PendingRecordDetails(
@@ -593,7 +593,8 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
         if (widget.trackerState.selected.isNotEmpty)
           _BulkCompletionBar(
             selectedCount: widget.trackerState.selected.length,
-            busy: widget.trackerState.completing || widget.trackerState.recordMutating,
+            busy: widget.trackerState.completing ||
+                widget.trackerState.recordMutating,
             restricted: restricted,
             onComplete: () => _completeSelected(context, ref),
             onClear: controller.exitSelectionMode,
@@ -1096,8 +1097,8 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
                         children: [
                           _CompletedRecordRow(
                             record: record,
-                            selected:
-                                widget.trackerState.selected.contains(record.id),
+                            selected: widget.trackerState.selected
+                                .contains(record.id),
                             selectionMode: selecting,
                             expanded: expanded,
                             onTap: selecting
@@ -1132,7 +1133,8 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
             ),
           ),
         ),
-        if (widget.trackerState.selectionScope == QazaSelectionScope.completed &&
+        if (widget.trackerState.selectionScope ==
+                QazaSelectionScope.completed &&
             widget.trackerState.selected.isNotEmpty)
           Positioned(
             left: 0,

@@ -1044,8 +1044,7 @@ void main() {
     expect(header, contains('error: (_, __) => const SizedBox.shrink()'));
   });
 
-  test(
-      'Pending rows use the Home prayer icon and a trailing Pending status',
+  test('Pending rows use the Home prayer icon and a trailing Pending status',
       () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
@@ -1082,7 +1081,8 @@ void main() {
     expect(row, isNot(contains('leading: selectionMode')));
   });
 
-  test('Qaza details use single-row inline expansion without detail routes', () {
+  test('Qaza details use single-row inline expansion without detail routes',
+      () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
@@ -1109,7 +1109,10 @@ void main() {
       contains('BorderSide(color: scheme.outlineVariant, width: 0.5)'),
     );
     expect(source, contains('homePrayerIcon(record.prayerType)'));
-    expect(source, contains('DateFormatters.formatGregorianDatePadded(record.originalDate)'));
+    expect(
+        source,
+        contains(
+            'DateFormatters.formatGregorianDatePadded(record.originalDate)'));
     expect(source, contains('l10n.formatHijriDate(record.originalDate)'));
     expect(source, contains('maxLines: 2'));
   });
