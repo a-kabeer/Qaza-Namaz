@@ -42,7 +42,7 @@ void main() {
         );
 
         await tester.tap(find.text('Show Undo'));
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         final snackbar = tester.widget<SnackBar>(find.byType(SnackBar));
         final scheme = theme.colorScheme;
