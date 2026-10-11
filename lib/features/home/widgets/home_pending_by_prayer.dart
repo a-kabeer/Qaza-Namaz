@@ -124,8 +124,7 @@ class HomePendingByPrayer extends ConsumerWidget {
                     progress:
                         summary.byPrayer[pendingPrayers[index]]!.progress,
                     charts: charts,
-                    onTap: () =>
-                        openQazaForPrayer(ref, pendingPrayers[index]),
+                    onTap: () => openQazaForPrayer(ref, pendingPrayers[index]),
                   ),
                   if (index < pendingPrayers.length - 1)
                     const Divider(height: 1, indent: 52),
