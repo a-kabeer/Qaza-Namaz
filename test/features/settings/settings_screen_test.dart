@@ -157,6 +157,21 @@ void main() {
     },
   );
 
+  testWidgets('bundled software notices are registered for the licence catalogue',
+      (tester) async {
+    registerAppLicenses();
+    final registeredNotices = StringBuffer();
+    await for (final entry in LicenseRegistry.licenses) {
+      registeredNotices.writeln(entry.packages.join('\\n'));
+      for (final paragraph in entry.paragraphs) {
+        registeredNotices.writeln(paragraph.text);
+      }
+    }
+
+    expect(registeredNotices.toString(), contains('Noto Nastaliq Urdu'));
+    expect(registeredNotices.toString(), contains('SQLite3MultipleCiphers'));
+  });
+
   testWidgets(
     'About removes the GeoNames row and keeps attribution under Licenses',
     (tester) async {
@@ -201,8 +216,7 @@ void main() {
       // requiring every animation to settle (which can time out in CI).
       await tester.pump(const Duration(seconds: 1));
       await tester.pump();
-      expect(find.textContaining('Noto Nastaliq Urdu'), findsWidgets);
-      expect(find.textContaining('SQLite3MultipleCiphers'), findsWidgets);
+      expect(find.byType(LicensePage), findsOneWidget);
     },
   );
 }
