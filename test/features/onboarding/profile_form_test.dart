@@ -391,6 +391,7 @@ void main() {
       expect(year.value, defaultYear);
       expect(month.value, today.month);
       expect(day.value, defaultDay);
+      expect(day.items, hasLength(lastDayInDefaultMonth));
       expect(
         find.byKey(const Key('profile_dob_picker_panel')),
         findsOneWidget,
