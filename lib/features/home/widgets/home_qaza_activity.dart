@@ -749,6 +749,7 @@ class _ActivityBarChart extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     final maxCompleted = period.days.fold<int>(
       0,
@@ -829,6 +830,56 @@ class _ActivityBarChart extends StatelessWidget {
             ),
             barTouchData: BarTouchData(
               enabled: onSelectedDay != null || onSelectedMonth != null,
+              touchTooltipData: BarTouchTooltipData(
+                // Use inverse surface tokens so the tooltip keeps strong
+                // contrast in both light and dark themes.
+                getTooltipColor: (_) => theme.colorScheme.inverseSurface,
+                tooltipRoundedRadius: 10,
+                tooltipPadding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                fitInsideHorizontally: true,
+                fitInsideVertically: true,
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  if (groupIndex < 0 || groupIndex >= period.days.length) {
+                    return null;
+                  }
+
+                  final date = period.days[groupIndex].date;
+                  final dateLabel = labelsAreDates
+                      ? DateFormat.MMMd(locale).format(date)
+                      : DateFormat.yMMMM(locale).format(date);
+                  final foreground = theme.colorScheme.onInverseSurface;
+
+                  return BarTooltipItem(
+                    '$dateLabel\\n',
+                    TextStyle(
+                      color: foreground,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '${DateFormatters.formatCount(rod.toY.round())} ',
+                        style: TextStyle(
+                          color: foreground,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                      TextSpan(
+                        text: l10n.homeCompleted,
+                        style: TextStyle(
+                          color: foreground.withAlpha(230),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  );
+                },
+              ),
               // FL Chart's built-in back-draw touch region keeps zero-height
               // bars, including future days, selectable without custom hit testing.
               allowTouchBarBackDraw: true,
