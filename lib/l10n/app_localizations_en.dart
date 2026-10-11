@@ -1761,8 +1761,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileEdit => 'Edit profile';
 
   @override
-  String profileAgeYears(int count) =>
-      count == 1 ? '$count year' : '$count years';
+  String profileAgeYears(int count) {
+    return '$count years';
+  }
 
   @override
   String get profileDiscardChangesTitle => 'Discard unsaved changes?';

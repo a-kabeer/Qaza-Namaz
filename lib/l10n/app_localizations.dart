@@ -3050,18 +3050,46 @@ abstract class AppLocalizations {
   /// **'Save Changes'**
   String get profileSave;
 
+  /// No description provided for @profileEdit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit profile'**
   String get profileEdit;
 
+  /// No description provided for @profileAgeYears.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} years'**
   String profileAgeYears(int count);
 
+  /// No description provided for @profileDiscardChangesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard unsaved changes?'**
   String get profileDiscardChangesTitle;
 
+  /// No description provided for @profileDiscardChangesMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Your edits have not been saved. Discard them and leave edit mode?'**
   String get profileDiscardChangesMessage;
 
+  /// No description provided for @profileDiscardChangesAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Discard changes'**
   String get profileDiscardChangesAction;
 
+  /// No description provided for @profileQazaAssumptionsChanged.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile values being changed'**
   String get profileQazaAssumptionsChanged;
 
+  /// No description provided for @profileQazaAssumptionsHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the previous and new values before applying this Qaza plan.'**
   String get profileQazaAssumptionsHint;
 
   /// No description provided for @profileQazaPlanChangedTitle.

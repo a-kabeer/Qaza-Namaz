@@ -1758,7 +1758,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get profileEdit => 'پروفائل میں ترمیم کریں';
 
   @override
-  String profileAgeYears(int count) => '$count سال';
+  String profileAgeYears(int count) {
+    return '$count سال';
+  }
 
   @override
   String get profileDiscardChangesTitle => 'غیر محفوظ تبدیلیاں مسترد کریں؟';
@@ -1771,7 +1773,8 @@ class AppLocalizationsUr extends AppLocalizations {
   String get profileDiscardChangesAction => 'تبدیلیاں مسترد کریں';
 
   @override
-  String get profileQazaAssumptionsChanged => 'پروفائل میں کی جانے والی تبدیلیاں';
+  String get profileQazaAssumptionsChanged =>
+      'پروفائل میں کی جانے والی تبدیلیاں';
 
   @override
   String get profileQazaAssumptionsHint =>
