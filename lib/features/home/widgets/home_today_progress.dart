@@ -382,7 +382,9 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const RestrictedTimeTimelineRow(),
+        RestrictedTimeTimelineRow(
+          onTap: () => openPrayerTime(ref),
+        ),
         Row(
           children: [
             Expanded(child: header),
