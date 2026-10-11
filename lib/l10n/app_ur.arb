@@ -1024,7 +1024,7 @@
   "cloudConnected": "منسلک",
   "cloudNotConnected": "اپنی پیش رفت کا بیک اپ رکھنے کے لیے گوگل اکاؤنٹ منسلک کریں۔",
   "cloudBackupNow": "ابھی بیک اپ کریں",
-  "cloudAutomaticBackup": "روزانہ خودکار بیک اپ",
+  "cloudAutomaticBackup": "خودکار بیک اپ",
   "cloudLastBackup": "آخری کامیاب بیک اپ",
   "cloudNeverBackedUp": "ابھی تک بیک اپ نہیں ہوا",
   "cloudBackupSucceeded": "کلاؤڈ بیک اپ/سنک مکمل ہو گیا۔",
