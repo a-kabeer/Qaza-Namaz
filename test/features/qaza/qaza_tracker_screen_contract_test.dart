@@ -925,7 +925,8 @@ void main() {
     final contentStart =
         source.indexOf('class _TrackerContent extends StatelessWidget {');
     final contentEnd = source.indexOf(
-        'class _PendingTrackerBody extends ConsumerStatefulWidget {', contentStart);
+        'class _PendingTrackerBody extends ConsumerStatefulWidget {',
+        contentStart);
     final trackerContent = source.substring(contentStart, contentEnd);
 
     expect(trackerContent, contains('_FilterSortBar('));
@@ -987,7 +988,8 @@ void main() {
     final trackerStart =
         source.indexOf('class _TrackerContent extends StatelessWidget {');
     final trackerEnd = source.indexOf(
-        'class _PendingTrackerBody extends ConsumerStatefulWidget {', trackerStart);
+        'class _PendingTrackerBody extends ConsumerStatefulWidget {',
+        trackerStart);
     final tracker = source.substring(trackerStart, trackerEnd);
 
     expect(tracker, contains('_FilterSortBar('));
