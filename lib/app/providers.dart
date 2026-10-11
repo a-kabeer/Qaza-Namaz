@@ -51,8 +51,9 @@ final cloudAccountProvider = Provider<CloudAccountProvider>(
   (ref) => const UnsupportedCloudAccountProvider(),
 );
 
-/// Runs lightweight account restoration once per app session. The cloud host
-/// starts it before routing; an onboarding screen can await the same future.
+/// Loads the optional cloud account snapshot for onboarding. The implementation
+/// may inspect a resolved account and cached identity, but must never prompt for
+/// authentication; interactive sign-in is only initiated by an explicit action.
 final cloudAccountStartupRestoreProvider =
     FutureProvider<CloudAccountSnapshot>((ref) {
   final account = ref.watch(cloudAccountProvider);

@@ -13,6 +13,8 @@ abstract interface class CloudSyncStateStore {
   Future<void> setCloudSyncEnabled(bool enabled);
   Future<bool> isAutomaticSyncEnabled();
   Future<void> setAutomaticSyncEnabled(bool enabled);
+  Future<bool> isReconnectRequired();
+  Future<void> setReconnectRequired(bool required);
   Future<DateTime?> lastSuccessfulSyncAt();
   Future<void> setLastSuccessfulSyncAt(DateTime value);
   Future<CloudConflict?> readPendingConflict();
@@ -29,6 +31,8 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   static const _cloudEnabledKey = 'qaza_cloud_adapter.cloud_enabled_v1';
   static const _automaticSyncEnabledKey =
       'qaza_cloud_adapter.automatic_sync_enabled_v1';
+  static const _reconnectRequiredKey =
+      'qaza_cloud_adapter.reconnect_required_v1';
   static const _lastSuccessfulSyncAtKey =
       'qaza_cloud_adapter.last_successful_sync_at_v1';
   static const _pendingConflictKey = 'qaza_cloud_adapter.pending_conflict_v1';
@@ -92,6 +96,7 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
       // The worker checks both durable flags before opening local storage or
       // initializing Google authorization.
       await prefs.setBool(_automaticSyncEnabledKey, false);
+      await prefs.setBool(_reconnectRequiredKey, false);
       await prefs.remove(_pendingConflictKey);
     }
   }
@@ -111,6 +116,21 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
       );
     }
     await prefs.setBool(_automaticSyncEnabledKey, enabled);
+  }
+
+  @override
+  Future<bool> isReconnectRequired() async {
+    final prefs = await _prefs;
+    return prefs.getBool(_reconnectRequiredKey) ?? false;
+  }
+
+  @override
+  Future<void> setReconnectRequired(bool required) async {
+    final prefs = await _prefs;
+    if (required && !(prefs.getBool(_cloudEnabledKey) ?? false)) {
+      return;
+    }
+    await prefs.setBool(_reconnectRequiredKey, required);
   }
 
   @override

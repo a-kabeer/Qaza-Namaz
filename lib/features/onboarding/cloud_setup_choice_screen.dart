@@ -62,6 +62,11 @@ class _CloudSetupChoiceScreenState
       if (account.isConnected) {
         _accountConnected = true;
         await _discoverBackup();
+      } else if (account.status == CloudAccountStatus.reconnectRequired) {
+        // There is an existing cloud opt-in, even though this process has no
+        // resolved account. If the user explicitly chooses local-only setup,
+        // _continueLocally must also stop that existing scheduled sync.
+        _cloudAttempted = true;
       } else if (account.status == CloudAccountStatus.failed) {
         _cloudAttempted = true;
         setState(() => _error = account.message ??
@@ -80,8 +85,10 @@ class _CloudSetupChoiceScreenState
     ref.invalidate(cloudSetupChoiceCompleteProvider);
   }
 
-  Future<void> _discoverBackup() async {
-    final result = await ref.read(cloudSyncProvider).discoverBackup();
+  Future<void> _discoverBackup({bool allowInteractive = false}) async {
+    final result = await ref.read(cloudSyncProvider).discoverBackup(
+          allowInteractive: allowInteractive,
+        );
     if (!mounted) return;
 
     switch (result.status) {
@@ -131,7 +138,9 @@ class _CloudSetupChoiceScreenState
         return;
       }
       _accountConnected = true;
-      await _discoverBackup();
+      // This follows the explicit "Use Google" tap; automatic restoration
+      // never requests Drive consent.
+      await _discoverBackup(allowInteractive: true);
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
     } finally {
@@ -248,7 +257,7 @@ class _CloudSetupChoiceScreenState
     });
     try {
       await _persistSelectedLanguage();
-      await _discoverBackup();
+      await _discoverBackup(allowInteractive: true);
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
     } finally {

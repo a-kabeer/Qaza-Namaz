@@ -116,17 +116,8 @@ class StartupGate extends ConsumerWidget {
               );
             }
 
-            if (cloudEnabled) {
-              // Restore the saved cloud session before entering the workspace.
-              // The gateway serializes restoration with interactive auth.
-              final restoration = ref.watch(cloudAccountStartupRestoreProvider);
-              return restoration.when(
-                loading: () => const SplashScreen(),
-                error: (_, __) => const WorkspaceShell(),
-                data: (_) => const WorkspaceShell(),
-              );
-            }
-
+            // Local startup must not depend on resolving Google authentication.
+            // Cached account identity is read only when Account is opened.
             return const WorkspaceShell();
           },
         );

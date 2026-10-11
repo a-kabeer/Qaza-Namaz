@@ -1,5 +1,6 @@
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'cloud_models.dart';
 import 'cloud_state_store.dart';
@@ -24,41 +25,99 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   final CloudSyncScheduler _scheduler;
   final String? serverClientId;
 
+  static const _cachedDisplayNameKey =
+      'qaza_cloud_adapter.cached_account_display_name_v1';
+  static const _cachedEmailKey = 'qaza_cloud_adapter.cached_account_email_v1';
+  static const _cachedPhotoUrlKey =
+      'qaza_cloud_adapter.cached_account_photo_url_v1';
+
   @override
   bool get isSupported => true;
 
   @override
   Future<CloudAccountSnapshot> restore() async {
     try {
-      // Native Google session state is not itself application consent to cloud
-      // backup. Restore only when this installation has durably opted in.
+      // Restore display metadata only. Cached identity is not proof of Drive
+      // authorization, and an unavailable native session must not disable the
+      // user's opt-in or automatic-backup preference.
       if (!await _state.isCloudSyncEnabled()) {
-        return const CloudAccountSnapshot.disconnected();
-      }
-      final account = await _gateway.restoreLightweightAuthentication();
-      if (account == null) {
-        await _scheduler.disconnect();
         return const CloudAccountSnapshot.disconnected();
       }
       if (await _state.isAutomaticSyncEnabled()) {
         await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
       }
-      return CloudAccountSnapshot(
-        status: CloudAccountStatus.connected,
-        displayName: account.displayName,
-        email: account.email,
-        photoUrl: account.photoUrl,
+
+      // Reading currentUser is passive; unlike
+      // attemptLightweightAuthentication, it never asks Android to show UI.
+      final account = await _gateway.currentAccount();
+      if (account != null) {
+        await _persistAccountProfile(
+          displayName: account.displayName,
+          email: account.email,
+          photoUrl: account.photoUrl,
+        );
+        return CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          displayName: account.displayName,
+          email: account.email,
+          photoUrl: account.photoUrl,
+        );
+      }
+
+      final preferences = await SharedPreferences.getInstance();
+      String? readValue(String key) {
+        final value = preferences.getString(key)?.trim();
+        return value == null || value.isEmpty ? null : value;
+      }
+
+      return CloudAccountSnapshot.reconnectRequired(
+        displayName: readValue(_cachedDisplayNameKey),
+        email: readValue(_cachedEmailKey),
+        photoUrl: readValue(_cachedPhotoUrlKey),
       );
     } catch (error) {
       return CloudAccountSnapshot.failed(error.toString());
     }
   }
 
+  Future<void> _persistAccountProfile({
+    String? displayName,
+    String? email,
+    String? photoUrl,
+  }) async {
+    final preferences = await SharedPreferences.getInstance();
+    Future<void> writeValue(String key, String? rawValue) async {
+      final value = rawValue?.trim();
+      if (value == null || value.isEmpty) {
+        await preferences.remove(key);
+      } else {
+        await preferences.setString(key, value);
+      }
+    }
+
+    await writeValue(_cachedDisplayNameKey, displayName);
+    await writeValue(_cachedEmailKey, email);
+    await writeValue(_cachedPhotoUrlKey, photoUrl);
+  }
+
+  Future<void> _clearCachedAccountProfile() async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_cachedDisplayNameKey);
+    await preferences.remove(_cachedEmailKey);
+    await preferences.remove(_cachedPhotoUrlKey);
+  }
+
   @override
   Future<CloudAccountSnapshot> signIn() async {
     try {
       final account = await _gateway.authenticate();
+      await _persistAccountProfile(
+        displayName: account.displayName,
+        email: account.email,
+        photoUrl: account.photoUrl,
+      );
       await _state.setCloudSyncEnabled(true);
+      await _state.setReconnectRequired(false);
       if (await _state.isAutomaticSyncEnabled()) {
         await _scheduler.initializeAndSchedule(serverClientId: serverClientId);
       }
@@ -78,6 +137,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     // The worker guard is persisted before OAuth sign-out can begin.
     await _scheduler.disconnect();
     await _gateway.signOut();
+    await _clearCachedAccountProfile();
   }
 }
 
@@ -104,8 +164,12 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   bool get isSupported => true;
 
   @override
-  Future<CloudBackupDiscoverySnapshot> discoverBackup() async {
-    final result = await _engine().discoverBackup(allowInteractive: true);
+  Future<CloudBackupDiscoverySnapshot> discoverBackup({
+    bool allowInteractive = false,
+  }) async {
+    final result = await _engine().discoverBackup(
+      allowInteractive: allowInteractive,
+    );
     switch (result.kind) {
       case CloudBackupDiscoveryKind.noBackup:
         return const CloudBackupDiscoverySnapshot.noBackup();
@@ -134,12 +198,15 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   Future<CloudSyncSnapshot> status() async {
     final enabled = await _state.isCloudSyncEnabled();
     final automatic = await _state.isAutomaticSyncEnabled();
+    final reconnectRequired = enabled && await _state.isReconnectRequired();
     final pendingConflict = enabled ? await _state.readPendingConflict() : null;
     return CloudSyncSnapshot(
       status: !enabled
           ? CloudSyncStatus.disconnected
           : pendingConflict != null
           ? CloudSyncStatus.conflict
+          : reconnectRequired
+          ? CloudSyncStatus.reconnectRequired
           : (_syncing ? CloudSyncStatus.syncing : CloudSyncStatus.idle),
       automaticSyncEnabled: automatic,
       lastSuccessAt: await _state.lastSuccessfulSyncAt(),
