@@ -834,7 +834,7 @@ class _ActivityBarChart extends StatelessWidget {
                 // Use inverse surface tokens so the tooltip keeps strong
                 // contrast in both light and dark themes.
                 getTooltipColor: (_) => theme.colorScheme.inverseSurface,
-                tooltipRoundedRadius: 10,
+                tooltipBorderRadius: BorderRadius.circular(10),
                 tooltipPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
