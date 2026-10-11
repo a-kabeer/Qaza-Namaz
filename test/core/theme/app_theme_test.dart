@@ -37,6 +37,26 @@ void main() {
         theme.bottomSheetTheme.backgroundColor,
         scheme.surfaceContainerHigh,
       );
+      expect(theme.snackBarTheme.backgroundColor, scheme.inverseSurface);
+      expect(
+        theme.snackBarTheme.contentTextStyle?.color,
+        scheme.onInverseSurface,
+      );
+      expect(theme.snackBarTheme.actionTextColor, scheme.inversePrimary);
+      expect(
+        _contrastRatio(
+          theme.snackBarTheme.contentTextStyle!.color!,
+          theme.snackBarTheme.backgroundColor!,
+        ),
+        greaterThanOrEqualTo(4.5),
+      );
+      expect(
+        _contrastRatio(
+          theme.snackBarTheme.actionTextColor!,
+          theme.snackBarTheme.backgroundColor!,
+        ),
+        greaterThanOrEqualTo(4.5),
+      );
       expect(
         theme.navigationBarTheme.backgroundColor,
         scheme.surfaceContainerHigh,
