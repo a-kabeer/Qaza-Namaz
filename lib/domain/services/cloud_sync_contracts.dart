@@ -78,6 +78,40 @@ enum CloudSyncStatus {
   reconnectRequired,
 }
 
+/// User-selectable periodic cloud backup cadence.
+enum CloudBackupFrequency {
+  daily(Duration(days: 1)),
+  weekly(Duration(days: 7)),
+  monthly(Duration(days: 30));
+
+  const CloudBackupFrequency(this.interval);
+  final Duration interval;
+}
+
+enum CloudBackupProgressStage { preparing, uploading }
+
+/// Progress from the upload stream. The UI must not show 100% until Drive
+/// returns successfully for the complete remote write.
+class CloudBackupProgress {
+  const CloudBackupProgress.preparing()
+      : stage = CloudBackupProgressStage.preparing,
+        sentBytes = 0,
+        totalBytes = 0;
+
+  const CloudBackupProgress.uploading({
+    required this.sentBytes,
+    required this.totalBytes,
+  }) : stage = CloudBackupProgressStage.uploading;
+
+  final CloudBackupProgressStage stage;
+  final int sentBytes;
+  final int totalBytes;
+}
+
+typedef CloudBackupProgressCallback = void Function(
+  CloudBackupProgress progress,
+);
+
 enum CloudConflictChoice { keepLocal, useRemote }
 
 class CloudConflictInfo {
@@ -112,6 +146,7 @@ class CloudSyncSnapshot {
   const CloudSyncSnapshot({
     required this.status,
     this.automaticSyncEnabled = false,
+    this.backupFrequency = CloudBackupFrequency.daily,
     this.lastSuccessAt,
     this.message,
     this.conflict,
@@ -122,6 +157,7 @@ class CloudSyncSnapshot {
   const CloudSyncSnapshot.unavailable()
       : status = CloudSyncStatus.unavailable,
         automaticSyncEnabled = false,
+        backupFrequency = CloudBackupFrequency.daily,
         lastSuccessAt = null,
         message = null,
         conflict = null,
@@ -131,6 +167,7 @@ class CloudSyncSnapshot {
   const CloudSyncSnapshot.disconnected()
       : status = CloudSyncStatus.disconnected,
         automaticSyncEnabled = false,
+        backupFrequency = CloudBackupFrequency.daily,
         lastSuccessAt = null,
         message = null,
         conflict = null,
@@ -139,6 +176,7 @@ class CloudSyncSnapshot {
 
   final CloudSyncStatus status;
   final bool automaticSyncEnabled;
+  final CloudBackupFrequency backupFrequency;
   final DateTime? lastSuccessAt;
   final String? message;
   final CloudConflictInfo? conflict;
@@ -202,12 +240,18 @@ abstract interface class CloudSyncProvider {
     bool allowInteractive = false,
   });
   Future<CloudSyncSnapshot> status();
-  Future<CloudSyncSnapshot> backupNow();
+  Future<CloudSyncSnapshot> backupNow({
+    CloudBackupProgressCallback? onProgress,
+  });
   Future<CloudSyncSnapshot> setAutomaticSyncEnabled(bool enabled);
+  Future<CloudSyncSnapshot> setAutomaticBackupFrequency(
+    CloudBackupFrequency frequency,
+  );
   Future<CloudSyncSnapshot> resolveConflict({
     required CloudConflictInfo conflict,
     required CloudConflictChoice choice,
     required bool confirmed,
+    CloudBackupProgressCallback? onProgress,
   });
   Future<CloudSyncSnapshot> restoreLocalRecoverySnapshot({
     required bool confirmed,
@@ -249,18 +293,25 @@ class UnsupportedCloudSyncProvider implements CloudSyncProvider {
       const CloudSyncSnapshot.unavailable();
 
   @override
-  Future<CloudSyncSnapshot> backupNow() async =>
-      const CloudSyncSnapshot.unavailable();
+  Future<CloudSyncSnapshot> backupNow({
+    CloudBackupProgressCallback? onProgress,
+  }) async => const CloudSyncSnapshot.unavailable();
 
   @override
   Future<CloudSyncSnapshot> setAutomaticSyncEnabled(bool enabled) async =>
       const CloudSyncSnapshot.unavailable();
 
   @override
+  Future<CloudSyncSnapshot> setAutomaticBackupFrequency(
+    CloudBackupFrequency frequency,
+  ) async => const CloudSyncSnapshot.unavailable();
+
+  @override
   Future<CloudSyncSnapshot> resolveConflict({
     required CloudConflictInfo conflict,
     required CloudConflictChoice choice,
     required bool confirmed,
+    CloudBackupProgressCallback? onProgress,
   }) async =>
       const CloudSyncSnapshot.unavailable();
 
