@@ -160,6 +160,12 @@ void main() {
         find.byKey(const Key('account_cloud_backup_card')),
         findsOneWidget,
       );
+      expect(
+        find.byKey(const Key('account_cloud_backup_frequency')),
+        findsOneWidget,
+      );
+      expect(find.text('Automatic backup'), findsOneWidget);
+      expect(find.text('Daily'), findsWidgets);
 
       final profileY = tester
           .getTopLeft(find.byKey(const Key('account_google_profile_card')))
