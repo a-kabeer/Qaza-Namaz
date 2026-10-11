@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/licenses/app_license_registry.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
@@ -35,6 +36,7 @@ class _FakeUserProfileRepository implements UserProfileRepository {
 }
 
 Widget _app(ProviderContainer container) {
+  registerAppLicenses();
   return UncontrolledProviderScope(
     container: container,
     child: Consumer(
