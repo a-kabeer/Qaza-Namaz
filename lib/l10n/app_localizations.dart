@@ -3554,6 +3554,30 @@ abstract class AppLocalizations {
   /// **'Location data'**
   String get prayerTimeLocationData;
 
+  /// No description provided for @settingsLicensesSoftwareTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Open-source software licences'**
+  String get settingsLicensesSoftwareTitle;
+
+  /// No description provided for @settingsLicensesSoftwareSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Flutter packages, native libraries and bundled fonts.'**
+  String get settingsLicensesSoftwareSubtitle;
+
+  /// No description provided for @settingsLicensesGeoNamesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'GeoNames city data'**
+  String get settingsLicensesGeoNamesTitle;
+
+  /// No description provided for @settingsLicensesGeoNamesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Attribution for the offline city and place catalogue.'**
+  String get settingsLicensesGeoNamesSubtitle;
+
   /// No description provided for @prayerTimeLocationDataAttribution.
   ///
   /// In en, this message translates to:

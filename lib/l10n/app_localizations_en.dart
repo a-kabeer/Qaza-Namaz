@@ -2029,6 +2029,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get prayerTimeLocationData => 'Location data';
 
   @override
+  String get settingsLicensesSoftwareTitle => 'Open-source software licences';
+
+  @override
+  String get settingsLicensesSoftwareSubtitle =>
+      'Flutter packages, native libraries and bundled fonts.';
+
+  @override
+  String get settingsLicensesGeoNamesTitle => 'GeoNames city data';
+
+  @override
+  String get settingsLicensesGeoNamesSubtitle =>
+      'Attribution for the offline city and place catalogue.';
+
+  @override
   String get prayerTimeLocationDataAttribution =>
       'City data © GeoNames, licensed under CC BY 4.0.';
 

@@ -8,6 +8,7 @@ import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'app/app.dart';
 import 'core/widgets/fatal_error_screen.dart';
 import 'core/diagnostics/diagnostics.dart';
+import 'core/licenses/app_license_registry.dart';
 import 'core/time/local_date_service.dart';
 import 'data/local/database/app_database.dart';
 
@@ -15,6 +16,7 @@ const Duration _startupStepTimeout = Duration(seconds: 10);
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  registerAppLicenses();
   tzdata.initializeTimeZones();
 
   const diagnostics = DebugDiagnostics();

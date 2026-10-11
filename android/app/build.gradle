@@ -4,6 +4,9 @@ plugins {
     // compiles this module's Kotlin itself.
     // The Flutter Gradle Plugin must be applied after the Android plugin.
     id "dev.flutter.flutter-gradle-plugin"
+    // flutter_native_oss_licenses plugin:start
+    id "com.google.android.gms.oss-licenses-plugin"
+    // flutter_native_oss_licenses plugin:end
 }
 
 def localProperties = new Properties()
@@ -97,3 +100,7 @@ dependencies {
 flutter {
     source = "../.."
 }
+
+// flutter_native_oss_licenses collector:start
+apply from: rootProject.file('flutter_native_oss_licenses.gradle')
+// flutter_native_oss_licenses collector:end

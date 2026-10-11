@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/licenses/app_license_registry.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
@@ -35,6 +36,7 @@ class _FakeUserProfileRepository implements UserProfileRepository {
 }
 
 Widget _app(ProviderContainer container) {
+  registerAppLicenses();
   return UncontrolledProviderScope(
     container: container,
     child: Consumer(
@@ -152,6 +154,71 @@ void main() {
       expect(repository.saveCount, 0);
       expect(container.read(localeProvider).languageCode, 'ur');
       expect(prefs.getString(LocaleNotifier.storageKey), 'ur');
+    },
+  );
+
+  test(
+    'bundled software notices are available for the licence catalogue',
+    () async {
+      final entries = await loadBundledAppLicenseEntries();
+      final registeredNotices = StringBuffer();
+      for (final entry in entries) {
+        registeredNotices.writeln(entry.packages.join('\n'));
+        for (final paragraph in entry.paragraphs) {
+          registeredNotices.writeln(paragraph.text);
+        }
+      }
+
+      expect(registeredNotices.toString(), contains('Noto Nastaliq Urdu'));
+      expect(registeredNotices.toString(), contains('SQLite3MultipleCiphers'));
+    },
+  );
+
+  testWidgets(
+    'About removes the GeoNames row and keeps attribution under Licenses',
+    (tester) async {
+      final repository = _FakeUserProfileRepository(
+        stored: const UserProfile(
+          languageCode: 'en',
+          onboardingCompleted: true,
+        ),
+      );
+      final container = _container(
+        repository,
+        _EnglishLocaleNotifier.new,
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(_app(container));
+
+      final aboutKey = find.byKey(const Key('settings_about'));
+      await tester.scrollUntilVisible(aboutKey, 200);
+      await tester.tap(aboutKey);
+      await tester.pumpAndSettle();
+
+      expect(find.text('GeoNames attribution'), findsNothing);
+      expect(find.textContaining('GeoNames'), findsNothing);
+
+      final licensesKey = find.byKey(const Key('about_licenses'));
+      await tester.scrollUntilVisible(licensesKey, 200);
+      await tester.tap(licensesKey);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('licenses_geonames_attribution')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('CC BY 4.0'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const Key('licenses_software_catalogue')),
+      );
+      // Flutter's built-in LicensePage can keep an animation scheduled while
+      // asynchronously collecting the registry. Pump the route without
+      // requiring every animation to settle (which can time out in CI).
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
+      expect(find.byType(LicensePage), findsOneWidget);
     },
   );
 }

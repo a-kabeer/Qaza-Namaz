@@ -13,6 +13,6 @@ The application keeps the actual GPS latitude/longitude for `source=current`; th
 
 ## Attribution
 
-GeoNames data is licensed under CC BY 4.0. The application displays the attribution exposed by `geonames_offline` in Settings > About.
+GeoNames data is licensed under CC BY 4.0. The application displays the attribution exposed by `geonames_offline` in Settings > About > Licenses. The complete Noto Nastaliq Urdu OFL notice is bundled as an asset and registered in Flutter's licence registry at startup. Dart/Flutter package notices are shown with Flutter's built-in licence page, and Android native dependency notices are collected through `flutter_native_oss_licenses` for both supported Android hosts. The manually bundled SQLite3MultipleCiphers notice covers the native encryption source selected through the `sqlite3mc` build hook, which is not part of Android's Gradle dependency graph.
 
 The `geonames_offline` package documentation requires downstream applications that ship its data to display its attribution.

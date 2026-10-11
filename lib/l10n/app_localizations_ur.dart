@@ -2028,6 +2028,20 @@ class AppLocalizationsUr extends AppLocalizations {
   String get prayerTimeLocationData => 'مقام کا ڈیٹا';
 
   @override
+  String get settingsLicensesSoftwareTitle => 'اوپن سورس سافٹ ویئر کے لائسنس';
+
+  @override
+  String get settingsLicensesSoftwareSubtitle =>
+      'Flutter پیکیجز، مقامی لائبریریاں اور شامل فونٹس۔';
+
+  @override
+  String get settingsLicensesGeoNamesTitle => 'GeoNames شہری ڈیٹا';
+
+  @override
+  String get settingsLicensesGeoNamesSubtitle =>
+      'آف لائن شہروں اور مقامات کے ڈیٹا کی نسبت۔';
+
+  @override
   String get prayerTimeLocationDataAttribution =>
       'شہری ڈیٹا © GeoNames، CC BY 4.0 کے تحت لائسنس یافتہ ہے۔';
 
