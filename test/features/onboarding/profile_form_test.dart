@@ -150,6 +150,9 @@ void main() {
         find.byKey(const Key('profile_dob_picker_dialog')),
         findsOneWidget,
       );
+      expect(find.text('Day'), findsOneWidget);
+      expect(find.text('Month'), findsOneWidget);
+      expect(find.text('Year'), findsOneWidget);
       final dayFinder = find.byKey(const Key('profile_dob_day'));
       final monthFinder = find.byKey(const Key('profile_dob_month'));
       final yearFinder = find.byKey(const Key('profile_dob_year'));
