@@ -286,11 +286,11 @@ class _CloudSetupChoiceScreenState
               shrinkWrap: true,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(12),
                   child: Image.asset(
                     'assets/branding/qaza_namaz_logo.png',
-                    width: 88,
-                    height: 88,
+                    width: 56,
+                    height: 56,
                     fit: BoxFit.cover,
                     filterQuality: FilterQuality.high,
                   ),
