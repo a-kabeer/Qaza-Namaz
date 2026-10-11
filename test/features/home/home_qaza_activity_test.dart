@@ -749,11 +749,14 @@ void main() {
       }
 
       await selectMonth(1);
-      final februaryHeight = tester
-          .getRect(
-            find.byKey(const Key('home_activity_inline_month_detail')),
-          )
-          .height;
+      final februaryDetail = find.byKey(
+        const Key('home_activity_inline_month_detail'),
+      );
+      final noDayDetails = find.byKey(
+        const Key('home_activity_no_selected_day'),
+      );
+      final februaryHeight = tester.getRect(februaryDetail).height;
+      expect(tester.getSize(noDayDetails).height, 0);
 
       await selectMonth(2);
       final marchHeight = tester
@@ -894,10 +897,12 @@ void main() {
 
       await tester.pumpAndSettle();
       expect(outerScrollController.offset, closeTo(offsetBefore, 0.01));
-      expect(
-        tester.getRect(inlineDetail).height,
-        closeTo(detailHeightBefore, 0.01),
+      final detailRect = tester.getRect(inlineDetail);
+      final selectedDayRect = tester.getRect(
+        find.byKey(const Key('home_activity_day_details')),
       );
+      expect(detailRect.height, greaterThan(detailHeightBefore));
+      expect(detailRect.bottom, closeTo(selectedDayRect.bottom, 0.01));
       expect(
         find.byKey(const Key('home_activity_day_details')),
         findsOneWidget,
