@@ -8,6 +8,7 @@ import '../../core/constants/app_metadata.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
+import '../prayer_time/application/prayer_time_providers.dart';
 import 'profile_screen.dart';
 import '../account/account_screen.dart';
 
@@ -112,11 +113,11 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class AboutScreen extends ConsumerWidget {
+class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AppScaffold(
       title: l10n.settingsAboutSection,
@@ -130,6 +131,74 @@ class AboutScreen extends ConsumerWidget {
           ListTile(
             title: Text(l10n.commonVersion),
             subtitle: Text(appDisplayVersion),
+          ),
+          ListTile(
+            key: const Key('about_licenses'),
+            leading: const Icon(Icons.article_outlined),
+            title: Text(MaterialLocalizations.of(context).licensesPageTitle),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const LicensesScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Separates data attribution from the complete software licence catalogue.
+class LicensesScreen extends ConsumerWidget {
+  const LicensesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final attribution = ref.watch(offlineCityResolverProvider).attribution;
+
+    return AppScaffold(
+      title: MaterialLocalizations.of(context).licensesPageTitle,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ListTile(
+                  key: const Key('licenses_geonames_attribution'),
+                  leading: const Icon(Icons.public_outlined),
+                  title: Text(l10n.settingsLicensesGeoNamesTitle),
+                  subtitle: Text(l10n.settingsLicensesGeoNamesSubtitle),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: SelectableText(attribution),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              key: const Key('licenses_software_catalogue'),
+              leading: const Icon(Icons.article_outlined),
+              title: Text(l10n.settingsLicensesSoftwareTitle),
+              subtitle: Text(l10n.settingsLicensesSoftwareSubtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                showLicensePage(
+                  context: context,
+                  applicationName: l10n.appTitle,
+                  applicationVersion: appDisplayVersion,
+                );
+              },
+            ),
           ),
         ],
       ),
