@@ -144,22 +144,16 @@ void main() {
     callback!(event, chartResponseForGroup(chart, index));
   }
 
-  void tapChartGroup(BarChart chart, int index) {
-    dispatchChartTouch(
-      chart,
-      index,
-      FlTapUpEvent(
-        TapUpDetails(kind: PointerDeviceKind.touch),
-      ),
-    );
-  }
 
   void pressChartGroup(BarChart chart, int index) {
     dispatchChartTouch(
       chart,
       index,
       FlTapDownEvent(
-        TapDownDetails(kind: PointerDeviceKind.touch),
+        TapDownDetails(
+          globalPosition: Offset.zero,
+          kind: PointerDeviceKind.touch,
+        ),
       ),
     );
   }
