@@ -461,109 +461,116 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
             child: RefreshIndicator(
               onRefresh: controller.refresh,
               child: NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                if (notification.metrics.extentAfter < 320) {
-                  controller.loadMore();
-                }
-                return false;
-              },
-              child: ListView.builder(
-                key: const Key('qaza_tracker_list'),
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  0,
-                  AppSpacing.lg,
-                  AppSpacing.fabClearance,
-                ),
-                itemCount: widget.trackerState.records.length + (widget.trackerState.loadingMore ? 1 : 0),
-                itemBuilder: (_, index) {
-                  if (index >= widget.trackerState.records.length) {
-                    return const Padding(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: AppSpacing.lg,
-                        vertical: AppSpacing.sm,
-                      ),
+                onNotification: (notification) {
+                  if (notification.metrics.extentAfter < 320) {
+                    controller.loadMore();
+                  }
+                  return false;
+                },
+                child: ListView.builder(
+                  key: const Key('qaza_tracker_list'),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.fabClearance,
+                  ),
+                  itemCount: widget.trackerState.records.length +
+                      (widget.trackerState.loadingMore ? 1 : 0),
+                  itemBuilder: (_, index) {
+                    if (index >= widget.trackerState.records.length) {
+                      return const Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: AppSpacing.lg,
+                          vertical: AppSpacing.sm,
+                        ),
+                        child: Column(
+                          children: [
+                            _TrackerSkeletonRow(),
+                            _TrackerSkeletonRow(),
+                          ],
+                        ),
+                      );
+                    }
+                    final record = widget.trackerState.records[index];
+                    final canAct =
+                        record.status == QazaStatus.pending && !restricted;
+                    final canComplete = canAct &&
+                        !widget.trackerState.completing &&
+                        !widget.trackerState.recordMutating;
+                    final expanded = !widget.trackerState.selectionMode &&
+                        _expandedRecordId == record.id;
+
+                    return _QazaStackedTile(
+                      isFirst: index == 0,
                       child: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          _TrackerSkeletonRow(),
-                          _TrackerSkeletonRow(),
+                          _RecordRow(
+                            key: Key('qaza_record_row_${record.id}'),
+                            record: record,
+                            selected:
+                                widget.trackerState.selected.contains(record.id),
+                            selectionMode: widget.trackerState.selectionMode,
+                            expanded: expanded,
+                            busy: widget.trackerState.completing ||
+                                widget.trackerState.recordMutating,
+                            canAct: canAct,
+                            onTap: widget.trackerState.selectionMode
+                                ? (record.status == QazaStatus.pending &&
+                                        !restricted
+                                    ? () =>
+                                        controller.toggleSelection(record.id)
+                                    : null)
+                                : () {
+                                    setState(() {
+                                      _expandedRecordId =
+                                          expanded ? null : record.id;
+                                    });
+                                  },
+                            onLongPress:
+                                record.status == QazaStatus.pending &&
+                                        !restricted
+                                    ? () =>
+                                        controller.enterSelectionMode(record.id)
+                                    : null,
+                            onSwipeComplete:
+                                widget.trackerState.selectionMode ||
+                                        record.status != QazaStatus.pending ||
+                                        !canAct ||
+                                        widget.trackerState.completing ||
+                                        widget.trackerState.recordMutating
+                                    ? null
+                                    : () =>
+                                        _completeSingle(context, ref, record),
+                          ),
+                          if (expanded)
+                            _PendingRecordDetails(
+                              record: record,
+                              canComplete: canComplete,
+                              onComplete: canComplete
+                                  ? () async {
+                                      final completed = await _completeSingle(
+                                        context,
+                                        ref,
+                                        record,
+                                      );
+                                      if (completed && mounted) {
+                                        setState(() {
+                                          _expandedRecordId = null;
+                                        });
+                                      }
+                                    }
+                                  : null,
+                            ),
                         ],
                       ),
                     );
-                  }
-                  final record = widget.trackerState.records[index];
-                  final canAct =
-                      record.status == QazaStatus.pending && !restricted;
-                  final canComplete = canAct &&
-                      !widget.trackerState.completing &&
-                      !widget.trackerState.recordMutating;
-                  final expanded = !widget.trackerState.selectionMode &&
-                      _expandedRecordId == record.id;
-
-                  return _QazaStackedTile(
-                    isFirst: index == 0,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _RecordRow(
-                          key: Key('qaza_record_row_${record.id}'),
-                          record: record,
-                          selected:
-                              widget.trackerState.selected.contains(record.id),
-                          selectionMode: widget.trackerState.selectionMode,
-                          expanded: expanded,
-                          busy: widget.trackerState.completing ||
-                              widget.trackerState.recordMutating,
-                          canAct: canAct,
-                          onTap: widget.trackerState.selectionMode
-                              ? (record.status == QazaStatus.pending &&
-                                      !restricted
-                                  ? () => controller.toggleSelection(record.id)
-                                  : null)
-                              : () {
-                                  setState(() {
-                                    _expandedRecordId =
-                                        expanded ? null : record.id;
-                                  });
-                                },
-                          onLongPress: record.status == QazaStatus.pending &&
-                                  !restricted
-                              ? () => controller.enterSelectionMode(record.id)
-                              : null,
-                          onSwipeComplete: widget.trackerState.selectionMode ||
-                                  record.status != QazaStatus.pending ||
-                                  !canAct ||
-                                  widget.trackerState.completing ||
-                                  widget.trackerState.recordMutating
-                              ? null
-                              : () => _completeSingle(context, ref, record),
-                        ),
-                        if (expanded)
-                          _PendingRecordDetails(
-                            record: record,
-                            canComplete: canComplete,
-                            onComplete: canComplete
-                                ? () async {
-                                    final completed = await _completeSingle(
-                                      context,
-                                      ref,
-                                      record,
-                                    );
-                                    if (completed && mounted) {
-                                      setState(() {
-                                        _expandedRecordId = null;
-                                      });
-                                    }
-                                  }
-                                : null,
-                          ),
-                      ],
-                    ),
-                  );                },
+                  },
+                ),
               ),
             ),
-          ),
           ),
         ),
         if (widget.trackerState.selected.isNotEmpty)
@@ -1012,78 +1019,82 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
             child: RefreshIndicator(
               onRefresh: controller.refresh,
               child: NotificationListener<ScrollNotification>(
-              onNotification: (notification) {
-                if (notification.metrics.extentAfter < 320) {
-                  controller.loadMore();
-                }
-                return false;
-              },
-              child: ListView.builder(
-                key: const Key('qaza_completed_list'),
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg,
-                  0,
-                  AppSpacing.lg,
-                  AppSpacing.fabClearance + 96,
-                ),
-                itemCount: widget.trackerState.records.length + (widget.trackerState.hasMore ? 1 : 0),
-                itemBuilder: (context, index) {
-                  if (index >= widget.trackerState.records.length) {
-                    return const Padding(
-                      padding: EdgeInsets.all(AppSpacing.md),
-                      child: CircularProgressIndicator(),
-                    );
+                onNotification: (notification) {
+                  if (notification.metrics.extentAfter < 320) {
+                    controller.loadMore();
                   }
-                  final record = widget.trackerState.records[index];
-                  final completedAt = record.completedAt;
-                  if (completedAt == null) return const SizedBox.shrink();
+                  return false;
+                },
+                child: ListView.builder(
+                  key: const Key('qaza_completed_list'),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg,
+                    0,
+                    AppSpacing.lg,
+                    AppSpacing.fabClearance + 96,
+                  ),
+                  itemCount: widget.trackerState.records.length +
+                      (widget.trackerState.hasMore ? 1 : 0),
+                  itemBuilder: (context, index) {
+                    if (index >= widget.trackerState.records.length) {
+                      return const Padding(
+                        padding: EdgeInsets.all(AppSpacing.md),
+                        child: CircularProgressIndicator(),
+                      );
+                    }
+                    final record = widget.trackerState.records[index];
+                    final completedAt = record.completedAt;
+                    if (completedAt == null) {
+                      return const SizedBox.shrink();
+                    }
 
-                  final selecting = widget.trackerState.selectionScope ==
-                      QazaSelectionScope.completed;
-                  final expanded =
-                      !selecting && _expandedRecordId == record.id;
+                    final selecting = widget.trackerState.selectionScope ==
+                        QazaSelectionScope.completed;
+                    final expanded =
+                        !selecting && _expandedRecordId == record.id;
 
-                  return _QazaStackedTile(
-                    isFirst: index == 0,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _CompletedRecordRow(
-                          record: record,
-                          selected:
-                              widget.trackerState.selected.contains(record.id),
-                          selectionMode: selecting,
-                          expanded: expanded,
-                          onTap: selecting
-                              ? () =>
-                                  controller.toggleCompletedSelection(record.id)
-                              : () {
-                                  setState(() {
-                                    _expandedRecordId =
-                                        expanded ? null : record.id;
-                                  });
-                                },
-                          onLongPress: () =>
-                              controller.enterCompletedSelectionMode(record.id),
-                        ),
-                        if (expanded)
-                          _CompletedRecordDetails(
+                    return _QazaStackedTile(
+                      isFirst: index == 0,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _CompletedRecordRow(
                             record: record,
-                            controller: controller,
-                            onSaved: () {
-                              if (!mounted) return;
-                              setState(() {
-                                _expandedRecordId = null;
-                              });
-                            },
+                            selected:
+                                widget.trackerState.selected.contains(record.id),
+                            selectionMode: selecting,
+                            expanded: expanded,
+                            onTap: selecting
+                                ? () => controller
+                                    .toggleCompletedSelection(record.id)
+                                : () {
+                                    setState(() {
+                                      _expandedRecordId =
+                                          expanded ? null : record.id;
+                                    });
+                                  },
+                            onLongPress: () => controller
+                                .enterCompletedSelectionMode(record.id),
                           ),
-                      ],
-                    ),
-                  );                },
+                          if (expanded)
+                            _CompletedRecordDetails(
+                              record: record,
+                              controller: controller,
+                              onSaved: () {
+                                if (!mounted) return;
+                                setState(() {
+                                  _expandedRecordId = null;
+                                });
+                              },
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
           ),
         ),
         if (widget.trackerState.selectionScope == QazaSelectionScope.completed &&
