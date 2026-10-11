@@ -179,6 +179,16 @@ class QazaTrackerState {
         error: clearError ? null : error ?? this.error,
         selected: selected ?? this.selected,
       );
+
+  /// Keeps the selected IDs, selection mode, and scope consistent.
+  ///
+  /// An empty selection ends multi-select mode automatically so users do not
+  /// need to press Back or close after unchecking the final row.
+  QazaTrackerState copyWithSelection(Set<String> selection) => copyWith(
+        selected: selection,
+        selectionMode: selection.isNotEmpty,
+        clearSelectionScope: selection.isEmpty,
+      );
 }
 
 /// A filter another screen wants the tracker to open with.
@@ -501,7 +511,7 @@ class QazaTrackerController
     if (state.selectionScope != QazaSelectionScope.pending) return;
     final next = Set<String>.of(state.selected);
     if (!next.remove(recordId)) next.add(recordId);
-    state = state.copyWith(selectionMode: true, selected: next);
+    state = state.copyWithSelection(next);
   }
 
   void toggleCompletedSelection(String recordId) {
@@ -519,7 +529,7 @@ class QazaTrackerController
       if (record.completionId == null) return;
       next.add(recordId);
     }
-    state = state.copyWith(selectionMode: true, selected: next);
+    state = state.copyWithSelection(next);
   }
 
   void exitSelectionMode() => state = state.copyWith(
