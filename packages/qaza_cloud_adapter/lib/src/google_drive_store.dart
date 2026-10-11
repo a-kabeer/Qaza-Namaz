@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:googleapis/drive/v3.dart' as drive;
+import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 import 'cloud_models.dart';
 import 'google_sign_in_gateway.dart';
@@ -74,6 +75,7 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
   Future<CloudRemoteSnapshot> write(
     CloudBackup backup, {
     required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
   }) async {
     return _withDrive<CloudRemoteSnapshot>(
       allowInteractive: allowInteractive,
@@ -94,7 +96,7 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
               'db_revision': backup.lineage.dbRevision.toString(),
             },
           uploadMedia: drive.Media(
-            Stream<List<int>>.value(bytes),
+            _uploadProgressStream(bytes, onProgress: onProgress),
             bytes.length,
             contentType: 'application/json',
           ),
@@ -123,6 +125,32 @@ class GoogleDriveAppDataStore implements CloudRemoteStore {
         );
       },
     );
+  }
+
+  Stream<List<int>> _uploadProgressStream(
+    List<int> bytes, {
+    CloudBackupProgressCallback? onProgress,
+  }) async* {
+    const chunkSize = 16 * 1024;
+    onProgress?.call(
+      CloudBackupProgress.uploading(sentBytes: 0, totalBytes: bytes.length),
+    );
+    var offset = 0;
+    while (offset < bytes.length) {
+      final end = offset + chunkSize < bytes.length
+          ? offset + chunkSize
+          : bytes.length;
+      yield bytes.sublist(offset, end);
+      // The HTTP client has consumed this upload-stream chunk. Keep the UI
+      // below 100% until Drive confirms the complete remote write.
+      offset = end;
+      onProgress?.call(
+        CloudBackupProgress.uploading(
+          sentBytes: offset,
+          totalBytes: bytes.length,
+        ),
+      );
+    }
   }
 
   Future<T> _withDrive<T>({
