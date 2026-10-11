@@ -1,5 +1,6 @@
 package com.qaza_namaz.cloud_adapter
 
+import android.accounts.Account
 import android.content.Context
 import com.google.android.gms.auth.api.identity.AuthorizationRequest
 import com.google.android.gms.auth.api.identity.ClearTokenRequest
@@ -37,25 +38,30 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            "authorizeDriveSilently" -> authorizeDriveSilently(result)
+            "authorizeDriveSilently" -> authorizeDriveSilently(call, result)
             "clearAuthorizationToken" -> clearAuthorizationToken(call, result)
             else -> result.notImplemented()
         }
     }
 
-    private fun authorizeDriveSilently(result: MethodChannel.Result) {
+    private fun authorizeDriveSilently(call: MethodCall, result: MethodChannel.Result) {
         val context = appContext
-        if (context == null) {
+        val accountEmail = call.argument<String>("accountEmail")?.trim()
+        if (context == null || accountEmail.isNullOrEmpty()) {
             result.success(
                 mapOf(
                     "status" to "unavailable",
-                    "message" to "The Android authorization context is unavailable.",
+                    "message" to "The Android authorization context or connected account is unavailable.",
                 ),
             )
             return
         }
 
+        // Target the account the foreground user explicitly connected. The
+        // cached email selects the account; only a freshly returned access token
+        // and granted scope prove that the native authorization is usable.
         val request = AuthorizationRequest.builder()
+            .setAccount(Account(accountEmail, GOOGLE_ACCOUNT_TYPE))
             .setRequestedScopes(listOf(Scope(DRIVE_APPDATA_SCOPE)))
             .build()
 
@@ -72,11 +78,10 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                     val accessToken = authorization.accessToken
                     val grantedScopes = authorization.grantedScopes
-                    val driveAuthorized =
-                        !accessToken.isNullOrBlank() &&
-                        grantedScopes.contains(DRIVE_APPDATA_SCOPE)
 
-                    if (!driveAuthorized) {
+                    if (accessToken.isNullOrBlank() ||
+                        !grantedScopes.contains(DRIVE_APPDATA_SCOPE)
+                    ) {
                         result.success(mapOf("status" to "interactionRequired"))
                         return@addOnSuccessListener
                     }
@@ -153,6 +158,7 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private companion object {
         const val CHANNEL_NAME = "qaza_cloud_adapter/google_drive_authorization"
+        const val GOOGLE_ACCOUNT_TYPE = "com.google"
         const val DRIVE_APPDATA_SCOPE =
             "https://www.googleapis.com/auth/drive.appdata"
     }
