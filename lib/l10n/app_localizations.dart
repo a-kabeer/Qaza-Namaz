@@ -2967,12 +2967,21 @@ abstract class AppLocalizations {
   String get profileDateOfBirth;
 
   /// No description provided for @profileDobDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Day'**
   String get profileDobDay;
 
   /// No description provided for @profileDobMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Month'**
   String get profileDobMonth;
 
   /// No description provided for @profileDobYear.
+  ///
+  /// In en, this message translates to:
+  /// **'Year'**
   String get profileDobYear;
 
   /// No description provided for @profileSelectDate.

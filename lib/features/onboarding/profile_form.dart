@@ -75,9 +75,7 @@ class _ProfileFormState extends State<ProfileForm> {
         DateTime(
           defaultYear,
           now.month,
-          now.day <= finalDayInDefaultMonth
-              ? now.day
-              : finalDayInDefaultMonth,
+          now.day <= finalDayInDefaultMonth ? now.day : finalDayInDefaultMonth,
         );
     var initialDate = DateTime(initial.year, initial.month, initial.day);
     if (initialDate.year < 1900) initialDate = DateTime(1900, 1, 1);
@@ -466,7 +464,6 @@ class _ProfileFormState extends State<ProfileForm> {
   String _formatDate(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
 }
-
 
 class _DateOfBirthPickerDialog extends StatefulWidget {
   const _DateOfBirthPickerDialog({
