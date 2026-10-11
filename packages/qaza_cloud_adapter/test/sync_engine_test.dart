@@ -133,17 +133,18 @@ void main() {
     });
 
     test(
-      'uploads the initial local backup when no remote backup exists',
+      'uploads the initial local backup and forwards progress events',
       () async {
         final phase1 = FakePhase1(revision: 10);
         final state = FakeState(deviceIdValue: 'device-A', cursor: null);
         final remote = FakeRemote(latestSnapshot: null);
+        final progress = <CloudBackupProgress>[];
 
         final result = await CloudSyncEngine(
           phase1: phase1,
           remote: remote,
           state: state,
-        ).sync();
+        ).sync(onProgress: progress.add);
 
         expect(result.kind, CloudSyncResultKind.uploaded);
         expect(remote.writeCount, 1);
@@ -154,6 +155,17 @@ void main() {
           remote.written!.lineage.backupId,
         );
         expect(state.cursor!.lastSyncedLocalRevision, 10);
+        expect(progress.first.stage, CloudBackupProgressStage.preparing);
+        expect(
+          progress.any(
+            (item) => item.stage == CloudBackupProgressStage.uploading,
+          ),
+          isTrue,
+        );
+        expect(
+          progress.last.sentBytes,
+          progress.last.totalBytes,
+        );
       },
     );
 
@@ -945,6 +957,16 @@ class FakeRemote implements CloudRemoteStore {
   }) async {
     writeCount++;
     written = backup;
+    final totalBytes = backup.toJsonString().length;
+    onProgress?.call(
+      CloudBackupProgress.uploading(sentBytes: 0, totalBytes: totalBytes),
+    );
+    onProgress?.call(
+      CloudBackupProgress.uploading(
+        sentBytes: totalBytes,
+        totalBytes: totalBytes,
+      ),
+    );
     latestSnapshot = CloudRemoteSnapshot(
       fileId: 'file-' + backup.lineage.backupId,
       remoteVersion: 'new-version',
