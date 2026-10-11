@@ -560,17 +560,10 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
                           ),
                       ],
                     ),
-                  );
-                },
+                  );                },
               ),
             ),
           ),
-          ),
-        ),
-        if (widget.trackerState.selected.isNotEmpty)                  );
-                },
-              ),
-            ),
           ),
         ),
         if (widget.trackerState.selected.isNotEmpty)
@@ -1087,17 +1080,10 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
                           ),
                       ],
                     ),
-                  );
-                },
+                  );                },
               ),
             ),
           ),
-          ),
-        ),
-        if (widget.trackerState.selectionScope == QazaSelectionScope.completed                  );
-                },
-              ),
-            ),
           ),
         ),
         if (widget.trackerState.selectionScope == QazaSelectionScope.completed &&
