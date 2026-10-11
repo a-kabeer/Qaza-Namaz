@@ -456,18 +456,18 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
             ),
           ),
         Expanded(
-          child: RefreshIndicator(
-            onRefresh: controller.refresh,
-            child: NotificationListener<ScrollNotification>(
+          child: ColoredBox(
+            color: Theme.of(context).colorScheme.surfaceContainer,
+            child: RefreshIndicator(
+              onRefresh: controller.refresh,
+              child: NotificationListener<ScrollNotification>(
               onNotification: (notification) {
                 if (notification.metrics.extentAfter < 320) {
                   controller.loadMore();
                 }
                 return false;
               },
-              child: ColoredBox(
-                color: Theme.of(context).colorScheme.surfaceContainer,
-                child: ListView.builder(
+              child: ListView.builder(
                 key: const Key('qaza_tracker_list'),
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(
@@ -507,8 +507,68 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         _RecordRow(
-                      },
-                ),
+                          key: Key('qaza_record_row_${record.id}'),
+                          record: record,
+                          selected:
+                              widget.trackerState.selected.contains(record.id),
+                          selectionMode: widget.trackerState.selectionMode,
+                          expanded: expanded,
+                          busy: widget.trackerState.completing ||
+                              widget.trackerState.recordMutating,
+                          canAct: canAct,
+                          onTap: widget.trackerState.selectionMode
+                              ? (record.status == QazaStatus.pending &&
+                                      !restricted
+                                  ? () => controller.toggleSelection(record.id)
+                                  : null)
+                              : () {
+                                  setState(() {
+                                    _expandedRecordId =
+                                        expanded ? null : record.id;
+                                  });
+                                },
+                          onLongPress: record.status == QazaStatus.pending &&
+                                  !restricted
+                              ? () => controller.enterSelectionMode(record.id)
+                              : null,
+                          onSwipeComplete: widget.trackerState.selectionMode ||
+                                  record.status != QazaStatus.pending ||
+                                  !canAct ||
+                                  widget.trackerState.completing ||
+                                  widget.trackerState.recordMutating
+                              ? null
+                              : () => _completeSingle(context, ref, record),
+                        ),
+                        if (expanded)
+                          _PendingRecordDetails(
+                            record: record,
+                            canComplete: canComplete,
+                            onComplete: canComplete
+                                ? () async {
+                                    final completed = await _completeSingle(
+                                      context,
+                                      ref,
+                                      record,
+                                    );
+                                    if (completed && mounted) {
+                                      setState(() {
+                                        _expandedRecordId = null;
+                                      });
+                                    }
+                                  }
+                                : null,
+                          ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+          ),
+        ),
+        if (widget.trackerState.selected.isNotEmpty)                  );
+                },
               ),
             ),
           ),
@@ -539,9 +599,9 @@ class _QazaStackedTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    // The existing Light-theme surfaceContainerHigh token is too close to
-    // surfaceContainer. Use the existing white container there; keep the
-    // raised charcoal container in Dark mode. No global tokens are changed.
+    // Light surfaceContainerHigh is too close to surfaceContainer. Use an
+    // existing white surface in Light mode and the raised charcoal surface
+    // in Dark mode; no global theme colors are changed.
     final tileColor = theme.brightness == Brightness.light
         ? scheme.surfaceContainerLow
         : scheme.surfaceContainerHigh;
@@ -959,13 +1019,13 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
             child: RefreshIndicator(
               onRefresh: controller.refresh,
               child: NotificationListener<ScrollNotification>(
-                onNotification: (notification) {
-                  if (notification.metrics.extentAfter < 320) {
-                    controller.loadMore();
-                  }
-                  return false;
-                },
-                child: ListView.builder(
+              onNotification: (notification) {
+                if (notification.metrics.extentAfter < 320) {
+                  controller.loadMore();
+                }
+                return false;
+              },
+              child: ListView.builder(
                 key: const Key('qaza_completed_list'),
                 physics: const AlwaysScrollableScrollPhysics(),
                 padding: const EdgeInsets.fromLTRB(
@@ -988,8 +1048,8 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
 
                   final selecting = widget.trackerState.selectionScope ==
                       QazaSelectionScope.completed;
-                  final expanded = !selecting &&
-                      _expandedRecordId == record.id;
+                  final expanded =
+                      !selecting && _expandedRecordId == record.id;
 
                   return _QazaStackedTile(
                     isFirst: index == 0,
@@ -998,11 +1058,13 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
                       children: [
                         _CompletedRecordRow(
                           record: record,
-                          selected: widget.trackerState.selected.contains(record.id),
+                          selected:
+                              widget.trackerState.selected.contains(record.id),
                           selectionMode: selecting,
                           expanded: expanded,
                           onTap: selecting
-                              ? () => controller.toggleCompletedSelection(record.id)
+                              ? () =>
+                                  controller.toggleCompletedSelection(record.id)
                               : () {
                                   setState(() {
                                     _expandedRecordId =
@@ -1027,7 +1089,13 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
                     ),
                   );
                 },
-                ),
+              ),
+            ),
+          ),
+          ),
+        ),
+        if (widget.trackerState.selectionScope == QazaSelectionScope.completed                  );
+                },
               ),
             ),
           ),
