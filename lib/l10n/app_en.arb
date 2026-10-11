@@ -1411,7 +1411,7 @@
   "cloudConnected": "Connected",
   "cloudNotConnected": "Connect a Google account to back up your progress.",
   "cloudBackupNow": "Back up now",
-  "cloudAutomaticBackup": "Daily automatic backup",
+  "cloudAutomaticBackup": "Automatic backup",
   "cloudLastBackup": "Last successful backup",
   "cloudNeverBackedUp": "Not backed up yet",
   "cloudBackupSucceeded": "Cloud backup/sync completed.",
