@@ -744,11 +744,10 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
     final pressedTooltipIndex = _pressedTooltipIndex ?? -1;
 
     void updatePressedTooltip(int? index) {
-      final nextIndex = index != null &&
-              index >= 0 &&
-              index < period.days.length
-          ? index
-          : null;
+      final nextIndex =
+          index != null && index >= 0 && index < period.days.length
+              ? index
+              : null;
       if (_pressedTooltipIndex != nextIndex) {
         setState(() => _pressedTooltipIndex = nextIndex);
       }
@@ -875,8 +874,7 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
                           vertical: 20,
                         ),
                         touchCallback: (event, response) {
-                          final index =
-                              response?.spot?.touchedBarGroupIndex;
+                          final index = response?.spot?.touchedBarGroupIndex;
 
                           if (event is FlTapDownEvent ||
                               event is FlPanDownEvent ||
