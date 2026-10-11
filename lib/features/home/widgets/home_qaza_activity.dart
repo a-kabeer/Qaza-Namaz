@@ -720,14 +720,57 @@ class _ActivityBarChart extends StatelessWidget {
     final axis = _activityAxisScale(maxCompleted);
     final maxY = axis.maxY;
     final leftInterval = axis.interval;
+    final selectedDayValue = selectedDay;
+    final selectedMonthValue = selectedMonth;
+    final selectedTooltipIndex = labelsAreDates
+        ? period.days.indexWhere(
+            (day) =>
+                selectedDayValue != null &&
+                day.date.year == selectedDayValue.year &&
+                day.date.month == selectedDayValue.month &&
+                day.date.day == selectedDayValue.day,
+          )
+        : period.days.indexWhere(
+            (month) =>
+                selectedMonthValue != null &&
+                month.date.year == selectedMonthValue.year &&
+                month.date.month == selectedMonthValue.month,
+          );
 
     return Semantics(
       container: true,
       label: _chartSemantics(context),
       child: SizedBox(
         height: 250,
-        child: BarChart(
-          BarChartData(
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            const tooltipWidth = 72.0;
+            const plotLeft = 36.0;
+            final plotWidth =
+                math.max(constraints.maxWidth - plotLeft, 0.0).toDouble();
+            final hasSelectedTooltip = selectedTooltipIndex >= 0 &&
+                selectedTooltipIndex < period.days.length;
+            final tooltipCenterX = !hasSelectedTooltip || period.days.isEmpty
+                ? 0.0
+                : plotLeft +
+                    plotWidth *
+                        (selectedTooltipIndex + 0.5) /
+                        period.days.length;
+            final safeTooltipWidth =
+                math.min(tooltipWidth, constraints.maxWidth).toDouble();
+            final tooltipLeft = math.max(
+              0.0,
+              math.min(
+                tooltipCenterX - safeTooltipWidth / 2,
+                constraints.maxWidth - safeTooltipWidth,
+              ),
+            ).toDouble();
+
+            return Stack(
+              children: [
+                Positioned.fill(
+                  child: BarChart(
+                    BarChartData(
             maxY: maxY,
             minY: 0,
             alignment: BarChartAlignment.spaceAround,
@@ -792,13 +835,10 @@ class _ActivityBarChart extends StatelessWidget {
             ),
             barTouchData: BarTouchData(
               enabled: onSelectedDay != null || onSelectedMonth != null,
-              touchTooltipData: BarTouchTooltipData(
-                getTooltipColor: (_) => theme.colorScheme.surfaceContainerHigh,
-                getTooltipItem: (_, __, rod, ___) => BarTooltipItem(
-                  DateFormatters.formatCount(rod.toY.round()),
-                  TextStyle(color: theme.colorScheme.onSurface),
-                ),
-              ),
+              // The custom tooltip is pinned to one row in the chart overlay.
+              // Disable FL Chart's bar-relative tooltip so it cannot jump with
+              // the selected rod's height.
+              handleBuiltInTouches: false,
               // FL Chart's built-in back-draw touch region keeps zero-height
               // bars, including future days, selectable without custom hit testing.
               allowTouchBarBackDraw: true,
@@ -847,6 +887,48 @@ class _ActivityBarChart extends StatelessWidget {
           ),
           duration: ChartAnimationPolicy.durationFor(context),
           curve: ChartAnimationPolicy.curve,
+                ),
+              ),
+                if (hasSelectedTooltip)
+                  Positioned(
+                    left: tooltipLeft,
+                    top: 4,
+                    width: safeTooltipWidth,
+                    child: IgnorePointer(
+                      child: DecoratedBox(
+                        key: const Key('home_activity_fixed_tooltip'),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(
+                            color: theme.colorScheme.outlineVariant,
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 5,
+                          ),
+                          child: Text(
+                            DateFormatters.formatCount(
+                              period.days[selectedTooltipIndex].completed,
+                            ),
+                            key: const Key('home_activity_fixed_tooltip_value'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            textAlign: TextAlign.center,
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: theme.colorScheme.onSurface,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
         ),
       ),
     );
