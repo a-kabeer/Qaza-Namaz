@@ -739,7 +739,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               const SizedBox(height: 4),
               DropdownButtonFormField<CloudBackupFrequency>(
                 key: const Key('account_cloud_backup_frequency'),
-                value: _sync.backupFrequency,
+                initialValue: _sync.backupFrequency,
                 decoration: InputDecoration(
                   labelText: _isUrdu ? 'بیک اپ کی فریکوئنسی' : 'Backup frequency',
                 ),
