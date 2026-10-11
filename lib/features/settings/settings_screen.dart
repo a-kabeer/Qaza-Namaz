@@ -104,11 +104,11 @@ class SettingsScreen extends ConsumerWidget {
   }
 }
 
-class AboutScreen extends ConsumerWidget {
+class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     return AppScaffold(
       title: l10n.settingsAboutSection,
@@ -124,9 +124,47 @@ class AboutScreen extends ConsumerWidget {
             subtitle: Text(appDisplayVersion),
           ),
           ListTile(
-            title: const Text('GeoNames attribution'),
-            subtitle: Text(
-              ref.read(offlineCityResolverProvider).attribution,
+            key: const Key('about_licenses'),
+            leading: const Icon(Icons.article_outlined),
+            title: Text(MaterialLocalizations.of(context).licensesPageTitle),
+            trailing: const Icon(Icons.chevron_right_rounded),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => const LicensesScreen(),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Keeps third-party data notices out of the compact About summary while
+/// making the required GeoNames attribution available from a dedicated page.
+class LicensesScreen extends ConsumerWidget {
+  const LicensesScreen({super.key});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final attribution = ref.watch(offlineCityResolverProvider).attribution;
+    final theme = Theme.of(context);
+
+    return AppScaffold(
+      title: MaterialLocalizations.of(context).licensesPageTitle,
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: SelectableText(
+                attribution,
+                style: theme.textTheme.bodyMedium,
+              ),
             ),
           ),
         ],
