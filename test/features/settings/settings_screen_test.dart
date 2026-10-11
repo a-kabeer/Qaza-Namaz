@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart' show LicenseRegistry;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -158,12 +157,12 @@ void main() {
     },
   );
 
-  testWidgets(
-    'bundled software notices are registered for the licence catalogue',
-    (tester) async {
-      registerAppLicenses();
+  test(
+    'bundled software notices are available for the licence catalogue',
+    () async {
+      final entries = await loadBundledAppLicenseEntries();
       final registeredNotices = StringBuffer();
-      await for (final entry in LicenseRegistry.licenses) {
+      for (final entry in entries) {
         registeredNotices.writeln(entry.packages.join('\n'));
         for (final paragraph in entry.paragraphs) {
           registeredNotices.writeln(paragraph.text);
