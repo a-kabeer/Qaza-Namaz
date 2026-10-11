@@ -61,7 +61,8 @@ class _FakeCloudSyncProvider implements CloudSyncProvider {
   @override
   Future<CloudSyncSnapshot> backupNow({
     CloudBackupProgressCallback? onProgress,
-  }) async => const CloudSyncSnapshot.disconnected();
+  }) async =>
+      const CloudSyncSnapshot.disconnected();
 
   @override
   Future<CloudSyncSnapshot> setAutomaticSyncEnabled(bool enabled) async =>
@@ -70,7 +71,8 @@ class _FakeCloudSyncProvider implements CloudSyncProvider {
   @override
   Future<CloudSyncSnapshot> setAutomaticBackupFrequency(
     CloudBackupFrequency frequency,
-  ) async => const CloudSyncSnapshot.disconnected();
+  ) async =>
+      const CloudSyncSnapshot.disconnected();
 
   @override
   Future<CloudSyncSnapshot> resolveConflict({

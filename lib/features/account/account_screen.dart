@@ -412,7 +412,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           _backupProgress = null;
         }
       });
-      if (result.status == CloudSyncStatus.conflict && result.conflict != null) {
+      if (result.status == CloudSyncStatus.conflict &&
+          result.conflict != null) {
         await _resolveConflict(result.conflict!);
       } else if (result.status == CloudSyncStatus.synced && mounted) {
         setState(
@@ -714,7 +715,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 6),
-                        LinearProgressIndicator(value: preparing ? null : fraction),
+                        LinearProgressIndicator(
+                            value: preparing ? null : fraction),
                         if (!preparing) ...[
                           const SizedBox(height: 4),
                           Text(
@@ -741,7 +743,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 key: const Key('account_cloud_backup_frequency'),
                 initialValue: _sync.backupFrequency,
                 decoration: InputDecoration(
-                  labelText: _isUrdu ? 'بیک اپ کی فریکوئنسی' : 'Backup frequency',
+                  labelText:
+                      _isUrdu ? 'بیک اپ کی فریکوئنسی' : 'Backup frequency',
                 ),
                 items: CloudBackupFrequency.values
                     .map(

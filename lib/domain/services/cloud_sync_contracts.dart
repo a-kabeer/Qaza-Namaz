@@ -300,7 +300,8 @@ class UnsupportedCloudSyncProvider implements CloudSyncProvider {
   @override
   Future<CloudSyncSnapshot> backupNow({
     CloudBackupProgressCallback? onProgress,
-  }) async => const CloudSyncSnapshot.unavailable();
+  }) async =>
+      const CloudSyncSnapshot.unavailable();
 
   @override
   Future<CloudSyncSnapshot> setAutomaticSyncEnabled(bool enabled) async =>
@@ -309,7 +310,8 @@ class UnsupportedCloudSyncProvider implements CloudSyncProvider {
   @override
   Future<CloudSyncSnapshot> setAutomaticBackupFrequency(
     CloudBackupFrequency frequency,
-  ) async => const CloudSyncSnapshot.unavailable();
+  ) async =>
+      const CloudSyncSnapshot.unavailable();
 
   @override
   Future<CloudSyncSnapshot> resolveConflict({
