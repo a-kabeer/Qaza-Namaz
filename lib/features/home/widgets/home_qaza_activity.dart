@@ -758,137 +758,146 @@ class _ActivityBarChart extends StatelessWidget {
                         period.days.length;
             final safeTooltipWidth =
                 math.min(tooltipWidth, constraints.maxWidth).toDouble();
-            final tooltipLeft = math.max(
-              0.0,
-              math.min(
-                tooltipCenterX - safeTooltipWidth / 2,
-                constraints.maxWidth - safeTooltipWidth,
-              ),
-            ).toDouble();
+            final tooltipLeft = math
+                .max(
+                  0.0,
+                  math.min(
+                    tooltipCenterX - safeTooltipWidth / 2,
+                    constraints.maxWidth - safeTooltipWidth,
+                  ),
+                )
+                .toDouble();
 
             return Stack(
               children: [
                 Positioned.fill(
                   child: BarChart(
                     BarChartData(
-            maxY: maxY,
-            minY: 0,
-            alignment: BarChartAlignment.spaceAround,
-            gridData: FlGridData(
-              show: true,
-              drawVerticalLine: false,
-              horizontalInterval: leftInterval,
-            ),
-            borderData: FlBorderData(show: false),
-            titlesData: FlTitlesData(
-              topTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              rightTitles: const AxisTitles(
-                sideTitles: SideTitles(showTitles: false),
-              ),
-              leftTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 36,
-                  interval: leftInterval,
-                  getTitlesWidget: (value, meta) => SideTitleWidget(
-                    meta: meta,
-                    child: Text(
-                      value.toInt().toString(),
-                      style: theme.textTheme.labelSmall,
-                    ),
-                  ),
-                ),
-              ),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  reservedSize: 32,
-                  getTitlesWidget: (value, meta) {
-                    final index = value.toInt();
-                    if (index < 0 || index >= period.days.length) {
-                      return const SizedBox.shrink();
-                    }
-                    final date = period.days[index].date;
-                    final label = labelsAreDates
-                        ? DateFormat.E(locale).format(date)
-                        : DateFormat.MMM(locale).format(date);
-                    final selectedMonthValue = selectedMonth;
-                    final selected = selectedMonthValue != null &&
-                        date.year == selectedMonthValue.year &&
-                        date.month == selectedMonthValue.month;
-                    return SideTitleWidget(
-                      meta: meta,
-                      child: Text(
-                        label,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: selected ? theme.colorScheme.primary : null,
-                          fontWeight:
-                              selected ? FontWeight.w800 : FontWeight.w500,
+                      maxY: maxY,
+                      minY: 0,
+                      alignment: BarChartAlignment.spaceAround,
+                      gridData: FlGridData(
+                        show: true,
+                        drawVerticalLine: false,
+                        horizontalInterval: leftInterval,
+                      ),
+                      borderData: FlBorderData(show: false),
+                      titlesData: FlTitlesData(
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        leftTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 36,
+                            interval: leftInterval,
+                            getTitlesWidget: (value, meta) => SideTitleWidget(
+                              meta: meta,
+                              child: Text(
+                                value.toInt().toString(),
+                                style: theme.textTheme.labelSmall,
+                              ),
+                            ),
+                          ),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            reservedSize: 32,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index < 0 || index >= period.days.length) {
+                                return const SizedBox.shrink();
+                              }
+                              final date = period.days[index].date;
+                              final label = labelsAreDates
+                                  ? DateFormat.E(locale).format(date)
+                                  : DateFormat.MMM(locale).format(date);
+                              final selectedMonthValue = selectedMonth;
+                              final selected = selectedMonthValue != null &&
+                                  date.year == selectedMonthValue.year &&
+                                  date.month == selectedMonthValue.month;
+                              return SideTitleWidget(
+                                meta: meta,
+                                child: Text(
+                                  label,
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: selected
+                                        ? theme.colorScheme.primary
+                                        : null,
+                                    fontWeight: selected
+                                        ? FontWeight.w800
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       ),
-                    );
-                  },
-                ),
-              ),
-            ),
-            barTouchData: BarTouchData(
-              enabled: onSelectedDay != null || onSelectedMonth != null,
-              // The custom tooltip is pinned to one row in the chart overlay.
-              // Disable FL Chart's bar-relative tooltip so it cannot jump with
-              // the selected rod's height.
-              handleBuiltInTouches: false,
-              // FL Chart's built-in back-draw touch region keeps zero-height
-              // bars, including future days, selectable without custom hit testing.
-              allowTouchBarBackDraw: true,
-              touchExtraThreshold: const EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: 20,
-              ),
-              touchCallback: (event, response) {
-                if ((onSelectedDay == null && onSelectedMonth == null) ||
-                    event is! FlTapUpEvent) {
-                  return;
-                }
-                final index = response?.spot?.touchedBarGroupIndex;
-                if (index == null || index < 0 || index >= period.days.length) {
-                  return;
-                }
-                final date = period.days[index].date;
-                if (onSelectedMonth != null) {
-                  onSelectedMonth!(date);
-                } else {
-                  onSelectedDay!(date);
-                }
-              },
-            ),
-            barGroups: [
-              for (var index = 0; index < period.days.length; index++)
-                BarChartGroupData(
-                  x: index,
-                  barRods: [
-                    BarChartRodData(
-                      toY: period.days[index].completed.toDouble(),
-                      width: labelsAreDates ? 20 : 15,
-                      color: _barColor(context, period.days[index]),
-                      borderRadius: const BorderRadius.vertical(
-                        top: Radius.circular(4),
+                      barTouchData: BarTouchData(
+                        enabled:
+                            onSelectedDay != null || onSelectedMonth != null,
+                        // The custom tooltip is pinned to one row in the chart overlay.
+                        // Disable FL Chart's bar-relative tooltip so it cannot jump with
+                        // the selected rod's height.
+                        handleBuiltInTouches: false,
+                        // FL Chart's built-in back-draw touch region keeps zero-height
+                        // bars, including future days, selectable without custom hit testing.
+                        allowTouchBarBackDraw: true,
+                        touchExtraThreshold: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 20,
+                        ),
+                        touchCallback: (event, response) {
+                          if ((onSelectedDay == null &&
+                                  onSelectedMonth == null) ||
+                              event is! FlTapUpEvent) {
+                            return;
+                          }
+                          final index = response?.spot?.touchedBarGroupIndex;
+                          if (index == null ||
+                              index < 0 ||
+                              index >= period.days.length) {
+                            return;
+                          }
+                          final date = period.days[index].date;
+                          if (onSelectedMonth != null) {
+                            onSelectedMonth!(date);
+                          } else {
+                            onSelectedDay!(date);
+                          }
+                        },
                       ),
-                      backDrawRodData: BackgroundBarChartRodData(
-                        show: true,
-                        toY: maxY,
-                        color: theme.colorScheme.surface.withAlpha(0),
-                      ),
+                      barGroups: [
+                        for (var index = 0; index < period.days.length; index++)
+                          BarChartGroupData(
+                            x: index,
+                            barRods: [
+                              BarChartRodData(
+                                toY: period.days[index].completed.toDouble(),
+                                width: labelsAreDates ? 20 : 15,
+                                color: _barColor(context, period.days[index]),
+                                borderRadius: const BorderRadius.vertical(
+                                  top: Radius.circular(4),
+                                ),
+                                backDrawRodData: BackgroundBarChartRodData(
+                                  show: true,
+                                  toY: maxY,
+                                  color: theme.colorScheme.surface.withAlpha(0),
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
-                  ],
+                    duration: ChartAnimationPolicy.durationFor(context),
+                    curve: ChartAnimationPolicy.curve,
+                  ),
                 ),
-            ],
-          ),
-          duration: ChartAnimationPolicy.durationFor(context),
-          curve: ChartAnimationPolicy.curve,
-                ),
-              ),
                 if (hasSelectedTooltip)
                   Positioned(
                     left: tooltipLeft,

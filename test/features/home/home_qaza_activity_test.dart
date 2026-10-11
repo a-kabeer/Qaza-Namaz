@@ -243,7 +243,9 @@ void main() {
       final tooltipBox = tester.widget<DecoratedBox>(tooltipFinder);
       expect(
         (tooltipBox.decoration as BoxDecoration).color,
-        Theme.of(tester.element(tooltipFinder)).colorScheme.surfaceContainerHigh,
+        Theme.of(tester.element(tooltipFinder))
+            .colorScheme
+            .surfaceContainerHigh,
       );
     },
   );
