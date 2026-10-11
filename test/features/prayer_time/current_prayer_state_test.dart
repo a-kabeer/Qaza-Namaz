@@ -90,8 +90,10 @@ void main() {
     expect(state?.current, PrayerSlot.isha);
     expect(state?.next, PrayerSlot.fajr);
     expect(state?.nextAt, isNull);
-    expect(prayerTimeSnapshotCoversDate(snapshot, DateTime(2026, 10, 11)),
-        isFalse);
+    expect(
+      prayerTimeSnapshotCoversDate(snapshot, DateTime(2026, 10, 11)),
+      isFalse,
+    );
   });
 
   test('stale schedule cannot masquerade as today', () {
