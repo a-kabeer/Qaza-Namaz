@@ -1714,6 +1714,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileDateOfBirth => 'Date of Birth';
 
   @override
+  String get profileDobDay => 'Day';
+
+  @override
+  String get profileDobMonth => 'Month';
+
+  @override
+  String get profileDobYear => 'Year';
+
+  @override
   String get profileSelectDate => 'Select date';
 
   @override
