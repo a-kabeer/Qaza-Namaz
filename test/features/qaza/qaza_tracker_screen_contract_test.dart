@@ -180,7 +180,7 @@ void main() {
       expect(
         source,
         contains(
-          'child: SizedBox(\n        height: _rowHeight,\n        child: ListTile(',
+          'child: ConstrainedBox(\n        constraints: const BoxConstraints(minHeight: _rowHeight),\n        child: ListTile(',
         ),
       );
       expect(source, contains('trailing: SizedBox('));
@@ -814,7 +814,7 @@ void main() {
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
     final bodyStart = source.indexOf(
-      'class _CompletedTrackerBody extends StatelessWidget {',
+      'class _CompletedTrackerBody extends StatefulWidget {',
     );
     final detailsStart = source.indexOf(
       'class _CompletedRecordDetails extends ConsumerWidget {',
@@ -1043,13 +1043,13 @@ void main() {
   });
 
   test(
-      'Pending rows use a neutral leading pending status icon and keep restricted lock status',
+      'Pending rows use the Home prayer icon and a trailing Pending status',
       () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final start = source.indexOf('class _RecordRow extends StatelessWidget {');
     final end = source.indexOf(
-      'class _CompletionSwipeBackground extends StatelessWidget {',
+      'class _PendingRecordDetails extends StatelessWidget {',
       start,
     );
     final row = source.substring(start, end);
@@ -1060,17 +1060,40 @@ void main() {
     expect(leadingEnd, greaterThan(leadingStart));
     final leading = row.substring(leadingStart, leadingEnd);
 
-    expect(leading, contains('Icons.pending_actions_rounded'));
+    expect(leading, contains('homePrayerIcon(record.prayerType)'));
     expect(leading, contains('size: 20'));
     expect(leading, contains('theme.colorScheme.onSurfaceVariant'));
-    expect(leading, isNot(contains('Icons.lock_clock_rounded')));
+    expect(leading, isNot(contains('Icons.pending_actions_rounded')));
+    expect(row, contains('Icons.pending_actions_rounded'));
     expect(row, contains('Icons.lock_clock_rounded'));
     expect(row, contains('static const double _rowHeight = 68;'));
+    expect(
+      row,
+      contains('constraints: const BoxConstraints(minHeight: _rowHeight)'),
+    );
     expect(row, contains('trailing: SizedBox('));
     expect(row, contains('width: _selectionControlWidth'));
     expect(row, contains('height: _selectionControlWidth'));
     expect(row, contains('Checkbox('));
+    expect(row, contains('maxLines: 2'));
     expect(row, isNot(contains('leading: selectionMode')));
+  });
+
+  test('Qaza details use single-row inline expansion without detail routes', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    expect('String? _expandedRecordId;'.allMatches(source).length, 2);
+    expect(source, contains('expanded ? null : record.id;'));
+    expect(source, contains('expanded: expanded'));
+    expect(source, contains('_PendingRecordDetails('));
+    expect(source, contains('_CompletedRecordDetails('));
+    expect(source, isNot(contains('Future<void> _openDetails(')));
+    expect(source, isNot(contains('_openDetails(context, record)')));
+    expect(source, contains('onSaved?.call();'));
+    expect(source, contains('colorScheme.surfaceContainer'));
+    expect(source, contains('scheme.surfaceContainerHigh'));
+    expect(source, contains('homePrayerIcon(record.prayerType)'));
   });
 
   test('Completed rows retain their check-circle status icon', () {
