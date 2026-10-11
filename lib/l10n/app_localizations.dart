@@ -3500,6 +3500,11 @@ abstract class AppLocalizations {
   /// **'City data © GeoNames, licensed under CC BY 4.0.'**
   String get prayerTimeLocationDataAttribution;
 
+  String get settingsLicensesSoftwareTitle;
+  String get settingsLicensesSoftwareSubtitle;
+  String get settingsLicensesGeoNamesTitle;
+  String get settingsLicensesGeoNamesSubtitle;
+
   /// No description provided for @prayerTimeUpdated.
   ///
   /// In en, this message translates to:
