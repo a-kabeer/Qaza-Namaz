@@ -750,6 +750,7 @@ class _RecordRow extends StatelessWidget {
         constraints: const BoxConstraints(minHeight: _rowHeight),
         child: ListTile(
           key: Key('qaza_record_${record.id}'),
+          dense: true,
           leading: Icon(
             homePrayerIcon(record.prayerType),
             size: 20,
