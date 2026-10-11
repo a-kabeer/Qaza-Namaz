@@ -853,7 +853,7 @@ class _ActivityBarChart extends StatelessWidget {
                   final foreground = theme.colorScheme.onInverseSurface;
 
                   return BarTooltipItem(
-                    '$dateLabel\\n',
+                    '$dateLabel\n',
                     TextStyle(
                       color: foreground,
                       fontSize: 12,
