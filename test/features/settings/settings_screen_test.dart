@@ -185,7 +185,17 @@ void main() {
       await tester.tap(licensesKey);
       await tester.pumpAndSettle();
 
-      expect(find.textContaining('GeoNames'), findsOneWidget);
+      expect(
+        find.byKey(const Key('licenses_geonames_attribution')),
+        findsOneWidget,
+      );
+      expect(find.textContaining('CC BY 4.0'), findsOneWidget);
+
+      await tester.tap(
+        find.byKey(const Key('licenses_software_catalogue')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Noto Nastaliq Urdu'), findsWidgets);
     },
   );
 }
