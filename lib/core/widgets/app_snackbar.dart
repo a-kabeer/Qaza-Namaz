@@ -37,7 +37,8 @@ abstract final class AppSnackBarPolicy {
     return SnackBar(
       key: snackBar.key,
       content: snackBar.content,
-      backgroundColor: snackTheme.backgroundColor ?? scheme.surfaceContainerHigh,
+      backgroundColor:
+          snackTheme.backgroundColor ?? scheme.surfaceContainerHigh,
       elevation: snackTheme.elevation ?? 6,
       width: snackTheme.width,
       shape: snackTheme.shape ??
@@ -197,8 +198,7 @@ class _AppSnackbarContent extends StatelessWidget {
         theme.textTheme.bodyMedium?.copyWith(
           color: theme.colorScheme.onSurface,
         );
-    final foreground =
-        contentStyle?.color ?? theme.colorScheme.onSurface;
+    final foreground = contentStyle?.color ?? theme.colorScheme.onSurface;
 
     return Row(
       children: [

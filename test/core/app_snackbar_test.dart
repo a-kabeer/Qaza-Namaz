@@ -182,9 +182,8 @@ void main() {
     testWidgets(
       'Undo Snackbar follows the $brightness theme surface colors',
       (tester) async {
-        final theme = brightness == Brightness.dark
-            ? AppTheme.dark()
-            : AppTheme.light();
+        final theme =
+            brightness == Brightness.dark ? AppTheme.dark() : AppTheme.light();
         final messengerKey = GlobalKey<AppScaffoldMessengerState>();
         var undoInvoked = false;
 
