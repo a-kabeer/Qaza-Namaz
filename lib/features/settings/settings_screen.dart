@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -6,7 +8,6 @@ import '../../core/constants/app_metadata.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
-import '../prayer_time/application/prayer_time_providers.dart';
 import 'profile_screen.dart';
 import '../account/account_screen.dart';
 
@@ -32,7 +33,14 @@ class SettingsScreen extends ConsumerWidget {
         return;
       }
 
-      ref.read(localeProvider.notifier).set(resolved);
+      try {
+        await ref.read(localeProvider.notifier).set(resolved);
+      } catch (_) {
+        if (!context.mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(AppLocalizations.of(context).errorStorage)),
+        );
+      }
     }
 
     final accountSubtitle = l10n.settingsAccountGuestSubtitle;
@@ -83,7 +91,7 @@ class SettingsScreen extends ConsumerWidget {
                 ],
                 selected: {locale.languageCode},
                 onSelectionChanged: (value) {
-                  changeLanguage(Locale(value.first));
+                  unawaited(changeLanguage(Locale(value.first)));
                 },
               ),
             ),
@@ -122,12 +130,6 @@ class AboutScreen extends ConsumerWidget {
           ListTile(
             title: Text(l10n.commonVersion),
             subtitle: Text(appDisplayVersion),
-          ),
-          ListTile(
-            title: const Text('GeoNames attribution'),
-            subtitle: Text(
-              ref.read(offlineCityResolverProvider).attribution,
-            ),
           ),
         ],
       ),

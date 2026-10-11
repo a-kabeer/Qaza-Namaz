@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
+
 class AppScaffold extends StatelessWidget {
   const AppScaffold({
     super.key,
@@ -27,7 +29,7 @@ class AppScaffold extends StatelessWidget {
         leading: onBack == null
             ? null
             : IconButton(
-                tooltip: 'Back',
+                tooltip: AppLocalizations.of(context).commonBack,
                 onPressed: onBack,
                 icon: const Icon(Icons.arrow_back_rounded),
               ),
