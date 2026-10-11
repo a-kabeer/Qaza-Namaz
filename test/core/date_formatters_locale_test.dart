@@ -51,7 +51,7 @@ void main() {
       expect(DateFormatters.formatWeekdayShort(date), matches(urduScript));
       expect(
         DateFormatters.formatClockTime(DateTime(2026, 10, 11, 16, 5)),
-        matches(urduScript),
+        '04:05 شام',
       );
     });
   });

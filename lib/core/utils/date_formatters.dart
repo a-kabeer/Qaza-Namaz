@@ -89,6 +89,19 @@ class DateFormatters {
         '${seconds.toString().padLeft(2, '0')}';
   }
 
-  static String formatClockTime(DateTime value) =>
-      intl.DateFormat('hh:mm a').format(value);
+  static String formatClockTime(DateTime value) {
+    final locale = intl.Intl.getCurrentLocale().split('_').first;
+    if (locale == 'ur') {
+      final period = switch (value.hour) {
+        < 5 => 'رات',
+        < 12 => 'صبح',
+        < 16 => 'دوپہر',
+        < 19 => 'شام',
+        _ => 'رات',
+      };
+      final clock = intl.DateFormat('hh:mm').format(value);
+      return '$clock $period';
+    }
+    return intl.DateFormat('hh:mm a').format(value);
+  }
 }
