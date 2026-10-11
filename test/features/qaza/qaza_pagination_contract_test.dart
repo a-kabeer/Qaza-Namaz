@@ -10,10 +10,10 @@ void main() {
         .replaceAll('\r', '\n');
 
     final pendingStart = source.indexOf(
-      'class _PendingTrackerBody extends ConsumerWidget {',
+      'class _PendingTrackerBody extends ConsumerStatefulWidget {',
     );
     final completedStart = source.indexOf(
-      'class _CompletedTrackerBody extends StatelessWidget {',
+      'class _CompletedTrackerBody extends StatefulWidget {',
     );
 
     expect(pendingStart, greaterThanOrEqualTo(0));
