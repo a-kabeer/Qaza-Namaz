@@ -143,15 +143,14 @@ class AboutScreen extends StatelessWidget {
   }
 }
 
-/// Keeps third-party data notices out of the compact About summary while
-/// making the required GeoNames attribution available from a dedicated page.
+/// Separates data attribution from the complete software licence catalogue.
 class LicensesScreen extends ConsumerWidget {
   const LicensesScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
     final attribution = ref.watch(offlineCityResolverProvider).attribution;
-    final theme = Theme.of(context);
 
     return AppScaffold(
       title: MaterialLocalizations.of(context).licensesPageTitle,
@@ -159,12 +158,37 @@ class LicensesScreen extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
           Card(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: SelectableText(
-                attribution,
-                style: theme.textTheme.bodyMedium,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                ListTile(
+                  key: const Key('licenses_geonames_attribution'),
+                  leading: const Icon(Icons.public_outlined),
+                  title: Text(l10n.settingsLicensesGeoNamesTitle),
+                  subtitle: Text(l10n.settingsLicensesGeoNamesSubtitle),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: SelectableText(attribution),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: ListTile(
+              key: const Key('licenses_software_catalogue'),
+              leading: const Icon(Icons.article_outlined),
+              title: Text(l10n.settingsLicensesSoftwareTitle),
+              subtitle: Text(l10n.settingsLicensesSoftwareSubtitle),
+              trailing: const Icon(Icons.chevron_right_rounded),
+              onTap: () {
+                showLicensePage(
+                  context: context,
+                  applicationName: l10n.appTitle,
+                  applicationVersion: appDisplayVersion,
+                );
+              },
             ),
           ),
         ],
