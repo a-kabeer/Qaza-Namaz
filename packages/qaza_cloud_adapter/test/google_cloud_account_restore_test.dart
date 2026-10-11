@@ -87,44 +87,50 @@ void main() {
     },
   );
 
-  test('restore defaults an unset automatic-backup choice to Daily ON', () async {
-    final state = SharedPreferencesCloudSyncStateStore();
-    await state.setCloudSyncEnabled(true);
-    final gateway = _CountingGateway();
-    final scheduler = _CountingScheduler(state: state);
-    final provider = GoogleCloudAccountProvider(
-      gateway: gateway,
-      state: state,
-      scheduler: scheduler,
-    );
+  test(
+    'restore defaults an unset automatic-backup choice to Daily ON',
+    () async {
+      final state = SharedPreferencesCloudSyncStateStore();
+      await state.setCloudSyncEnabled(true);
+      final gateway = _CountingGateway();
+      final scheduler = _CountingScheduler(state: state);
+      final provider = GoogleCloudAccountProvider(
+        gateway: gateway,
+        state: state,
+        scheduler: scheduler,
+      );
 
-    final snapshot = await provider.restore();
+      final snapshot = await provider.restore();
 
-    expect(snapshot.status, CloudAccountStatus.connected);
-    expect(await state.hasAutomaticSyncPreference(), isTrue);
-    expect(await state.isAutomaticSyncEnabled(), isTrue);
-    expect(await state.backupFrequency(), CloudBackupFrequency.daily);
-    expect(scheduler.initializeCalls, 1);
-  });
+      expect(snapshot.status, CloudAccountStatus.connected);
+      expect(await state.hasAutomaticSyncPreference(), isTrue);
+      expect(await state.isAutomaticSyncEnabled(), isTrue);
+      expect(await state.backupFrequency(), CloudBackupFrequency.daily);
+      expect(scheduler.initializeCalls, 1);
+    },
+  );
 
-  test('restore preserves an existing explicit automatic-backup OFF choice', () async {
-    final state = SharedPreferencesCloudSyncStateStore();
-    await state.setCloudSyncEnabled(true);
-    await state.setAutomaticSyncEnabled(false);
-    final gateway = _CountingGateway();
-    final scheduler = _CountingScheduler(state: state);
-    final provider = GoogleCloudAccountProvider(
-      gateway: gateway,
-      state: state,
-      scheduler: scheduler,
-    );
+  test(
+    'restore preserves an existing explicit automatic-backup OFF choice',
+    () async {
+      final state = SharedPreferencesCloudSyncStateStore();
+      await state.setCloudSyncEnabled(true);
+      await state.setAutomaticSyncEnabled(false);
+      final gateway = _CountingGateway();
+      final scheduler = _CountingScheduler(state: state);
+      final provider = GoogleCloudAccountProvider(
+        gateway: gateway,
+        state: state,
+        scheduler: scheduler,
+      );
 
-    final snapshot = await provider.restore();
+      final snapshot = await provider.restore();
 
-    expect(snapshot.status, CloudAccountStatus.connected);
-    expect(await state.isAutomaticSyncEnabled(), isFalse);
-    expect(scheduler.initializeCalls, 0);
-  });
+      expect(snapshot.status, CloudAccountStatus.connected);
+      expect(await state.isAutomaticSyncEnabled(), isFalse);
+      expect(scheduler.initializeCalls, 0);
+    },
+  );
 
   test('restore while cloud is disabled does not call Google APIs', () async {
     final state = SharedPreferencesCloudSyncStateStore();
