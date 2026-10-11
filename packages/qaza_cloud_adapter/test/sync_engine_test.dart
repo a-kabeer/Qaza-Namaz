@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
+import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 void main() {
   group('CloudSyncEngine', () {
@@ -835,6 +836,8 @@ class FakeState implements CloudSyncStateStore {
   CloudSyncCursor? cursor;
   bool cloudEnabled;
   bool automaticEnabled;
+  bool automaticPreferenceConfigured = true;
+  CloudBackupFrequency frequency = CloudBackupFrequency.daily;
   bool reconnectRequired = false;
   DateTime? lastSuccessfulAt;
   CloudConflict? pendingConflict;
@@ -858,7 +861,6 @@ class FakeState implements CloudSyncStateStore {
   Future<void> setCloudSyncEnabled(bool enabled) async {
     cloudEnabled = enabled;
     if (!enabled) {
-      automaticEnabled = false;
       reconnectRequired = false;
     }
   }
@@ -875,11 +877,24 @@ class FakeState implements CloudSyncStateStore {
   Future<bool> isAutomaticSyncEnabled() async => automaticEnabled;
 
   @override
+  Future<bool> hasAutomaticSyncPreference() async =>
+      automaticPreferenceConfigured;
+
+  @override
+  Future<CloudBackupFrequency> backupFrequency() async => frequency;
+
+  @override
+  Future<void> setBackupFrequency(CloudBackupFrequency frequency) async {
+    this.frequency = frequency;
+  }
+
+  @override
   Future<void> setAutomaticSyncEnabled(bool enabled) async {
     if (enabled && !cloudEnabled) {
       throw const CloudAdapterException('cloud disabled');
     }
     automaticEnabled = enabled;
+    automaticPreferenceConfigured = true;
   }
 
   @override
@@ -926,6 +941,7 @@ class FakeRemote implements CloudRemoteStore {
   Future<CloudRemoteSnapshot> write(
     CloudBackup backup, {
     required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
   }) async {
     writeCount++;
     written = backup;
