@@ -1069,6 +1069,7 @@ void main() {
     expect(row, contains('Icons.pending_actions_rounded'));
     expect(row, contains('Icons.lock_clock_rounded'));
     expect(row, contains('static const double _rowHeight = 68;'));
+    expect(row, contains('dense: true'));
     expect(
       row,
       contains('constraints: const BoxConstraints(minHeight: _rowHeight)'),
