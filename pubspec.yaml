@@ -31,6 +31,7 @@ dependencies:
   geolocator: ^14.1.1
   flutter_timezone: ^5.1.0
   geonames_offline: ^0.1.0
+  flutter_native_oss_licenses: ^1.0.0
   flutter_device_compass: ^2.2.0
   geomag: ^0.3.0
 
@@ -63,3 +64,6 @@ flutter:
     - family: Noto Nastaliq Urdu
       fonts:
         - asset: assets/fonts/NotoNastaliqUrdu-VariableFont_wght.ttf
+
+  licenses:
+    - licenses/noto_nastaliq_urdu.txt
