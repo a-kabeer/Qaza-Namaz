@@ -380,17 +380,16 @@ void main() {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
 
+    expect(source, contains('widget.trackerState.records.length'));
     expect(
       source,
-      contains(
-        'itemCount: state.records.length + (state.loadingMore ? 1 : 0),',
-      ),
+      contains('widget.trackerState.loadingMore ? 1 : 0'),
     );
     final itemCountLine =
         source.split('\n').firstWhere((line) => line.contains('itemCount:'));
     expect(
       itemCountLine,
-      contains('state.loadingMore ? 1 : 0'),
+      contains('widget.trackerState.loadingMore ? 1 : 0'),
     );
   });
 
