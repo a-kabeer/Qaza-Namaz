@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -10,6 +12,7 @@ import '../../l10n/app_localizations.dart';
 import '../onboarding/profile_form.dart';
 import '../qaza/qaza_import_controller.dart';
 import '../qaza/qaza_import_progress_dialog.dart';
+import 'profile_overview.dart';
 import 'profile_qaza_change_dialog.dart';
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -20,35 +23,151 @@ class ProfileScreen extends ConsumerStatefulWidget {
 }
 
 class _ProfileScreenState extends ConsumerState<ProfileScreen> {
-  UserProfile? _profile;
+  UserProfile? _draftProfile;
+  UserProfile? _originalProfile;
+  bool _isEditing = false;
+  int _editSession = 0;
+
+  bool get _hasDraftChanges {
+    final original = _originalProfile;
+    final draft = _draftProfile;
+    if (original == null || draft == null) return false;
+
+    return original.languageCode != draft.languageCode ||
+        original.dailyQazaTarget != draft.dailyQazaTarget ||
+        original.gender != draft.gender ||
+        original.madhab != draft.madhab ||
+        !_sameDate(original.dateOfBirth, draft.dateOfBirth) ||
+        original.pubertyAge != draft.pubertyAge ||
+        original.startPrayingAge != draft.startPrayingAge ||
+        ProfileRules.effectiveWitr(original) !=
+            ProfileRules.effectiveWitr(draft);
+  }
 
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
     final l10n = AppLocalizations.of(context);
 
-    return Scaffold(
-      appBar: AppBar(title: Text(l10n.profileTitle)),
-      body: profileAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(child: Text(error.toString())),
-        data: (loaded) {
-          if (loaded == null) {
-            return Center(child: Text(l10n.profileErrorDob));
-          }
+    return PopScope<void>(
+      canPop: !_isEditing,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && _isEditing) {
+          unawaited(_handleBackWhileEditing());
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(title: Text(l10n.profileTitle)),
+        body: profileAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(Icons.error_outline),
+                  const SizedBox(height: 12),
+                  Text(
+                    l10n.errorUnknown,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton(
+                    onPressed: () => ref.invalidate(userProfileProvider),
+                    child: Text(l10n.commonRetry),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          data: (loaded) {
+            if (loaded == null) {
+              return Center(child: Text(l10n.profileErrorDob));
+            }
 
-          final profile = _profile ?? loaded;
-          return ProfileForm(
-            initialProfile: profile,
-            showIntro: false,
-            showDailyQazaTarget: true,
-            submitLabel: l10n.profileSave,
-            onChanged: (next) => _profile = next,
-            onSubmit: _save,
-          );
-        },
+            if (!_isEditing) {
+              return ProfileOverview(
+                profile: loaded,
+                onEdit: () => _startEditing(loaded),
+              );
+            }
+
+            return ProfileForm(
+              key: ValueKey<int>(_editSession),
+              initialProfile: _draftProfile ?? loaded,
+              showIntro: false,
+              showDailyQazaTarget: true,
+              submitLabel: l10n.profileSave,
+              onChanged: (next) {
+                _draftProfile = next;
+              },
+              onCancel: _cancelEditing,
+              onSubmit: _save,
+            );
+          },
+        ),
       ),
     );
+  }
+
+  void _startEditing(UserProfile profile) {
+    setState(() {
+      _originalProfile = profile;
+      _draftProfile = profile;
+      _isEditing = true;
+      _editSession++;
+    });
+  }
+
+  void _cancelEditing() {
+    if (!mounted) return;
+    setState(_leaveEditMode);
+  }
+
+  void _leaveEditMode() {
+    _isEditing = false;
+    _draftProfile = null;
+    _originalProfile = null;
+  }
+
+  Future<void> _handleBackWhileEditing() async {
+    if (!_isEditing) return;
+
+    if (!_hasDraftChanges) {
+      _cancelEditing();
+      return;
+    }
+
+    final l10n = AppLocalizations.of(context);
+    final discard = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.profileDiscardChangesTitle),
+        content: Text(l10n.profileDiscardChangesMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            key: const Key('profile_discard_changes'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.profileDiscardChangesAction),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted || discard != true) return;
+    _cancelEditing();
+  }
+
+  static bool _sameDate(DateTime? first, DateTime? second) {
+    if (first == null || second == null) return first == second;
+    return first.year == second.year &&
+        first.month == second.month &&
+        first.day == second.day;
   }
 
   Future<void> _save(UserProfile profile) async {
@@ -80,6 +199,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         final review = await showProfileQazaChangeDialog(
           context: context,
           preview: useCase.prepareSettingsSave(newProfile: finalizedProfile),
+          previousProfile: currentProfile,
+          newProfile: finalizedProfile,
         );
         if (!mounted || review == null || review.choice == null) return;
         preview = review.preview;
@@ -94,6 +215,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           final review = await showProfileQazaChangeDialog(
             context: context,
             preview: preview,
+            previousProfile: currentProfile,
+            newProfile: finalizedProfile,
           );
           if (!mounted || review == null || review.choice == null) return;
           preview = review.preview;
@@ -160,7 +283,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             )
           : l10n.profileQazaUpdatedNoChange;
       snackbar.success(message);
-      Navigator.of(context).pop();
+      setState(_leaveEditMode);
     } catch (_) {
       if (!mounted) return;
       snackbar.error(l10n.errorUnknown);
