@@ -54,7 +54,14 @@ void main() {
       await tester.pumpWidget(host(onEdit: () => editTapped = true));
 
       final editButton = find.byKey(const Key('profile_edit'));
-      await tester.ensureVisible(editButton);
+      await tester.scrollUntilVisible(
+        editButton,
+        300,
+        scrollable: find.descendant(
+          of: find.byKey(const Key('profile_overview')),
+          matching: find.byType(Scrollable),
+        ),
+      );
       await tester.pumpAndSettle();
       await tester.tap(editButton);
       expect(editTapped, isTrue);
