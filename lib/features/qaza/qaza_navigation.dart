@@ -50,7 +50,10 @@ void openQazaForPrayer(WidgetRef ref, PrayerType prayer) {
 
 /// Opens the unfiltered Qaza tracker tab without pushing a duplicate screen.
 void openQazaAll(WidgetRef ref) {
-  ref.read(qazaTrackerFilterRequestProvider.notifier).state = null;
+  // A concrete Pending request also resets filters on an already-mounted
+  // tracker instead of only clearing the hand-off slot.
+  ref.read(qazaTrackerFilterRequestProvider.notifier).state =
+      const QazaTrackerFilterRequest(status: QazaStatusFilter.pending);
   ref.read(workspaceDestinationProvider.notifier).state =
       WorkspaceDestination.qaza;
 }

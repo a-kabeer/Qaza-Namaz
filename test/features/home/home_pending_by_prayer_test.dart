@@ -47,7 +47,7 @@ Widget _app({required Widget child, required ProviderContainer container}) {
 }
 
 void main() {
-  testWidgets('View all opens the unfiltered Qaza workspace', (tester) async {
+  testWidgets('the whole card opens all pending Qaza records', (tester) async {
     final container = ProviderContainer(
       overrides: [
         enabledPrayerTypesProvider.overrideWithValue(
@@ -66,16 +66,25 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      find.byKey(const Key('home_pending_by_prayer_view_all')),
+      find.byKey(const Key('home_pending_by_prayer_tap')),
       findsOneWidget,
     );
-    await tester.tap(find.byKey(const Key('home_pending_by_prayer_view_all')));
+    expect(
+      find.byKey(const Key('home_pending_by_prayer_view_all')),
+      findsNothing,
+    );
+    // Tap the header rather than a prayer row: this should use the card's
+    // unfiltered Pending navigation.
+    await tester.tap(find.byKey(const Key('home_pending_by_prayer_title')));
 
     expect(
       container.read(workspaceDestinationProvider),
       WorkspaceDestination.qaza,
     );
-    expect(container.read(qazaTrackerFilterRequestProvider), isNull);
+    final request = container.read(qazaTrackerFilterRequestProvider);
+    expect(request?.status, QazaStatusFilter.pending);
+    expect(request?.prayer, isNull);
+    expect(request?.additionId, isNull);
   });
 
   testWidgets('prayer rows have comfortable spacing and slim progress bars',
@@ -108,7 +117,7 @@ void main() {
     expect(progressBar.height, 6);
   });
 
-  testWidgets('tapping a prayer keeps the existing prayer and pending filter',
+  testWidgets('tapping a prayer row opens Pending filtered to that prayer',
       (tester) async {
     final container = ProviderContainer(
       overrides: [
@@ -132,7 +141,8 @@ void main() {
 
     expect(container.read(workspaceDestinationProvider),
         WorkspaceDestination.qaza);
-    expect(request?.prayer, PrayerType.fajr);
     expect(request?.status, QazaStatusFilter.pending);
+    expect(request?.prayer, PrayerType.fajr);
+    expect(request?.additionId, isNull);
   });
 }
