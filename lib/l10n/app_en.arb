@@ -993,7 +993,21 @@
   "profileWitrExcluded": "Not included",
   "profileSubmit": "Continue",
   "profileSave": "Save Changes",
-  "profileQazaPlanChangedTitle": "Qaza plan will be updated",
+  "profileEdit": "Edit profile",
+  "profileAgeYears": "{count} years",
+  "@profileAgeYears": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "profileDiscardChangesTitle": "Discard unsaved changes?",
+  "profileDiscardChangesMessage": "Your edits have not been saved. Discard them and leave edit mode?",
+  "profileDiscardChangesAction": "Discard changes",
+  "profileQazaAssumptionsChanged": "Profile values being changed",
+  "profileQazaAssumptionsHint": "Review the previous and new values before applying this Qaza plan.",
+  "profileQazaPlanChangedTitle: "Qaza plan will be updated",
   "profileQazaPlanSummary": "Your profile change changes the calculated Qaza plan.",
   "profileQazaReviewError": "We could not prepare the Qaza plan review. Please try again.",
   "profileQazaApplying": "Applying Qaza plan…",
