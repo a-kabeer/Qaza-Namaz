@@ -14,6 +14,16 @@ pluginManagement {
         mavenCentral()
         gradlePluginPortal()
     }
+
+    // flutter_native_oss_licenses plugin resolution:start
+    resolutionStrategy {
+        eachPlugin {
+            if (requested.id.id == "com.google.android.gms.oss-licenses-plugin") {
+                useModule("com.google.android.gms:oss-licenses-plugin:0.13.0")
+            }
+        }
+    }
+    // flutter_native_oss_licenses plugin resolution:end
 }
 
 plugins {
