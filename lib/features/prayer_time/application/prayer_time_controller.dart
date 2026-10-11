@@ -12,6 +12,7 @@ import '../domain/prayer_settings.dart';
 import '../domain/prayer_time.dart';
 import '../domain/prayer_time_calculator.dart';
 import 'prayer_time_providers.dart';
+import 'current_prayer_state.dart';
 
 class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
   bool _dateRefreshInFlight = false;
@@ -25,13 +26,21 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
   Future<PrayerTimeSnapshot?> build() async {
     final profile = await ref.watch(userProfileProvider.future);
     final cached = await _cache.load();
-    final madhab = profile?.madhab;
+    if (cached == null) return null;
 
-    if (cached == null || madhab == null) return cached;
+    // Keep the saved calculation method when the profile is temporarily
+    // unavailable, and use the app default only for legacy snapshots without
+    // calculation metadata.
+    final madhab = profile?.madhab ?? cached.calculationMadhab ?? Madhab.hanafi;
+    final locationZone = tz.getLocation(cached.location.timezoneId);
+    final localNow = tz.TZDateTime.now(locationZone);
+    final localDate = DateTime(localNow.year, localNow.month, localNow.day);
 
-    // Old snapshots have no calculationMadhab metadata and cannot be trusted
-    // to represent the current Profile. Recalculate before exposing them.
-    if (cached.calculationMadhab != madhab) {
+    // A matching madhab is not sufficient: after midnight, yesterday's
+    // snapshot can have its old "tomorrow" become today. Always validate both
+    // dates before exposing a cached schedule to the Prayer Time UI.
+    if (cached.calculationMadhab != madhab ||
+        !prayerTimeSnapshotCoversDate(cached, localDate)) {
       final normalized = await _calculate(
         location: cached.location,
         madhab: madhab,
@@ -115,7 +124,8 @@ class PrayerTimeController extends AsyncNotifier<PrayerTimeSnapshot?> {
 
   Future<void> refreshForDateIfNeeded(DateTime localDate) async {
     final current = state.valueOrNull;
-    if (current == null || current.today.date == localDate) return;
+    final date = DateTime(localDate.year, localDate.month, localDate.day);
+    if (current == null || prayerTimeSnapshotCoversDate(current, date)) return;
     if (_dateRefreshInFlight) return;
 
     _dateRefreshInFlight = true;
