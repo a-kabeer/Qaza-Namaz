@@ -691,7 +691,7 @@ double _niceChartInterval(double rawInterval) {
   return niceNormalized * magnitude;
 }
 
-class _ActivityBarChart extends StatelessWidget {
+class _ActivityBarChart extends StatefulWidget {
   const _ActivityBarChart({
     super.key,
     required this.period,
@@ -710,7 +710,29 @@ class _ActivityBarChart extends StatelessWidget {
   final ValueChanged<DateTime>? onSelectedMonth;
 
   @override
+  State<_ActivityBarChart> createState() => _ActivityBarChartState();
+}
+
+class _ActivityBarChartState extends State<_ActivityBarChart> {
+  int? _pressedTooltipIndex;
+
+  @override
+  void didUpdateWidget(covariant _ActivityBarChart oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.period != widget.period ||
+        oldWidget.labelsAreDates != widget.labelsAreDates) {
+      _pressedTooltipIndex = null;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final period = widget.period;
+    final labelsAreDates = widget.labelsAreDates;
+    final selectedDay = widget.selectedDay;
+    final onSelectedDay = widget.onSelectedDay;
+    final selectedMonth = widget.selectedMonth;
+    final onSelectedMonth = widget.onSelectedMonth;
     final theme = Theme.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     final maxCompleted = period.days.fold<int>(
@@ -720,22 +742,23 @@ class _ActivityBarChart extends StatelessWidget {
     final axis = _activityAxisScale(maxCompleted);
     final maxY = axis.maxY;
     final leftInterval = axis.interval;
-    final selectedDayValue = selectedDay;
-    final selectedMonthValue = selectedMonth;
-    final selectedTooltipIndex = labelsAreDates
-        ? period.days.indexWhere(
-            (day) =>
-                selectedDayValue != null &&
-                day.date.year == selectedDayValue.year &&
-                day.date.month == selectedDayValue.month &&
-                day.date.day == selectedDayValue.day,
-          )
-        : period.days.indexWhere(
-            (month) =>
-                selectedMonthValue != null &&
-                month.date.year == selectedMonthValue.year &&
-                month.date.month == selectedMonthValue.month,
-          );
+    final pressedTooltipIndex = _pressedTooltipIndex ?? -1;
+
+    void updatePressedTooltip(int? index) {
+      final nextIndex = index != null &&
+              index >= 0 &&
+              index < period.days.length
+          ? index
+          : null;
+      if (_pressedTooltipIndex != nextIndex) {
+        setState(() => _pressedTooltipIndex = nextIndex);
+      }
+    }
+
+    void hidePressedTooltip() {
+      if (_pressedTooltipIndex == null) return;
+      setState(() => _pressedTooltipIndex = null);
+    }
 
     return Semantics(
       container: true,
@@ -748,13 +771,13 @@ class _ActivityBarChart extends StatelessWidget {
             const plotLeft = 36.0;
             final plotWidth =
                 math.max(constraints.maxWidth - plotLeft, 0.0).toDouble();
-            final hasSelectedTooltip = selectedTooltipIndex >= 0 &&
-                selectedTooltipIndex < period.days.length;
-            final tooltipCenterX = !hasSelectedTooltip || period.days.isEmpty
+            final hasPressedTooltip = pressedTooltipIndex >= 0 &&
+                pressedTooltipIndex < period.days.length;
+            final tooltipCenterX = !hasPressedTooltip || period.days.isEmpty
                 ? 0.0
                 : plotLeft +
                     plotWidth *
-                        (selectedTooltipIndex + 0.5) /
+                        (pressedTooltipIndex + 0.5) /
                         period.days.length;
             final safeTooltipWidth =
                 math.min(tooltipWidth, constraints.maxWidth).toDouble();
@@ -853,17 +876,37 @@ class _ActivityBarChart extends StatelessWidget {
                           vertical: 20,
                         ),
                         touchCallback: (event, response) {
-                          if ((onSelectedDay == null &&
-                                  onSelectedMonth == null) ||
-                              event is! FlTapUpEvent) {
+                          final index =
+                              response?.spot?.touchedBarGroupIndex;
+
+                          if (event is FlTapDownEvent ||
+                              event is FlPanDownEvent ||
+                              event is FlLongPressStart ||
+                              event is FlPanUpdateEvent ||
+                              event is FlLongPressMoveUpdate) {
+                            updatePressedTooltip(index);
                             return;
                           }
-                          final index = response?.spot?.touchedBarGroupIndex;
+
+                          if (event is FlTapUpEvent ||
+                              event is FlTapCancelEvent ||
+                              event is FlLongPressEnd ||
+                              event is FlPanEndEvent ||
+                              event is FlPanCancelEvent) {
+                            hidePressedTooltip();
+                          }
+
+                          if (event is! FlTapUpEvent ||
+                              (onSelectedDay == null &&
+                                  onSelectedMonth == null)) {
+                            return;
+                          }
                           if (index == null ||
                               index < 0 ||
                               index >= period.days.length) {
                             return;
                           }
+
                           final date = period.days[index].date;
                           if (onSelectedMonth != null) {
                             onSelectedMonth!(date);
@@ -898,7 +941,7 @@ class _ActivityBarChart extends StatelessWidget {
                     curve: ChartAnimationPolicy.curve,
                   ),
                 ),
-                if (hasSelectedTooltip)
+                if (hasPressedTooltip)
                   Positioned(
                     left: tooltipLeft,
                     top: 4,
@@ -920,7 +963,7 @@ class _ActivityBarChart extends StatelessWidget {
                           ),
                           child: Text(
                             DateFormatters.formatCount(
-                              period.days[selectedTooltipIndex].completed,
+                              period.days[pressedTooltipIndex].completed,
                             ),
                             key: const Key('home_activity_fixed_tooltip_value'),
                             maxLines: 1,
