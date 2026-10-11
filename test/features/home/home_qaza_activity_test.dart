@@ -163,7 +163,10 @@ void main() {
       chart,
       index,
       FlPanUpdateEvent(
-        DragUpdateDetails(delta: Offset.zero),
+        DragUpdateDetails(
+          globalPosition: Offset.zero,
+          delta: Offset.zero,
+        ),
       ),
     );
   }
