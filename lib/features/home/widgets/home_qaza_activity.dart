@@ -729,7 +729,6 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
   Widget build(BuildContext context) {
     final period = widget.period;
     final labelsAreDates = widget.labelsAreDates;
-    final selectedDay = widget.selectedDay;
     final onSelectedDay = widget.onSelectedDay;
     final selectedMonth = widget.selectedMonth;
     final onSelectedMonth = widget.onSelectedMonth;
@@ -909,7 +908,7 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
 
                           final date = period.days[index].date;
                           if (onSelectedMonth != null) {
-                            onSelectedMonth!(date);
+                            onSelectedMonth(date);
                           } else {
                             onSelectedDay!(date);
                           }
@@ -988,7 +987,7 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
 
   Color _barColor(BuildContext context, QazaDailyActivity day) {
     final scheme = Theme.of(context).colorScheme;
-    final selectedDayValue = selectedDay;
+    final selectedDayValue = widget.selectedDay;
     final selectedDayMatches = selectedDayValue != null &&
         day.date ==
             DateTime(
@@ -996,7 +995,7 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
               selectedDayValue.month,
               selectedDayValue.day,
             );
-    final selectedMonthValue = selectedMonth;
+    final selectedMonthValue = widget.selectedMonth;
     final selectedMonthMatches = selectedMonthValue != null &&
         day.date.year == selectedMonthValue.year &&
         day.date.month == selectedMonthValue.month;
@@ -1010,10 +1009,10 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     return [
-      for (var index = 0; index < period.days.length; index++)
-        labelsAreDates
-            ? '${DateFormat.EEEE(locale).format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}'
-            : '${DateFormat.MMMM(locale).format(period.days[index].date)}: ${period.days[index].completed} ${l10n.homeCompleted}',
+      for (var index = 0; index < widget.period.days.length; index++)
+        widget.labelsAreDates
+            ? '${DateFormat.EEEE(locale).format(widget.period.days[index].date)}: ${widget.period.days[index].completed} ${l10n.homeCompleted}'
+            : '${DateFormat.MMMM(locale).format(widget.period.days[index].date)}: ${widget.period.days[index].completed} ${l10n.homeCompleted}',
     ].join(', ');
   }
 }
