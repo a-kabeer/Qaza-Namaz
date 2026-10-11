@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -32,7 +34,14 @@ class SettingsScreen extends ConsumerWidget {
         return;
       }
 
-      ref.read(localeProvider.notifier).set(resolved);
+      try {
+        await ref.read(localeProvider.notifier).set(resolved);
+      } catch (_) {
+        if (!context.mounted) return;
+        ref
+            .read(appSnackbarServiceProvider)
+            .error(AppLocalizations.of(context).errorStorage);
+      }
     }
 
     final accountSubtitle = l10n.settingsAccountGuestSubtitle;
@@ -83,7 +92,7 @@ class SettingsScreen extends ConsumerWidget {
                 ],
                 selected: {locale.languageCode},
                 onSelectionChanged: (value) {
-                  changeLanguage(Locale(value.first));
+                  unawaited(changeLanguage(Locale(value.first)));
                 },
               ),
             ),

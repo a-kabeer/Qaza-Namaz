@@ -544,7 +544,7 @@ class _ActivityTargetSummary extends StatelessWidget {
               ? l10n.homeWeeklyTargetLabel
               : l10n.homeMonthlyTarget,
           value: DateFormatters.formatCount(period.fullTarget ?? 0),
-          secondary: '${DateFormatters.formatCount(period.dailyTarget)}/day',
+          secondary: l10n.homePerDay(period.dailyTarget),
         ),
         _SummaryMetricData(
           label: l10n.homeRemaining,

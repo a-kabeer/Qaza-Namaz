@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
@@ -29,6 +30,18 @@ void main() {
 
     await restarted.read(localeRestorationProvider.future);
     expect(restarted.read(localeProvider).languageCode, 'ur');
+  });
+
+  test('Intl date format locale follows language selection', () async {
+    final container = ProviderContainer();
+    addTearDown(container.dispose);
+
+    await container.read(localeRestorationProvider.future);
+    await container.read(localeProvider.notifier).set(const Locale('ur'));
+    expect(intl.Intl.defaultLocale, 'ur');
+
+    await container.read(localeProvider.notifier).set(const Locale('en'));
+    expect(intl.Intl.defaultLocale, 'en');
   });
 
   test('unsupported saved language preserves a supported fallback', () async {

@@ -5,6 +5,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:intl/intl.dart' as intl;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/diagnostics/diagnostics.dart';
@@ -359,7 +360,9 @@ class LocaleNotifier extends Notifier<Locale> {
   @override
   Locale build() {
     final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
-    return resolve(systemLocale.languageCode) ?? fallback;
+    final resolved = resolve(systemLocale.languageCode) ?? fallback;
+    intl.Intl.defaultLocale = resolved.languageCode;
+    return resolved;
   }
 
   static List<Locale> get supported => AppLocalizations.supportedLocales;
@@ -376,7 +379,10 @@ class LocaleNotifier extends Notifier<Locale> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final resolved = resolve(prefs.getString(storageKey));
-      if (resolved != null) state = resolved;
+      if (resolved != null) {
+        state = resolved;
+        intl.Intl.defaultLocale = resolved.languageCode;
+      }
     } catch (_) {}
   }
 
@@ -384,6 +390,7 @@ class LocaleNotifier extends Notifier<Locale> {
     final resolved = resolve(locale.languageCode);
     if (resolved == null) return;
     state = resolved;
+    intl.Intl.defaultLocale = resolved.languageCode;
   }
 
   /// Persists a selected locale without changing the currently previewed UI.
@@ -400,6 +407,7 @@ class LocaleNotifier extends Notifier<Locale> {
     final resolved = resolve(locale.languageCode);
     if (resolved == null) return;
     state = resolved;
+    intl.Intl.defaultLocale = resolved.languageCode;
     await _persist(resolved);
   }
 

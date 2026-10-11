@@ -1,6 +1,10 @@
+import 'package:intl/intl.dart' as intl;
+
 class DateFormatters {
   DateFormatters._();
 
+  // Retained for callers that need the English month labels as data. User-facing
+  // date strings below are formatted from the active Intl locale instead.
   static const List<String> gregorianMonths = [
     'Jan',
     'Feb',
@@ -41,26 +45,27 @@ class DateFormatters {
     'December',
   ];
 
-  static String gregorianMonthName(int month) => gregorianMonths[month - 1];
+  static String gregorianMonthName(int month) =>
+      intl.DateFormat('MMM').format(DateTime(2000, month, 1));
 
   static String gregorianMonthFullName(int month) =>
-      gregorianMonthsFull[month - 1];
+      intl.DateFormat('MMMM').format(DateTime(2000, month, 1));
 
-  /// The complete Gregorian date — day, month and year — e.g.
-  /// `1 September 2026`.
+  /// The complete Gregorian date — day, localized month, and year.
   ///
-  /// The single primary-date format for anything that shows a Hijri date
-  /// underneath it; a date shown to be acted on always carries its year.
+  /// Gregorian remains the canonical date even when Urdu is selected.
   static String formatGregorianFull(DateTime date) =>
-      '${date.day} ${gregorianMonthFullName(date.month)} ${date.year}';
+      intl.DateFormat('d MMMM yyyy').format(date);
 
   static String formatGregorianDatePadded(DateTime date) =>
-      '${date.day.toString().padLeft(2, '0')} ${gregorianMonthName(date.month)} ${date.year}';
+      intl.DateFormat('dd MMM yyyy').format(date);
 
-  /// Compact Gregorian date with a short weekday, e.g. `Sat, Oct 3, 2026`.
+  /// Compact Gregorian date with a localized short weekday.
   static String formatGregorianWeekdayShortFull(DateTime date) =>
-      '${weekdayShortNames[date.weekday - 1]}, '
-      '${gregorianMonthName(date.month)} ${date.day}, ${date.year}';
+      intl.DateFormat('EEE, MMM d, yyyy').format(date);
+
+  static String formatWeekdayShort(DateTime date) =>
+      intl.DateFormat('EEE').format(date);
 
   /// Groups a count with thousands separators, e.g. `4380` becomes `4,380`.
   static String formatCount(int value) {
@@ -85,8 +90,18 @@ class DateFormatters {
   }
 
   static String formatClockTime(DateTime value) {
-    final hour = value.hour % 12 == 0 ? 12 : value.hour % 12;
-    final suffix = value.hour < 12 ? 'AM' : 'PM';
-    return '${hour.toString().padLeft(2, '0')}:${value.minute.toString().padLeft(2, '0')} $suffix';
+    final locale = intl.Intl.getCurrentLocale().split('_').first;
+    if (locale == 'ur') {
+      final period = switch (value.hour) {
+        < 5 => 'رات',
+        < 12 => 'صبح',
+        < 16 => 'دوپہر',
+        < 19 => 'شام',
+        _ => 'رات',
+      };
+      final clock = intl.DateFormat('hh:mm').format(value);
+      return '$clock $period';
+    }
+    return intl.DateFormat('hh:mm a').format(value);
   }
 }

@@ -134,7 +134,7 @@ void main() {
       expect(find.text('Remaining'), findsOneWidget);
       expect(find.text('Target To Date'), findsNothing);
       expect(find.byKey(const Key('home_activity_progress')), findsNothing);
-      expect(find.text('5/day'), findsOneWidget);
+      expect(find.text('5 per day'), findsOneWidget);
     },
   );
 

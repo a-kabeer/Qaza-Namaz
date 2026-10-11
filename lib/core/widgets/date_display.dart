@@ -11,7 +11,7 @@ class DateDisplay extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final value = showWeekday
-        ? '${DateFormatters.weekdayShortNames[date.weekday - 1]}, ${DateFormatters.formatGregorianDatePadded(date)}'
+        ? '${DateFormatters.formatWeekdayShort(date)}, ${DateFormatters.formatGregorianDatePadded(date)}'
         : DateFormatters.formatGregorianDatePadded(date);
     return Text(value);
   }
