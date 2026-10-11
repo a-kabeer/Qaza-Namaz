@@ -344,4 +344,58 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'DOB selector defaults to a valid date when no DOB is saved',
+    (tester) async {
+      final today = LocalDateService.today();
+      final defaultYear = today.year - 18;
+      final lastDayInDefaultMonth =
+          DateTime(defaultYear, today.month + 1, 0).day;
+      final defaultDay =
+          today.day <= lastDayInDefaultMonth ? today.day : lastDayInDefaultMonth;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: const UserProfile(languageCode: 'en'),
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_dob')),
+        300,
+        scrollable: find.byType(Scrollable),
+      );
+      await tester.tap(find.byKey(const Key('profile_dob')));
+      await tester.pumpAndSettle();
+
+      final day = tester.widget<DropdownButton<int>>(
+        find.byKey(const Key('profile_dob_day')),
+      );
+      final month = tester.widget<DropdownButton<int>>(
+        find.byKey(const Key('profile_dob_month')),
+      );
+      final year = tester.widget<DropdownButton<int>>(
+        find.byKey(const Key('profile_dob_year')),
+      );
+
+      expect(year.value, defaultYear);
+      expect(month.value, today.month);
+      expect(day.value, defaultDay);
+      expect(
+        find.byKey(const Key('profile_dob_picker_panel')),
+        findsOneWidget,
+      );
+      expect(find.byType(AlertDialog), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 }
