@@ -79,13 +79,19 @@ void main() {
   Widget buildInteractiveWidget(
     QazaActivityPeriod period, {
     bool disableAnimations = false,
+    bool yearly = false,
   }) {
     return ProviderScope(
       overrides: [
         homeLocalDateProvider.overrideWithValue(period.today),
-        homeQazaActivityWeekProvider.overrideWith(
-          (ref, _) async => period,
-        ),
+        if (yearly)
+          homeQazaActivityYearProvider.overrideWith(
+            (ref, _) async => period,
+          )
+        else
+          homeQazaActivityWeekProvider.overrideWith(
+            (ref, _) async => period,
+          ),
         activeUserIdProvider.overrideWithValue(null),
         dailyQazaTargetProvider.overrideWithValue(5),
       ],
@@ -108,6 +114,32 @@ void main() {
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  void tapChartGroup(BarChart chart, int index) {
+    final callback = chart.data.barTouchData.touchCallback;
+    expect(callback, isNotNull);
+    final group = chart.data.barGroups[index];
+    final rod = group.barRods.first;
+    callback!(
+      FlTapUpEvent(
+        TapUpDetails(kind: PointerDeviceKind.touch),
+      ),
+      BarTouchResponse(
+        touchLocation: Offset.zero,
+        touchChartCoordinate: Offset.zero,
+        spot: BarTouchedSpot(
+          group,
+          index,
+          rod,
+          0,
+          null,
+          -1,
+          FlSpot(group.x.toDouble(), rod.toY),
+          Offset.zero,
         ),
       ),
     );
@@ -159,6 +191,130 @@ void main() {
       expect(
         chart.data.titlesData.leftTitles.sideTitles.interval,
         20,
+      );
+    },
+  );
+
+  testWidgets(
+    'weekly tooltip stays on one fixed row for short and tall bars',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 9, 30),
+        completedOnWednesday: 108,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      var chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_week_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      tapChartGroup(chart, 0);
+      await tester.pumpAndSettle();
+
+      final tooltipFinder =
+          find.byKey(const Key('home_activity_fixed_tooltip'));
+      expect(tooltipFinder, findsOneWidget);
+      final shortBarPosition = tester.getTopLeft(tooltipFinder);
+
+      chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_week_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      tapChartGroup(chart, 3);
+      await tester.pumpAndSettle();
+
+      final tallBarPosition = tester.getTopLeft(tooltipFinder);
+      expect(tallBarPosition.dy, shortBarPosition.dy);
+      expect(tallBarPosition.dx, greaterThan(shortBarPosition.dx));
+      final tooltipValue = tester.widget<Text>(
+        find.byKey(const Key('home_activity_fixed_tooltip_value')),
+      );
+      expect(tooltipValue.data, '108');
+      expect(
+        tooltipValue.style?.color,
+        Theme.of(tester.element(tooltipFinder)).colorScheme.onSurface,
+      );
+
+      final tooltipBox = tester.widget<DecoratedBox>(tooltipFinder);
+      expect(
+        (tooltipBox.decoration as BoxDecoration).color,
+        Theme.of(tester.element(tooltipFinder))
+            .colorScheme
+            .surfaceContainerHigh,
+      );
+    },
+  );
+
+  testWidgets(
+    'yearly tooltip stays on one fixed row across selected months',
+    (tester) async {
+      final today = DateTime(2026, 9, 30);
+      final period = QazaActivityPeriod(
+        from: DateTime(2026, 1, 1),
+        toExclusive: DateTime(2027, 1, 1),
+        today: today,
+        dailyTarget: 0,
+        targetAvailable: false,
+        days: [
+          for (var month = 1; month <= 12; month++)
+            QazaDailyActivity(
+              date: DateTime(2026, month),
+              completed: month == 1
+                  ? 1
+                  : month == 9
+                      ? 12
+                      : 0,
+              byPrayer: const {},
+              target: 0,
+              isFuture: DateTime(2026, month).isAfter(today),
+            ),
+        ],
+      );
+      await tester.pumpWidget(
+        buildInteractiveWidget(period, yearly: true),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Yearly'));
+      await tester.pumpAndSettle();
+
+      var chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_year_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      tapChartGroup(chart, 0);
+      await tester.pumpAndSettle();
+
+      final tooltipFinder =
+          find.byKey(const Key('home_activity_fixed_tooltip'));
+      expect(tooltipFinder, findsOneWidget);
+      final shortBarPosition = tester.getTopLeft(tooltipFinder);
+
+      chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_year_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      tapChartGroup(chart, 8);
+      await tester.pumpAndSettle();
+
+      final tallBarPosition = tester.getTopLeft(tooltipFinder);
+      expect(tallBarPosition.dy, shortBarPosition.dy);
+      expect(tallBarPosition.dx, greaterThan(shortBarPosition.dx));
+      expect(
+        tester
+            .widget<Text>(
+              find.byKey(const Key('home_activity_fixed_tooltip_value')),
+            )
+            .data,
+        '12',
       );
     },
   );
@@ -261,6 +417,7 @@ void main() {
     expect(find.text('Remaining'), findsOneWidget);
     expect(find.text('Target To Date'), findsNothing);
     expect(find.byKey(const Key('home_activity_month_grid')), findsOneWidget);
+    expect(find.byKey(const Key('home_activity_fixed_tooltip')), findsNothing);
   });
 
   testWidgets(
