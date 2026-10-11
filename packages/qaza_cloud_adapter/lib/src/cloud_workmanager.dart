@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
 import 'cloud_models.dart';
@@ -12,6 +13,8 @@ import 'phase1_backup_bridge.dart';
 import 'sync_engine.dart';
 
 const String cloudSyncWorkerTaskName = 'qaza_namaz_cloud_periodic_sync';
+const String _scheduledFrequencyDaysKey =
+    'qaza_cloud_adapter.scheduled_frequency_days_v1';
 
 /// WorkManager may defer a run because of constraints, battery policy, or
 /// other system limits. Unsupported custom intervals safely fall back to Daily.
@@ -111,9 +114,14 @@ class CloudSyncScheduler {
         _initialized = true;
       }
 
-      // Update an existing unique task when the selected cadence changes;
-      // KEEP would silently retain the previous periodic specification.
+      // Avoid resetting the next run every time the Account screen restores
+      // status. Re-register only for a new schedule, or a cadence change.
       final normalized = normalizeCloudSyncFrequency(frequency);
+      final preferences = await SharedPreferences.getInstance();
+      if (preferences.getInt(_scheduledFrequencyDaysKey) ==
+          normalized.inDays) {
+        return;
+      }
       final inputData = <String, dynamic>{
         if (serverClientId != null) 'server_client_id': serverClientId,
       };
@@ -126,6 +134,7 @@ class CloudSyncScheduler {
         constraints: Constraints(networkType: NetworkType.connected),
         existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
       );
+      await preferences.setInt(_scheduledFrequencyDaysKey, normalized.inDays);
     } catch (_) {
       // Keep the user's intended preference intact if scheduling fails. The
       // caller receives the registration error and can surface it in the UI.
@@ -133,10 +142,20 @@ class CloudSyncScheduler {
     }
   }
 
+  Future<void> _cancelScheduledWork() async {
+    try {
+      await _workmanager.cancelByUniqueName(cloudSyncWorkerTaskName);
+    } finally {
+      // A subsequent re-enable must register work even if cancellation throws.
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.remove(_scheduledFrequencyDaysKey);
+    }
+  }
+
   Future<void> cancel() async {
     // Persist the disabled state before cancelling unique periodic work.
     await _state.setAutomaticSyncEnabled(false);
-    await _workmanager.cancelByUniqueName(cloudSyncWorkerTaskName);
+    await _cancelScheduledWork();
   }
 
   Future<void> disconnect() async {
@@ -144,6 +163,6 @@ class CloudSyncScheduler {
     await _state.setCloudSyncEnabled(false);
     // The cloud flag hard-stops workers; preserve the user's saved preference
     // so reconnecting does not silently change their choice.
-    await _workmanager.cancelByUniqueName(cloudSyncWorkerTaskName);
+    await _cancelScheduledWork();
   }
 }
