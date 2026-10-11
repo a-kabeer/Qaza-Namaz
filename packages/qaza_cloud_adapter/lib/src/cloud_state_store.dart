@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 import 'cloud_models.dart';
 
@@ -12,7 +13,10 @@ abstract interface class CloudSyncStateStore {
   Future<bool> isCloudSyncEnabled();
   Future<void> setCloudSyncEnabled(bool enabled);
   Future<bool> isAutomaticSyncEnabled();
+  Future<bool> hasAutomaticSyncPreference();
   Future<void> setAutomaticSyncEnabled(bool enabled);
+  Future<CloudBackupFrequency> backupFrequency();
+  Future<void> setBackupFrequency(CloudBackupFrequency frequency);
   Future<bool> isReconnectRequired();
   Future<void> setReconnectRequired(bool required);
   Future<DateTime?> lastSuccessfulSyncAt();
@@ -31,6 +35,8 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   static const _cloudEnabledKey = 'qaza_cloud_adapter.cloud_enabled_v1';
   static const _automaticSyncEnabledKey =
       'qaza_cloud_adapter.automatic_sync_enabled_v1';
+  static const _backupFrequencyKey =
+      'qaza_cloud_adapter.backup_frequency_v1';
   static const _reconnectRequiredKey =
       'qaza_cloud_adapter.reconnect_required_v1';
   static const _lastSuccessfulSyncAtKey =
@@ -93,9 +99,8 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
     final prefs = await _prefs;
     await prefs.setBool(_cloudEnabledKey, enabled);
     if (!enabled) {
-      // The worker checks both durable flags before opening local storage or
-      // initializing Google authorization.
-      await prefs.setBool(_automaticSyncEnabledKey, false);
+      // Cloud-enabled is the hard worker guard. Retain the user's automatic
+      // backup choice so reconnecting does not silently change that choice.
       await prefs.setBool(_reconnectRequiredKey, false);
       await prefs.remove(_pendingConflictKey);
     }
@@ -105,6 +110,28 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   Future<bool> isAutomaticSyncEnabled() async {
     final prefs = await _prefs;
     return prefs.getBool(_automaticSyncEnabledKey) ?? false;
+  }
+
+  @override
+  Future<bool> hasAutomaticSyncPreference() async {
+    final prefs = await _prefs;
+    return prefs.containsKey(_automaticSyncEnabledKey);
+  }
+
+  @override
+  Future<CloudBackupFrequency> backupFrequency() async {
+    final prefs = await _prefs;
+    final value = prefs.getString(_backupFrequencyKey);
+    return CloudBackupFrequency.values.firstWhere(
+      (frequency) => frequency.name == value,
+      orElse: () => CloudBackupFrequency.daily,
+    );
+  }
+
+  @override
+  Future<void> setBackupFrequency(CloudBackupFrequency frequency) async {
+    final prefs = await _prefs;
+    await prefs.setString(_backupFrequencyKey, frequency.name);
   }
 
   @override
