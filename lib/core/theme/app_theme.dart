@@ -9,9 +9,9 @@ import 'app_colors.dart';
 /// Central application theme.
 ///
 /// The only source of Material styling for the application. Color, type,
-/// shape and elevation tokens use neutral surfaces, a blue primary, violet
-/// secondary accents, semantic feedback colors, and Noto Serif / Manrope
-/// typography.
+/// shape and elevation tokens use neutral surfaces, a teal primary and
+/// complementary teal secondary accents, semantic feedback colors, and Noto
+/// Serif / Manrope typography.
 class AppTheme {
   static const _subThemesData = FlexSubThemesData(
     defaultRadius: 12,
@@ -141,16 +141,16 @@ class AppTheme {
   static const _lightOutlineVariant = Color(0xFFE5E7EB);
 
   // Brand and container roles.
-  static const _lightPrimary = Color(0xFF2563EB);
-  static const _lightPrimaryContainer = Color(0xFFDBEAFE);
-  static const _lightOnPrimaryContainer = Color(0xFF1E40AF);
-  static const _lightSecondary = Color(0xFF7C3AED);
-  static const _lightSecondaryContainer = Color(0xFFEDE9FE);
-  static const _lightOnSecondaryContainer = Color(0xFF5B21B6);
-  static const _lightTertiary = Color(0xFF6D28D9);
+  static const _lightPrimary = Color(0xFF01485A);
+  static const _lightPrimaryContainer = Color(0xFFD6EBEE);
+  static const _lightOnPrimaryContainer = Color(0xFF123F49);
+  static const _lightSecondary = Color(0xFF2F7782);
+  static const _lightSecondaryContainer = Color(0xFFDCEFF1);
+  static const _lightOnSecondaryContainer = Color(0xFF174D56);
+  static const _lightTertiary = Color(0xFF386F78);
   static const _lightOnTertiary = Color(0xFFFFFFFF);
-  static const _lightTertiaryContainer = Color(0xFFF5F3FF);
-  static const _lightOnTertiaryContainer = Color(0xFF5B21B6);
+  static const _lightTertiaryContainer = Color(0xFFE6F3F4);
+  static const _lightOnTertiaryContainer = Color(0xFF174D56);
   static const _lightError = Color(0xFFEF4444);
   static const _lightErrorContainer = Color(0x1FEF4444);
 
@@ -166,18 +166,18 @@ class AppTheme {
   static const _darkOutlineVariant = Color(0xFF27272A);
 
   // Brand and container roles.
-  static const _darkPrimary = Color(0xFF60A5FA);
+  static const _darkPrimary = Color(0xFF78BCC5);
   static const _darkOnPrimary = Color(0xFF09090B);
-  static const _darkPrimaryContainer = Color(0xFF1E3A5F);
-  static const _darkOnPrimaryContainer = Color(0xFFDBEAFE);
-  static const _darkSecondary = Color(0xFFC4B5FD);
+  static const _darkPrimaryContainer = Color(0xFF16434B);
+  static const _darkOnPrimaryContainer = Color(0xFFD6EBEE);
+  static const _darkSecondary = Color(0xFFB6DCE0);
   static const _darkOnSecondary = Color(0xFF09090B);
-  static const _darkSecondaryContainer = Color(0xFF3B2463);
-  static const _darkOnSecondaryContainer = Color(0xFFEDE9FE);
-  static const _darkTertiary = Color(0xFFA5B4FC);
-  static const _darkOnTertiary = Color(0xFF1E1B4B);
-  static const _darkTertiaryContainer = Color(0xFF312E81);
-  static const _darkOnTertiaryContainer = Color(0xFFE0E7FF);
+  static const _darkSecondaryContainer = Color(0xFF1B4147);
+  static const _darkOnSecondaryContainer = Color(0xFFDCEFF1);
+  static const _darkTertiary = Color(0xFF91CDD4);
+  static const _darkOnTertiary = Color(0xFF0E3036);
+  static const _darkTertiaryContainer = Color(0xFF20474D);
+  static const _darkOnTertiaryContainer = Color(0xFFE2F3F4);
   static const _darkError = Color(0xFFFF6B61);
   static const _darkOnError = Color(0xFF5A0000);
   static const _darkErrorContainer = Color(0xFF7F1D1D);
