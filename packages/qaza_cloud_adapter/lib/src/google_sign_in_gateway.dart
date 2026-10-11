@@ -95,9 +95,9 @@ class GoogleSignInGateway {
         final resolvedAuthorization =
             authorization ??
             (allowInteractive
-                ? await user.authorizationClient.authorizeScopes(
-                    const <String>[cloudDriveScope],
-                  )
+                ? await user.authorizationClient.authorizeScopes(const <String>[
+                    cloudDriveScope,
+                  ])
                 : null);
 
         if (resolvedAuthorization == null) {
