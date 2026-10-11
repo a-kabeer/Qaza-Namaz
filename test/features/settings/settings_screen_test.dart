@@ -154,6 +154,40 @@ void main() {
       expect(prefs.getString(LocaleNotifier.storageKey), 'ur');
     },
   );
+
+  testWidgets(
+    'About removes the GeoNames row and keeps attribution under Licenses',
+    (tester) async {
+      final repository = _FakeUserProfileRepository(
+        stored: const UserProfile(
+          languageCode: 'en',
+          onboardingCompleted: true,
+        ),
+      );
+      final container = _container(
+        repository,
+        _EnglishLocaleNotifier.new,
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(_app(container));
+
+      final aboutKey = find.byKey(const Key('settings_about'));
+      await tester.scrollUntilVisible(aboutKey, 200);
+      await tester.tap(aboutKey);
+      await tester.pumpAndSettle();
+
+      expect(find.text('GeoNames attribution'), findsNothing);
+      expect(find.textContaining('GeoNames'), findsNothing);
+
+      final licensesKey = find.byKey(const Key('about_licenses'));
+      await tester.scrollUntilVisible(licensesKey, 200);
+      await tester.tap(licensesKey);
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('GeoNames'), findsOneWidget);
+    },
+  );
 }
 
 class _UrduLocaleNotifier extends LocaleNotifier {
