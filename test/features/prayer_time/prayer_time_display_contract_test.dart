@@ -80,6 +80,9 @@ void main() {
     expect(source, contains("key: const Key('restricted_time_timeline_row')"));
     expect(source, isNot(contains('prayerTimeRemaining(')));
     expect(source, isNot(contains('prayerTimeActive')));
+    expect(source, contains('active.startsAt.toUtc()'));
+    expect(source, contains('active.endsAt.toUtc()'));
+    expect(source, contains('restricted: true'));
     expect(source, isNot(contains('Remaining time')));
   });
 
@@ -96,6 +99,8 @@ void main() {
     expect(source, contains('static const double _timeWidth = 82;'));
     expect(source, contains('width: _countdownWidth'));
     expect(source, contains('width: _timeWidth'));
+    expect(source, contains('restricted ? _buildRestrictedContent('));
+    expect(source, contains('fit: BoxFit.scaleDown'));
     expect(source, contains('margin: EdgeInsets.zero'));
     expect(source, contains('this.icon'));
     expect(source, contains('this.restricted'));
@@ -113,7 +118,8 @@ void main() {
         "import '../../prayer_time/presentation/prayer_timeline_row.dart';",
       ),
     );
-    expect(source, contains('const RestrictedTimeTimelineRow(),'));
+    expect(source, contains('RestrictedTimeTimelineRow('));
+    expect(source, contains('onTap: () => openPrayerTime(ref)'));
     expect(source, isNot(contains('RestrictedTimesStatusCard')));
   });
 
