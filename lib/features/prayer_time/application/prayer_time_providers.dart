@@ -15,6 +15,7 @@ import '../domain/prayer_time_calculator.dart';
 import '../domain/prayer_time.dart';
 import '../domain/restricted_time.dart';
 import 'prayer_time_controller.dart';
+import 'current_prayer_state.dart';
 
 enum PrayerTimeTargetAvailability {
   available,
@@ -161,70 +162,13 @@ final qazaPrayerTimeEligibilitySignatureProvider =
   ].join('|');
 });
 
-PrayerSchedule _scheduleForLocalDate(
-  PrayerTimeSnapshot snapshot,
-  tz.TZDateTime localNow,
-) {
-  final date = _dateOnly(DateTime(localNow.year, localNow.month, localNow.day));
-  if (snapshot.today.date == date) return snapshot.today;
-  if (snapshot.tomorrow.date == date) return snapshot.tomorrow;
-  return snapshot.today;
-}
-
-class CurrentPrayerState {
-  const CurrentPrayerState({
-    this.current,
-    this.next,
-    this.currentStartedAt,
-    this.nextAt,
-  });
-
-  final PrayerSlot? current;
-  final PrayerSlot? next;
-  final DateTime? currentStartedAt;
-  final DateTime? nextAt;
-}
-
 final currentPrayerStateProvider =
     Provider.autoDispose<CurrentPrayerState?>((ref) {
   final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
   final now = ref.watch(prayerTimeClockProvider).valueOrNull;
   if (snapshot == null || now == null) return null;
 
-  final location = tz.getLocation(snapshot.location.timezoneId);
-  final localNow = tz.TZDateTime.from(now, location);
-  final today = _scheduleForLocalDate(snapshot, localNow);
-  final tomorrow = snapshot.tomorrow;
-
-  const prayers = [
-    PrayerSlot.fajr,
-    PrayerSlot.dhuhr,
-    PrayerSlot.asr,
-    PrayerSlot.maghrib,
-    PrayerSlot.isha,
-  ];
-
-  for (var i = prayers.length - 1; i >= 0; i--) {
-    final prayer = prayers[i];
-    final time = today.localFor(prayer, location);
-    if (!localNow.isBefore(time)) {
-      final next = i + 1 < prayers.length ? prayers[i + 1] : PrayerSlot.fajr;
-      final nextAt = i + 1 < prayers.length
-          ? today.localFor(next, location)
-          : tomorrow.localFor(PrayerSlot.fajr, location);
-      return CurrentPrayerState(
-        current: prayer,
-        next: next,
-        currentStartedAt: time,
-        nextAt: nextAt,
-      );
-    }
-  }
-
-  return CurrentPrayerState(
-    next: PrayerSlot.fajr,
-    nextAt: today.localFor(PrayerSlot.fajr, location),
-  );
+  return resolveCurrentPrayerState(snapshot: snapshot, now: now);
 });
 
 final currentQazaPrayerTypeProvider = Provider.autoDispose<PrayerType?>((ref) {
