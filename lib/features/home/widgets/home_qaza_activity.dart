@@ -232,29 +232,25 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
             ),
             if (_range == _ActivityRange.yearly && _selectedMonth != null) ...[
               const SizedBox(height: 16),
-              LayoutBuilder(
-                builder: (context, constraints) {
-                  return SizedBox(
-                    height: _yearlyInlineMonthlyDetailHeight(
-                      constraints.maxWidth,
+              AnimatedSize(
+                duration: const Duration(milliseconds: 180),
+                curve: Curves.easeOutCubic,
+                alignment: Alignment.topCenter,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 180),
+                  switchInCurve: Curves.easeOutCubic,
+                  switchOutCurve: Curves.easeInCubic,
+                  child: _InlineMonthlyDetail(
+                    key: ValueKey(
+                      'home_activity_month_detail_${_selectedMonth!.year}_${_selectedMonth!.month}',
                     ),
-                    child: AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 180),
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      child: _InlineMonthlyDetail(
-                        key: ValueKey(
-                          'home_activity_month_detail_${_selectedMonth!.year}_${_selectedMonth!.month}',
-                        ),
-                        month: _selectedMonth!,
-                        selectedDay: _selectedDay,
-                        onSelectedDay: (date) {
-                          setState(() => _selectedDay = date);
-                        },
-                      ),
-                    ),
-                  );
-                },
+                    month: _selectedMonth!,
+                    selectedDay: _selectedDay,
+                    onSelectedDay: (date) {
+                      setState(() => _selectedDay = date);
+                    },
+                  ),
+                ),
               ),
             ] else if (_selectedDay != null &&
                 _range != _ActivityRange.yearly) ...[
@@ -272,39 +268,6 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
     );
 
     return content;
-  }
-
-  static const _selectedActivityDetailsReservedHeight = 380.0;
-
-  double _yearlyInlineMonthlyDetailHeight(double width) {
-    const dividerHeight = 1.0;
-    const topSpacing = 14.0;
-    const monthTitleHeight = 32.0;
-    const titleSpacing = 10.0;
-    const summaryHeight = 64.0;
-    const summarySpacing = 12.0;
-    const noActivityHeight = 28.0;
-    const weekdayHeaderHeight = 24.0;
-    const calendarSpacing = _monthlyCalendarSpacing;
-    const selectedDetailsSpacing = 12.0;
-
-    // The inline monthly detail is not inside the 1px-padded activity
-    // content ListView, so its calendar uses the full available width.
-    final gridWidth = math.max(width, 0).toDouble();
-    final gridHeight = _monthlyCalendarGridHeight(gridWidth);
-
-    return dividerHeight +
-        topSpacing +
-        monthTitleHeight +
-        titleSpacing +
-        summaryHeight +
-        summarySpacing +
-        noActivityHeight +
-        weekdayHeaderHeight +
-        calendarSpacing +
-        gridHeight +
-        selectedDetailsSpacing +
-        _selectedActivityDetailsReservedHeight;
   }
 
   double _activityViewportHeight(double width) {
@@ -990,8 +953,10 @@ class _InlineMonthlyDetail extends ConsumerWidget {
             selectedDay: selectedDay,
             onSelectedDay: onSelectedDay,
           ),
-          const SizedBox(height: 12),
-          Expanded(
+          AnimatedSize(
+            duration: const Duration(milliseconds: 180),
+            curve: Curves.easeOutCubic,
+            alignment: Alignment.topCenter,
             child: AnimatedSwitcher(
               duration: const Duration(milliseconds: 160),
               switchInCurve: Curves.easeOutCubic,
@@ -1003,17 +968,19 @@ class _InlineMonthlyDetail extends ConsumerWidget {
                 );
               },
               child: selectedDay == null
-                  ? const SizedBox.expand(
+                  ? const SizedBox.shrink(
                       key: ValueKey('home_activity_no_selected_day'),
                     )
-                  : Align(
-                      key: const ValueKey('home_activity_selected_day'),
-                      alignment: Alignment.topCenter,
+                  : Padding(
+                      key: ValueKey(
+                        'home_activity_selected_day_${selectedDay!.year}_${selectedDay!.month}_${selectedDay!.day}',
+                      ),
+                      padding: const EdgeInsets.only(top: 12),
                       child: _SelectedActivityDayDetails(
                         key: const Key('home_activity_selected_day_details'),
                         range: _ActivityRange.monthly,
                         anchor: normalizedMonth,
-                        selectedDay: selectedDay!,
+                        selectedDay: selectedDay,
                       ),
                     ),
             ),
