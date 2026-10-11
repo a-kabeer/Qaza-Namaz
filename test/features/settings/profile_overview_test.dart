@@ -53,7 +53,10 @@ void main() {
       var editTapped = false;
       await tester.pumpWidget(host(onEdit: () => editTapped = true));
 
-      await tester.tap(find.byKey(const Key('profile_edit')));
+      final editButton = find.byKey(const Key('profile_edit'));
+      await tester.ensureVisible(editButton);
+      await tester.pumpAndSettle();
+      await tester.tap(editButton);
       expect(editTapped, isTrue);
     },
   );
