@@ -196,7 +196,11 @@ void main() {
       await tester.tap(
         find.byKey(const Key('licenses_software_catalogue')),
       );
-      await tester.pumpAndSettle();
+      // Flutter's built-in LicensePage can keep an animation scheduled while
+      // asynchronously collecting the registry. Pump the route without
+      // requiring every animation to settle (which can time out in CI).
+      await tester.pump(const Duration(seconds: 1));
+      await tester.pump();
       expect(find.textContaining('Noto Nastaliq Urdu'), findsWidgets);
       expect(find.textContaining('SQLite3MultipleCiphers'), findsWidgets);
     },
