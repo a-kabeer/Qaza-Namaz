@@ -17,8 +17,13 @@ void main() {
 
   PrayerSchedule makeSchedule(DateTime date) {
     DateTime utc(int hour, int minute) => tz.TZDateTime(
-      karachi, date.year, date.month, date.day, hour, minute,
-    ).toUtc();
+          karachi,
+          date.year,
+          date.month,
+          date.day,
+          hour,
+          minute,
+        ).toUtc();
     final fajr = utc(5, 0);
     final sunrise = utc(6, 20);
     final dhuhr = utc(12, 0);
@@ -28,9 +33,12 @@ void main() {
     return PrayerSchedule(
       date: DateTime(date.year, date.month, date.day),
       timesUtc: {
-        PrayerSlot.fajr: fajr, PrayerSlot.sunrise: sunrise,
-        PrayerSlot.dhuhr: dhuhr, PrayerSlot.asr: asr,
-        PrayerSlot.maghrib: maghrib, PrayerSlot.isha: isha,
+        PrayerSlot.fajr: fajr,
+        PrayerSlot.sunrise: sunrise,
+        PrayerSlot.dhuhr: dhuhr,
+        PrayerSlot.asr: asr,
+        PrayerSlot.maghrib: maghrib,
+        PrayerSlot.isha: isha,
       },
       astronomicalSunriseUtc: sunrise,
       astronomicalDhuhrUtc: dhuhr,
@@ -41,9 +49,14 @@ void main() {
   PrayerTimeSnapshot makeSnapshot(DateTime today, DateTime tomorrow) =>
       PrayerTimeSnapshot(
         location: const PrayerLocation(
-          latitude: 24.8607, longitude: 67.0011, city: 'Karachi',
-          region: 'Sindh', country: 'Pakistan', countryCode: 'PK',
-          timezoneId: 'Asia/Karachi', source: PrayerLocationSource.city,
+          latitude: 24.8607,
+          longitude: 67.0011,
+          city: 'Karachi',
+          region: 'Sindh',
+          country: 'Pakistan',
+          countryCode: 'PK',
+          timezoneId: 'Asia/Karachi',
+          source: PrayerLocationSource.city,
         ),
         settings: const PrayerSettings(),
         today: makeSchedule(today),
@@ -67,10 +80,12 @@ void main() {
 
   test('rollover never reuses the old schedule Fajr', () {
     final snapshot = makeSnapshot(
-      DateTime(2026, 10, 10), DateTime(2026, 10, 11),
+      DateTime(2026, 10, 10),
+      DateTime(2026, 10, 11),
     );
     final state = resolveCurrentPrayerState(
-      snapshot: snapshot, now: local(11, 21),
+      snapshot: snapshot,
+      now: local(11, 21),
     );
     expect(state?.current, PrayerSlot.isha);
     expect(state?.next, PrayerSlot.fajr);
