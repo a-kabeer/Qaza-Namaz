@@ -119,29 +119,76 @@ void main() {
     );
   }
 
-  void tapChartGroup(BarChart chart, int index) {
-    final callback = chart.data.barTouchData.touchCallback;
-    expect(callback, isNotNull);
+  BarTouchResponse chartResponseForGroup(BarChart chart, int index) {
     final group = chart.data.barGroups[index];
     final rod = group.barRods.first;
-    callback!(
+    return BarTouchResponse(
+      touchLocation: Offset.zero,
+      touchChartCoordinate: Offset.zero,
+      spot: BarTouchedSpot(
+        group,
+        index,
+        rod,
+        0,
+        null,
+        -1,
+        FlSpot(group.x.toDouble(), rod.toY),
+        Offset.zero,
+      ),
+    );
+  }
+
+  void dispatchChartTouch(BarChart chart, int index, FlTouchEvent event) {
+    final callback = chart.data.barTouchData.touchCallback;
+    expect(callback, isNotNull);
+    callback!(event, chartResponseForGroup(chart, index));
+  }
+
+  void tapChartGroup(BarChart chart, int index) {
+    dispatchChartTouch(
+      chart,
+      index,
       FlTapUpEvent(
         TapUpDetails(kind: PointerDeviceKind.touch),
       ),
-      BarTouchResponse(
-        touchLocation: Offset.zero,
-        touchChartCoordinate: Offset.zero,
-        spot: BarTouchedSpot(
-          group,
-          index,
-          rod,
-          0,
-          null,
-          -1,
-          FlSpot(group.x.toDouble(), rod.toY),
-          Offset.zero,
-        ),
+    );
+  }
+
+  void pressChartGroup(BarChart chart, int index) {
+    dispatchChartTouch(
+      chart,
+      index,
+      FlTapDownEvent(
+        TapDownDetails(kind: PointerDeviceKind.touch),
       ),
+    );
+  }
+
+  void movePressedChartGroup(BarChart chart, int index) {
+    dispatchChartTouch(
+      chart,
+      index,
+      FlPanUpdateEvent(
+        DragUpdateDetails(delta: Offset.zero),
+      ),
+    );
+  }
+
+  void releasePressedChartGroup(BarChart chart, int index) {
+    dispatchChartTouch(
+      chart,
+      index,
+      FlTapUpEvent(
+        TapUpDetails(kind: PointerDeviceKind.touch),
+      ),
+    );
+  }
+
+  void cancelPressedChartGroup(BarChart chart, int index) {
+    dispatchChartTouch(
+      chart,
+      index,
+      const FlTapCancelEvent(),
     );
   }
 
@@ -211,7 +258,7 @@ void main() {
           matching: find.byType(BarChart),
         ),
       );
-      tapChartGroup(chart, 0);
+      pressChartGroup(chart, 0);
       await tester.pumpAndSettle();
 
       final tooltipFinder =
@@ -225,7 +272,7 @@ void main() {
           matching: find.byType(BarChart),
         ),
       );
-      tapChartGroup(chart, 3);
+      movePressedChartGroup(chart, 3);
       await tester.pumpAndSettle();
 
       final tallBarPosition = tester.getTopLeft(tooltipFinder);
@@ -247,6 +294,9 @@ void main() {
             .colorScheme
             .surfaceContainerHigh,
       );
+      releasePressedChartGroup(chart, 3);
+      await tester.pumpAndSettle();
+      expect(tooltipFinder, findsNothing);
     },
   );
 
@@ -288,7 +338,7 @@ void main() {
           matching: find.byType(BarChart),
         ),
       );
-      tapChartGroup(chart, 0);
+      pressChartGroup(chart, 0);
       await tester.pumpAndSettle();
 
       final tooltipFinder =
@@ -302,7 +352,7 @@ void main() {
           matching: find.byType(BarChart),
         ),
       );
-      tapChartGroup(chart, 8);
+      movePressedChartGroup(chart, 8);
       await tester.pumpAndSettle();
 
       final tallBarPosition = tester.getTopLeft(tooltipFinder);
@@ -316,6 +366,43 @@ void main() {
             .data,
         '12',
       );
+      releasePressedChartGroup(chart, 8);
+      await tester.pumpAndSettle();
+      expect(tooltipFinder, findsNothing);
+    },
+  );
+
+  testWidgets(
+    'activity tooltip hides when a pressed touch is cancelled',
+    (tester) async {
+      final period = activityPeriod(
+        today: DateTime(2026, 9, 30),
+        completedOnWednesday: 5,
+      );
+      await tester.pumpWidget(buildInteractiveWidget(period));
+      await tester.pumpAndSettle();
+
+      var chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_week_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      pressChartGroup(chart, 3);
+      await tester.pump();
+      final tooltipFinder =
+          find.byKey(const Key('home_activity_fixed_tooltip'));
+      expect(tooltipFinder, findsOneWidget);
+
+      chart = tester.widget<BarChart>(
+        find.descendant(
+          of: find.byKey(const Key('home_activity_week_chart')),
+          matching: find.byType(BarChart),
+        ),
+      );
+      cancelPressedChartGroup(chart, 3);
+      await tester.pumpAndSettle();
+      expect(tooltipFinder, findsNothing);
     },
   );
 
