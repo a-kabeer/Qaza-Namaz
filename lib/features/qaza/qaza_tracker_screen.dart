@@ -425,7 +425,7 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final restricted = ref.watch(qazaCompletionRestrictedProvider);
 
