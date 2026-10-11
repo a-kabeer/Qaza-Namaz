@@ -199,6 +199,48 @@ void main() {
     });
 
     test(
+      'manual backup uploads when local revision already matches the sync cursor',
+      () async {
+        final phase1 = FakePhase1(revision: 10);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-100',
+            baseBackupId: null,
+            revision: 10,
+            modifiedAt: DateTime.utc(2026, 10, 8),
+            remoteVersion: '1',
+          ),
+        );
+        final progress = <CloudBackupProgress>[];
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync(forceUpload: true, onProgress: progress.add);
+
+        expect(result.kind, CloudSyncResultKind.uploaded);
+        expect(remote.writeCount, 1);
+        expect(remote.written!.lineage.baseBackupId, 'backup-100');
+        expect(remote.written!.lineage.dbRevision, 10);
+        expect(
+          state.cursor!.lastSyncedBackupId,
+          remote.written!.lineage.backupId,
+        );
+        expect(progress.first.stage, CloudBackupProgressStage.preparing);
+      },
+    );
+
+    test(
       'local-only progression uploads with the last remote backup as base',
       () async {
         final phase1 = FakePhase1(revision: 11);
