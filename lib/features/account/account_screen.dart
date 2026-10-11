@@ -407,6 +407,10 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       setState(() {
         _sync = result;
         _message = result.message;
+        if (result.status == CloudSyncStatus.failed ||
+            result.status == CloudSyncStatus.disabled) {
+          _backupProgress = null;
+        }
       });
       if (result.status == CloudSyncStatus.conflict && result.conflict != null) {
         await _resolveConflict(result.conflict!);
@@ -416,14 +420,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         );
       }
     } catch (error) {
-      if (mounted) setState(() => _message = error.toString());
-    } finally {
       if (mounted) {
         setState(() {
-          _busy = false;
+          _message = error.toString();
           _backupProgress = null;
         });
       }
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -680,16 +684,18 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                     final progress = _backupProgress!;
                     final preparing =
                         progress.stage == CloudBackupProgressStage.preparing;
-                    final fraction = progress.totalBytes <= 0
+                    final completed =
+                        progress.stage == CloudBackupProgressStage.completed;
+                    final fraction = preparing || progress.totalBytes <= 0
                         ? 0.0
                         : (progress.sentBytes / progress.totalBytes)
-                            .clamp(0.0, 0.99)
+                            .clamp(0.0, completed ? 1.0 : 0.99)
                             .toDouble();
-                    final percent = progress.totalBytes <= 0
+                    final percent = preparing || progress.totalBytes <= 0
                         ? 0
                         : (progress.sentBytes * 100 / progress.totalBytes)
                             .floor()
-                            .clamp(0, 99);
+                            .clamp(0, completed ? 100 : 99);
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -698,15 +704,17 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                               ? (_isUrdu
                                   ? 'بیک اپ تیار کیا جا رہا ہے…'
                                   : 'Preparing backup…')
-                              : (_isUrdu
-                                  ? 'گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے'
-                                  : 'Uploading backup to Google Drive'),
+                              : completed
+                                  ? (_isUrdu
+                                      ? 'بیک اپ مکمل ہو گیا'
+                                      : 'Backup completed')
+                                  : (_isUrdu
+                                      ? 'گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے'
+                                      : 'Uploading backup to Google Drive'),
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 6),
-                        LinearProgressIndicator(
-                          value: preparing ? null : fraction,
-                        ),
+                        LinearProgressIndicator(value: preparing ? null : fraction),
                         if (!preparing) ...[
                           const SizedBox(height: 4),
                           Text(
