@@ -726,11 +726,21 @@ class _PrayerTimeFocusCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          Text(
-            time,
-            style: textTheme.titleMedium?.copyWith(
-              color: scheme.onPrimaryContainer,
-              fontWeight: FontWeight.w700,
+          SizedBox(
+            width: double.infinity,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.center,
+              child: Text(
+                time,
+                maxLines: 1,
+                softWrap: false,
+                textAlign: TextAlign.center,
+                style: textTheme.titleMedium?.copyWith(
+                  color: scheme.onPrimaryContainer,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
           ),
         ],
