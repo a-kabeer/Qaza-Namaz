@@ -1092,8 +1092,23 @@ void main() {
     expect(source, isNot(contains('_openDetails(context, record)')));
     expect(source, contains('onSaved?.call();'));
     expect(source, contains('colorScheme.surfaceContainer'));
+    expect(source, contains('class _QazaStackedTile extends StatelessWidget'));
+    expect(source, contains('theme.brightness == Brightness.light'));
+    expect(source, contains('scheme.surfaceContainerLow'));
     expect(source, contains('scheme.surfaceContainerHigh'));
+    expect(
+      source,
+      contains('BorderRadius.vertical(top: Radius.circular(AppRadius.md))'),
+    );
+    expect(source, contains('BorderRadius.zero'));
+    expect(
+      source,
+      contains('BorderSide(color: scheme.outlineVariant, width: 0.5)'),
+    );
     expect(source, contains('homePrayerIcon(record.prayerType)'));
+    expect(source, contains('DateFormatters.formatGregorianDatePadded(record.originalDate)'));
+    expect(source, contains('l10n.formatHijriDate(record.originalDate)'));
+    expect(source, contains('maxLines: 2'));
   });
 
   test('Completed rows retain their check-circle status icon', () {
