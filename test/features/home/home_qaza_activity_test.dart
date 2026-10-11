@@ -144,7 +144,6 @@ void main() {
     callback!(event, chartResponseForGroup(chart, index));
   }
 
-
   void pressChartGroup(BarChart chart, int index) {
     dispatchChartTouch(
       chart,
