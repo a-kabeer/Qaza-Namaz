@@ -121,8 +121,7 @@ class HomePendingByPrayer extends ConsumerWidget {
                 for (var index = 0; index < pendingPrayers.length; index++) ...[
                   _PrayerPendingBar(
                     prayer: pendingPrayers[index],
-                    progress:
-                        summary.byPrayer[pendingPrayers[index]]!.progress,
+                    progress: summary.byPrayer[pendingPrayers[index]]!.progress,
                     charts: charts,
                     onTap: () => openQazaForPrayer(ref, pendingPrayers[index]),
                   ),
