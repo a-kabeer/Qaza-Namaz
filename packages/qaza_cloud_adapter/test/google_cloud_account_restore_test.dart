@@ -50,6 +50,40 @@ void main() {
       expect(scheduler.initializeCalls, 1);
       expect(await state.isCloudSyncEnabled(), isTrue);
       expect(await state.isAutomaticSyncEnabled(), isTrue);
+      expect(await state.isReconnectRequired(), isFalse);
+    },
+  );
+
+  test(
+    'missing Drive authorization marks reconnect without disabling backup',
+    () async {
+      final preferences = await SharedPreferences.getInstance();
+      final state = SharedPreferencesCloudSyncStateStore(
+        preferences: preferences,
+      );
+      await state.setCloudSyncEnabled(true);
+      await state.setAutomaticSyncEnabled(true);
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_display_name_v1',
+        'Saved Google User',
+      );
+
+      final gateway = _CountingGateway(authorizationAvailable: false);
+      final scheduler = _CountingScheduler(state: state);
+      final provider = GoogleCloudAccountProvider(
+        gateway: gateway,
+        state: state,
+        scheduler: scheduler,
+      );
+
+      final snapshot = await provider.restore();
+
+      expect(snapshot.status, CloudAccountStatus.reconnectRequired);
+      expect(snapshot.isConnected, isFalse);
+      expect(snapshot.displayName, 'Saved Google User');
+      expect(await state.isCloudSyncEnabled(), isTrue);
+      expect(await state.isAutomaticSyncEnabled(), isTrue);
+      expect(await state.isReconnectRequired(), isTrue);
     },
   );
 
