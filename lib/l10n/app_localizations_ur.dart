@@ -1997,6 +1997,20 @@ class AppLocalizationsUr extends AppLocalizations {
       'شہری ڈیٹا © GeoNames، CC BY 4.0 کے تحت لائسنس یافتہ ہے۔';
 
   @override
+  @override
+  String get settingsLicensesSoftwareTitle => 'اوپن سورس سافٹ ویئر کے لائسنس';
+
+  @override
+  String get settingsLicensesSoftwareSubtitle =>
+      'Flutter پیکیجز، مقامی لائبریریاں اور شامل فونٹس۔';
+
+  @override
+  String get settingsLicensesGeoNamesTitle => 'GeoNames شہری ڈیٹا';
+
+  @override
+  String get settingsLicensesGeoNamesSubtitle =>
+      'آف لائن شہروں اور مقامات کے ڈیٹا کی نسبت۔';
+
   String get prayerTimeUpdated => 'اپ ڈیٹ';
 
   @override
