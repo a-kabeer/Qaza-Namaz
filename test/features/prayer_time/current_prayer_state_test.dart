@@ -101,4 +101,41 @@ void main() {
     );
     expect(state, isNull);
   });
+
+  test('before Fajr, the next boundary belongs to the current local day', () {
+    final snapshot = makeSnapshot(
+      DateTime(2026, 10, 11),
+      DateTime(2026, 10, 12),
+    );
+
+    final state = resolveCurrentPrayerState(
+      snapshot: snapshot,
+      now: local(11, 4),
+    );
+
+    expect(state, isNotNull);
+    expect(state!.current, isNull);
+    expect(state.next, PrayerSlot.fajr);
+    expect(state.nextAt, tz.TZDateTime(karachi, 2026, 10, 11, 5));
+  });
+
+  test('cache window requires today and the immediately following day', () {
+    final currentWindow = makeSnapshot(
+      DateTime(2026, 10, 11),
+      DateTime(2026, 10, 12),
+    );
+    final rolledWindow = makeSnapshot(
+      DateTime(2026, 10, 10),
+      DateTime(2026, 10, 11),
+    );
+
+    expect(
+      prayerTimeSnapshotCoversDate(currentWindow, DateTime(2026, 10, 11)),
+      isTrue,
+    );
+    expect(
+      prayerTimeSnapshotCoversDate(rolledWindow, DateTime(2026, 10, 11)),
+      isFalse,
+    );
+  });
 }
