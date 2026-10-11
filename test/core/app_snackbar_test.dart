@@ -218,7 +218,10 @@ void main() {
         );
         expect(icon.color, scheme.onSurface);
 
-        await tester.tap(find.text('Undo'));
+        final action = tester.widget<SnackBarAction>(
+          find.byType(SnackBarAction),
+        );
+        action.onPressed();
         await tester.pump();
         expect(undoInvoked, isTrue);
       },
