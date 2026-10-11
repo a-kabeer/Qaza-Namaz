@@ -74,8 +74,15 @@ class CloudSyncEngine {
     }
   }
 
+  /// Synchronizes local and remote state.
+  ///
+  /// [forceUpload] is reserved for the explicit manual "Back up now" action.
+  /// It creates a fresh remote snapshot even when the local revision matches
+  /// the sync cursor, while retaining the existing remote-change/conflict
+  /// checks so a newer backup from another device is never overwritten.
   Future<CloudSyncResult> sync({
     bool allowInteractive = false,
+    bool forceUpload = false,
     CloudBackupProgressCallback? onProgress,
   }) async {
     if (!await _state.isCloudSyncEnabled()) {
@@ -99,9 +106,10 @@ class CloudSyncEngine {
       return CloudSyncResult.failed('Cloud read failed: $error');
     }
 
-    final localUnsynced = cursor.lastSyncedLocalRevision == null
+    final hasLocalChanges = cursor.lastSyncedLocalRevision == null
         ? localRevision > 1
         : localRevision > cursor.lastSyncedLocalRevision!;
+    final localUnsynced = hasLocalChanges || forceUpload;
 
     // An initial connection that finds a remote backup always requires an
     // explicit user decision, even when local revision looks pristine.
