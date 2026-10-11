@@ -163,8 +163,8 @@ void main() {
       index,
       FlPanUpdateEvent(
         DragUpdateDetails(
-          globalPosition: Offset.zero,
-          delta: Offset.zero,
+          globalPosition: const Offset(1, 0),
+          delta: const Offset(1, 0),
         ),
       ),
     );
