@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/time/local_date_service.dart';
@@ -68,17 +69,41 @@ class _ProfileFormState extends State<ProfileForm> {
 
   Future<void> _pickDob() async {
     final now = LocalDateService.today();
-    final initial =
-        _profile.dateOfBirth ?? DateTime(now.year - 18, now.month, now.day);
-    final picked = await showDatePicker(
+    final defaultYear = now.year - 18;
+    final finalDayInDefaultMonth = DateTime(defaultYear, now.month + 1, 0).day;
+    final initial = _profile.dateOfBirth ??
+        DateTime(
+          defaultYear,
+          now.month,
+          now.day <= finalDayInDefaultMonth
+              ? now.day
+              : finalDayInDefaultMonth,
+        );
+    var initialDate = DateTime(initial.year, initial.month, initial.day);
+    if (initialDate.year < 1900) initialDate = DateTime(1900, 1, 1);
+    if (initialDate.isAfter(now)) initialDate = now;
+
+    final l10n = AppLocalizations.of(context);
+    final picked = await showDialog<DateTime>(
       context: context,
-      initialDate: initial.isAfter(now) ? now : initial,
-      firstDate: DateTime(1900),
-      lastDate: now,
-      helpText: AppLocalizations.of(context).profileSelectDobHelp,
+      builder: (_) => _DateOfBirthPickerDialog(
+        initialDate: initialDate,
+        today: now,
+        title: l10n.profileDateOfBirth,
+        helpText: l10n.profileSelectDobHelp,
+        dayLabel: l10n.profileDobDay,
+        monthLabel: l10n.profileDobMonth,
+        yearLabel: l10n.profileDobYear,
+        cancelLabel: l10n.commonCancel,
+        confirmLabel: l10n.commonDone,
+      ),
     );
     if (picked != null) {
-      _update(_profile.copyWith(dateOfBirth: picked));
+      _update(
+        _profile.copyWith(
+          dateOfBirth: DateTime(picked.year, picked.month, picked.day),
+        ),
+      );
     }
   }
 
@@ -440,4 +465,227 @@ class _ProfileFormState extends State<ProfileForm> {
 
   String _formatDate(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+}
+
+
+class _DateOfBirthPickerDialog extends StatefulWidget {
+  const _DateOfBirthPickerDialog({
+    required this.initialDate,
+    required this.today,
+    required this.title,
+    required this.helpText,
+    required this.dayLabel,
+    required this.monthLabel,
+    required this.yearLabel,
+    required this.cancelLabel,
+    required this.confirmLabel,
+  });
+
+  final DateTime initialDate;
+  final DateTime today;
+  final String title;
+  final String helpText;
+  final String dayLabel;
+  final String monthLabel;
+  final String yearLabel;
+  final String cancelLabel;
+  final String confirmLabel;
+
+  @override
+  State<_DateOfBirthPickerDialog> createState() =>
+      _DateOfBirthPickerDialogState();
+}
+
+class _DateOfBirthPickerDialogState extends State<_DateOfBirthPickerDialog> {
+  late int _day;
+  late int _month;
+  late int _year;
+
+  int get _daysInMonth => DateTime(_year, _month + 1, 0).day;
+  int get _latestMonth => _year == widget.today.year ? widget.today.month : 12;
+
+  int get _latestDay {
+    if (_year == widget.today.year && _month == widget.today.month) {
+      return widget.today.day;
+    }
+    return _daysInMonth;
+  }
+
+  List<int> get _years => [
+        for (var year = widget.today.year; year >= 1900; year--) year,
+      ];
+  List<int> get _months => [
+        for (var month = 1; month <= _latestMonth; month++) month,
+      ];
+  List<int> get _days => [
+        for (var day = 1; day <= _latestDay; day++) day,
+      ];
+
+  @override
+  void initState() {
+    super.initState();
+    var initial = DateTime(
+      widget.initialDate.year,
+      widget.initialDate.month,
+      widget.initialDate.day,
+    );
+    final today = DateTime(
+      widget.today.year,
+      widget.today.month,
+      widget.today.day,
+    );
+    if (initial.year < 1900) initial = DateTime(1900, 1, 1);
+    if (initial.isAfter(today)) initial = today;
+    _year = initial.year;
+    _month = initial.month;
+    _day = initial.day;
+    _clampDay();
+  }
+
+  void _setYear(int year) {
+    setState(() {
+      _year = year;
+      if (_month > _latestMonth) _month = _latestMonth;
+      _clampDay();
+    });
+  }
+
+  void _setMonth(int month) {
+    setState(() {
+      _month = month;
+      _clampDay();
+    });
+  }
+
+  void _clampDay() {
+    if (_day > _latestDay) _day = _latestDay;
+    if (_day < 1) _day = 1;
+  }
+
+  Widget _selector<T>({
+    required Key key,
+    required String label,
+    required T value,
+    required List<DropdownMenuItem<T>> items,
+    required ValueChanged<T?> onChanged,
+  }) {
+    return InputDecorator(
+      decoration: InputDecoration(
+        labelText: label,
+        border: const OutlineInputBorder(),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<T>(
+          key: key,
+          value: value,
+          items: items,
+          onChanged: onChanged,
+          isExpanded: true,
+          isDense: true,
+          menuMaxHeight: 320,
+        ),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final localeName = Localizations.localeOf(context).toString();
+    return AlertDialog(
+      key: const Key('profile_dob_picker_dialog'),
+      title: Text(widget.title),
+      content: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 440),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                widget.helpText,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 20),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _selector<int>(
+                      key: const Key('profile_dob_day'),
+                      label: widget.dayLabel,
+                      value: _day,
+                      items: [
+                        for (final day in _days)
+                          DropdownMenuItem<int>(
+                            value: day,
+                            child: Text(day.toString()),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) setState(() => _day = value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _selector<int>(
+                      key: const Key('profile_dob_month'),
+                      label: widget.monthLabel,
+                      value: _month,
+                      items: [
+                        for (final month in _months)
+                          DropdownMenuItem<int>(
+                            value: month,
+                            child: Text(
+                              DateFormat.MMMM(localeName).format(
+                                DateTime(2000, month, 1),
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) _setMonth(value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _selector<int>(
+                      key: const Key('profile_dob_year'),
+                      label: widget.yearLabel,
+                      value: _year,
+                      items: [
+                        for (final year in _years)
+                          DropdownMenuItem<int>(
+                            value: year,
+                            child: Text(year.toString()),
+                          ),
+                      ],
+                      onChanged: (value) {
+                        if (value != null) _setYear(value);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(widget.cancelLabel),
+        ),
+        FilledButton(
+          key: const Key('profile_dob_confirm'),
+          onPressed: () =>
+              Navigator.of(context).pop(DateTime(_year, _month, _day)),
+          child: Text(widget.confirmLabel),
+        ),
+      ],
+    );
+  }
 }
