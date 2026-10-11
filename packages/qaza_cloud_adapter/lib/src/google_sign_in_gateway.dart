@@ -39,9 +39,11 @@ class GoogleSignInGateway {
   Future<GoogleSignInAccount> authenticate() =>
       _serialized(() => _authenticateUnlocked());
 
+  /// Revokes the app's Google authorization as well as signing out. The
+  /// cloud provider calls this only after automatic work has been disabled.
   Future<void> signOut() => _serialized(() async {
     await _initializeUnlocked();
-    await _signIn.signOut();
+    await _signIn.disconnect();
     _resolvedAccount = null;
   });
 
