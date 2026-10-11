@@ -1007,7 +1007,7 @@
   "profileDiscardChangesAction": "Discard changes",
   "profileQazaAssumptionsChanged": "Profile values being changed",
   "profileQazaAssumptionsHint": "Review the previous and new values before applying this Qaza plan.",
-  "profileQazaPlanChangedTitle: "Qaza plan will be updated",
+  "profileQazaPlanChangedTitle": "Qaza plan will be updated",
   "profileQazaPlanSummary": "Your profile change changes the calculated Qaza plan.",
   "profileQazaReviewError": "We could not prepare the Qaza plan review. Please try again.",
   "profileQazaApplying": "Applying Qaza plan…",
