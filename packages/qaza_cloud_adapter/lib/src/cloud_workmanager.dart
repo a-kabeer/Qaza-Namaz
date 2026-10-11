@@ -127,9 +127,8 @@ class CloudSyncScheduler {
         existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
       );
     } catch (_) {
-      // A failed registration must not leave the UI claiming automatic backup
-      // is active when no periodic task could be registered.
-      await _state.setAutomaticSyncEnabled(false);
+      // Keep the user's intended preference intact if scheduling fails. The
+      // caller receives the registration error and can surface it in the UI.
       rethrow;
     }
   }
