@@ -182,7 +182,10 @@ void main() {
         expect(result.kind, CloudSyncResultKind.uploaded);
         expect(remote.writeCount, 1);
         expect(state.cursor!.lastSyncedLocalRevision, 1);
-        expect(state.cursor!.lastSyncedBackupId, remote.written!.lineage.backupId);
+        expect(
+          state.cursor!.lastSyncedBackupId,
+          remote.written!.lineage.backupId,
+        );
       },
     );
 
