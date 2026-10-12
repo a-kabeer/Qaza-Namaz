@@ -783,6 +783,7 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
               color: theme.colorScheme.onSurface,
               fontWeight: FontWeight.w700,
             );
+            // Keep the background tightly fitted to the displayed count.
             final tooltipTextPainter = TextPainter(
               text: TextSpan(text: tooltipValue, style: tooltipTextStyle),
               maxLines: 1,
