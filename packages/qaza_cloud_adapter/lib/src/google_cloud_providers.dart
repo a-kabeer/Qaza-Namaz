@@ -301,7 +301,6 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     try {
       final result = await _engine().sync(
         allowInteractive: true,
-        forceUpload: true,
         onProgress: (progress) {
           latestProgress = progress;
           onProgress?.call(progress);
@@ -469,6 +468,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           ? null
           : _toCoreConflict(result.conflict!),
       restoredRemoteBackup: result.kind == CloudSyncResultKind.downloaded,
+      backupAlreadyUpToDate: result.kind == CloudSyncResultKind.noOp,
     );
   }
 
@@ -492,6 +492,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     String? message,
     CloudConflictInfo? conflict,
     bool restoredRemoteBackup = false,
+    bool backupAlreadyUpToDate = false,
   }) async => CloudSyncSnapshot(
     status: status,
     automaticSyncEnabled: await _state.isAutomaticSyncEnabled(),
@@ -501,5 +502,6 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     conflict: conflict,
     hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
     restoredRemoteBackup: restoredRemoteBackup,
+    backupAlreadyUpToDate: backupAlreadyUpToDate,
   );
 }
