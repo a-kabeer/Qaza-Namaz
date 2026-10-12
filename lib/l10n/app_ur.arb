@@ -1028,6 +1028,7 @@
   "cloudLastBackup": "آخری کامیاب بیک اپ",
   "cloudNeverBackedUp": "ابھی تک بیک اپ نہیں ہوا",
   "cloudBackupSucceeded": "کلاؤڈ بیک اپ/سنک مکمل ہو گیا۔",
+  "cloudBackupUpToDate": "بیک اپ پہلے ہی تازہ ترین ہے۔",
   "cloudBackupConflictTitle": "تبدیلیوں میں فرق ملا",
   "cloudBackupConflictMessage": "اس ڈیوائس اور گوگل ڈرائیو پر مختلف پیش رفت موجود ہے۔ منتخب کریں کہ کون سا ڈیٹا رکھنا ہے۔",
   "cloudKeepLocal": "اس ڈیوائس کی پیش رفت رکھیں",
