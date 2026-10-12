@@ -278,6 +278,15 @@ void main() {
         find.byKey(const Key('home_activity_fixed_tooltip_value')),
       );
       expect(tooltipValue.data, '108');
+      final tooltipTextWidth = tester
+          .getSize(find.byKey(const Key('home_activity_fixed_tooltip_value')))
+          .width;
+      final tooltipBackgroundWidth = tester.getSize(tooltipFinder).width;
+      expect(tooltipBackgroundWidth, greaterThan(tooltipTextWidth));
+      expect(
+        tooltipBackgroundWidth,
+        lessThanOrEqualTo(tooltipTextWidth + 12.5),
+      );
       expect(
         tooltipValue.style?.color,
         Theme.of(tester.element(tooltipFinder)).colorScheme.onSurface,
