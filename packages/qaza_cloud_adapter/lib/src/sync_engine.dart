@@ -76,8 +76,13 @@ class CloudSyncEngine {
 
   /// Synchronizes local and remote state, skipping uploads when local progress
   /// and the verified remote backup already match the sync cursor.
+  ///
+  /// [createInitialBackup] lets an explicit manual backup establish the first
+  /// snapshot when there is no successful cursor yet. It does not force later
+  /// uploads when the saved local revision and remote version still match.
   Future<CloudSyncResult> sync({
     bool allowInteractive = false,
+    bool createInitialBackup = false,
     CloudBackupProgressCallback? onProgress,
   }) async {
     if (!await _state.isCloudSyncEnabled()) {
@@ -102,7 +107,8 @@ class CloudSyncEngine {
     }
 
     final hasLocalChanges = cursor.lastSyncedLocalRevision == null
-        ? localRevision > 1
+        ? localRevision > 1 ||
+              (createInitialBackup && cursor.lastSyncedBackupId == null)
         : localRevision != cursor.lastSyncedLocalRevision;
     final localUnsynced = hasLocalChanges;
 
