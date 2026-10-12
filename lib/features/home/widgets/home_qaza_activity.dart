@@ -964,7 +964,7 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
                   Positioned(
                     left: tooltipLeft,
                     top: 4,
-                    width: safeTooltipWidth,
+                    width: tooltipWidth,
                     child: IgnorePointer(
                       child: DecoratedBox(
                         key: const Key('home_activity_fixed_tooltip'),
