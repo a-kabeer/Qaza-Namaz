@@ -2523,6 +2523,9 @@ class AppLocalizationsUr extends AppLocalizations {
   String get cloudBackupSucceeded => 'کلاؤڈ بیک اپ/سنک مکمل ہو گیا۔';
 
   @override
+  String get cloudBackupUpToDate => 'بیک اپ پہلے ہی تازہ ترین ہے۔';
+
+  @override
   String get cloudBackupConflictTitle => 'تبدیلیوں میں فرق ملا';
 
   @override
