@@ -1415,6 +1415,7 @@
   "cloudLastBackup": "Last successful backup",
   "cloudNeverBackedUp": "Not backed up yet",
   "cloudBackupSucceeded": "Cloud backup/sync completed.",
+  "cloudBackupUpToDate": "Backup is already up to date.",
   "cloudBackupConflictTitle": "Different changes found",
   "cloudBackupConflictMessage": "This device and Google Drive contain different progress. Choose which version to keep.",
   "cloudKeepLocal": "Keep this device",
