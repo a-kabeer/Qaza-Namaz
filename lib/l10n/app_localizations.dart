@@ -4368,7 +4368,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudBackupUpToDate.
   ///
   /// In en, this message translates to:
-  /// "Backup is already up to date."
+  /// **'Backup is already up to date.'**
   String get cloudBackupUpToDate;
 
   /// No description provided for @cloudBackupConflictTitle.

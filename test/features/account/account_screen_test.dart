@@ -270,26 +270,31 @@ void main() {
 
       await tester.pumpWidget(_app(container, const AccountScreen()));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('account_cloud_backup_frequency')), findsNothing);
+      expect(find.byKey(const Key('account_cloud_backup_frequency')),
+          findsNothing);
 
       await tester.tap(find.byKey(const Key('account_daily_cloud_backup')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('account_cloud_backup_frequency')), findsOneWidget);
+      expect(find.byKey(const Key('account_cloud_backup_frequency')),
+          findsOneWidget);
       expect(find.text('Weekly'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('account_daily_cloud_backup')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('account_cloud_backup_frequency')), findsNothing);
+      expect(find.byKey(const Key('account_cloud_backup_frequency')),
+          findsNothing);
       expect(cloudSync.snapshot.backupFrequency, CloudBackupFrequency.weekly);
 
       await tester.tap(find.byKey(const Key('account_daily_cloud_backup')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('account_cloud_backup_frequency')), findsOneWidget);
+      expect(find.byKey(const Key('account_cloud_backup_frequency')),
+          findsOneWidget);
       expect(find.text('Weekly'), findsOneWidget);
     },
   );
 
-  testWidgets('monthly frequency label stays concise in English and Urdu', (tester) async {
+  testWidgets('monthly frequency label stays concise in English and Urdu',
+      (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = await _createSession(database);
     final cloudAccount = _FakeCloudAccountProvider(
@@ -332,7 +337,8 @@ void main() {
     expect(find.text('ماہانہ (ہر 30 دن)'), findsNothing);
   });
 
-  testWidgets('backup progress clears after success and failure', (tester) async {
+  testWidgets('backup progress clears after success and failure',
+      (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = await _createSession(database);
     final cloudAccount = _FakeCloudAccountProvider(
@@ -388,7 +394,8 @@ void main() {
     expect(find.text('Cloud backup/sync completed.'), findsNothing);
   });
 
-  testWidgets('safe no-op backup shows the already-up-to-date message', (tester) async {
+  testWidgets('safe no-op backup shows the already-up-to-date message',
+      (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = await _createSession(database);
     final cloudAccount = _FakeCloudAccountProvider(
