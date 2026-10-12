@@ -2577,14 +2577,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudBackupWorking => 'Backing up…';
 
   @override
-  String get cloudSetupChoiceTitle => 'Keep your progress safe';
+  String get cloudSetupChoiceTitle => 'Welcome to Qaza Namaz';
 
   @override
   String get cloudSetupChoiceDescription =>
-      'Your Qaza progress is saved on this device. You can continue locally or connect Google to back up and restore your progress across devices.';
+      'Track your missed prayers and organize your Qaza progress at your own pace. Your records stay on this device. You can optionally use Google to back up and restore progress across devices.';
 
   @override
-  String get cloudSetupUseGoogle => 'Connect Google';
+  String get cloudSetupUseGoogle => 'Continue with Google';
 
   @override
   String get cloudSetupContinueLocal => 'Continue on this device';

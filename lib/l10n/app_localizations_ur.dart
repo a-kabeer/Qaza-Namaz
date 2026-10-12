@@ -2578,14 +2578,14 @@ class AppLocalizationsUr extends AppLocalizations {
   String get cloudBackupWorking => 'بیک اپ ہو رہا ہے…';
 
   @override
-  String get cloudSetupChoiceTitle => 'اپنی پیش رفت محفوظ رکھیں';
+  String get cloudSetupChoiceTitle => 'قضا نماز میں خوش آمدید';
 
   @override
   String get cloudSetupChoiceDescription =>
-      'آپ کی قضا کی پیش رفت اسی ڈیوائس پر محفوظ ہوتی ہے۔ آپ مقامی طور پر جاری رکھ سکتے ہیں یا مختلف ڈیوائسز پر بیک اپ اور بحالی کے لیے گوگل منسلک کر سکتے ہیں۔';
+      'اپنی چھوٹی ہوئی نمازوں کا حساب رکھیں اور قضا کی پیش رفت کو اپنی سہولت کے مطابق منظم کریں۔ آپ کا ریکارڈ اسی ڈیوائس پر محفوظ رہتا ہے۔ مختلف ڈیوائسز پر بیک اپ اور بحالی کے لیے آپ اختیاری طور پر گوگل استعمال کر سکتے ہیں۔';
 
   @override
-  String get cloudSetupUseGoogle => 'گوگل سے منسلک کریں';
+  String get cloudSetupUseGoogle => 'گوگل کے ساتھ جاری رکھیں';
 
   @override
   String get cloudSetupContinueLocal => 'اسی ڈیوائس پر جاری رکھیں';

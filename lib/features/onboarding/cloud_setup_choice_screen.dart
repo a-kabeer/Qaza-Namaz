@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -31,7 +33,7 @@ class _CloudSetupChoiceScreenState
   }
 
   void _selectLanguage(Locale locale) {
-    if (_working || locale.languageCode == _selectedLocale.languageCode) {
+    if (_working || locale == _selectedLocale) {
       return;
     }
     setState(() {
@@ -269,80 +271,93 @@ class _CloudSetupChoiceScreenState
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final backupFound =
         _discovery?.status == CloudBackupDiscoveryStatus.backupFound;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(l10n.cloudSetupChoiceTitle),
         automaticallyImplyLeading: false,
+        title: const SizedBox.shrink(),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<Locale>(
+                key: const Key('cloud_setup_language_selector'),
+                value: _selectedLocale,
+                isDense: true,
+                icon: const Icon(Icons.expand_more_rounded),
+                iconEnabledColor: scheme.onSurfaceVariant,
+                dropdownColor: scheme.surface,
+                borderRadius: BorderRadius.circular(12),
+                menuMaxHeight: 360,
+                style: theme.textTheme.labelLarge?.copyWith(
+                  color: scheme.onSurface,
+                ),
+                onChanged: _working
+                    ? null
+                    : (locale) {
+                        if (locale != null) _selectLanguage(locale);
+                      },
+                items: [
+                  for (final locale in AppLocalizations.supportedLocales)
+                    DropdownMenuItem<Locale>(
+                      key: Key(
+                        'cloud_setup_language_${locale.languageCode}',
+                      ),
+                      value: locale,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(_nativeLanguageName(locale)),
+                          if (locale == _selectedLocale) ...[
+                            const SizedBox(width: 8),
+                            Icon(
+                              Icons.check_rounded,
+                              size: 16,
+                              color: scheme.primary,
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
             child: ListView(
-              padding: const EdgeInsets.all(24),
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 28),
               shrinkWrap: true,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
+                Center(
                   child: Image.asset(
                     'assets/branding/qaza_namaz_logo.png',
-                    width: 56,
-                    height: 56,
-                    fit: BoxFit.cover,
+                    width: 88,
+                    height: 88,
+                    fit: BoxFit.contain,
                     filterQuality: FilterQuality.high,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 Text(
-                  l10n.appTitle,
+                  l10n.cloudSetupChoiceTitle,
                   style: theme.textTheme.headlineMedium,
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.profileLanguageTitle,
-                  style: theme.textTheme.titleLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  l10n.profileLanguageIntro,
-                  style: theme.textTheme.bodyMedium,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 16),
-                Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 10,
-                  runSpacing: 8,
-                  children: [
-                    for (final locale in AppLocalizations.supportedLocales)
-                      ChoiceChip(
-                        key: Key(
-                          'cloud_setup_language_${locale.languageCode}',
-                        ),
-                        label: Text(
-                          locale.languageCode == 'ur'
-                              ? l10n.languageUrdu
-                              : l10n.languageEnglish,
-                        ),
-                        selected:
-                            locale.languageCode == _selectedLocale.languageCode,
-                        onSelected: _working
-                            ? null
-                            : (selected) {
-                                if (selected) _selectLanguage(locale);
-                              },
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 28),
+                const SizedBox(height: 12),
                 Text(
                   l10n.cloudSetupChoiceDescription,
-                  style: theme.textTheme.bodyLarge,
+                  style: theme.textTheme.bodyLarge?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                    height: 1.5,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 if (backupFound) ...[
@@ -355,7 +370,7 @@ class _CloudSetupChoiceScreenState
                           Icon(
                             Icons.cloud_download_outlined,
                             size: 30,
-                            color: theme.colorScheme.primary,
+                            color: scheme.primary,
                           ),
                           const SizedBox(height: 8),
                           Text(
@@ -384,31 +399,60 @@ class _CloudSetupChoiceScreenState
                   ),
                 ],
                 const SizedBox(height: 24),
-                FilledButton.icon(
-                  key: const Key('cloud_setup_connect_google'),
-                  onPressed:
-                      _working || _accountConnected ? null : _connectGoogle,
-                  icon: _working
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.login_rounded),
-                  label: Text(l10n.cloudSetupUseGoogle),
+                SizedBox(
+                  height: 52,
+                  width: double.infinity,
+                  child: OutlinedButton(
+                    key: const Key('cloud_setup_connect_google'),
+                    onPressed:
+                        _working || _accountConnected ? null : _connectGoogle,
+                    style: OutlinedButton.styleFrom(
+                      backgroundColor: scheme.surface,
+                      foregroundColor: scheme.onSurface,
+                      side: BorderSide(color: scheme.outlineVariant),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (_working)
+                          const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        else
+                          const _GoogleGMark(),
+                        const SizedBox(width: 12),
+                        Text(l10n.cloudSetupUseGoogle),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 12),
-                OutlinedButton(
-                  key: const Key('cloud_setup_continue_local'),
-                  onPressed: _working ? null : _continueLocally,
-                  child: Text(l10n.cloudSetupContinueLocal),
+                SizedBox(
+                  height: 52,
+                  width: double.infinity,
+                  child: FilledButton(
+                    key: const Key('cloud_setup_continue_local'),
+                    onPressed: _working ? null : _continueLocally,
+                    style: FilledButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: Text(l10n.cloudSetupContinueLocal),
+                  ),
                 ),
                 if (_error != null) ...[
                   const SizedBox(height: 16),
                   Text(
                     _error!,
                     textAlign: TextAlign.center,
-                    style: TextStyle(color: theme.colorScheme.error),
+                    style: TextStyle(color: scheme.error),
                   ),
                   const SizedBox(height: 8),
                   TextButton(
@@ -423,4 +467,81 @@ class _CloudSetupChoiceScreenState
       ),
     );
   }
+}
+
+const Map<String, String> _nativeLanguageNames = <String, String>{
+  'ar': 'العربية',
+  'bn': 'বাংলা',
+  'de': 'Deutsch',
+  'en': 'English',
+  'es': 'Español',
+  'fa': 'فارسی',
+  'fr': 'Français',
+  'hi': 'हिन्दी',
+  'id': 'Bahasa Indonesia',
+  'ms': 'Bahasa Melayu',
+  'tr': 'Türkçe',
+  'ur': 'اردو',
+  'zh': '中文',
+};
+
+/// Keeps the selector data-driven: adding a supported locale needs a native
+/// display-name entry, not a screen redesign. Unknown locales remain
+/// selectable while their native name is added to this registry.
+String _nativeLanguageName(Locale locale) =>
+    _nativeLanguageNames[locale.languageCode] ?? locale.languageCode;
+
+/// Google sign-in mark drawn with the four Google brand colors. Drawing the
+/// mark locally avoids a platform-specific monochrome icon or white asset.
+class _GoogleGMark extends StatelessWidget {
+  const _GoogleGMark();
+
+  @override
+  Widget build(BuildContext context) => const CustomPaint(
+        key: Key('google_g_mark'),
+        size: Size(24, 24),
+        painter: _GoogleGMarkPainter(),
+      );
+}
+
+class _GoogleGMarkPainter extends CustomPainter {
+  const _GoogleGMarkPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    const strokeWidth = 4.0;
+    final radius = size.shortestSide / 2 - strokeWidth / 2;
+    final rect = Rect.fromCircle(
+      center: Offset(size.width / 2, size.height / 2),
+      radius: radius,
+    );
+
+    void arc(Color color, double start, double sweep) {
+      final paint = Paint()
+        ..color = color
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.butt;
+      canvas.drawArc(rect, start, sweep, false, paint);
+    }
+
+    const gap = 0.12;
+    arc(const Color(0xFFEA4335), -math.pi / 2 + gap, math.pi / 2 - gap * 2);
+    arc(const Color(0xFF4285F4), gap, math.pi / 2 - gap * 2);
+    arc(const Color(0xFF34A853), math.pi / 2 + gap, math.pi / 2 - gap * 2);
+    arc(const Color(0xFFFBBC05), math.pi + gap, math.pi / 2 - gap * 2);
+
+    final bar = Paint()
+      ..color = const Color(0xFF4285F4)
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.butt;
+    canvas.drawLine(
+      Offset(size.width / 2, size.height / 2),
+      Offset(size.width - 1, size.height / 2),
+      bar,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant _GoogleGMarkPainter oldDelegate) => false;
 }

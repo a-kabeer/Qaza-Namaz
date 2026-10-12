@@ -100,6 +100,16 @@ Future<void> _tapVisible(
   await tester.pumpAndSettle();
 }
 
+Future<void> _chooseLanguage(
+  WidgetTester tester,
+  String languageCode,
+) async {
+  await tester.tap(find.byKey(const Key('cloud_setup_language_selector')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(Key('cloud_setup_language_$languageCode')));
+  await tester.pumpAndSettle();
+}
+
 Widget _app(ProviderContainer container) {
   return UncontrolledProviderScope(
     container: container,
@@ -172,23 +182,23 @@ void main() {
     expect(find.byKey(const Key('cloud_setup_connect_google')), findsOneWidget);
     expect(find.byKey(const Key('cloud_setup_continue_local')), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('cloud_setup_language_ur')));
+    await _chooseLanguage(tester, 'ur');
     await tester.pumpAndSettle();
 
     final preferences = await SharedPreferences.getInstance();
     expect(preferences.getString(LocaleNotifier.storageKey), 'ur');
-    expect(find.text('اپنی پیش رفت محفوظ رکھیں'), findsOneWidget);
+    expect(find.text('قضا نماز میں خوش آمدید'), findsOneWidget);
 
-    await tester.tap(find.byKey(const Key('cloud_setup_language_en')));
+    await _chooseLanguage(tester, 'en');
     await tester.pumpAndSettle();
-    expect(find.text('Choose your language'), findsOneWidget);
+    expect(find.text('Welcome to Qaza Namaz'), findsOneWidget);
     expect(
       (await SharedPreferences.getInstance())
           .getString(LocaleNotifier.storageKey),
       'en',
     );
 
-    await tester.tap(find.byKey(const Key('cloud_setup_language_ur')));
+    await _chooseLanguage(tester, 'ur');
     await tester.pumpAndSettle();
     expect(
       (await SharedPreferences.getInstance())
@@ -218,7 +228,7 @@ void main() {
     await tester.pumpWidget(_app(container));
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('cloud_setup_language_ur')));
+    await _chooseLanguage(tester, 'ur');
     await tester.pumpAndSettle();
     await _tapVisible(
       tester,
@@ -247,7 +257,7 @@ void main() {
 
     await tester.pumpWidget(_app(container));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('cloud_setup_language_ur')));
+    await _chooseLanguage(tester, 'ur');
     await tester.pumpAndSettle();
     await _tapVisible(
       tester,
@@ -371,6 +381,42 @@ void main() {
       await database.isCloudSetupChoiceComplete(),
       isTrue,
     );
+  });
+
+  testWidgets(
+      'welcome screen preserves logo proportions and shows Google G CTA',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final container = await _container(
+      database: database,
+      cloudEnabled: true,
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    final logo = tester.widget<Image>(
+      find.byWidgetPredicate(
+        (widget) =>
+            widget is Image &&
+            widget.image is AssetImage &&
+            (widget.image as AssetImage).assetName ==
+                'assets/branding/qaza_namaz_logo.png',
+      ),
+    );
+    expect(logo.fit, BoxFit.contain);
+    expect(logo.width, 88);
+    expect(logo.height, 88);
+
+    expect(find.text('Welcome to Qaza Namaz'), findsOneWidget);
+    expect(find.text('Continue with Google'), findsOneWidget);
+    expect(find.text('Continue on this device'), findsOneWidget);
+    expect(
+        find.byKey(const Key('cloud_setup_language_selector')), findsOneWidget);
+    expect(find.byKey(const Key('google_g_mark')), findsOneWidget);
+    expect(find.byIcon(Icons.check_rounded), findsOneWidget);
   });
 
   testWidgets('offline startup retains standalone language selection',

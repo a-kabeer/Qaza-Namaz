@@ -1431,9 +1431,9 @@
   "cloudRecoveryConfirmMessage": "The saved local snapshot will replace the current application data on this device.",
   "cloudAutomaticBackupRequiresConnection": "Connect Google before enabling automatic backup.",
   "cloudBackupWorking": "Backing up…",
-  "cloudSetupChoiceTitle": "Keep your progress safe",
-  "cloudSetupChoiceDescription": "Your Qaza progress is saved on this device. You can continue locally or connect Google to back up and restore your progress across devices.",
-  "cloudSetupUseGoogle": "Connect Google",
+  "cloudSetupChoiceTitle": "Welcome to Qaza Namaz",
+  "cloudSetupChoiceDescription": "Track your missed prayers and organize your Qaza progress at your own pace. Your records stay on this device. You can optionally use Google to back up and restore progress across devices.",
+  "cloudSetupUseGoogle": "Continue with Google",
   "cloudSetupContinueLocal": "Continue on this device",
   "cloudConnectionFailed": "Google connection could not be completed. Try again or continue locally."
 }

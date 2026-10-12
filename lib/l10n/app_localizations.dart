@@ -4464,19 +4464,19 @@ abstract class AppLocalizations {
   /// No description provided for @cloudSetupChoiceTitle.
   ///
   /// In en, this message translates to:
-  /// **'Keep your progress safe'**
+  /// **'Welcome to Qaza Namaz'**
   String get cloudSetupChoiceTitle;
 
   /// No description provided for @cloudSetupChoiceDescription.
   ///
   /// In en, this message translates to:
-  /// **'Your Qaza progress is saved on this device. You can continue locally or connect Google to back up and restore your progress across devices.'**
+  /// **'Track your missed prayers and organize your Qaza progress at your own pace. Your records stay on this device. You can optionally use Google to back up and restore progress across devices.'**
   String get cloudSetupChoiceDescription;
 
   /// No description provided for @cloudSetupUseGoogle.
   ///
   /// In en, this message translates to:
-  /// **'Connect Google'**
+  /// **'Continue with Google'**
   String get cloudSetupUseGoogle;
 
   /// No description provided for @cloudSetupContinueLocal.
