@@ -66,13 +66,63 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
     ),
   });
 
-  final CloudSyncSnapshot snapshot;
+  CloudSyncSnapshot snapshot;
+  Completer<CloudSyncSnapshot>? backupCompleter;
+  CloudSyncSnapshot? backupResult;
+  bool emitBackupProgress = true;
+  int backupCalls = 0;
 
   @override
   bool get isSupported => true;
 
   @override
   Future<CloudSyncSnapshot> status() async => snapshot;
+
+  @override
+  Future<CloudSyncSnapshot> backupNow({
+    CloudBackupProgressCallback? onProgress,
+  }) {
+    backupCalls++;
+    if (emitBackupProgress) {
+      onProgress?.call(const CloudBackupProgress.preparing());
+      onProgress?.call(
+        const CloudBackupProgress.uploading(sentBytes: 1, totalBytes: 2),
+      );
+    }
+    return backupCompleter?.future ??
+        Future<CloudSyncSnapshot>.value(backupResult ?? snapshot);
+  }
+
+  CloudSyncSnapshot _withSettings({
+    bool? automaticSyncEnabled,
+    CloudBackupFrequency? backupFrequency,
+  }) =>
+      CloudSyncSnapshot(
+        status: snapshot.status,
+        automaticSyncEnabled:
+            automaticSyncEnabled ?? snapshot.automaticSyncEnabled,
+        backupFrequency: backupFrequency ?? snapshot.backupFrequency,
+        lastSuccessAt: snapshot.lastSuccessAt,
+        message: snapshot.message,
+        conflict: snapshot.conflict,
+        hasLocalRecoverySnapshot: snapshot.hasLocalRecoverySnapshot,
+        restoredRemoteBackup: snapshot.restoredRemoteBackup,
+        backupAlreadyUpToDate: snapshot.backupAlreadyUpToDate,
+      );
+
+  @override
+  Future<CloudSyncSnapshot> setAutomaticSyncEnabled(bool enabled) async {
+    snapshot = _withSettings(automaticSyncEnabled: enabled);
+    return snapshot;
+  }
+
+  @override
+  Future<CloudSyncSnapshot> setAutomaticBackupFrequency(
+    CloudBackupFrequency frequency,
+  ) async {
+    snapshot = _withSettings(backupFrequency: frequency);
+    return snapshot;
+  }
 }
 
 void main() {
