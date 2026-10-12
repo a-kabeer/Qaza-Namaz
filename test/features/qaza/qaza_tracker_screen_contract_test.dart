@@ -1156,7 +1156,13 @@ void main() {
     final completed = source.substring(completedStart, completedEnd);
 
     expect(pending, contains("Key('qaza_pending_mark_completed')"));
-    expect(pending, contains('onPressed: canComplete && onComplete != null'));
+    expect(
+      pending,
+      contains(
+        'onPressed:\n'
+        '              canComplete && onComplete != null ? () => onComplete!() : null,',
+      ),
+    );
     expect(pending, isNot(contains('qazaOriginalDateLabel')));
     expect(pending, isNot(contains('formatHijriDate')));
     expect(pending, isNot(contains('statusPending')));
