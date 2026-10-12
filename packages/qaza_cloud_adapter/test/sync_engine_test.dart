@@ -166,6 +166,26 @@ void main() {
       },
     );
 
+    test(
+      'manual backup creates the first snapshot when no cursor exists',
+      () async {
+        final phase1 = FakePhase1(revision: 1);
+        final state = FakeState(deviceIdValue: 'device-A', cursor: null);
+        final remote = FakeRemote(latestSnapshot: null);
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync(createInitialBackup: true);
+
+        expect(result.kind, CloudSyncResultKind.uploaded);
+        expect(remote.writeCount, 1);
+        expect(state.cursor!.lastSyncedLocalRevision, 1);
+        expect(state.cursor!.lastSyncedBackupId, remote.written!.lineage.backupId);
+      },
+    );
+
     test('different device IDs alone do not create a conflict', () async {
       final phase1 = FakePhase1(revision: 10);
       final state = FakeState(
