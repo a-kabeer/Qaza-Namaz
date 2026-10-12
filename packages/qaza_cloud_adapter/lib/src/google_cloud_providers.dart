@@ -301,6 +301,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     try {
       final result = await _engine().sync(
         allowInteractive: true,
+        createInitialBackup: true,
         onProgress: (progress) {
           latestProgress = progress;
           onProgress?.call(progress);
