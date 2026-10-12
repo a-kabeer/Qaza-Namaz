@@ -2522,6 +2522,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudBackupSucceeded => 'Cloud backup/sync completed.';
 
   @override
+  String get cloudBackupUpToDate => 'Backup is already up to date.';
+
+  @override
   String get cloudBackupConflictTitle => 'Different changes found';
 
   @override

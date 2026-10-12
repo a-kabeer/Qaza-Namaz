@@ -74,15 +74,15 @@ class CloudSyncEngine {
     }
   }
 
-  /// Synchronizes local and remote state.
+  /// Synchronizes local and remote state, skipping uploads when local progress
+  /// and the verified remote backup already match the sync cursor.
   ///
-  /// [forceUpload] is reserved for the explicit manual "Back up now" action.
-  /// It creates a fresh remote snapshot even when the local revision matches
-  /// the sync cursor, while retaining the existing remote-change/conflict
-  /// checks so a newer backup from another device is never overwritten.
+  /// [createInitialBackup] lets an explicit manual backup establish the first
+  /// snapshot when there is no successful cursor yet. It does not force later
+  /// uploads when the saved local revision and remote version still match.
   Future<CloudSyncResult> sync({
     bool allowInteractive = false,
-    bool forceUpload = false,
+    bool createInitialBackup = false,
     CloudBackupProgressCallback? onProgress,
   }) async {
     if (!await _state.isCloudSyncEnabled()) {
@@ -107,9 +107,10 @@ class CloudSyncEngine {
     }
 
     final hasLocalChanges = cursor.lastSyncedLocalRevision == null
-        ? localRevision > 1
-        : localRevision > cursor.lastSyncedLocalRevision!;
-    final localUnsynced = hasLocalChanges || forceUpload;
+        ? localRevision > 1 ||
+              (createInitialBackup && cursor.lastSyncedBackupId == null)
+        : localRevision != cursor.lastSyncedLocalRevision;
+    final localUnsynced = hasLocalChanges;
 
     // An initial connection that finds a remote backup always requires an
     // explicit user decision, even when local revision looks pristine.
@@ -132,7 +133,9 @@ class CloudSyncEngine {
     final remoteChanged = cursor.lastSyncedBackupId == null
         ? remote != null
         : remote == null ||
-              remote.backup.lineage.backupId != cursor.lastSyncedBackupId;
+              remote.backup.lineage.backupId != cursor.lastSyncedBackupId ||
+              cursor.lastSyncedRemoteVersion == null ||
+              remote.remoteVersion != cursor.lastSyncedRemoteVersion;
 
     if (!localUnsynced && !remoteChanged) {
       await _state.clearPendingConflict();

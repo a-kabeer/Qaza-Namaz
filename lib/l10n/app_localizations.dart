@@ -4365,6 +4365,12 @@ abstract class AppLocalizations {
   /// **'Cloud backup/sync completed.'**
   String get cloudBackupSucceeded;
 
+  /// No description provided for @cloudBackupUpToDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup is already up to date.'**
+  String get cloudBackupUpToDate;
+
   /// No description provided for @cloudBackupConflictTitle.
   ///
   /// In en, this message translates to:

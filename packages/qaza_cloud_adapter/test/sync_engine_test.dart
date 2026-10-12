@@ -166,6 +166,29 @@ void main() {
       },
     );
 
+    test(
+      'manual backup creates the first snapshot when no cursor exists',
+      () async {
+        final phase1 = FakePhase1(revision: 1);
+        final state = FakeState(deviceIdValue: 'device-A', cursor: null);
+        final remote = FakeRemote(latestSnapshot: null);
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync(createInitialBackup: true);
+
+        expect(result.kind, CloudSyncResultKind.uploaded);
+        expect(remote.writeCount, 1);
+        expect(state.cursor!.lastSyncedLocalRevision, 1);
+        expect(
+          state.cursor!.lastSyncedBackupId,
+          remote.written!.lineage.backupId,
+        );
+      },
+    );
+
     test('different device IDs alone do not create a conflict', () async {
       final phase1 = FakePhase1(revision: 10);
       final state = FakeState(
@@ -199,7 +222,7 @@ void main() {
     });
 
     test(
-      'manual backup uploads when local revision already matches the sync cursor',
+      'backup skips upload when local revision and remote version match the cursor',
       () async {
         final phase1 = FakePhase1(revision: 10);
         final state = FakeState(
@@ -220,23 +243,17 @@ void main() {
             remoteVersion: '1',
           ),
         );
-        final progress = <CloudBackupProgress>[];
 
         final result = await CloudSyncEngine(
           phase1: phase1,
           remote: remote,
           state: state,
-        ).sync(forceUpload: true, onProgress: progress.add);
+        ).sync();
 
-        expect(result.kind, CloudSyncResultKind.uploaded);
-        expect(remote.writeCount, 1);
-        expect(remote.written!.lineage.baseBackupId, 'backup-100');
-        expect(remote.written!.lineage.dbRevision, 10);
-        expect(
-          state.cursor!.lastSyncedBackupId,
-          remote.written!.lineage.backupId,
-        );
-        expect(progress.first.stage, CloudBackupProgressStage.preparing);
+        expect(result.kind, CloudSyncResultKind.noOp);
+        expect(remote.writeCount, 0);
+        expect(remote.latestCount, 1);
+        expect(state.cursor!.lastSyncedBackupId, 'backup-100');
       },
     );
 
@@ -514,6 +531,44 @@ void main() {
       expect(result.conflict!.lastSyncedBackupId, 'backup-100');
       expect(phase1.importCount, 0);
     });
+
+    test(
+      'same remote backup ID with a changed version conflicts with local changes',
+      () async {
+        final phase1 = FakePhase1(revision: 11);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-100',
+            baseBackupId: null,
+            revision: 10,
+            modifiedAt: DateTime.utc(2026, 10, 8),
+            remoteVersion: '2',
+          ),
+        );
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
+
+        expect(result.kind, CloudSyncResultKind.conflict);
+        expect(result.conflict!.remoteLineage.backupId, 'backup-100');
+        expect(result.conflict!.remoteVersion, '2');
+        expect(result.conflict!.localRevision, 11);
+        expect(remote.writeCount, 0);
+        expect(phase1.importCount, 0);
+      },
+    );
 
     test(
       'conflict exposes display information for user confirmation',

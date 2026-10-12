@@ -157,6 +157,7 @@ class CloudSyncSnapshot {
     this.conflict,
     this.hasLocalRecoverySnapshot = false,
     this.restoredRemoteBackup = false,
+    this.backupAlreadyUpToDate = false,
   });
 
   const CloudSyncSnapshot.unavailable()
@@ -167,7 +168,8 @@ class CloudSyncSnapshot {
         message = null,
         conflict = null,
         hasLocalRecoverySnapshot = false,
-        restoredRemoteBackup = false;
+        restoredRemoteBackup = false,
+        backupAlreadyUpToDate = false;
 
   const CloudSyncSnapshot.disconnected()
       : status = CloudSyncStatus.disconnected,
@@ -177,7 +179,8 @@ class CloudSyncSnapshot {
         message = null,
         conflict = null,
         hasLocalRecoverySnapshot = false,
-        restoredRemoteBackup = false;
+        restoredRemoteBackup = false,
+        backupAlreadyUpToDate = false;
 
   final CloudSyncStatus status;
   final bool automaticSyncEnabled;
@@ -190,6 +193,9 @@ class CloudSyncSnapshot {
   /// True only when the operation actually imported a remote cloud backup.
   /// A generic "synced" status can also mean that local data was uploaded.
   final bool restoredRemoteBackup;
+
+  /// True when an explicit backup request required no upload or restore.
+  final bool backupAlreadyUpToDate;
 }
 
 enum CloudBackupDiscoveryStatus {

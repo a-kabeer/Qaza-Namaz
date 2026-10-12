@@ -301,13 +301,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       return switch (frequency) {
         CloudBackupFrequency.daily => 'روزانہ',
         CloudBackupFrequency.weekly => 'ہفتہ وار',
-        CloudBackupFrequency.monthly => 'ماہانہ (ہر 30 دن)',
+        CloudBackupFrequency.monthly => 'ماہانہ',
       };
     }
     return switch (frequency) {
       CloudBackupFrequency.daily => 'Daily',
       CloudBackupFrequency.weekly => 'Weekly',
-      CloudBackupFrequency.monthly => 'Monthly (every 30 days)',
+      CloudBackupFrequency.monthly => 'Monthly',
     };
   }
 
@@ -404,31 +404,35 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
             onProgress: _publishBackupProgress,
           );
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
       setState(() {
         _sync = result;
-        _message = result.message;
-        if (result.status == CloudSyncStatus.failed ||
-            result.status == CloudSyncStatus.disabled) {
-          _backupProgress = null;
-        }
+        _message = result.backupAlreadyUpToDate
+            ? l10n.cloudBackupUpToDate
+            : result.message;
+        _backupProgress = null;
       });
       if (result.status == CloudSyncStatus.conflict &&
           result.conflict != null) {
         await _resolveConflict(result.conflict!);
       } else if (result.status == CloudSyncStatus.synced && mounted) {
-        setState(
-          () => _message = AppLocalizations.of(context).cloudBackupSucceeded,
-        );
+        setState(() {
+          _message = result.backupAlreadyUpToDate
+              ? l10n.cloudBackupUpToDate
+              : result.message ?? l10n.cloudBackupSucceeded;
+        });
       }
     } catch (error) {
       if (mounted) {
+        setState(() => _message = error.toString());
+      }
+    } finally {
+      if (mounted) {
         setState(() {
-          _message = error.toString();
+          _busy = false;
           _backupProgress = null;
         });
       }
-    } finally {
-      if (mounted) setState(() => _busy = false);
     }
   }
 
@@ -678,7 +682,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                   ),
                 ),
               ),
-              if (_backupProgress != null) ...[
+              if (_busy && _backupProgress != null) ...[
                 const SizedBox(height: 12),
                 Builder(
                   builder: (context) {
@@ -738,31 +742,33 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 onChanged: _busy ? null : _toggleAutomaticBackup,
                 title: Text(l10n.cloudAutomaticBackup),
               ),
-              const SizedBox(height: 4),
-              DropdownButtonFormField<CloudBackupFrequency>(
-                key: const Key('account_cloud_backup_frequency'),
-                initialValue: _sync.backupFrequency,
-                decoration: InputDecoration(
-                  labelText:
-                      _isUrdu ? 'بیک اپ کی فریکوئنسی' : 'Backup frequency',
+              if (_sync.automaticSyncEnabled) ...[
+                const SizedBox(height: 4),
+                DropdownButtonFormField<CloudBackupFrequency>(
+                  key: const Key('account_cloud_backup_frequency'),
+                  initialValue: _sync.backupFrequency,
+                  decoration: InputDecoration(
+                    labelText:
+                        _isUrdu ? 'بیک اپ کی فریکوئنسی' : 'Backup frequency',
+                  ),
+                  items: CloudBackupFrequency.values
+                      .map(
+                        (frequency) => DropdownMenuItem<CloudBackupFrequency>(
+                          value: frequency,
+                          child: Text(_frequencyLabel(frequency)),
+                        ),
+                      )
+                      .toList(),
+                  onChanged: _busy
+                      ? null
+                      : (frequency) {
+                          if (frequency != null &&
+                              frequency != _sync.backupFrequency) {
+                            _changeBackupFrequency(frequency);
+                          }
+                        },
                 ),
-                items: CloudBackupFrequency.values
-                    .map(
-                      (frequency) => DropdownMenuItem<CloudBackupFrequency>(
-                        value: frequency,
-                        child: Text(_frequencyLabel(frequency)),
-                      ),
-                    )
-                    .toList(),
-                onChanged: _busy
-                    ? null
-                    : (frequency) {
-                        if (frequency != null &&
-                            frequency != _sync.backupFrequency) {
-                          _changeBackupFrequency(frequency);
-                        }
-                      },
-              ),
+              ],
               Text(
                 '${l10n.cloudLastBackup}: $lastBackup',
                 style: Theme.of(context).textTheme.bodySmall,
