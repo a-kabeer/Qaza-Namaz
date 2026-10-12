@@ -1095,7 +1095,13 @@ void main() {
     expect(source, isNot(contains('Future<void> _openDetails(')));
     expect(source, isNot(contains('_openDetails(context, record)')));
     expect(source, contains('onSaved?.call();'));
-    expect(source, contains('colorScheme.surfaceContainer'));
+    expect(source, contains('Theme.of(context).scaffoldBackgroundColor'));
+    expect(
+      'color: Theme.of(context).scaffoldBackgroundColor'
+          .allMatches(source)
+          .length,
+      2,
+    );
     expect(source, contains('class _QazaStackedTile extends StatelessWidget'));
     expect(source, contains('theme.brightness == Brightness.light'));
     expect(source, contains('scheme.surfaceContainerLow'));
@@ -1105,9 +1111,17 @@ void main() {
       contains('BorderRadius.vertical(top: Radius.circular(AppRadius.md))'),
     );
     expect(source, contains('BorderRadius.zero'));
+    expect(source, contains('required this.isLast'));
+    expect(source, contains('border: isLast'));
+    expect(source, contains('color: theme.scaffoldBackgroundColor'));
+    expect(source, contains('width: 1,'));
+    expect(source,
+        contains('isLast: index == widget.trackerState.records.length - 1'));
     expect(
-      source,
-      contains('BorderSide(color: scheme.outlineVariant, width: 0.5)'),
+      'contentPadding: const EdgeInsets.symmetric(horizontal: 8)'
+          .allMatches(source)
+          .length,
+      2,
     );
     expect(source, contains('homePrayerIcon(record.prayerType)'));
     expect(
@@ -1116,6 +1130,52 @@ void main() {
             'DateFormatters.formatGregorianDatePadded(record.originalDate)'));
     expect(source, contains('l10n.formatHijriDate(record.originalDate)'));
     expect(source, contains('maxLines: 2'));
+  });
+
+  test('Qaza inline expansions contain only their single action', () {
+    final source =
+        File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
+
+    final pendingStart =
+        source.indexOf('class _PendingRecordDetails extends StatelessWidget {');
+    final pendingEnd = source.indexOf(
+      'class _CompletionSwipeBackground extends StatelessWidget {',
+      pendingStart,
+    );
+    final completedStart = source
+        .indexOf('class _CompletedRecordDetails extends ConsumerWidget {');
+    final completedEnd =
+        source.indexOf('/// Shared Material 3 filter', completedStart);
+
+    expect(pendingStart, greaterThanOrEqualTo(0));
+    expect(pendingEnd, greaterThan(pendingStart));
+    expect(completedStart, greaterThanOrEqualTo(0));
+    expect(completedEnd, greaterThan(completedStart));
+
+    final pending = source.substring(pendingStart, pendingEnd);
+    final completed = source.substring(completedStart, completedEnd);
+
+    expect(pending, contains("Key('qaza_pending_mark_completed')"));
+    expect(
+      pending,
+      contains(
+        'onPressed:\n'
+        '              canComplete && onComplete != null ? () => onComplete!() : null,',
+      ),
+    );
+    expect(pending, isNot(contains('qazaOriginalDateLabel')));
+    expect(pending, isNot(contains('formatHijriDate')));
+    expect(pending, isNot(contains('statusPending')));
+    expect(pending, isNot(contains('Divider(')));
+    expect(pending, isNot(contains('Column(')));
+
+    expect(completed, contains('onPressed: () => _markPending(context, ref)'));
+    expect(completed, contains('l10n.qazaMarkAsPending'));
+    expect(completed, isNot(contains('qazaOriginalDateLabel')));
+    expect(completed, isNot(contains('formatHijriDate')));
+    expect(completed, isNot(contains('statusCompleted')));
+    expect(completed, isNot(contains('completedAt')));
+    expect(completed, isNot(contains('Column(')));
   });
 
   test('Completed rows retain their check-circle status icon', () {
