@@ -789,12 +789,14 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
               textDirection: Directionality.of(context),
               textScaler: MediaQuery.textScalerOf(context),
             )..layout();
-            final tooltipWidth = math.min(
-              tooltipTextPainter.width +
-                  tooltipHorizontalPadding * 2 +
-                  tooltipBorderWidth * 2,
-              constraints.maxWidth,
-            ).toDouble();
+            final tooltipWidth = math
+                .min(
+                  tooltipTextPainter.width +
+                      tooltipHorizontalPadding * 2 +
+                      tooltipBorderWidth * 2,
+                  constraints.maxWidth,
+                )
+                .toDouble();
             final tooltipCenterX = !hasPressedTooltip || period.days.isEmpty
                 ? 0.0
                 : plotLeft +
