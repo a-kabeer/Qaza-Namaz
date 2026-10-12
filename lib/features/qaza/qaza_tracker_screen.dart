@@ -477,7 +477,7 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
           ),
         Expanded(
           child: ColoredBox(
-            color: Theme.of(context).colorScheme.surfaceContainer,
+            color: Theme.of(context).scaffoldBackgroundColor,
             child: RefreshIndicator(
               onRefresh: controller.refresh,
               child: NotificationListener<ScrollNotification>(
@@ -524,6 +524,7 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
 
                     return _QazaStackedTile(
                       isFirst: index == 0,
+                      isLast: index == widget.trackerState.records.length - 1,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -564,7 +565,6 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
                           ),
                           if (expanded)
                             _PendingRecordDetails(
-                              record: record,
                               canComplete: canComplete,
                               onComplete: canComplete
                                   ? () async {
@@ -607,10 +607,12 @@ class _PendingTrackerBodyState extends ConsumerState<_PendingTrackerBody> {
 class _QazaStackedTile extends StatelessWidget {
   const _QazaStackedTile({
     required this.isFirst,
+    required this.isLast,
     required this.child,
   });
 
   final bool isFirst;
+  final bool isLast;
   final Widget child;
 
   @override
@@ -632,9 +634,14 @@ class _QazaStackedTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: tileColor,
         borderRadius: radius,
-        border: Border(
-          bottom: BorderSide(color: scheme.outlineVariant, width: 0.5),
-        ),
+        border: isLast
+            ? null
+            : Border(
+                bottom: BorderSide(
+                  color: theme.scaffoldBackgroundColor,
+                  width: 1,
+                ),
+              ),
       ),
       child: Material(
         color: Colors.transparent,
@@ -757,7 +764,7 @@ class _RecordRow extends StatelessWidget {
             size: 20,
             color: theme.colorScheme.onSurfaceVariant,
           ),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8),
           minVerticalPadding: 8,
           title: Text(
             record.prayerType.localizedLabel(l10n),
@@ -841,69 +848,28 @@ class _RecordRow extends StatelessWidget {
 
 class _PendingRecordDetails extends StatelessWidget {
   const _PendingRecordDetails({
-    required this.record,
     required this.canComplete,
     required this.onComplete,
   });
 
-  final QazaRecord record;
   final bool canComplete;
   final Future<void> Function()? onComplete;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Divider(height: 1),
-          const SizedBox(height: 12),
-          Text(
-            l10n.qazaOriginalDateLabel,
-            style: theme.textTheme.labelMedium,
-          ),
-          Text(
-            DateFormatters.formatGregorianDatePadded(record.originalDate),
-            softWrap: true,
-          ),
-          Text(
-            l10n.formatHijriDate(record.originalDate),
-            softWrap: true,
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Icon(
-                Icons.pending_actions_rounded,
-                size: 18,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 8),
-              Text(
-                l10n.statusPending,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-            ],
-          ),
-          if (canComplete && onComplete != null) ...[
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                key: const Key('qaza_pending_mark_completed'),
-                onPressed: () => onComplete!(),
-                child: Text(l10n.qazaCompleteCount(1)),
-              ),
-            ),
-          ],
-        ],
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton(
+          key: const Key('qaza_pending_mark_completed'),
+          onPressed: canComplete && onComplete != null
+              ? () => onComplete!()
+              : null,
+          child: Text(l10n.qazaCompleteCount(1)),
+        ),
       ),
     );
   }
@@ -1051,7 +1017,7 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
       children: [
         Positioned.fill(
           child: ColoredBox(
-            color: Theme.of(context).colorScheme.surfaceContainer,
+            color: Theme.of(context).scaffoldBackgroundColor,
             child: RefreshIndicator(
               onRefresh: controller.refresh,
               child: NotificationListener<ScrollNotification>(
@@ -1092,6 +1058,7 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
 
                     return _QazaStackedTile(
                       isFirst: index == 0,
+                      isLast: index == widget.trackerState.records.length - 1,
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
@@ -1212,7 +1179,7 @@ class _CompletedRecordRow extends StatelessWidget {
       child: ListTile(
         key: Key('qaza_completed_record_${record.id}'),
         dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 4),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 8),
         minVerticalPadding: 4,
         leading: Icon(
           Icons.check_circle_rounded,
@@ -1372,41 +1339,15 @@ class _CompletedRecordDetails extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final theme = Theme.of(context);
-    final completedAt = record.completedAt?.toLocal();
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            record.prayerType.localizedLabel(l10n),
-            style: theme.textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Text(l10n.qazaOriginalDateLabel, style: theme.textTheme.labelMedium),
-          Text(DateFormatters.formatGregorianDatePadded(record.originalDate)),
-          Text(l10n.formatHijriDate(record.originalDate)),
-          const SizedBox(height: 12),
-          if (completedAt != null) ...[
-            Text(l10n.statusCompleted, style: theme.textTheme.labelMedium),
-            Text(
-              '${DateFormatters.formatGregorianDatePadded(completedAt)} · ${DateFormatters.formatClockTime(completedAt)}',
-            ),
-          ],
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () => _markPending(context, ref),
-              child: Text(l10n.qazaMarkAsPending),
-            ),
-          ),
-        ],
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 12),
+      child: SizedBox(
+        width: double.infinity,
+        child: FilledButton(
+          onPressed: () => _markPending(context, ref),
+          child: Text(l10n.qazaMarkAsPending),
+        ),
       ),
     );
   }
