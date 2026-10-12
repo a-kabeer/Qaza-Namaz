@@ -1097,7 +1097,9 @@ void main() {
     expect(source, contains('onSaved?.call();'));
     expect(source, contains('Theme.of(context).scaffoldBackgroundColor'));
     expect(
-      'color: Theme.of(context).scaffoldBackgroundColor'.allMatches(source).length,
+      'color: Theme.of(context).scaffoldBackgroundColor'
+          .allMatches(source)
+          .length,
       2,
     );
     expect(source, contains('class _QazaStackedTile extends StatelessWidget'));
@@ -1113,9 +1115,12 @@ void main() {
     expect(source, contains('border: isLast'));
     expect(source, contains('color: theme.scaffoldBackgroundColor'));
     expect(source, contains('width: 1,'));
-    expect(source, contains('isLast: index == widget.trackerState.records.length - 1'));
+    expect(source,
+        contains('isLast: index == widget.trackerState.records.length - 1'));
     expect(
-      'contentPadding: const EdgeInsets.symmetric(horizontal: 8)'.allMatches(source).length,
+      'contentPadding: const EdgeInsets.symmetric(horizontal: 8)'
+          .allMatches(source)
+          .length,
       2,
     );
     expect(source, contains('homePrayerIcon(record.prayerType)'));
@@ -1127,7 +1132,6 @@ void main() {
     expect(source, contains('maxLines: 2'));
   });
 
-
   test('Qaza inline expansions contain only their single action', () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
@@ -1138,8 +1142,8 @@ void main() {
       'class _CompletionSwipeBackground extends StatelessWidget {',
       pendingStart,
     );
-    final completedStart =
-        source.indexOf('class _CompletedRecordDetails extends ConsumerWidget {');
+    final completedStart = source
+        .indexOf('class _CompletedRecordDetails extends ConsumerWidget {');
     final completedEnd =
         source.indexOf('/// Shared Material 3 filter', completedStart);
 

@@ -865,9 +865,8 @@ class _PendingRecordDetails extends StatelessWidget {
         width: double.infinity,
         child: FilledButton(
           key: const Key('qaza_pending_mark_completed'),
-          onPressed: canComplete && onComplete != null
-              ? () => onComplete!()
-              : null,
+          onPressed:
+              canComplete && onComplete != null ? () => onComplete!() : null,
           child: Text(l10n.qazaCompleteCount(1)),
         ),
       ),
