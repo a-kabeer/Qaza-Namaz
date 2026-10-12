@@ -765,26 +765,48 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
         height: 250,
         child: LayoutBuilder(
           builder: (context, constraints) {
-            const tooltipWidth = 72.0;
+            const tooltipHorizontalPadding = 4.0;
+            const tooltipVerticalPadding = 3.0;
+            const tooltipBorderWidth = 1.0;
             const plotLeft = 36.0;
             final plotWidth =
                 math.max(constraints.maxWidth - plotLeft, 0.0).toDouble();
             final hasPressedTooltip = pressedTooltipIndex >= 0 &&
                 pressedTooltipIndex < period.days.length;
+            final tooltipValue = hasPressedTooltip
+                ? DateFormatters.formatCount(
+                    period.days[pressedTooltipIndex].completed,
+                  )
+                : '';
+            final tooltipTextStyle =
+                (theme.textTheme.labelLarge ?? const TextStyle()).copyWith(
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.w700,
+            );
+            final tooltipTextPainter = TextPainter(
+              text: TextSpan(text: tooltipValue, style: tooltipTextStyle),
+              maxLines: 1,
+              textDirection: Directionality.of(context),
+              textScaler: MediaQuery.textScalerOf(context),
+            )..layout();
+            final tooltipWidth = math.min(
+              tooltipTextPainter.width +
+                  tooltipHorizontalPadding * 2 +
+                  tooltipBorderWidth * 2,
+              constraints.maxWidth,
+            ).toDouble();
             final tooltipCenterX = !hasPressedTooltip || period.days.isEmpty
                 ? 0.0
                 : plotLeft +
                     plotWidth *
                         (pressedTooltipIndex + 0.5) /
                         period.days.length;
-            final safeTooltipWidth =
-                math.min(tooltipWidth, constraints.maxWidth).toDouble();
             final tooltipLeft = math
                 .max(
                   0.0,
                   math.min(
-                    tooltipCenterX - safeTooltipWidth / 2,
-                    constraints.maxWidth - safeTooltipWidth,
+                    tooltipCenterX - tooltipWidth / 2,
+                    constraints.maxWidth - tooltipWidth,
                   ),
                 )
                 .toDouble();
@@ -951,25 +973,21 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
                             color: theme.colorScheme.outlineVariant,
+                            width: tooltipBorderWidth,
                           ),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 5,
+                            horizontal: tooltipHorizontalPadding,
+                            vertical: tooltipVerticalPadding,
                           ),
                           child: Text(
-                            DateFormatters.formatCount(
-                              period.days[pressedTooltipIndex].completed,
-                            ),
+                            tooltipValue,
                             key: const Key('home_activity_fixed_tooltip_value'),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             textAlign: TextAlign.center,
-                            style: theme.textTheme.labelLarge?.copyWith(
-                              color: theme.colorScheme.onSurface,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: tooltipTextStyle,
                           ),
                         ),
                       ),
