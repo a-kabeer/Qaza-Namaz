@@ -70,6 +70,7 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
   CloudSyncSnapshot snapshot;
   Completer<CloudSyncSnapshot>? backupCompleter;
   CloudSyncSnapshot? backupResult;
+  Object? backupError;
   bool emitBackupProgress = true;
   int backupCalls = 0;
 
@@ -90,6 +91,8 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
         const CloudBackupProgress.uploading(sentBytes: 1, totalBytes: 2),
       );
     }
+    final error = backupError;
+    if (error != null) return Future<CloudSyncSnapshot>.error(error);
     return backupCompleter?.future ??
         Future<CloudSyncSnapshot>.value(backupResult ?? snapshot);
   }
@@ -393,6 +396,44 @@ void main() {
     expect(find.text('Backup failed.'), findsOneWidget);
     expect(find.text('Cloud backup/sync completed.'), findsNothing);
   });
+
+  testWidgets(
+    'backup progress clears when the provider throws',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          displayName: 'A Test User',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(status: CloudSyncStatus.idle),
+      )..backupError = StateError('Synthetic backup exception');
+      final container = ProviderContainer(
+        overrides: [
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Back up now'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(find.textContaining('Synthetic backup exception'), findsOneWidget);
+      expect(find.text('Back up now'), findsOneWidget);
+    },
+  );
 
   testWidgets('safe no-op backup shows the already-up-to-date message',
       (tester) async {
