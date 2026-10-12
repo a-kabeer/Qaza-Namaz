@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -134,7 +135,14 @@ void main() {
         overrides: [
           accountSessionManagerProvider.overrideWith((ref) => manager),
           cloudAccountProvider.overrideWith((ref) => cloudAccount),
-          cloudSyncProvider.overrideWith((ref) => _FakeCloudSyncProvider()),
+          cloudSyncProvider.overrideWith(
+            (ref) => _FakeCloudSyncProvider(
+              snapshot: const CloudSyncSnapshot(
+                status: CloudSyncStatus.idle,
+                automaticSyncEnabled: true,
+              ),
+            ),
+          ),
           progressSummaryProvider.overrideWith(
             (ref) async => QazaProgressSummary.empty(),
           ),
@@ -177,6 +185,198 @@ void main() {
       expect(find.text('Connect Google'), findsNothing);
     },
   );
+
+  testWidgets(
+    'automatic backup hides the frequency selector and preserves its choice',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          displayName: 'A Test User',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(
+          status: CloudSyncStatus.idle,
+          automaticSyncEnabled: false,
+          backupFrequency: CloudBackupFrequency.weekly,
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('account_cloud_backup_frequency')), findsNothing);
+
+      await tester.tap(find.byKey(const Key('account_daily_cloud_backup')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('account_cloud_backup_frequency')), findsOneWidget);
+      expect(find.text('Weekly'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('account_daily_cloud_backup')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('account_cloud_backup_frequency')), findsNothing);
+      expect(cloudSync.snapshot.backupFrequency, CloudBackupFrequency.weekly);
+
+      await tester.tap(find.byKey(const Key('account_daily_cloud_backup')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('account_cloud_backup_frequency')), findsOneWidget);
+      expect(find.text('Weekly'), findsOneWidget);
+    },
+  );
+
+  testWidgets('monthly frequency label stays concise in English and Urdu', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final manager = await _createSession(database);
+    final cloudAccount = _FakeCloudAccountProvider(
+      snapshot: const CloudAccountSnapshot(
+        status: CloudAccountStatus.connected,
+        displayName: 'A Test User',
+      ),
+    );
+    final cloudSync = _FakeCloudSyncProvider(
+      snapshot: const CloudSyncSnapshot(
+        status: CloudSyncStatus.idle,
+        automaticSyncEnabled: true,
+        backupFrequency: CloudBackupFrequency.monthly,
+      ),
+    );
+    final container = ProviderContainer(
+      overrides: [
+        accountSessionManagerProvider.overrideWith((ref) => manager),
+        cloudAccountProvider.overrideWith((ref) => cloudAccount),
+        cloudSyncProvider.overrideWith((ref) => cloudSync),
+        progressSummaryProvider.overrideWith(
+          (ref) async => QazaProgressSummary.empty(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container, const AccountScreen()));
+    await tester.pumpAndSettle();
+    expect(find.text('Monthly'), findsOneWidget);
+    expect(find.text('Monthly (every 30 days)'), findsNothing);
+    expect(cloudSync.snapshot.backupFrequency, CloudBackupFrequency.monthly);
+
+    await tester.pumpWidget(
+      _app(container, const AccountScreen(), locale: const Locale('ur')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('ماہانہ'), findsOneWidget);
+    expect(find.text('ماہانہ (ہر 30 دن)'), findsNothing);
+  });
+
+  testWidgets('backup progress clears after success and failure', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final manager = await _createSession(database);
+    final cloudAccount = _FakeCloudAccountProvider(
+      snapshot: const CloudAccountSnapshot(
+        status: CloudAccountStatus.connected,
+        displayName: 'A Test User',
+      ),
+    );
+    final cloudSync = _FakeCloudSyncProvider(
+      snapshot: const CloudSyncSnapshot(status: CloudSyncStatus.idle),
+    )..backupCompleter = Completer<CloudSyncSnapshot>();
+    final container = ProviderContainer(
+      overrides: [
+        accountSessionManagerProvider.overrideWith((ref) => manager),
+        cloudAccountProvider.overrideWith((ref) => cloudAccount),
+        cloudSyncProvider.overrideWith((ref) => cloudSync),
+        progressSummaryProvider.overrideWith(
+          (ref) async => QazaProgressSummary.empty(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container, const AccountScreen()));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Back up now'));
+    await tester.pump();
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    cloudSync.backupCompleter!.complete(
+      const CloudSyncSnapshot(status: CloudSyncStatus.synced),
+    );
+    cloudSync.backupCompleter = null;
+    await tester.pumpAndSettle();
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(find.text('Cloud backup/sync completed.'), findsOneWidget);
+
+    cloudSync.backupCompleter = Completer<CloudSyncSnapshot>();
+    await tester.tap(find.text('Back up now'));
+    await tester.pump();
+    expect(find.byType(LinearProgressIndicator), findsOneWidget);
+    cloudSync.backupCompleter!.complete(
+      const CloudSyncSnapshot(
+        status: CloudSyncStatus.failed,
+        message: 'Backup failed.',
+      ),
+    );
+    cloudSync.backupCompleter = null;
+    await tester.pumpAndSettle();
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+    expect(find.text('Backup failed.'), findsOneWidget);
+    expect(find.text('Cloud backup/sync completed.'), findsNothing);
+  });
+
+  testWidgets('safe no-op backup shows the already-up-to-date message', (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final manager = await _createSession(database);
+    final cloudAccount = _FakeCloudAccountProvider(
+      snapshot: const CloudAccountSnapshot(
+        status: CloudAccountStatus.connected,
+        displayName: 'A Test User',
+      ),
+    );
+    final cloudSync = _FakeCloudSyncProvider(
+      snapshot: const CloudSyncSnapshot(status: CloudSyncStatus.idle),
+    )
+      ..emitBackupProgress = false
+      ..backupResult = const CloudSyncSnapshot(
+        status: CloudSyncStatus.synced,
+        backupAlreadyUpToDate: true,
+      );
+    final container = ProviderContainer(
+      overrides: [
+        accountSessionManagerProvider.overrideWith((ref) => manager),
+        cloudAccountProvider.overrideWith((ref) => cloudAccount),
+        cloudSyncProvider.overrideWith((ref) => cloudSync),
+        progressSummaryProvider.overrideWith(
+          (ref) async => QazaProgressSummary.empty(),
+        ),
+      ],
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container, const AccountScreen()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Back up now'));
+    await tester.pumpAndSettle();
+
+    expect(cloudSync.backupCalls, 1);
+    expect(find.text('Backup is already up to date.'), findsOneWidget);
+    expect(find.text('Cloud backup/sync completed.'), findsNothing);
+    expect(find.byType(LinearProgressIndicator), findsNothing);
+  });
 
   testWidgets(
     'connected profile safely falls back when Google fields are absent',
