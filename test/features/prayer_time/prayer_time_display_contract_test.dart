@@ -109,8 +109,7 @@ void main() {
     expect(source, contains('scheme.tertiary'));
   });
 
-  test(
-      'overnight focus shows Isha while countdown boundary remains Fajr', () {
+  test('overnight focus shows Isha while countdown boundary remains Fajr', () {
     final source =
         File('lib/features/prayer_time/presentation/prayer_time_page.dart')
             .readAsStringSync();
