@@ -200,46 +200,48 @@ void main() {
     expect(written.backup.lineage.backupId, 'backup-ambiguous');
     client.close();
   });
-  test('does not issue a second create when reconciliation finds no upload', () async {
-    final backup = CloudBackup(
-      lineage: CloudLineage(
-        deviceId: 'device-A',
-        backupId: 'backup-not-confirmed',
-        baseBackupId: 'backup-100',
-        dbRevision: 8,
-        createdAt: DateTime.utc(2026, 10, 13),
-      ),
-      phase1BackupJson:
-          '{"metadata":{"app_id":"qaza_namaz_app","db_revision":8},"data":{}}',
-    );
-    var createAttempts = 0;
-    final client = MockClient((request) async {
-      if (request.method == 'POST' && request.url.path.endsWith('/files')) {
-        createAttempts++;
-        throw http.ClientException(
-          'Connection closed before full header was received',
-          request.url,
-        );
-      }
-      if (request.method == 'GET' && request.url.path.endsWith('/files')) {
-        return http.Response(
-          jsonEncode(<String, Object?>{'files': <Object?>[]}),
-          200,
-          headers: const <String, String>{'content-type': 'application/json'},
-        );
-      }
-      return http.Response('Unexpected request', 500);
-    });
-    final store = GoogleDriveAppDataStore(_TestGateway(client));
+  test(
+    'does not issue a second create when reconciliation finds no upload',
+    () async {
+      final backup = CloudBackup(
+        lineage: CloudLineage(
+          deviceId: 'device-A',
+          backupId: 'backup-not-confirmed',
+          baseBackupId: 'backup-100',
+          dbRevision: 8,
+          createdAt: DateTime.utc(2026, 10, 13),
+        ),
+        phase1BackupJson:
+            '{"metadata":{"app_id":"qaza_namaz_app","db_revision":8},"data":{}}',
+      );
+      var createAttempts = 0;
+      final client = MockClient((request) async {
+        if (request.method == 'POST' && request.url.path.endsWith('/files')) {
+          createAttempts++;
+          throw http.ClientException(
+            'Connection closed before full header was received',
+            request.url,
+          );
+        }
+        if (request.method == 'GET' && request.url.path.endsWith('/files')) {
+          return http.Response(
+            jsonEncode(<String, Object?>{'files': <Object?>[]}),
+            200,
+            headers: const <String, String>{'content-type': 'application/json'},
+          );
+        }
+        return http.Response('Unexpected request', 500);
+      });
+      final store = GoogleDriveAppDataStore(_TestGateway(client));
 
-    await expectLater(
-      store.write(backup, allowInteractive: false),
-      throwsA(isA<CloudDriveRequestException>()),
-    );
-    expect(createAttempts, 1);
-    client.close();
-  });
-
+      await expectLater(
+        store.write(backup, allowInteractive: false),
+        throwsA(isA<CloudDriveRequestException>()),
+      );
+      expect(createAttempts, 1);
+      client.close();
+    },
+  );
 }
 
 http.Response _fileListResponse() => http.Response(
