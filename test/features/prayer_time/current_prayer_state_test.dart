@@ -104,7 +104,8 @@ void main() {
     expect(state, isNull);
   });
 
-  test('at midnight, Isha remains focus while Fajr countdown stays accurate', () {
+  test(
+      'at midnight, Isha remains focus while Fajr countdown stays accurate', () {
     final snapshot = makeSnapshot(
       DateTime(2026, 10, 11),
       DateTime(2026, 10, 12),
