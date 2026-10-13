@@ -1908,15 +1908,15 @@ class AppLocalizationsAr extends AppLocalizationsEn {
 
   @override
   String prayerTimeEndsIn(String duration) =>
-      'ينتهي بعد $time';
+      'ينتهي بعد $duration';
 
   @override
   String prayerTimeRemaining(String duration) =>
-      'الوقت المتبقي $time';
+      'الوقت المتبقي $duration';
 
   @override
   String prayerTimeStartsIn(String duration) =>
-      'يبدأ بعد $time';
+      'يبدأ بعد $duration';
 
   @override
   String get prayerTimeNextRestricted => 'وقت النهي التالي';

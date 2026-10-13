@@ -993,7 +993,7 @@
   "prayerTimeSetupTitle": "إعداد مواقيت الصلاة",
   "prayerTimeSetupBody": "اختر موقعك وطريقة الحساب لعرض مواقيت الصلاة الصحيحة.",
   "prayerTimeRefresh": "تحديث",
-  "prayerTimeEndsIn": "ينتهي بعد {time}",
+  "prayerTimeEndsIn": "ينتهي بعد {duration}",
   "@prayerTimeEndsIn": {
     "placeholders": {
       "duration": {
@@ -1001,7 +1001,7 @@
       }
     }
   },
-  "prayerTimeRemaining": "الوقت المتبقي {time}",
+  "prayerTimeRemaining": "الوقت المتبقي {duration}",
   "@prayerTimeRemaining": {
     "placeholders": {
       "duration": {
@@ -1009,7 +1009,7 @@
       }
     }
   },
-  "prayerTimeStartsIn": "يبدأ بعد {time}",
+  "prayerTimeStartsIn": "يبدأ بعد {duration}",
   "@prayerTimeStartsIn": {
     "placeholders": {
       "duration": {
