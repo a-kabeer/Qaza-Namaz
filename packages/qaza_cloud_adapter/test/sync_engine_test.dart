@@ -317,9 +317,10 @@ void main() {
           state: state,
         ).sync();
 
-        expect(result.kind, CloudSyncResultKind.noOp);
+        expect(result.kind, CloudSyncResultKind.downloaded);
         expect(remote.downloadCount, 1);
         expect(remote.writeCount, 0);
+        expect(phase1.importCount, 1);
       },
     );
 
