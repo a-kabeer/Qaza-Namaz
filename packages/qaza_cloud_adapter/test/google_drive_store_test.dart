@@ -37,39 +37,44 @@ void main() {
       });
     }
 
-    test('retries Drive 403 userRateLimitExceeded only', () async {
-      var attempts = 0;
-      final client = MockClient((request) async {
-        attempts++;
-        if (attempts == 1) {
-          return http.Response(
-            jsonEncode(<String, Object?>{
-              'error': <String, Object?>{
-                'code': 403,
-                'message': 'rate limited',
-                'errors': <Object?>[
-                  <String, Object?>{
-                    'domain': 'usageLimits',
-                    'reason': 'userRateLimitExceeded',
-                    'message': 'rate limited',
-                  },
-                ],
-              },
-            }),
-            403,
-            headers: const <String, String>{'retry-after': '0'},
-          );
-        }
-        return _fileListResponse();
+    for (final reason in <String>[
+      'rateLimitExceeded',
+      'userRateLimitExceeded',
+    ]) {
+      test('retries Drive 403 $reason only', () async {
+        var attempts = 0;
+        final client = MockClient((request) async {
+          attempts++;
+          if (attempts == 1) {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'error': <String, Object?>{
+                  'code': 403,
+                  'message': 'rate limited',
+                  'errors': <Object?>[
+                    <String, Object?>{
+                      'domain': 'usageLimits',
+                      'reason': reason,
+                      'message': 'rate limited',
+                    },
+                  ],
+                },
+              }),
+              403,
+              headers: const <String, String>{'retry-after': '0'},
+            );
+          }
+          return _fileListResponse();
+        });
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        final metadata = await store.latestMetadata(allowInteractive: false);
+
+        expect(attempts, 2);
+        expect(metadata?.backupId, 'backup-100');
+        client.close();
       });
-      final store = GoogleDriveAppDataStore(_TestGateway(client));
-
-      final metadata = await store.latestMetadata(allowInteractive: false);
-
-      expect(attempts, 2);
-      expect(metadata?.backupId, 'backup-100');
-      client.close();
-    });
+    }
 
     test('does not retry permanent Drive permission failures', () async {
       var attempts = 0;
