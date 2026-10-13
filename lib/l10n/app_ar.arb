@@ -385,5 +385,338 @@
         "type": "String"
       }
     }
-  }
+  },
+  "qazaSelectAllMatching": "تحديد جميع النتائج المطابقة",
+  "qazaSelectAllMatchingCapped": "تم تحديد أول {count} من السجلات المطابقة.",
+  "@qazaSelectAllMatchingCapped": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaConfirmBulkTitle": "إكمال {count} سجلًا؟",
+  "@qazaConfirmBulkTitle": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaConfirmBulkMessage": "سيتم وضع علامة الإكمال على {count} من الصلوات المعلّقة. يمكنك التراجع مباشرة بعد ذلك، ولكن ليس لاحقًا.",
+  "@qazaConfirmBulkMessage": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaConfirmBulkAction": "إكمالها",
+  "homeDailyProgressError": "تعذر تحميل تقدم اليوم.",
+  "progressPendingCompleted": "{pending} قيد الانتظار • {completed} مكتملة",
+  "@progressPendingCompleted": {
+    "placeholders": {
+      "pending": {
+        "type": "String"
+      },
+      "completed": {
+        "type": "String"
+      }
+    }
+  },
+  "progressCompletedPending": "{completed} مكتملة • {pending} قيد الانتظار",
+  "@progressCompletedPending": {
+    "placeholders": {
+      "completed": {
+        "type": "String"
+      },
+      "pending": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaDateFilterRange": "{from} — {to}",
+  "@qazaDateFilterRange": {
+    "placeholders": {
+      "from": {
+        "type": "String"
+      },
+      "to": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaLoadError": "تعذر تحميل سجلات القضاء: {error}",
+  "@qazaLoadError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaLoadMoreError": "تعذر تحميل المزيد من السجلات: {error}",
+  "@qazaLoadMoreError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaCompleteError": "تعذر إكمال سجلات القضاء المحددة: {error}",
+  "@qazaCompleteError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaCompleteCount": "{count, plural, =1{إكمال قضاء واحد} other{إكمال {count} من سجلات القضاء}}",
+  "@qazaCompleteCount": {
+    "description": "Bulk completion action label",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaDeleteRecordMessage": "حذف سجل صلاة القضاء {prayer} بتاريخ {date} نهائيًا؟ لا يمكن التراجع عن ذلك.",
+  "qazaDuplicateRecord": "يوجد بالفعل سجل قضاء للصلاة {prayer} بتاريخ {date}.",
+  "qazaUndoAvailable": "{count, plural, =1{يمكن التراجع عن إكمال السجل الأخير.} other{يمكن التراجع عن إكمال السجلات الأخيرة.}}",
+  "@qazaUndoAvailable": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "calendarSelectedCount": "{count, plural, =1{تم تحديد تاريخ واحد.} other{تم تحديد {count} تواريخ.}}",
+  "@calendarSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "authProviderNote": "Google هو موفر تسجيل الدخول المتصل حاليًا. تتم استعادة حالة تسجيل الدخول تلقائيًا من Firebase.",
+  "authHelpBody": "طريقة تسجيل الدخول المتاحة في هذا الإصدار هي Google. ترتبط بيانات القضاء بحساب Firebase الذي تستخدمه لتسجيل الدخول.",
+  "accountChoiceHeadline": "حافظ على تقدمك في القضاء",
+  "accountChoiceDescription": "سجّل الدخول باستخدام Google لنسخ تقدمك احتياطيًا واستعادته عبر الأجهزة.",
+  "accountChoiceContinueGoogle": "المتابعة باستخدام Google",
+  "accountChoiceContinueGuest": "المتابعة كضيف",
+  "accountChoiceGuestDescription": "تظل بيانات الضيف على هذا الجهاز. يمكنك ربط Google لاحقًا.",
+  "accountChoiceGoogleFailed": "تعذر إكمال تسجيل الدخول باستخدام Google. حاول مرة أخرى.",
+  "accountProfileChecking": "جارٍ التحقق من حساب Google…",
+  "accountProfileUnavailable": "حالة حساب Google غير متاحة",
+  "accountProfileUnavailableDetail": "ما زالت سجلات القضاء متاحة على هذا الجهاز.",
+  "accountRecordsRetained": "ستبقى سجلات القضاء المحفوظة مخزنة، وستتم استعادتها بعد تسجيل الدخول التالي.",
+  "accountDeveloperContext": "معلومات المطور",
+  "accountFirebaseUid": "معرّف Firebase",
+  "dataExportFailed": "فشل التصدير: {error}",
+  "@dataExportFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "dataImportRejected": "تم رفض الاستيراد: {error}\nلم يتم تطبيق أي استيراد جزئي.",
+  "@dataImportRejected": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "dataSafetyBody": "لا يؤدي التصدير إلى حذف بيانات السحابة. ولا يمحو الاستيراد السجلات الحالية. وتسجيل الخروج لا يعني حذف البيانات، كما أن إزالة التطبيق لا تحذف السجلات السحابية.",
+  "dataRemapNote": "تُربط البيانات المستوردة بالحساب الذي سجّل الدخول حاليًا. ثم تؤكد طبقة المزامنة المحلية أولًا التغييرات مع Firestore في الخلفية.",
+  "addQazaAvailabilityNote": "في وضع النطاق، يمكن تحديد التواريخ الصالحة حتى إذا لم يتبقَّ قضاء؛ وتضيف المراجعة الصلوات المؤهلة فقط.",
+  "addQazaStepSemantics": "الخطوة {step}: {name}",
+  "@addQazaStepSemantics": {
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "addQazaPartialAvailability": "متاح في {available} من أصل {total} تواريخ",
+  "@addQazaPartialAvailability": {
+    "placeholders": {
+      "available": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
+  },
+  "addQazaAvailableEveryDate": "متاح في جميع التواريخ المحددة",
+  "addQazaEligibleOnlyNote": "تُضاف فقط مجموعات التاريخ والصلاة المؤهلة. ويتم تخطي أي سجل موجود مسبقًا.",
+  "addQazaNothingNew": "لا توجد سجلات جديدة للإضافة؛ هذه المجموعات مسجلة بالفعل.",
+  "addQazaCombinationNote": "يُنشئ كل تاريخ مع كل صلاة سجلًا مستقلًا قيد الانتظار. ويتم تخطي المجموعات المسجلة مسبقًا تلقائيًا.",
+  "addQazaNewQazaLabel": "سجلات قضاء جديدة",
+  "addQazaInProgress": "جارٍ إضافة القضاء...",
+  "addQazaSelectedCount": "{count, plural, =1{تم تحديد يوم واحد • ما الصلوات التي فاتتك؟} other{تم تحديد {count} أيام • ما الصلوات التي فاتتك؟}}",
+  "@addQazaSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistorySelectedDates": "{count, plural, =1{تاريخ واحد محدد} other{{count} تواريخ محددة}}",
+  "@qazaHistorySelectedDates": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistorySelectionScope": "{prayers} صلوات · {days} أيام",
+  "@qazaHistorySelectionScope": {
+    "placeholders": {
+      "prayers": {
+        "type": "int"
+      },
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryProgressPercentage": "{percent}٪",
+  "@qazaHistoryProgressPercentage": {
+    "placeholders": {
+      "percent": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryTrackedRecords": "{count, plural, =1{سجل واحد متابع} other{{count} سجلات متابَعة}}",
+  "@qazaHistoryTrackedRecords": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryAdded": "تمت الإضافة في {date}",
+  "@qazaHistoryAdded": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaHistoryShowAllDates": "عرض جميع التواريخ",
+  "qazaHistoryHideDates": "إخفاء التواريخ",
+  "qazaHistoryDeletedStatus": "محذوف",
+  "qazaHistoryNoDates": "لا توجد تواريخ",
+  "addQazaDateCount": "{count, plural, =1{تاريخ واحد} other{{count} تواريخ}}",
+  "@addQazaDateCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addQazaUnavailablePrayer": "{rakats} • مسجلة بالفعل أو تمت صلاتها أو لم ينتهِ وقتها بعد",
+  "@addQazaUnavailablePrayer": {
+    "placeholders": {
+      "rakats": {
+        "type": "String"
+      }
+    }
+  },
+  "commonNone": "لا شيء",
+  "completeOldestSubtitle": "أقدم سجل معلّق",
+  "completePrayerQaza": "قضاء {prayer}",
+  "@completePrayerQaza": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      }
+    }
+  },
+  "completeSuccess": "تم إكمال قضاء {prayer} بنجاح.",
+  "@completeSuccess": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      }
+    }
+  },
+  "completeSuccessNext": "اكتمل قضاء {prayer} • السجل التالي جاهز.",
+  "@completeSuccessNext": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      }
+    }
+  },
+  "knowledgeBaseTopicAll": "كل الموضوعات",
+  "knowledgeTopicBasic": "الأساسيات",
+  "knowledgeTopicPrayerUnits": "ركعات الصلاة",
+  "knowledgeTopicSleepForgetfulness": "النوم والنسيان",
+  "knowledgeTopicIntentionalOmission": "الترك المتعمد",
+  "knowledgeTopicFriday": "الجمعة",
+  "knowledgeTopicMenstruation": "الحيض",
+  "knowledgeTopicNifas": "النفاس",
+  "knowledgeTopicMenstruationNifas": "الحيض والنفاس",
+  "knowledgeTopicMisconceptions": "المفاهيم الخاطئة",
+  "settingsResetCounterTitle": "إعادة تعيين عداد القضاء",
+  "settingsResetCounterSubtitle": "احذف جميع سجلات القضاء وابدأ العد من الصفر.",
+  "settingsResetCounterEmpty": "لا توجد سجلات قضاء لإعادة تعيينها.",
+  "settingsResetCounterDialogTitle": "إعادة تعيين عداد القضاء؟",
+  "settingsResetCounterDialogMessage": "سيؤدي هذا إلى حذف جميع سجلات القضاء في هذا الحساب نهائيًا، المعلّقة والمكتملة، من هذا الجهاز ومن النسخة الاحتياطية السحابية.\n\nسيعود العداد إلى الصفر وستفقد تقدم الإكمال الذي حققته. لا يمكن التراجع عن ذلك. صدّر بياناتك أولًا إذا كنت قد تحتاج إليها لاحقًا.",
+  "settingsResetCounterAcknowledge": "{count, plural, =1{أفهم أنه سيتم حذف سجل قضاء واحد نهائيًا} other{أفهم أنه سيتم حذف {count} سجلات قضاء نهائيًا}}",
+  "@settingsResetCounterAcknowledge": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsResetCounterConfirm": "إعادة تعيين العداد",
+  "settingsResetCounterDone": "تمت إعادة تعيين عداد القضاء.",
+  "settingsResetCounterFailed": "تعذرت إعادة تعيين عداد القضاء: {error}",
+  "@settingsResetCounterFailed": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "authContinueAsGuest": "المتابعة كضيف",
+  "authGuestNote": "يمكنك تسجيل الدخول باستخدام Google لاحقًا للاحتفاظ بتقدمك وربطه بحسابك.",
+  "settingsBackupSignIn": "النسخ الاحتياطي / تسجيل الدخول",
+  "settingsBackupSignInSubtitle": "أنت تستخدم التطبيق كضيف. سجّل الدخول لنسخ بيانات القضاء احتياطيًا.",
+  "backupSignInFailedReason": "فشل تسجيل الدخول: {reason} ما زال تقدمك محفوظًا على هذا الجهاز.",
+  "@backupSignInFailedReason": {
+    "placeholders": {
+      "reason": {
+        "type": "String"
+      }
+    }
+  },
+  "backupMigrationDone": "{count, plural, =0{تم تسجيل الدخول. أصبح تقدمك في القضاء مرتبطًا بحسابك.} =1{تم تسجيل الدخول. أصبح تقدمك في القضاء مرتبطًا بحسابك.} other{تم تسجيل الدخول. أصبح تقدمك في القضاء مرتبطًا بحسابك.}}",
+  "@backupMigrationDone": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "settingsAboutRowSubtitle": "قضاء الصلاة • الإصدار {version}",
+  "@settingsAboutRowSubtitle": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "cloudExportImportSubtitle": "نسخة احتياطية واستعادة آمنة بصيغة JSON تحت تحكم المستخدم. لا تُحذف بيانات السحابة عند استخدام هذه الإجراءات.",
+  "cloudInactive": "التخزين دون اتصال غير نشط في هذا الإصدار.",
+  "cloudBootstrapping": "جارٍ إعداد سجلات القضاء على هذا الجهاز…"
 }
