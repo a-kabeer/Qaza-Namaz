@@ -141,8 +141,7 @@ void main() {
     var reconciled = false;
 
     final client = MockClient((request) async {
-      if (request.method == 'POST' &&
-          request.url.path.endsWith('/files')) {
+      if (request.method == 'POST' && request.url.path.endsWith('/files')) {
         createAttempts++;
         // Model Drive persisting the upload but losing the response.
         throw http.ClientException(
@@ -157,14 +156,11 @@ void main() {
         return http.Response(
           backup.toJsonString(),
           200,
-          headers: const <String, String>{
-            'content-type': 'application/json',
-          },
+          headers: const <String, String>{'content-type': 'application/json'},
         );
       }
 
-      if (request.method == 'GET' &&
-          request.url.path.endsWith('/files')) {
+      if (request.method == 'GET' && request.url.path.endsWith('/files')) {
         expect(request.url.queryParameters['q'], contains(filename));
         reconciled = true;
         return http.Response(
@@ -185,9 +181,7 @@ void main() {
             ],
           }),
           200,
-          headers: const <String, String>{
-            'content-type': 'application/json',
-          },
+          headers: const <String, String>{'content-type': 'application/json'},
         );
       }
 
@@ -198,10 +192,7 @@ void main() {
     });
 
     final store = GoogleDriveAppDataStore(_TestGateway(client));
-    final written = await store.write(
-      backup,
-      allowInteractive: false,
-    );
+    final written = await store.write(backup, allowInteractive: false);
 
     expect(createAttempts, 1);
     expect(reconciled, isTrue);
@@ -233,8 +224,6 @@ class _TestGateway extends GoogleSignInGateway {
   final http.Client client;
 
   @override
-  Future<http.Client?> authorizeDrive({
-    required bool allowInteractive,
-  }) async =>
+  Future<http.Client?> authorizeDrive({required bool allowInteractive}) async =>
       client;
 }

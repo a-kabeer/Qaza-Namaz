@@ -149,27 +149,26 @@ class _RetryingDriveClient extends http.BaseClient {
   static http.StreamedResponse _restoreResponse(
     http.StreamedResponse response,
     List<int> bytes,
-  ) =>
-      http.StreamedResponse(
-        Stream<List<int>>.value(bytes),
-        response.statusCode,
-        request: response.request,
-        headers: response.headers,
-        reasonPhrase: response.reasonPhrase,
-        isRedirect: response.isRedirect,
-        persistentConnection: response.persistentConnection,
-        contentLength: bytes.length,
-      );
+  ) => http.StreamedResponse(
+    Stream<List<int>>.value(bytes),
+    response.statusCode,
+    request: response.request,
+    headers: response.headers,
+    reasonPhrase: response.reasonPhrase,
+    isRedirect: response.isRedirect,
+    persistentConnection: response.persistentConnection,
+    contentLength: bytes.length,
+  );
 
   static Duration? _retryDelay(
     int attempt, {
     String? retryAfter,
     required DateTime deadline,
   }) {
-    final requested = _parseRetryAfter(retryAfter) ??
+    final requested =
+        _parseRetryAfter(retryAfter) ??
         Duration(
-          milliseconds:
-              (500 * (1 << attempt)) + _driveRetryRandom.nextInt(251),
+          milliseconds: (500 * (1 << attempt)) + _driveRetryRandom.nextInt(251),
         );
     final remaining = deadline.difference(DateTime.now());
     if (remaining <= Duration.zero || requested > remaining) return null;
@@ -197,21 +196,19 @@ class GoogleDriveAppDataStore
   @override
   Future<CloudRemoteMetadata?> latestMetadata({
     required bool allowInteractive,
-  }) =>
-      _withDrive<CloudRemoteMetadata?>(
-        allowInteractive: allowInteractive,
-        action: (driveApi, _) => _latestMetadata(driveApi),
-      );
+  }) => _withDrive<CloudRemoteMetadata?>(
+    allowInteractive: allowInteractive,
+    action: (driveApi, _) => _latestMetadata(driveApi),
+  );
 
   @override
   Future<CloudRemoteSnapshot> download(
     CloudRemoteMetadata metadata, {
     required bool allowInteractive,
-  }) =>
-      _withDrive<CloudRemoteSnapshot>(
-        allowInteractive: allowInteractive,
-        action: (driveApi, _) => _downloadBackup(driveApi, metadata),
-      );
+  }) => _withDrive<CloudRemoteSnapshot>(
+    allowInteractive: allowInteractive,
+    action: (driveApi, _) => _downloadBackup(driveApi, metadata),
+  );
 
   Future<CloudRemoteMetadata?> _latestMetadata(drive.DriveApi driveApi) async {
     final response = await _retryReadAfterTransportFailure(
@@ -281,8 +278,8 @@ class GoogleDriveAppDataStore
     }
     return CloudRemoteSnapshot(
       fileId: metadata.fileId,
-      remoteVersion: metadata.remoteVersion ??
-          backup.lineage.createdAt.toIso8601String(),
+      remoteVersion:
+          metadata.remoteVersion ?? backup.lineage.createdAt.toIso8601String(),
       modifiedAt: metadata.modifiedAt ?? backup.lineage.createdAt,
       backup: backup,
     );
@@ -293,62 +290,62 @@ class GoogleDriveAppDataStore
     CloudBackup backup, {
     required bool allowInteractive,
     CloudBackupProgressCallback? onProgress,
-  }) =>
-      _withDrive<CloudRemoteSnapshot>(
-        allowInteractive: allowInteractive,
-        action: (driveApi, client) async {
-          final bytes = utf8.encode(backup.toJsonString());
-          final fileName =
-              cloudBackupFilePrefix + backup.lineage.backupId + '.json';
+  }) => _withDrive<CloudRemoteSnapshot>(
+    allowInteractive: allowInteractive,
+    action: (driveApi, client) async {
+      final bytes = utf8.encode(backup.toJsonString());
+      final fileName =
+          cloudBackupFilePrefix + backup.lineage.backupId + '.json';
 
-          drive.File created;
-          try {
-            created = await _createWithRateLimitRetries(
-              driveApi,
-              client,
-              backup: backup,
-              fileName: fileName,
-              bytes: bytes,
-              onProgress: onProgress,
-            );
-          } catch (error) {
-            if (!_isAmbiguousUploadFailure(error)) rethrow;
-            final recovered = await _reconcileAmbiguousUpload(
-              driveApi,
-              backup: backup,
-              fileName: fileName,
-            );
-            if (recovered != null) return recovered;
-            throw CloudDriveRequestException(
-              'Google Drive could not confirm whether the backup finished. Your local data is safe; tap Back up now again to check the remote status before retrying.',
-              error,
-            );
-          }
+      drive.File created;
+      try {
+        created = await _createWithRateLimitRetries(
+          driveApi,
+          client,
+          backup: backup,
+          fileName: fileName,
+          bytes: bytes,
+          onProgress: onProgress,
+        );
+      } catch (error) {
+        if (!_isAmbiguousUploadFailure(error)) rethrow;
+        final recovered = await _reconcileAmbiguousUpload(
+          driveApi,
+          backup: backup,
+          fileName: fileName,
+        );
+        if (recovered != null) return recovered;
+        throw CloudDriveRequestException(
+          'Google Drive could not confirm whether the backup finished. Your local data is safe; tap Back up now again to check the remote status before retrying.',
+          error,
+        );
+      }
 
-          final fileId = created.id;
-          if (fileId == null || fileId.isEmpty) {
-            final recovered = await _reconcileAmbiguousUpload(
-              driveApi,
-              backup: backup,
-              fileName: fileName,
-            );
-            if (recovered != null) return recovered;
-            throw CloudDriveRequestException(
-              'Google Drive did not confirm the uploaded backup. Your local data is safe; retry after checking the connection.',
-              StateError('Drive create response did not include a file ID.'),
-            );
-          }
+      final fileId = created.id;
+      if (fileId == null || fileId.isEmpty) {
+        final recovered = await _reconcileAmbiguousUpload(
+          driveApi,
+          backup: backup,
+          fileName: fileName,
+        );
+        if (recovered != null) return recovered;
+        throw CloudDriveRequestException(
+          'Google Drive did not confirm the uploaded backup. Your local data is safe; retry after checking the connection.',
+          StateError('Drive create response did not include a file ID.'),
+        );
+      }
 
-          final metadata = _metadataFromFile(created);
-          return CloudRemoteSnapshot(
-            fileId: fileId,
-            remoteVersion: metadata.remoteVersion ??
-                backup.lineage.createdAt.toIso8601String(),
-            modifiedAt: metadata.modifiedAt ?? backup.lineage.createdAt,
-            backup: backup,
-          );
-        },
+      final metadata = _metadataFromFile(created);
+      return CloudRemoteSnapshot(
+        fileId: fileId,
+        remoteVersion:
+            metadata.remoteVersion ??
+            backup.lineage.createdAt.toIso8601String(),
+        modifiedAt: metadata.modifiedAt ?? backup.lineage.createdAt,
+        backup: backup,
       );
+    },
+  );
 
   Future<drive.File> _createWithRateLimitRetries(
     drive.DriveApi driveApi,
@@ -365,24 +362,26 @@ class GoogleDriveAppDataStore
         if (remaining <= Duration.zero) {
           throw TimeoutException('Google Drive upload retry budget exhausted.');
         }
-        return await driveApi.files.create(
-          drive.File()
-            ..name = fileName
-            ..mimeType = 'application/json'
-            ..parents = <String>['appDataFolder']
-            ..appProperties = <String, String>{
-              'backup_id': backup.lineage.backupId,
-              'device_id': backup.lineage.deviceId,
-              'base_backup_id': backup.lineage.baseBackupId ?? '',
-              'db_revision': backup.lineage.dbRevision.toString(),
-            },
-          uploadMedia: drive.Media(
-            cloudUploadProgressStream(bytes, onProgress: onProgress),
-            bytes.length,
-            contentType: 'application/json',
-          ),
-          $fields: 'id,name,modifiedTime,version,md5Checksum,appProperties',
-        ).timeout(remaining);
+        return await driveApi.files
+            .create(
+              drive.File()
+                ..name = fileName
+                ..mimeType = 'application/json'
+                ..parents = <String>['appDataFolder']
+                ..appProperties = <String, String>{
+                  'backup_id': backup.lineage.backupId,
+                  'device_id': backup.lineage.deviceId,
+                  'base_backup_id': backup.lineage.baseBackupId ?? '',
+                  'db_revision': backup.lineage.dbRevision.toString(),
+                },
+              uploadMedia: drive.Media(
+                cloudUploadProgressStream(bytes, onProgress: onProgress),
+                bytes.length,
+                contentType: 'application/json',
+              ),
+              $fields: 'id,name,modifiedTime,version,md5Checksum,appProperties',
+            )
+            .timeout(remaining);
       } catch (error) {
         if (!_isExplicitRateLimit(error) || attempt >= _maxDriveRetries) {
           rethrow;
@@ -456,8 +455,7 @@ class GoogleDriveAppDataStore
           rethrow;
         }
         final delay = Duration(
-          milliseconds:
-              (500 * (1 << attempt)) + _driveRetryRandom.nextInt(251),
+          milliseconds: (500 * (1 << attempt)) + _driveRetryRandom.nextInt(251),
         );
         if (delay > deadline.difference(DateTime.now())) rethrow;
         await Future<void>.delayed(delay);
@@ -467,10 +465,7 @@ class GoogleDriveAppDataStore
 
   Future<T> _withDrive<T>({
     required bool allowInteractive,
-    required Future<T> Function(
-      drive.DriveApi,
-      _RetryingDriveClient,
-    ) action,
+    required Future<T> Function(drive.DriveApi, _RetryingDriveClient) action,
   }) async {
     final client = await _auth.authorizeDrive(
       allowInteractive: allowInteractive,

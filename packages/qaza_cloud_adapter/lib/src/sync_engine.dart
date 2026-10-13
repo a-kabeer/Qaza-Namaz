@@ -159,8 +159,8 @@ class CloudSyncEngine {
       );
     }
 
-    final remoteChanged = remoteMetadata != null &&
-            !remoteMetadata.hasAuthoritativeVersion
+    final remoteChanged =
+        remoteMetadata != null && !remoteMetadata.hasAuthoritativeVersion
         ? true
         : metadataMatchesCursor
         ? false

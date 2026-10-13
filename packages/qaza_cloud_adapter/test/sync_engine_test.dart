@@ -1162,10 +1162,7 @@ class FakeState implements CloudSyncStateStore {
 
 class FakeMetadataRemote extends FakeRemote
     implements CloudRemoteMetadataStore {
-  FakeMetadataRemote({
-    required super.latestSnapshot,
-    required this.metadata,
-  });
+  FakeMetadataRemote({required super.latestSnapshot, required this.metadata});
 
   final CloudRemoteMetadata? metadata;
   int metadataCount = 0;
