@@ -983,5 +983,151 @@
   "prayerTimeNoCities": "لا توجد مدن مطابقة",
   "prayerTimeSettings": "إعدادات مواقيت الصلاة",
   "prayerTimeLocationData": "بيانات الموقع",
-  "settingsLicensesSoftwareTitle": "تراخيص البرامج مفتوحة المصدر"
+  "settingsLicensesSoftwareTitle": "تراخيص البرامج مفتوحة المصدر",
+  "settingsLicensesSoftwareSubtitle": "إشعارات تراخيص البرامج المضمّنة في التطبيق.",
+  "settingsLicensesGeoNamesTitle": "بيانات المدن من GeoNames",
+  "settingsLicensesGeoNamesSubtitle": "مصدر بيانات المدن غير المتصلة بالإنترنت.",
+  "prayerTimeLocationDataAttribution": "مصدر بيانات الموقع",
+  "prayerTimeUpdated": "تم تحديث مواقيت الصلاة.",
+  "prayerTimeNoSchedule": "لا يوجد جدول لمواقيت الصلاة.",
+  "prayerTimeSetupTitle": "إعداد مواقيت الصلاة",
+  "prayerTimeSetupBody": "اختر موقعك وطريقة الحساب لعرض مواقيت الصلاة الصحيحة.",
+  "prayerTimeRefresh": "تحديث",
+  "prayerTimeEndsIn": "ينتهي بعد {time}",
+  "@prayerTimeEndsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "prayerTimeRemaining": "الوقت المتبقي {time}",
+  "@prayerTimeRemaining": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "prayerTimeStartsIn": "يبدأ بعد {time}",
+  "@prayerTimeStartsIn": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "prayerTimeNextRestricted": "وقت النهي التالي",
+  "prayerTimeUsingSavedLocation": "استخدام الموقع المحفوظ",
+  "prayerTimeAngleHint": "تُستخدم الزوايا لتحديد مواقيت الفجر والعشاء.",
+  "prayerTimeAdjustmentMinutes": "التعديل بالدقائق",
+  "prayerTimeSunrise": "الشروق",
+  "prayerTimeZawal": "الزوال",
+  "prayerTimeSunset": "الغروب",
+  "prayerTimeFajr": "الفجر",
+  "prayerTimeDhuhr": "الظهر",
+  "prayerTimeAsr": "العصر",
+  "prayerTimeMaghrib": "المغرب",
+  "prayerTimeIsha": "العشاء",
+  "qiblaTitle": "اتجاه القبلة",
+  "qiblaDirection": "اتجاه القبلة",
+  "qiblaBearing": "زاوية الاتجاه",
+  "qiblaFromTrueNorth": "من الشمال الحقيقي",
+  "qiblaUnavailable": "اتجاه القبلة غير متاح.",
+  "qiblaLocationRequired": "حدد موقعك لمعرفة اتجاه القبلة.",
+  "qiblaCompassBody": "حرّك جهازك حتى يشير المؤشر إلى اتجاه القبلة.",
+  "qiblaSensorUnavailableBody": "لا يتوفر مستشعر البوصلة على هذا الجهاز.",
+  "qiblaHeadingUnavailable": "تعذر تحديد اتجاه الجهاز.",
+  "qiblaTurnToDirection": "استدر باتجاه القبلة",
+  "qiblaCompassAccuracy": "دقة البوصلة",
+  "qiblaCalibrationHint": "عاير البوصلة بتحريك الجهاز على شكل الرقم 8.",
+  "accountAutomaticBackup": "النسخ الاحتياطي التلقائي",
+  "accountBackupStatusChecking": "جارٍ التحقق من حالة النسخ الاحتياطي…",
+  "accountBackupStatusDisabled": "النسخ الاحتياطي التلقائي متوقف",
+  "accountBackupStatusBackedUp": "تم حفظ نسخة احتياطية",
+  "accountBackupStatusBackingUp": "جارٍ إنشاء نسخة احتياطية…",
+  "accountBackupStatusPending": "توجد تغييرات بانتظار النسخ الاحتياطي",
+  "accountBackupStatusWaitingConnection": "بانتظار الاتصال",
+  "accountBackupStatusComplete": "اكتمل النسخ الاحتياطي",
+  "accountBackupStatusCompletedAt": "اكتمل في {timestamp}",
+  "accountBackupStatusWaitingConnectionMessage": "سيتم النسخ الاحتياطي عند عودة الاتصال.",
+  "accountBackupStatusFailedTitle": "فشل النسخ الاحتياطي",
+  "accountBackupStatusFailedMessage": "تعذر إنشاء النسخة الاحتياطية. بياناتك المحلية آمنة.",
+  "accountBackupStatusAuthRequired": "سجّل الدخول لتفعيل النسخ الاحتياطي.",
+  "accountBackupStatusSecurityRejected": "تم رفض طلب النسخ الاحتياطي لأسباب أمنية.",
+  "accountBackupStatusNetwork": "تعذر الاتصال بالخدمة. ستتم إعادة المحاولة تلقائيًا.",
+  "accountBackupStatusCloudStateInvalid": "حالة النسخة الاحتياطية السحابية غير صالحة.",
+  "accountBackupStatusFailedAutomaticRetry": "فشل النسخ الاحتياطي. ستتم إعادة المحاولة تلقائيًا.",
+  "accountBackupStatusRetry": "إعادة المحاولة",
+  "accountBackupStatusFailed": "فشل النسخ الاحتياطي",
+  "startupProfileLoadErrorTitle": "تعذر تحميل الملف الشخصي",
+  "startupProfileLoadErrorMessage": "تعذر تحميل بيانات ملفك الشخصي. حاول مرة أخرى.",
+  "qazaHistoryTitle": "سجل القضاء",
+  "qazaHistoryRecentAdditions": "الإضافات الأخيرة",
+  "qazaHistoryRecentlyDeleted": "المحذوفة مؤخرًا",
+  "qazaHistoryNoAdditions": "لا توجد إضافات حديثة.",
+  "qazaHistoryNoRecentlyDeleted": "لا توجد سجلات محذوفة مؤخرًا.",
+  "qazaHistoryLoadMore": "تحميل المزيد",
+  "qazaHistoryOriginalDateUnavailable": "التاريخ الأصلي غير متاح",
+  "qazaHistoryDeletedQaza": "سجل قضاء محذوف",
+  "qazaHistoryDeletedQazaCount": "{count} سجلات قضاء محذوفة",
+  "@qazaHistoryDeletedQazaCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaHistoryRestore": "استعادة",
+  "qazaHistoryRestoreSuccess": "تمت استعادة سجل القضاء.",
+  "qazaHistoryRestoreConflict": "تعذرت الاستعادة لأن سجلًا مماثلًا موجود بالفعل.",
+  "qazaAdditionTitle": "تفاصيل إضافة القضاء",
+  "qazaAdditionNotFound": "لم يتم العثور على سجل الإضافة.",
+  "qazaAdditionRecordsCount": "عدد السجلات: {count}",
+  "@qazaAdditionRecordsCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaAdditionNoPrayers": "لا توجد صلوات ضمن هذه الإضافة.",
+  "qazaAdditionViewRecords": "عرض السجلات",
+  "qazaAdditionMoreActions": "المزيد من الإجراءات",
+  "qazaAdditionEdit": "تعديل الإضافة",
+  "qazaAdditionDelete": "حذف الإضافة",
+  "qazaAdditionDeleteConfirmTitle": "حذف إضافة القضاء؟",
+  "qazaAdditionDeleteConfirmMessage": "سيؤدي هذا إلى حذف سجل الإضافة. لن تُحذف سجلات القضاء الفردية إلا إذا تم تأكيد ذلك صراحةً.",
+  "qazaAdditionDeletedNothing": "لم يتم حذف أي سجلات.",
+  "qazaAdditionDeletedCount": "تم حذف {count} سجلًا.",
+  "@qazaAdditionDeletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaAdditionRestoredCount": "تمت استعادة {count} سجلًا.",
+  "@qazaAdditionRestoredCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaTrackerHistoryTooltip": "عرض سجل الإضافات",
+  "qazaTrackerAdditionProgress": "الإضافة {current} من {total}",
+  "qazaTrackerSelectionHint": "حدد السجلات لإكمالها معًا.",
+  "qazaTrackerSwipeHint": "اسحب السجل لإكماله.",
+  "qazaMarkSelectedPendingTitle": "إعادة السجلات المحددة إلى حالة الانتظار؟",
+  "qazaMarkSelectedPendingMessage": "ستُعاد السجلات المحددة إلى حالة قيد الانتظار.",
+  "qazaMarkAsPending": "وضع علامة قيد الانتظار",
+  "qazaMarkAsPendingCount": "إعادة {count} سجلًا إلى حالة الانتظار",
+  "@qazaMarkAsPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }
