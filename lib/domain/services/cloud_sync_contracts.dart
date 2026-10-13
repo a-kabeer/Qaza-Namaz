@@ -88,11 +88,16 @@ enum CloudBackupFrequency {
   final Duration interval;
 }
 
-enum CloudBackupProgressStage { preparing, uploading, completed }
+enum CloudBackupProgressStage { checking, preparing, uploading, completed }
 
-/// Progress from the upload stream. The UI must not show 100% until Drive
-/// returns successfully for the complete remote write.
+/// Progress from the cloud backup flow. The UI must not show 100% until Drive
+/// confirms the complete remote write and sync-state persistence succeeds.
 class CloudBackupProgress {
+  const CloudBackupProgress.checking()
+      : stage = CloudBackupProgressStage.checking,
+        sentBytes = 0,
+        totalBytes = 0;
+
   const CloudBackupProgress.preparing()
       : stage = CloudBackupProgressStage.preparing,
         sentBytes = 0,
