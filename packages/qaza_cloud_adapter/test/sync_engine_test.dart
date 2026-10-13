@@ -300,7 +300,7 @@ void main() {
             baseBackupId: null,
             revision: 10,
             modifiedAt: DateTime.utc(2026, 10, 8),
-            remoteVersion: '1',
+            remoteVersion: '2026-10-08T00:00:00.000Z',
           ),
           metadata: const CloudRemoteMetadata(
             fileId: 'file-backup-100',
