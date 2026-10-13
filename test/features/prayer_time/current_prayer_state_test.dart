@@ -104,7 +104,7 @@ void main() {
     expect(state, isNull);
   });
 
-  test('before Fajr, the next boundary belongs to the current local day', () {
+  test('before Fajr, Isha remains focus phase and Fajr is next boundary', () {
     final snapshot = makeSnapshot(
       DateTime(2026, 10, 11),
       DateTime(2026, 10, 12),
@@ -117,6 +117,7 @@ void main() {
 
     expect(state, isNotNull);
     expect(state!.current, isNull);
+    expect(state.focusPrayer, PrayerSlot.isha);
     expect(state.next, PrayerSlot.fajr);
     expect(state.nextAt, tz.TZDateTime(karachi, 2026, 10, 11, 5));
   });
