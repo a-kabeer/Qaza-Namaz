@@ -159,7 +159,6 @@ class _RetryingDriveClient extends http.BaseClient {
         isRedirect: response.isRedirect,
         persistentConnection: response.persistentConnection,
         contentLength: bytes.length,
-        protocolVersion: response.protocolVersion,
       );
 
   static Duration? _retryDelay(
