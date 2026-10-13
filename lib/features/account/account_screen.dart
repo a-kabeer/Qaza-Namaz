@@ -712,16 +712,16 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                         progress.stage == CloudBackupProgressStage.completed;
                     final fraction =
                         checking || preparing || progress.totalBytes <= 0
-                        ? 0.0
-                        : (progress.sentBytes / progress.totalBytes)
-                              .clamp(0.0, completed ? 1.0 : 0.99)
-                              .toDouble();
+                            ? 0.0
+                            : (progress.sentBytes / progress.totalBytes)
+                                .clamp(0.0, completed ? 1.0 : 0.99)
+                                .toDouble();
                     final percent =
                         checking || preparing || progress.totalBytes <= 0
-                        ? 0
-                        : (progress.sentBytes * 100 / progress.totalBytes)
-                              .floor()
-                              .clamp(0, completed ? 100 : 99);
+                            ? 0
+                            : (progress.sentBytes * 100 / progress.totalBytes)
+                                .floor()
+                                .clamp(0, completed ? 100 : 99);
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -734,13 +734,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                                   ? (_isUrdu
                                       ? 'بیک اپ تیار کیا جا رہا ہے…'
                                       : 'Preparing backup…')
-                                      : completed
+                                  : completed
                                       ? (_isUrdu
                                           ? 'بیک اپ مکمل ہو گیا'
                                           : 'Backup completed')
                                       : (_isUrdu
-                                      ? 'گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے'
-                                      : 'Uploading backup to Google Drive'),
+                                          ? 'گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے'
+                                          : 'Uploading backup to Google Drive'),
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 6),
