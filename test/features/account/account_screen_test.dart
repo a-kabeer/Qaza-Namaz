@@ -69,6 +69,7 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
 
   CloudSyncSnapshot snapshot;
   Completer<CloudSyncSnapshot>? backupCompleter;
+  Completer<CloudSyncSnapshot>? settingsCompleter;
   CloudSyncSnapshot? backupResult;
   Object? backupError;
   bool emitBackupProgress = true;
@@ -117,6 +118,8 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
   @override
   Future<CloudSyncSnapshot> setAutomaticSyncEnabled(bool enabled) async {
     snapshot = _withSettings(automaticSyncEnabled: enabled);
+    final pending = settingsCompleter;
+    if (pending != null) snapshot = await pending.future;
     return snapshot;
   }
 
@@ -432,6 +435,104 @@ void main() {
       expect(find.byType(LinearProgressIndicator), findsNothing);
       expect(find.textContaining('Synthetic backup exception'), findsOneWidget);
       expect(find.text('Back up now'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'Backup Now shows checking feedback immediately while remote check is pending',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          displayName: 'A Test User',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(status: CloudSyncStatus.idle),
+      )
+        ..emitBackupProgress = false
+        ..backupCompleter = Completer<CloudSyncSnapshot>();
+      final container = ProviderContainer(
+        overrides: [
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Back up now'));
+      await tester.pump();
+
+      expect(find.text('Checking backup…'), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+
+      cloudSync.backupCompleter!.complete(
+        const CloudSyncSnapshot(status: CloudSyncStatus.synced),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Checking backup…'), findsNothing);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'automatic-backup setting updates do not show Backup Now loading visuals',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          displayName: 'A Test User',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(
+          status: CloudSyncStatus.idle,
+          automaticSyncEnabled: true,
+        ),
+      )..settingsCompleter = Completer<CloudSyncSnapshot>();
+      final container = ProviderContainer(
+        overrides: [
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('account_daily_cloud_backup')));
+      await tester.pump();
+
+      expect(find.text('Back up now'), findsOneWidget);
+      expect(find.text('Working…'), findsNothing);
+      expect(find.byIcon(Icons.backup_rounded), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+
+      cloudSync.settingsCompleter!.complete(
+        const CloudSyncSnapshot(
+          status: CloudSyncStatus.idle,
+          automaticSyncEnabled: false,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Back up now'), findsOneWidget);
+      expect(find.byIcon(Icons.backup_rounded), findsOneWidget);
     },
   );
 
