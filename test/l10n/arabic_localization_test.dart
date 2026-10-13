@@ -12,12 +12,16 @@ void main() {
     final l10n = lookupAppLocalizations(const Locale('ar'));
     expect(l10n.navHome, 'الرئيسية');
     expect(l10n.prayerFajr, 'الفجر');
+    expect(l10n.homeDailyProgress(1, 5), 'تم إكمال 1 من أصل 5');
+    expect(l10n.qazaCompletedCount(0), 'لم يتم إكمال أي قضاء.');
   });
 
   test('Arabic uses Noto Sans Arabic and Urdu keeps Nastaliq', () {
     final arabicTheme = AppTheme.light(locale: const Locale('ar'));
+    final darkArabicTheme = AppTheme.dark(locale: const Locale('ar'));
     final urduTheme = AppTheme.light(locale: const Locale('ur'));
     expect(arabicTheme.textTheme.bodyMedium?.fontFamily, 'Noto Sans Arabic');
+    expect(darkArabicTheme.textTheme.bodyMedium?.fontFamily, 'Noto Sans Arabic');
     expect(urduTheme.textTheme.bodyMedium?.fontFamily, AppTheme.urduFamily);
   });
 
