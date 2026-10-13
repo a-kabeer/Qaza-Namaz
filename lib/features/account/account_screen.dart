@@ -699,7 +699,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                   ),
                 ),
               ),
-              if (_busy && _backupProgress != null) ...[
+              if (_backupBusy && _backupProgress != null) ...[
                 const SizedBox(height: 12),
                 Builder(
                   builder: (context) {
@@ -710,16 +710,18 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                         progress.stage == CloudBackupProgressStage.preparing;
                     final completed =
                         progress.stage == CloudBackupProgressStage.completed;
-                    final fraction = checking || preparing || progress.totalBytes <= 0
+                    final fraction =
+                        checking || preparing || progress.totalBytes <= 0
                         ? 0.0
                         : (progress.sentBytes / progress.totalBytes)
-                            .clamp(0.0, completed ? 1.0 : 0.99)
-                            .toDouble();
-                    final percent = checking || preparing || progress.totalBytes <= 0
+                              .clamp(0.0, completed ? 1.0 : 0.99)
+                              .toDouble();
+                    final percent =
+                        checking || preparing || progress.totalBytes <= 0
                         ? 0
                         : (progress.sentBytes * 100 / progress.totalBytes)
-                            .floor()
-                            .clamp(0, completed ? 100 : 99);
+                              .floor()
+                              .clamp(0, completed ? 100 : 99);
                     return Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
@@ -732,18 +734,19 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                                   ? (_isUrdu
                                       ? 'بیک اپ تیار کیا جا رہا ہے…'
                                       : 'Preparing backup…')
-                                  : completed
-                                  ? (_isUrdu
-                                      ? 'بیک اپ مکمل ہو گیا'
-                                      : 'Backup completed')
-                                  : (_isUrdu
+                                      : completed
+                                      ? (_isUrdu
+                                          ? 'بیک اپ مکمل ہو گیا'
+                                          : 'Backup completed')
+                                      : (_isUrdu
                                       ? 'گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے'
                                       : 'Uploading backup to Google Drive'),
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 6),
                         LinearProgressIndicator(
-                            value: checking || preparing ? null : fraction),
+                          value: checking || preparing ? null : fraction,
+                        ),
                         if (!checking && !preparing) ...[
                           const SizedBox(height: 4),
                           Text(
