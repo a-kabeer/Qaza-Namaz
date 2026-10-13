@@ -19,6 +19,15 @@ class CurrentPrayerState {
   final PrayerSlot? next;
   final DateTime? currentStartedAt;
   final DateTime? nextAt;
+
+  /// Prayer phase shown in the Prayer Time focus card.
+  ///
+  /// Before today's Fajr, Isha remains the overnight phase even though no
+  /// prayer has started yet on the current local date. Keep [current] null in
+  /// that interval so consumers such as Home Qaza targeting still resolve to
+  /// the upcoming Fajr prayer.
+  PrayerSlot? get focusPrayer =>
+      current ?? (next == PrayerSlot.fajr ? PrayerSlot.isha : next);
 }
 
 DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
