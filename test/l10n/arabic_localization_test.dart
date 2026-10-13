@@ -14,6 +14,12 @@ void main() {
     expect(l10n.prayerFajr, 'الفجر');
     expect(l10n.homeDailyProgress(1, 5), 'تم إكمال 1 من أصل 5');
     expect(l10n.qazaCompletedCount(0), 'لم يتم إكمال أي قضاء.');
+    expect(l10n.prayerTimeNextRestricted('العصر'), 'وقت النهي التالي: العصر');
+    expect(l10n.qazaHistoryRestoreSuccess(1), 'تمت استعادة سجل قضاء واحد.');
+    expect(
+      l10n.qazaHistoryRestoreConflict(2, 1),
+      'تمت استعادة 2 سجلًا وتخطي 1 سجلات لوجودها مسبقًا.',
+    );
   });
 
   test('Arabic uses Noto Sans Arabic and Urdu keeps Nastaliq', () {
