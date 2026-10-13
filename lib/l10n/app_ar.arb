@@ -1129,5 +1129,149 @@
         "type": "int"
       }
     }
-  }
+  },
+  "qazaNoCompletedTitle": "لا توجد صلوات قضاء مكتملة",
+  "qazaNoCompletedMessage": "ستظهر صلوات القضاء المكتملة هنا.",
+  "qazaReturnedToPending": "أُعيد سجل القضاء إلى حالة قيد الانتظار.",
+  "qazaSelectedPendingNothingChanged": "لم يتم تغيير أي من سجلات القضاء المحددة.",
+  "qazaCorrectionChanged": "تعذر تصحيح سجل القضاء هذا لأنه قد تغيّر.",
+  "qazaFilter": "تصفية",
+  "qazaFiltersActive": "التصفية مفعّلة",
+  "qazaOriginalDateLabel": "تاريخ الصلاة الفائتة",
+  "qazaCompletedDateLabel": "تاريخ الإكمال",
+  "qazaFilterCompletedDateHelp": "تصفية حسب تاريخ الإكمال",
+  "qazaUndoCompletions": "التراجع عن الإكمال",
+  "qazaUndoSelected": "التراجع عن المحدد",
+  "qazaUndoAll": "التراجع عن الكل",
+  "qazaUndoQazaCount": "{count} قضاء",
+  "@qazaUndoQazaCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "addQazaManageAddition": "إدارة هذه الإضافة",
+  "qazaCompletionSingle": "تم إكمال قضاء {prayer} بتاريخ {date}.",
+  "@qazaCompletionSingle": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaCompletionMultiple": "تم إكمال {count} من سجلات القضاء.",
+  "@qazaCompletionMultiple": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaUndoSingle": "تمت استعادة قضاء {prayer} بتاريخ {date}.",
+  "@qazaUndoSingle": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      },
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "qazaUndoMultiple": "تمت استعادة {count} من سجلات القضاء.",
+  "@qazaUndoMultiple": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaUndoExpired": "لم يعد التراجع متاحًا لانتهاء مهلة الخمس ثوانٍ.",
+  "qazaUndoStaleBatch": "لم يعد التراجع متاحًا لأن إجراء تراجع أحدث قد حلّ محله.",
+  "qazaUndoTargetChanged": "لم يعد التراجع متاحًا لأن سجل القضاء تغيّر أو أُزيل.",
+  "qazaUndoFailed": "تعذر التراجع عن العملية. حاول مرة أخرى.",
+  "qazaMarkAsPendingMessage": "سيعود سجل القضاء هذا إلى حالة قيد الانتظار ولن يُحتسب مكتملًا.",
+  "commonDelete": "حذف",
+  "qazaRequestedSlots": "{count} خانات مطلوبة",
+  "@qazaRequestedSlots": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "qazaAdditionUpdated": "تم تحديث إضافة القضاء",
+  "qazaSelectedCount": "{count, plural, =1{تم تحديد عنصر واحد} other{تم تحديد {count} عناصر}}",
+  "@qazaSelectedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dataImportRestored": "تمت استعادة النسخة الاحتياطية بنجاح. تمت استعادة {count} سجلات قضاء.",
+  "@dataImportRestored": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dataImportRestoreSummary": "تحتوي هذه النسخة الاحتياطية على {records} سجلات قضاء و{accounts} حسابات محلية.\n\nستؤدي الاستعادة إلى استبدال بيانات التطبيق المحلية الحالية على هذا الجهاز. ستبقى هوية الجهاز على هذا الجهاز.\n\nمراجعة النسخة الاحتياطية: {revision}\nإعداد الحساب: {onboarding}",
+  "@dataImportRestoreSummary": {
+    "placeholders": {
+      "records": {
+        "type": "int"
+      },
+      "accounts": {
+        "type": "int"
+      },
+      "revision": {
+        "type": "int"
+      },
+      "onboarding": {
+        "type": "String"
+      }
+    }
+  },
+  "dataImportOnboardingComplete": "مكتمل",
+  "dataImportOnboardingIncomplete": "غير مكتمل",
+  "dataLocalOnlyNote": "نسخة احتياطية محلية فقط. تبقى بيانات القضاء على هذا الجهاز ما لم تصدّرها صراحةً.",
+  "cloudBackupTitle": "النسخ الاحتياطي السحابي",
+  "cloudBackupDescription": "احتفظ بنسخة احتياطية منفصلة من تقدم القضاء في بيانات تطبيقك على Google Drive.",
+  "cloudConnect": "ربط Google",
+  "cloudDisconnect": "فصل الحساب",
+  "cloudConnected": "متصل",
+  "cloudNotConnected": "اربط حساب Google لنسخ تقدمك احتياطيًا.",
+  "cloudBackupNow": "نسخ احتياطي الآن",
+  "cloudAutomaticBackup": "النسخ الاحتياطي التلقائي",
+  "cloudLastBackup": "آخر نسخة احتياطية ناجحة",
+  "cloudNeverBackedUp": "لم يتم إنشاء نسخة احتياطية بعد",
+  "cloudBackupSucceeded": "اكتملت النسخة الاحتياطية/المزامنة السحابية.",
+  "cloudBackupUpToDate": "النسخة الاحتياطية محدّثة بالفعل.",
+  "cloudBackupConflictTitle": "تم العثور على تغييرات مختلفة",
+  "cloudBackupConflictMessage": "توجد بيانات مختلفة على هذا الجهاز وفي Google Drive. اختر النسخة التي تريد الاحتفاظ بها.",
+  "cloudKeepLocal": "الاحتفاظ ببيانات هذا الجهاز",
+  "cloudUseRemote": "الاستعادة من Google Drive",
+  "cloudKeepLocalConfirmTitle": "الاحتفاظ بتقدم هذا الجهاز؟",
+  "cloudKeepLocalConfirmMessage": "سيتم إنشاء نسخة احتياطية سحابية جديدة من بيانات هذا الجهاز. ستبقى النسخة البعيدة الحالية في سجل النسخ.",
+  "cloudUseRemoteConfirmTitle": "استبدال التقدم المحلي؟",
+  "cloudUseRemoteConfirmMessage": "سيؤدي هذا إلى استبدال بيانات التطبيق المحلية الحالية بنسخة Google Drive الاحتياطية. ستُحفظ أولًا لقطة استرداد محلية مشفّرة.",
+  "cloudDisconnectConfirmTitle": "فصل Google؟",
+  "cloudDisconnectConfirmMessage": "سيتم تعطيل العمليات السحابية التلقائية. ستبقى بيانات القضاء على هذا الجهاز.",
+  "cloudRecoveryAvailable": "تتوفر لقطة استرداد محمية للبيانات المحلية السابقة.",
+  "cloudRecoverLocal": "استعادة البيانات المحلية السابقة",
+  "cloudRecoveryConfirmTitle": "استعادة البيانات المحلية السابقة؟",
+  "cloudRecoveryConfirmMessage": "ستستبدل اللقطة المحلية المحفوظة بيانات التطبيق الحالية على هذا الجهاز.",
+  "cloudAutomaticBackupRequiresConnection": "اربط Google قبل تفعيل النسخ الاحتياطي التلقائي.",
+  "cloudBackupWorking": "جارٍ إنشاء نسخة احتياطية…",
+  "cloudSetupChoiceTitle": "مرحبًا بك في قضاء الصلاة",
+  "cloudSetupChoiceDescription": "تابع صلواتك الفائتة ونظّم تقدمك في القضاء وفق وتيرتك. تبقى سجلاتك على هذا الجهاز. ويمكنك اختياريًا استخدام Google لنسخ تقدمك احتياطيًا واستعادته عبر الأجهزة.",
+  "cloudSetupUseGoogle": "المتابعة باستخدام Google",
+  "cloudSetupContinueLocal": "المتابعة على هذا الجهاز",
+  "cloudConnectionFailed": "تعذر إكمال الاتصال بـ Google. حاول مرة أخرى أو تابع محليًا."
 }
