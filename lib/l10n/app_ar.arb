@@ -1,0 +1,389 @@
+{
+  "@@locale": "ar",
+  "appTitle": "قضاء الصلاة",
+  "navHome": "الرئيسية",
+  "navQaza": "قضاء",
+  "navKnowledge": "المعرفة",
+  "navSettings": "الإعدادات",
+  "settingsRemindersSection": "التذكيرات",
+  "settingsRemindersSubtitle": "تذكير يومي بإكمال الصلوات الفائتة.",
+  "settingsBackupSection": "البيانات والتخزين",
+  "settingsBackupSubtitle": "المزامنة السحابية والتصدير والاستيراد.",
+  "prayerFajr": "الفجر",
+  "prayerZuhr": "الظهر",
+  "prayerAsr": "العصر",
+  "prayerMaghrib": "المغرب",
+  "prayerIsha": "العشاء",
+  "prayerWitr": "الوتر",
+  "statusPending": "قيد الانتظار",
+  "statusCompleted": "مكتملة",
+  "errorNetwork": "لا يوجد اتصال. حُفظت بيانات القضاء على هذا الجهاز وستتم مزامنتها عند عودة الاتصال.",
+  "errorTimeout": "استغرقت العملية وقتًا طويلًا. حاول مرة أخرى بعد قليل.",
+  "errorPermission": "يلزم منح الإذن لإتمام هذه العملية. افتح الإعدادات لمنحه.",
+  "errorAuthentication": "يجب تسجيل الدخول أولًا.",
+  "errorValidation": "البيانات المدخلة غير مقبولة. تحقق منها ثم حاول مرة أخرى.",
+  "errorMalformedData": "هذا الملف ليس نسخة احتياطية صالحة أو أنه تالف.",
+  "errorStorage": "تعذر حفظ التغيير على هذا الجهاز. أفرغ بعض المساحة ثم حاول مجددًا.",
+  "errorUnknown": "حدث خطأ غير متوقع.",
+  "commonOpenSettings": "فتح الإعدادات",
+  "qazaSortLabel": "الترتيب",
+  "qazaSortOldestFirst": "الأقدم أولًا",
+  "qazaSortNewestFirst": "الأحدث أولًا",
+  "filterAll": "الكل",
+  "commonRetry": "إعادة المحاولة",
+  "commonTotal": "الإجمالي",
+  "commonVersion": "الإصدار",
+  "stateErrorTitle": "حدث خطأ",
+  "prayerRakatFajr": "الفجر • ركعتان فرض",
+  "prayerRakatZuhr": "الظهر • أربع ركعات فرض",
+  "prayerRakatAsr": "العصر • أربع ركعات فرض",
+  "prayerRakatMaghrib": "المغرب • ثلاث ركعات فرض",
+  "prayerRakatIsha": "العشاء • أربع ركعات فرض",
+  "prayerRakatWitr": "الوتر • ثلاث ركعات واجبة",
+  "syncSettingUp": "جارٍ الإعداد",
+  "syncSettingUpDetail": "جارٍ تجهيز سجلات القضاء على هذا الجهاز.",
+  "syncRestoring": "جارٍ الاستعادة",
+  "syncRestoringDetail": "جارٍ استعادة سجلات القضاء المحفوظة إلى هذا الجهاز.",
+  "syncSynced": "تمت المزامنة",
+  "syncSyncing": "جارٍ المزامنة",
+  "syncSaved": "تم الحفظ",
+  "syncSavedDetail": "حُفظت تغييراتك على هذا الجهاز وستتم مزامنتها تلقائيًا.",
+  "syncErrorLabel": "خطأ في المزامنة",
+  "syncErrorDetail": "بياناتك محفوظة على هذا الجهاز. سنحاول المزامنة تلقائيًا.",
+  "commonClose": "إغلاق",
+  "commonCancel": "إلغاء",
+  "commonDone": "تم",
+  "commonReset": "إعادة تعيين",
+  "commonClear": "مسح",
+  "commonBack": "رجوع",
+  "commonContinue": "متابعة",
+  "commonLoading": "جارٍ التحميل...",
+  "commonToday": "اليوم",
+  "commonYesterday": "أمس",
+  "hijriMonthMuharram": "محرم",
+  "hijriMonthSafar": "صفر",
+  "hijriMonthRabiAlAwwal": "ربيع الأول",
+  "hijriMonthRabiAlThani": "ربيع الآخر",
+  "hijriMonthJumadaAlAwwal": "جمادى الأولى",
+  "hijriMonthJumadaAlThani": "جمادى الآخرة",
+  "hijriMonthRajab": "رجب",
+  "hijriMonthShaban": "شعبان",
+  "hijriMonthRamadan": "رمضان",
+  "hijriMonthShawwal": "شوال",
+  "hijriMonthDhulQadah": "ذو القعدة",
+  "hijriMonthDhulHijjah": "ذو الحجة",
+  "homeTitle": "الرئيسية",
+  "homeProfileTooltip": "الملف الشخصي",
+  "homeHeadingSetup": "ابدأ رحلتك مع قضاء الصلاة",
+  "homeHeadingPending": "واصل التقدم",
+  "homeHeadingCompleted": "أحسنت، لقد أكملت جميع الصلوات المسجلة",
+  "homeSetupMessage": "لم تضف أي صلوات فائتة بعد.",
+  "homeCompleteQaza": "إكمال القضاء",
+  "homeAddNewQaza": "إضافة قضاء جديد",
+  "homeAddManually": "إضافة قضاء يدويًا",
+  "homeStatTotal": "الإجمالي",
+  "homeAddQaza": "إضافة قضاء",
+  "homeProgressTitle": "تقدمك",
+  "homeProgressError": "تعذر تحميل تقدمك في القضاء. اسحب لإعادة المحاولة.",
+  "homeTodayProgress": "إنجاز اليوم",
+  "homeQazaPlan": "خطة القضاء",
+  "homeCompleteOldestQaza": "إكمال أقدم قضاء",
+  "homeAuto": "تلقائي",
+  "homeAutoSequence": "تسلسل تلقائي",
+  "homeQazaTarget": "هدف القضاء",
+  "homePrayerSelection": "اختيار الصلاة",
+  "homePrayerTimeUnavailable": "اختيار وقت الصلاة غير متاح حتى إعداد مواقيت الصلاة.",
+  "homeQazaTargetReachedTitle": "الحمد لله!",
+  "homeQazaTargetReachedMessage": "لقد أكملت خطة القضاء لهذا اليوم.\nتقبل الله منك.",
+  "homeDailyTarget": "الهدف اليومي",
+  "homeNextQaza": "القضاء التالي",
+  "homeCompleteNextQaza": "إكمال القضاء التالي",
+  "homeViewAllQaza": "عرض جميع الصلوات",
+  "qazaTitle": "القضاء",
+  "qazaProgressLabel": "التقدم",
+  "qazaAddTooltip": "إضافة قضاء",
+  "qazaDateFilterAny": "التاريخ الأصلي: أي تاريخ",
+  "qazaDateFilterHelp": "تصفية حسب تاريخ الصلاة الفائتة الأصلي",
+  "qazaLoading": "جارٍ تحميل سجلات القضاء...",
+  "qazaEmptyTitle": "لا توجد سجلات قضاء بعد",
+  "qazaEmptyMessage": "أضف الصلوات الفائتة أو احسب تقديرًا للبدء.",
+  "qazaFilteredEmptyTitle": "لا توجد سجلات تطابق هذه المرشحات",
+  "qazaFilteredEmptyMessage": "جرّب حالة أو صلاة أو نطاقًا زمنيًا مختلفًا.",
+  "qazaResetFilters": "إعادة ضبط المرشحات",
+  "qazaRecordActions": "إجراءات السجل",
+  "qazaEditRecord": "تعديل",
+  "qazaDeleteRecord": "حذف",
+  "qazaEditRecordTitle": "تعديل سجل القضاء",
+  "qazaEditPrayer": "الصلاة",
+  "qazaEditDate": "التاريخ الأصلي",
+  "qazaEditDateHelp": "حدد التاريخ الأصلي للصلاة الفائتة",
+  "qazaSaveChanges": "حفظ التغييرات",
+  "qazaDeleteRecordTitle": "حذف سجل القضاء؟",
+  "qazaRecordUpdated": "تم تحديث سجل القضاء.",
+  "qazaRecordUpdateFailed": "تعذر تحديث سجل القضاء. حاول مرة أخرى.",
+  "qazaRecordDeleted": "تم حذف سجل القضاء نهائيًا.",
+  "qazaRecordDeleteFailed": "تعذر حذف سجل القضاء. حاول مرة أخرى.",
+  "qazaUndoAction": "تراجع",
+  "calendarSelectYear": "اختر السنة",
+  "calendarSelectHint": "اضغط على تاريخ متاح لتحديده.",
+  "authTitle": "تسجيل الدخول",
+  "authWelcomeBack": "مرحبًا بعودتك",
+  "authSubtitle": "سجّل الدخول لمتابعة استخدام متتبع قضاء الصلاة.",
+  "authContinueWithGoogle": "المتابعة باستخدام Google",
+  "authSigningIn": "جارٍ تسجيل الدخول...",
+  "authHelpTooltip": "مساعدة تسجيل الدخول",
+  "authHelpTitle": "تسجيل الدخول",
+  "authDismiss": "إغلاق",
+  "authFailed": "تعذر تسجيل الدخول. حاول مرة أخرى.",
+  "welcomeTagline": "العبادة والمواظبة على الصلاة",
+  "welcomeHeadline": "تابع صلواتك الفائتة بوضوح وانتظام.",
+  "welcomeBody": "سجّل صلوات القضاء وأكملها وتابع تقدمك، صلاةً بعد صلاة.",
+  "welcomeGetStarted": "ابدأ الآن",
+  "welcomeSignIn": "لديك حساب بالفعل؟ سجّل الدخول",
+  "splashTagline": "مساحة هادئة للمواظبة على قضاء الصلاة",
+  "accountTitle": "الحساب",
+  "accountGuest": "ضيف",
+  "accountConnectGoogle": "ربط حساب Google",
+  "accountSignInMethod": "طريقة تسجيل الدخول",
+  "accountGoogleAuth": "Google",
+  "accountSignedInWithGoogle": "تم تسجيل الدخول باستخدام Google",
+  "accountStatus": "حالة الحساب",
+  "accountSignedIn": "محلي",
+  "accountNotAvailable": "غير متاح",
+  "accountSignOut": "تسجيل الخروج",
+  "accountSignOutPrompt": "تسجيل الخروج؟",
+  "accountSignOutExplanation": "سيؤدي تسجيل الخروج إلى فصل حساب Google. ستبقى بيانات القضاء على هذا الجهاز.",
+  "dataTitle": "تصدير واستيراد",
+  "dataExportTitle": "تصدير البيانات",
+  "dataExportBody": "احفظ نسخة JSON من سجلات القضاء. لن يتم رفع أي بيانات عند التصدير.",
+  "dataExportAction": "تصدير",
+  "dataExportDialogTitle": "حفظ نسخة بيانات القضاء",
+  "dataExportSaved": "تم حفظ التصدير بنجاح.",
+  "dataExportCanceled": "تم إلغاء التصدير. لم تتغير بياناتك.",
+  "dataExportSignInRequired": "سجّل الدخول قبل تصدير بيانات القضاء.",
+  "dataImportTitle": "استيراد البيانات",
+  "dataImportBody": "افتح ملف تصدير JSON، وتحقق من صحته، وراجع الدمج قبل تطبيقه على هذا الحساب.",
+  "dataImportAction": "استيراد",
+  "dataImportReviewTitle": "مراجعة استيراد البيانات",
+  "dataImportCanceled": "تم إلغاء الاستيراد. لم تتغير بياناتك.",
+  "dataImportSignInRequired": "سجّل الدخول قبل استيراد بيانات القضاء.",
+  "dataImportEmptyFile": "الملف المحدد فارغ أو يتعذر قراءته.",
+  "dataProcessing": "جارٍ معالجة البيانات…",
+  "dataSafetyTitle": "أمان البيانات",
+  "addQazaTitle": "إضافة قضاء",
+  "addQazaStep1": "الخطوة 1 من 3 • تحديد التواريخ",
+  "addQazaStep2": "الخطوة 2 من 3 • تحديد الصلوات الفائتة",
+  "addQazaStep3": "الخطوة 3 من 3 • المراجعة والإضافة",
+  "addQazaModeSingle": "مفرد",
+  "addQazaModeRange": "نطاق",
+  "addQazaModeMultiple": "متعدد",
+  "addQazaModeSingleTitle": "تاريخ واحد",
+  "addQazaModeRangeTitle": "نطاق زمني",
+  "addQazaModeMultipleTitle": "تواريخ متعددة",
+  "addQazaChooseSingle": "اختر تاريخًا",
+  "addQazaChooseRange": "اختر نطاقًا زمنيًا",
+  "addQazaChooseMultiple": "اختر تواريخ متعددة",
+  "addQazaStepNameDates": "تحديد التواريخ",
+  "addQazaStepNamePrayers": "الصلوات الفائتة",
+  "addQazaStepNameReview": "مراجعة",
+  "addQazaPrayersHeading": "الصلوات الفائتة",
+  "addQazaSelectAll": "تحديد الكل",
+  "addQazaAllSelected": "تم تحديد الكل",
+  "addQazaReviewHeading": "المراجعة والإضافة",
+  "addQazaReviewNote": "راجع الملخص ثم أضف سجلات القضاء إلى سجلك.",
+  "addQazaSelectionLabel": "التحديد",
+  "addQazaDatesLabel": "التواريخ",
+  "addQazaDateCountLabel": "عدد التواريخ",
+  "addQazaDateRangeLabel": "النطاق الزمني",
+  "addQazaCombinationCountLabel": "عدد السجلات",
+  "addQazaPrayersLabel": "الصلوات",
+  "addQazaPrayersPerDateLabel": "الصلوات لكل تاريخ",
+  "addQazaExistingLabel": "السجلات الموجودة",
+  "addQazaNewRecordsLabel": "السجلات الجديدة",
+  "addQazaNewLabel": "جديد",
+  "addQazaAlreadyAddedLabel": "تمت إضافته",
+  "addQazaUnavailableLabel": "غير متاح",
+  "addQazaTimeBlocked": "متاح بعد انتهاء وقت الصلاة.",
+  "addQazaCancelledTitle": "تم إلغاء إضافة القضاء",
+  "addQazaCancelledMessage": "تم إلغاء الإضافة. تم الاحتفاظ بأي سجلات حُفظت بالفعل.",
+  "addQazaChecking": "جارٍ التحقق من سجلاتك...",
+  "addQazaNextPrayers": "التالي: المراجعة والإضافة",
+  "qazaImportAdded": "تمت الإضافة",
+  "qazaImportSkipped": "تم التخطي",
+  "addQazaCreatedTitle": "تم إنشاء سجلات القضاء",
+  "completeTitle": "إكمال القضاء",
+  "completeHeading": "إكمال أقدم سجل معلّق",
+  "completeIntro": "أكمل سجلًا واحدًا في كل مرة. بعد النجاح، سيظهر السجل التالي مباشرة.",
+  "completeLoading": "جارٍ تحميل السجل المعلّق...",
+  "completeLoadError": "تعذر تحميل سجل القضاء.",
+  "completeNoPendingTitle": "لا يوجد قضاء معلّق لهذه الصلاة.",
+  "completeNoPendingMessage": "اختر صلاة أخرى أو أضف سجل قضاء أولًا.",
+  "completeOriginalDate": "التاريخ الأصلي للصلاة الفائتة",
+  "completeTimestampNote": "يُسجّل وقت الإكمال بشكل منفصل.",
+  "completeAction": "إكمال القضاء المعلّق",
+  "completeInProgress": "جارٍ الإكمال...",
+  "completeFailed": "تعذر إكمال القضاء. حاول مرة أخرى.",
+  "knowledgeBaseTitle": "المكتبة العلمية",
+  "knowledgeBaseSearchHint": "ابحث في المسائل والمغالطات",
+  "knowledgeBaseClearSearch": "مسح البحث",
+  "knowledgeCategoryMasail": "المسائل",
+  "knowledgeCategoryMugalat": "المغالطات",
+  "knowledgeBaseEmptyTitle": "لم يتم العثور على مقالات",
+  "knowledgeBaseEmptyMessage": "جرّب كلمة بحث أو تصنيفًا آخر.",
+  "knowledgeBaseLoadError": "تعذر تحميل المكتبة العلمية.",
+  "knowledgeBaseLanguage": "لغة المكتبة العلمية",
+  "knowledgeArticleTitle": "مقال",
+  "knowledgeArticleReferences": "المراجع",
+  "knowledgeArticleRelated": "مقالات ذات صلة",
+  "knowledgeArticleNotFound": "لم يتم العثور على المقال.",
+  "settingsAccountSection": "الحساب",
+  "settingsAccountSubtitle": "إدارة تسجيل الدخول وتفاصيل الحساب.",
+  "settingsGoogleSignIn": "تسجيل الدخول باستخدام Google",
+  "settingsKnowledgeBaseSubtitle": "تصفح المسائل والمغالطات",
+  "settingsDataSection": "البيانات والتخزين",
+  "settingsDataSubtitle": "مزامنة بيانات القضاء ونسخها احتياطيًا وتصديرها واستيرادها.",
+  "settingsDataCloud": "البيانات والسحابة",
+  "settingsDataCloudSubtitle": "حالة المزامنة والتصدير والاستيراد",
+  "settingsLanguage": "اللغة",
+  "settingsLanguageSubtitle": "اختر اللغة المستخدمة في التطبيق.",
+  "settingsLanguageNote": "تتبع أسماء الصلوات والتواريخ الهجرية اللغة المختارة. وتُعرض العربية من اليمين إلى اليسار.",
+  "settingsAboutSection": "حول التطبيق",
+  "settingsAboutSubtitle": "معلومات التطبيق وإصدار البرنامج.",
+  "settingsAppDescription": "متتبع قضاء الصلاة",
+  "cloudSyncTitle": "المزامنة السحابية",
+  "cloudSyncNow": "المزامنة الآن",
+  "cloudPendingChanges": "التغييرات المعلّقة",
+  "cloudLastSynced": "آخر مزامنة",
+  "backupPromptTitle": "حافظ على تقدمك",
+  "backupPromptBody": "سجّل الدخول باستخدام Google للاحتفاظ بتقدمك في القضاء وربطه بحسابك.",
+  "backupPromptConfirm": "المتابعة باستخدام Google",
+  "backupPromptDismiss": "ليس الآن",
+  "backupSignInFailed": "فشل تسجيل الدخول. ما زال تقدمك محفوظًا على هذا الجهاز.",
+  "backupSignInCancelled": "تم إلغاء تسجيل الدخول. ما زال تقدمك محفوظًا على هذا الجهاز.",
+  "profileLanguageTitle": "اختر لغتك",
+  "profileLanguageIntro": "اختر اللغة التي تريد استخدامها في التطبيق.",
+  "profileErrorLanguage": "يرجى اختيار اللغة.",
+  "hijriDate": "{day} {month} {year} هـ",
+  "hijriMonthYear": "{month} {year} هـ",
+  "homeCompletedCount": "{count} مكتملة",
+  "homeDailyProgress": "تم إكمال {completed} من أصل {target}",
+  "homeDailyRemaining": "متبقٍ {count}",
+  "homePerDay": "{count} يوميًا",
+  "homeEstimatedCompletion": "الإكمال المتوقع: {date}",
+  "qazaCompletedOn": "تم الإكمال في {date}",
+  "qazaCompletedCount": "{count, plural, =0{لم يتم إكمال أي قضاء.} =1{تم إكمال صلاة قضاء واحدة.} other{تم إكمال {count} صلوات قضاء.}}",
+  "qazaUndoCount": "{count, plural, =1{تمت استعادة قضاء واحد.} other{تمت استعادة {count} سجلات قضاء.}}",
+  "addQazaAddCount": "إضافة {count} من سجلات القضاء",
+  "addQazaCreatedMessage": "{count, plural, =1{تمت إضافة سجل واحد إلى سجلك.} other{تمت إضافة {count} سجلات إلى سجلك.}}",
+  "dataImportComplete": "اكتمل الاستيراد: أُضيف {added}، واكتمل {completed}، ولم يتغير {unchanged}.",
+  "syncSyncedAt": "تمت المزامنة • {timestamp}",
+  "@hijriDate": {
+    "description": "Secondary Hijri date line; Gregorian remains primary",
+    "placeholders": {
+      "day": {},
+      "month": {},
+      "year": {}
+    }
+  },
+  "@hijriMonthYear": {
+    "description": "Hijri month/year header; Gregorian remains primary",
+    "placeholders": {
+      "month": {},
+      "year": {}
+    }
+  },
+  "@homeCompletedCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@homeDailyProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "@homeDailyRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@homePerDay": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@homeEstimatedCompletion": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@qazaCompletedOn": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "@qazaCompletedCount": {
+    "description": "Confirmation after bulk completion",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@qazaUndoCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@addQazaAddCount": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "@addQazaCreatedMessage": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "@dataImportComplete": {
+    "placeholders": {
+      "added": {
+        "type": "int"
+      },
+      "completed": {
+        "type": "int"
+      },
+      "unchanged": {
+        "type": "int"
+      }
+    }
+  },
+  "@syncSyncedAt": {
+    "placeholders": {
+      "timestamp": {
+        "type": "String"
+      }
+    }
+  }
+}
