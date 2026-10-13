@@ -108,7 +108,9 @@ class _LanguageSelectionScreenState
                             label: Text(
                               locale.languageCode == 'ur'
                                   ? l10n.languageUrdu
-                                  : l10n.languageEnglish,
+                                  : locale.languageCode == 'ar'
+                                      ? 'العربية'
+                                      : l10n.languageEnglish,
                             ),
                             selected: locale.languageCode ==
                                 _selectedLocale.languageCode,

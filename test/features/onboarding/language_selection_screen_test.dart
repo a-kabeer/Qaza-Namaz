@@ -146,4 +146,20 @@ void main() {
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
     expect(repository.saveCount, 1);
   });
+
+  testWidgets('Arabic can be selected during onboarding', (tester) async {
+    final repository = _FakeUserProfileRepository();
+    await tester.pumpWidget(_app(repository: repository));
+    await tester.tap(find.byKey(const Key('onboarding_language_ar')));
+    await tester.pump();
+    expect(find.text('اختر لغتك'), findsOneWidget);
+    expect(find.text('العربية'), findsOneWidget);
+    await tester.tap(find.text('متابعة'));
+    await tester.pumpAndSettle();
+    final prefs = await SharedPreferences.getInstance();
+    expect(repository.savedProfile?.languageCode, 'ar');
+    expect(prefs.getString(LocaleNotifier.storageKey), 'ar');
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+  });
+
 }
