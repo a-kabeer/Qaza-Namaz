@@ -161,5 +161,4 @@ void main() {
     expect(prefs.getString(LocaleNotifier.storageKey), 'ar');
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
   });
-
 }

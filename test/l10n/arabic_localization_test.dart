@@ -21,7 +21,8 @@ void main() {
     final darkArabicTheme = AppTheme.dark(locale: const Locale('ar'));
     final urduTheme = AppTheme.light(locale: const Locale('ur'));
     expect(arabicTheme.textTheme.bodyMedium?.fontFamily, 'Noto Sans Arabic');
-    expect(darkArabicTheme.textTheme.bodyMedium?.fontFamily, 'Noto Sans Arabic');
+    expect(
+        darkArabicTheme.textTheme.bodyMedium?.fontFamily, 'Noto Sans Arabic');
     expect(urduTheme.textTheme.bodyMedium?.fontFamily, AppTheme.urduFamily);
   });
 

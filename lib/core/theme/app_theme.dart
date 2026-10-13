@@ -260,9 +260,11 @@ class AppTheme {
 
   /// Arabic interface typography uses the bundled Noto Sans Arabic face.
   /// Unlike Nastaliq, Arabic UI text does not need Urdu-specific leading.
-  static TextTheme _arabicTextTheme(ColorScheme scheme, {String? assetPackage}) {
+  static TextTheme _arabicTextTheme(ColorScheme scheme,
+      {String? assetPackage}) {
     final latin = _latinTextTheme(scheme);
-    TextStyle arabic(TextStyle style) => _toArabic(style, assetPackage: assetPackage);
+    TextStyle arabic(TextStyle style) =>
+        _toArabic(style, assetPackage: assetPackage);
     return TextTheme(
       displayLarge: arabic(latin.displayLarge!),
       displayMedium: arabic(latin.displayMedium!),
@@ -285,11 +287,15 @@ class AppTheme {
   static TextStyle _toArabic(TextStyle latin, {String? assetPackage}) {
     final weight = latin.fontWeight ?? FontWeight.w400;
     return latin.copyWith(
-      fontFamily: assetPackage == null ? arabicFamily : 'packages/$assetPackage/$arabicFamily',
+      fontFamily: assetPackage == null
+          ? arabicFamily
+          : 'packages/$assetPackage/$arabicFamily',
       height: math.max(latin.height ?? 1.2, 1.4),
       letterSpacing: 0,
       wordSpacing: 0,
-      fontVariations: [FontVariation.weight(weight.value.clamp(100, 900).toDouble())],
+      fontVariations: [
+        FontVariation.weight(weight.value.clamp(100, 900).toDouble())
+      ],
     );
   }
 
@@ -356,9 +362,8 @@ class AppTheme {
       urdu: _urduTextTheme(scheme, assetPackage: assetPackage),
       arabic: _arabicTextTheme(scheme, assetPackage: assetPackage),
     );
-    final textTheme = arabic
-        ? typography.arabic
-        : typography.forScript(urduScript: urdu);
+    final textTheme =
+        arabic ? typography.arabic : typography.forScript(urduScript: urdu);
 
     return baseTheme.copyWith(
       colorScheme: scheme,
@@ -473,7 +478,8 @@ class AppTheme {
 /// the widget.
 @immutable
 class AppTypography extends ThemeExtension<AppTypography> {
-  const AppTypography({required this.latin, required this.urdu, required this.arabic});
+  const AppTypography(
+      {required this.latin, required this.urdu, required this.arabic});
 
   final TextTheme latin;
   final TextTheme urdu;
@@ -498,8 +504,12 @@ class AppTypography extends ThemeExtension<AppTypography> {
       );
 
   @override
-  AppTypography copyWith({TextTheme? latin, TextTheme? urdu, TextTheme? arabic}) =>
-      AppTypography(latin: latin ?? this.latin, urdu: urdu ?? this.urdu, arabic: arabic ?? this.arabic);
+  AppTypography copyWith(
+          {TextTheme? latin, TextTheme? urdu, TextTheme? arabic}) =>
+      AppTypography(
+          latin: latin ?? this.latin,
+          urdu: urdu ?? this.urdu,
+          arabic: arabic ?? this.arabic);
 
   @override
   AppTypography lerp(ThemeExtension<AppTypography>? other, double t) {

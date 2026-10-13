@@ -95,9 +95,9 @@ abstract class AppLocalizations {
 
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
+    Locale('ar'),
     Locale('en'),
-    Locale('ur'),
-    Locale('ar')
+    Locale('ur')
   ];
 
   /// Application name shown in the OS task switcher
@@ -4511,7 +4511,7 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['en', 'ur', 'ar'].contains(locale.languageCode);
+      <String>['ar', 'en', 'ur'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
@@ -4520,12 +4520,12 @@ class _AppLocalizationsDelegate
 AppLocalizations lookupAppLocalizations(Locale locale) {
   // Lookup logic when only language code is specified.
   switch (locale.languageCode) {
+    case 'ar':
+      return AppLocalizationsAr();
     case 'en':
       return AppLocalizationsEn();
     case 'ur':
       return AppLocalizationsUr();
-    case 'ar':
-      return AppLocalizationsAr();
   }
 
   throw FlutterError(
