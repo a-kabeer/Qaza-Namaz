@@ -307,7 +307,8 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           onProgress?.call(progress);
         },
       );
-      // Show 100% only after the engine's upload and sync-cursor update succeed.
+      // Persist the successful-sync state before emitting 100% completion.
+      final snapshot = await _snapshotFromResult(result);
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&
           latestProgress!.totalBytes > 0) {
@@ -315,7 +316,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           CloudBackupProgress.completed(totalBytes: latestProgress!.totalBytes),
         );
       }
-      return await _snapshotFromResult(result);
+      return snapshot;
     } catch (error) {
       return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     } finally {
@@ -387,6 +388,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           onProgress?.call(progress);
         },
       );
+      final snapshot = await _snapshotFromResult(result);
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&
           latestProgress!.totalBytes > 0) {
@@ -394,7 +396,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           CloudBackupProgress.completed(totalBytes: latestProgress!.totalBytes),
         );
       }
-      return await _snapshotFromResult(result);
+      return snapshot;
     } catch (error) {
       return await _snapshot(CloudSyncStatus.failed, message: error.toString());
     }
