@@ -104,6 +104,29 @@ void main() {
     expect(state, isNull);
   });
 
+  test('at midnight, Isha remains focus while Fajr countdown stays accurate', () {
+    final snapshot = makeSnapshot(
+      DateTime(2026, 10, 11),
+      DateTime(2026, 10, 12),
+    );
+    final midnight = local(11, 0).add(const Duration(minutes: 32));
+
+    final state = resolveCurrentPrayerState(
+      snapshot: snapshot,
+      now: midnight,
+    );
+
+    expect(state, isNotNull);
+    expect(state!.current, isNull);
+    expect(state.focusPrayer, PrayerSlot.isha);
+    expect(state.next, PrayerSlot.fajr);
+    expect(state.nextAt, tz.TZDateTime(karachi, 2026, 10, 11, 5));
+    expect(
+      state.nextAt!.difference(midnight),
+      const Duration(hours: 4, minutes: 28),
+    );
+  });
+
   test('before Fajr, Isha remains focus phase and Fajr is next boundary', () {
     final snapshot = makeSnapshot(
       DateTime(2026, 10, 11),
