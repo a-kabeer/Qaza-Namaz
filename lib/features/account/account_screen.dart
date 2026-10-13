@@ -291,6 +291,8 @@ class _CloudBackupCard extends ConsumerStatefulWidget {
 class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   CloudSyncSnapshot _sync = const CloudSyncSnapshot.disconnected();
   bool _busy = false;
+  bool _settingsBusy = false;
+  bool _backupBusy = false;
   String? _message;
   CloudBackupProgress? _backupProgress;
 
@@ -394,10 +396,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   }
 
   Future<void> _backupNow() async {
+    if (_busy || _settingsBusy || _backupBusy) return;
     setState(() {
-      _busy = true;
+      _backupBusy = true;
       _message = null;
-      _backupProgress = null;
+      _backupProgress = const CloudBackupProgress.checking();
     });
     try {
       final result = await ref.read(cloudSyncProvider).backupNow(
@@ -429,7 +432,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     } finally {
       if (mounted) {
         setState(() {
-          _busy = false;
+          _backupBusy = false;
           _backupProgress = null;
         });
       }
@@ -522,34 +525,46 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   }
 
   Future<void> _toggleAutomaticBackup(bool enabled) async {
+    if (_busy || _settingsBusy || _backupBusy) return;
     setState(() {
-      _busy = true;
+      _settingsBusy = true;
       _message = null;
     });
-    final result =
-        await ref.read(cloudSyncProvider).setAutomaticSyncEnabled(enabled);
-    if (!mounted) return;
-    setState(() {
-      _sync = result;
-      _message = result.message;
-      _busy = false;
-    });
+    try {
+      final result =
+          await ref.read(cloudSyncProvider).setAutomaticSyncEnabled(enabled);
+      if (!mounted) return;
+      setState(() {
+        _sync = result;
+        _message = result.message;
+      });
+    } catch (error) {
+      if (mounted) setState(() => _message = error.toString());
+    } finally {
+      if (mounted) setState(() => _settingsBusy = false);
+    }
   }
 
   Future<void> _changeBackupFrequency(CloudBackupFrequency frequency) async {
+    if (_busy || _settingsBusy || _backupBusy) return;
     setState(() {
-      _busy = true;
+      _settingsBusy = true;
       _message = null;
     });
-    final result = await ref
-        .read(cloudSyncProvider)
-        .setAutomaticBackupFrequency(frequency);
-    if (!mounted) return;
-    setState(() {
-      _sync = result;
-      _message = result.message;
-      _busy = false;
-    });
+    try {
+      final result = await ref
+          .read(cloudSyncProvider)
+          .setAutomaticBackupFrequency(frequency);
+      if (!mounted) return;
+      setState(() {
+        _sync = result;
+        _message = result.message;
+      });
+    } catch (error) {
+      if (mounted) setState(() => _message = error.toString());
+    } finally {
+      if (mounted) setState(() => _settingsBusy = false);
+    }
   }
 
   Future<void> _recoverLocalSnapshot() async {
@@ -669,8 +684,10 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               SizedBox(
                 width: double.infinity,
                 child: FilledButton.icon(
-                  onPressed: _busy ? null : _backupNow,
-                  icon: _busy
+                  onPressed: (_busy || _settingsBusy || _backupBusy)
+                      ? null
+                      : _backupNow,
+                  icon: _backupBusy
                       ? const SizedBox(
                           width: 18,
                           height: 18,
@@ -678,7 +695,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                         )
                       : const Icon(Icons.backup_rounded),
                   label: Text(
-                    _busy ? l10n.cloudBackupWorking : l10n.cloudBackupNow,
+                    _backupBusy ? l10n.cloudBackupWorking : l10n.cloudBackupNow,
                   ),
                 ),
               ),
@@ -687,16 +704,18 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 Builder(
                   builder: (context) {
                     final progress = _backupProgress!;
+                    final checking =
+                        progress.stage == CloudBackupProgressStage.checking;
                     final preparing =
                         progress.stage == CloudBackupProgressStage.preparing;
                     final completed =
                         progress.stage == CloudBackupProgressStage.completed;
-                    final fraction = preparing || progress.totalBytes <= 0
+                    final fraction = checking || preparing || progress.totalBytes <= 0
                         ? 0.0
                         : (progress.sentBytes / progress.totalBytes)
                             .clamp(0.0, completed ? 1.0 : 0.99)
                             .toDouble();
-                    final percent = preparing || progress.totalBytes <= 0
+                    final percent = checking || preparing || progress.totalBytes <= 0
                         ? 0
                         : (progress.sentBytes * 100 / progress.totalBytes)
                             .floor()
@@ -705,11 +724,15 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          preparing
+                          checking
                               ? (_isUrdu
-                                  ? 'بیک اپ تیار کیا جا رہا ہے…'
-                                  : 'Preparing backup…')
-                              : completed
+                                  ? 'بیک اپ چیک کیا جا رہا ہے…'
+                                  : 'Checking backup…')
+                              : preparing
+                                  ? (_isUrdu
+                                      ? 'بیک اپ تیار کیا جا رہا ہے…'
+                                      : 'Preparing backup…')
+                                  : completed
                                   ? (_isUrdu
                                       ? 'بیک اپ مکمل ہو گیا'
                                       : 'Backup completed')
@@ -720,8 +743,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                         ),
                         const SizedBox(height: 6),
                         LinearProgressIndicator(
-                            value: preparing ? null : fraction),
-                        if (!preparing) ...[
+                            value: checking || preparing ? null : fraction),
+                        if (!checking && !preparing) ...[
                           const SizedBox(height: 4),
                           Text(
                             '${_formatBackupMb(progress.sentBytes)} MB / '
@@ -739,7 +762,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 key: const Key('account_daily_cloud_backup'),
                 contentPadding: EdgeInsets.zero,
                 value: _sync.automaticSyncEnabled,
-                onChanged: _busy ? null : _toggleAutomaticBackup,
+                onChanged: (_busy || _settingsBusy || _backupBusy)
+                    ? null
+                    : _toggleAutomaticBackup,
                 title: Text(l10n.cloudAutomaticBackup),
               ),
               if (_sync.automaticSyncEnabled) ...[
@@ -759,7 +784,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                         ),
                       )
                       .toList(),
-                  onChanged: _busy
+                  onChanged: (_busy || _settingsBusy || _backupBusy)
                       ? null
                       : (frequency) {
                           if (frequency != null &&
