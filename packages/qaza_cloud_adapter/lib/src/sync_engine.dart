@@ -138,6 +138,12 @@ class CloudSyncEngine {
     // An initial connection that finds a remote backup always requires an
     // explicit user decision, even when local revision looks pristine.
     if (cursor.lastSyncedBackupId == null && remoteFound) {
+      final initialRemote = remote;
+      if (initialRemote == null) {
+        return CloudSyncResult.failed(
+          'The existing Google Drive backup could not be verified safely.',
+        );
+      }
       final localPreview = await _localPreview();
       return await _persistConflict(
         CloudConflict(
@@ -145,9 +151,9 @@ class CloudSyncEngine {
           localTimestamp: localPreview.timestamp,
           localRevision: localRevision,
           localBaseBackupId: null,
-          remoteLineage: remote.backup.lineage,
-          remoteTimestamp: remote.modifiedAt,
-          remoteVersion: remote.remoteVersion,
+          remoteLineage: initialRemote.backup.lineage,
+          remoteTimestamp: initialRemote.modifiedAt,
+          remoteVersion: initialRemote.remoteVersion,
           lastSyncedBackupId: null,
         ),
       );
