@@ -718,5 +718,136 @@
   },
   "cloudExportImportSubtitle": "نسخة احتياطية واستعادة آمنة بصيغة JSON تحت تحكم المستخدم. لا تُحذف بيانات السحابة عند استخدام هذه الإجراءات.",
   "cloudInactive": "التخزين دون اتصال غير نشط في هذا الإصدار.",
-  "cloudBootstrapping": "جارٍ إعداد سجلات القضاء على هذا الجهاز…"
+  "cloudBootstrapping": "جارٍ إعداد سجلات القضاء على هذا الجهاز…",
+  "cloudHydrating": "جارٍ استعادة سجلات القضاء المحفوظة إلى هذا الجهاز…",
+  "cloudSynced": "تم حفظ جميع سجلات القضاء في السحابة.",
+  "cloudSyncing": "جارٍ مزامنة السجل…",
+  "cloudOffline": "دون اتصال — تُحفظ السجلات على هذا الجهاز وتتم مزامنتها تلقائيًا.",
+  "cloudPendingCount": "{count, plural, =1{هناك تغيير واحد بانتظار المزامنة.} other{هناك {count} تغييرات بانتظار المزامنة.}}",
+  "@cloudPendingCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cloudSyncProblem": "مشكلة في المزامنة — بياناتك آمنة على هذا الجهاز.",
+  "cloudQazaCount": "عدد سجلات القضاء",
+  "cloudQazaCountValue": "{count, plural, =0{لا توجد سجلات قضاء} =1{سجل قضاء واحد} other{{count} سجلات قضاء}}",
+  "@cloudQazaCountValue": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "cloudBackupStatus": "النسخة الاحتياطية السحابية",
+  "cloudBackupDeleted": "حُذفت النسخة السحابية؛ وما زالت السجلات المحلية محفوظة.",
+  "cloudLocalVsCloudTitle": "البيانات المحلية والسحابية",
+  "cloudLocalVsCloudBody": "تُخزّن سجلات القضاء محليًا لتكون متاحة دون اتصال. عند تسجيل الدخول، يمكن مزامنة التغييرات مع حسابك السحابي الخاص. التصدير نسخة احتياطية محلية، وحذف بيانات السحابة لا يحذف سجلاتك المحلية.",
+  "cloudDeleteTitle": "حذف البيانات السحابية",
+  "cloudDeleteBody": "سيؤدي هذا إلى حذف سجلات القضاء من حسابك السحابي نهائيًا. ستبقى السجلات المحلية على هذا الجهاز. لا يمكن التراجع عن ذلك. صدّر بياناتك أولًا إذا كنت قد تحتاج إلى نسخة احتياطية.",
+  "cloudDeleteAcknowledge": "أفهم أن النسخة السحابية ستُحذف نهائيًا.",
+  "cloudDeleteAction": "حذف البيانات السحابية",
+  "cloudDeleteDone": "تم حذف بيانات القضاء السحابية. ما زالت سجلاتك المحلية على هذا الجهاز.",
+  "cloudDeleteFailed": "تعذر حذف البيانات السحابية. ما زالت سجلاتك المحلية آمنة.",
+  "cloudDeleteSignInRequired": "سجّل الدخول لإدارة البيانات السحابية.",
+  "accountGoogle": "حساب Google",
+  "accountCloudBackup": "النسخ الاحتياطي السحابي",
+  "accountAutomatic": "تلقائي",
+  "accountBackupPaused": "تم إيقاف النسخ الاحتياطي مؤقتًا",
+  "accountEnableBackup": "تفعيل النسخ الاحتياطي",
+  "accountDisconnect": "فصل Google",
+  "accountDeleteCloudData": "حذف البيانات السحابية",
+  "accountDeleteCloudDataMessage": "سيتم حذف نسختك السحابية نهائيًا. ستبقى بيانات القضاء على هذا الجهاز.",
+  "accountDeleteCloudDataAcknowledge": "أفهم أن النسخة السحابية ستُحذف نهائيًا.",
+  "accountCancel": "إلغاء",
+  "accountContinue": "متابعة",
+  "accountGuestTitle": "هذا الجهاز",
+  "accountGuestLocalDataSubtitle": "بياناتك محفوظة على هذا الجهاز",
+  "accountNotConnectedGoogle": "Google غير متصل",
+  "accountKeepProgressSafe": "حافظ على تقدمك",
+  "accountKeepProgressSafeDescription": "اربط حساب Google لنسخ تقدمك في القضاء احتياطيًا واستعادته عبر الأجهزة.",
+  "accountGuestContinueMessage": "سيبقى تقدمك المحلي على هذا الجهاز.",
+  "accountBackupSection": "النسخ الاحتياطي",
+  "accountBackupAutomaticDescription": "نسخ تقدمك في القضاء احتياطيًا تلقائيًا",
+  "accountAccountActions": "إجراءات الحساب",
+  "accountSignOutDescription": "سجّل الخروج من حساب Google. يمكنك تسجيل الدخول مجددًا لاحقًا.",
+  "accountDisconnectDescription": "أزل اتصال Google من قضاء الصلاة وانتقل إلى وضع الضيف.",
+  "accountDangerZone": "منطقة الإجراءات الخطرة",
+  "settingsAccountGuestSubtitle": "محلي • هذا الجهاز فقط",
+  "settingsAccountGoogleSubtitle": "تم تسجيل الدخول باستخدام Google",
+  "accountConnectFailed": "تعذر إكمال الاتصال بـ Google. ما زالت بياناتك المحلية آمنة.",
+  "accountCloudDeleted": "تم حذف البيانات السحابية. ما زالت بيانات القضاء المحلية على هذا الجهاز.",
+  "settingsTitle": "الإعدادات",
+  "settingsPreferences": "التفضيلات",
+  "settingsPreferencesSubtitle": "إعدادات اللغة والمظهر.",
+  "settingsAppearance": "المظهر",
+  "settingsAppearanceSubtitle": "اختر مظهر التطبيق على هذا الجهاز.",
+  "settingsThemeSystem": "حسب النظام",
+  "settingsThemeLight": "فاتح",
+  "settingsThemeDark": "داكن",
+  "languageEnglish": "English",
+  "languageUrdu": "اردو",
+  "homeTodayProgressHeader": "إنجاز اليوم",
+  "homeNextQazaCurrentPrayer": "القضاء التالي (الصلاة الحالية)",
+  "homeOldestPending": "أقدم قضاء معلّق",
+  "homeOverallQaza": "إجمالي القضاء",
+  "homePendingByPrayer": "القضاء المعلّق حسب الصلاة",
+  "homePrayerBreakdown": "تفصيل الصلوات",
+  "homeViewDetails": "عرض التفاصيل",
+  "homeViewAll": "عرض الكل",
+  "homeCompleted": "مكتمل",
+  "homePending": "معلّق",
+  "homeDetailedStatistics": "عرض الإحصاءات التفصيلية",
+  "homeDetailedStatisticsSubtitle": "الإكمال الإجمالي وحسب كل صلاة",
+  "homeQazaActivity": "نشاط القضاء",
+  "homeProgressHistory": "سجل التقدم",
+  "homeRangeWeekly": "أسبوعي",
+  "homeRangeMonthly": "شهري",
+  "homeRangeYearly": "سنوي",
+  "homeWeeklyTargetLabel": "الهدف الأسبوعي",
+  "homeMonthlyTarget": "الهدف الشهري",
+  "homeProgressLabel": "التقدم",
+  "homeActiveDays": "الأيام النشطة",
+  "homeActiveMonths": "الأشهر النشطة",
+  "homeGoalReached": "تم تحقيق الهدف",
+  "homeRemaining": "المتبقي",
+  "homeActual": "الفعلي",
+  "homeNoActivity": "لم يكتمل أي قضاء خلال هذه الفترة.",
+  "homeSelectDay": "اضغط على يوم لعرض التفاصيل.",
+  "homePreviousWeek": "الأسبوع السابق",
+  "homeNextWeek": "الأسبوع التالي",
+  "homePreviousMonth": "الشهر السابق",
+  "homeNextMonth": "الشهر التالي",
+  "homePreviousYear": "السنة السابقة",
+  "homeNextYear": "السنة التالية",
+  "homeFutureDay": "المستقبل",
+  "homeDailyGoalsTitle": "أهدافك اليومية",
+  "homeLastSevenDays": "آخر 7 أيام",
+  "homeGoalsAchieved": "تم تحقيقه",
+  "homeWeeklyTarget": "هدفك الأسبوعي",
+  "homeWeeklyTargetProgress": "{completed} من {target}",
+  "@homeWeeklyTargetProgress": {
+    "placeholders": {
+      "completed": {
+        "type": "int"
+      },
+      "target": {
+        "type": "int"
+      }
+    }
+  },
+  "homeDayActivityDetails": "تفاصيل اليوم",
+  "homeTodayDate": "اليوم",
+  "homeCurrentPrayerLabel": "الصلاة الحالية: {prayer}",
+  "@homeCurrentPrayerLabel": {
+    "placeholders": {
+      "prayer": {
+        "type": "String"
+      }
+    }
+  },
+  "profileSetupTitle": "إعداد ملفك الشخصي",
+  "profileTitle": "الملف الشخصي"
 }
