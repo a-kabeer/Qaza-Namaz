@@ -1116,7 +1116,7 @@
     }
   },
   "qazaTrackerHistoryTooltip": "عرض سجل الإضافات",
-  "qazaTrackerAdditionProgress": "الإضافة {current} من {total}",
+  "qazaTrackerAdditionProgress": "تقدم الإضافة",
   "qazaTrackerSelectionHint": "حدد السجلات لإكمالها معًا.",
   "qazaTrackerSwipeHint": "اسحب السجل لإكماله.",
   "qazaMarkSelectedPendingTitle": "إعادة السجلات المحددة إلى حالة الانتظار؟",
