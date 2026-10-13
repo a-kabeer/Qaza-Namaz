@@ -362,6 +362,10 @@ class GoogleDriveAppDataStore
     final deadline = DateTime.now().add(_driveRetryBudget);
     for (var attempt = 0; ; attempt++) {
       try {
+        final remaining = deadline.difference(DateTime.now());
+        if (remaining <= Duration.zero) {
+          throw TimeoutException('Google Drive upload retry budget exhausted.');
+        }
         return await driveApi.files.create(
           drive.File()
             ..name = fileName
@@ -379,7 +383,7 @@ class GoogleDriveAppDataStore
             contentType: 'application/json',
           ),
           $fields: 'id,name,modifiedTime,version,md5Checksum,appProperties',
-        );
+        ).timeout(remaining);
       } catch (error) {
         if (!_isExplicitRateLimit(error) || attempt >= _maxDriveRetries) {
           rethrow;
@@ -559,7 +563,12 @@ Duration? _parseRetryAfter(String? header) {
   if (seconds != null) {
     return seconds <= 0 ? Duration.zero : Duration(seconds: seconds);
   }
-  final date = DateTime.tryParse(header);
+  DateTime? date;
+  try {
+    date = HttpDate.parse(header.trim());
+  } catch (_) {
+    date = DateTime.tryParse(header);
+  }
   if (date == null) return null;
   final delay = date.toUtc().difference(DateTime.now().toUtc());
   return delay.isNegative ? Duration.zero : delay;
