@@ -70,6 +70,7 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
   CloudSyncSnapshot snapshot;
   Completer<CloudSyncSnapshot>? backupCompleter;
   Completer<CloudSyncSnapshot>? settingsCompleter;
+  Completer<CloudSyncSnapshot>? frequencyCompleter;
   CloudSyncSnapshot? backupResult;
   Object? backupError;
   bool emitBackupProgress = true;
@@ -128,6 +129,8 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
     CloudBackupFrequency frequency,
   ) async {
     snapshot = _withSettings(backupFrequency: frequency);
+    final pending = frequencyCompleter;
+    if (pending != null) snapshot = await pending.future;
     return snapshot;
   }
 }
@@ -528,6 +531,64 @@ void main() {
         const CloudSyncSnapshot(
           status: CloudSyncStatus.idle,
           automaticSyncEnabled: false,
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('Back up now'), findsOneWidget);
+      expect(find.byIcon(Icons.backup_rounded), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'frequency update does not show Backup Now loading visuals',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          displayName: 'A Test User',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(
+          status: CloudSyncStatus.idle,
+          automaticSyncEnabled: true,
+          backupFrequency: CloudBackupFrequency.daily,
+        ),
+      )..frequencyCompleter = Completer<CloudSyncSnapshot>();
+      final container = ProviderContainer(
+        overrides: [
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+      final frequency = find.byKey(const Key('account_cloud_backup_frequency'));
+      expect(frequency, findsOneWidget);
+      await tester.tap(frequency);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Weekly').last);
+      await tester.pump();
+
+      expect(find.text('Back up now'), findsOneWidget);
+      expect(find.text('Working…'), findsNothing);
+      expect(find.byIcon(Icons.backup_rounded), findsOneWidget);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+
+      cloudSync.frequencyCompleter!.complete(
+        const CloudSyncSnapshot(
+          status: CloudSyncStatus.idle,
+          automaticSyncEnabled: true,
+          backupFrequency: CloudBackupFrequency.weekly,
         ),
       );
       await tester.pumpAndSettle();
