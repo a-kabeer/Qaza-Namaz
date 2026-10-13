@@ -128,6 +128,7 @@ class AppTheme {
       ),
       Brightness.dark,
       urdu: isUrdu(locale),
+      arabic: isArabic(locale),
       assetPackage: assetPackage,
     );
   }
