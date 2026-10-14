@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/widgets/language_selector.dart';
+
 import '../../app/providers.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../l10n/app_localizations.dart';
@@ -56,6 +58,14 @@ class _LanguageSelectionScreenState
           ),
         ),
       );
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(AppLocalizations.of(context).errorStorage),
+          ),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() => _isContinuing = false);
@@ -98,27 +108,26 @@ class _LanguageSelectionScreenState
                         style: theme.textTheme.bodyLarge,
                       ),
                       const SizedBox(height: 28),
-                      for (final locale in AppLocalizations.supportedLocales)
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
-                          child: ChoiceChip(
-                            key: Key(
-                              'onboarding_language_${locale.languageCode}',
-                            ),
-                            label: Text(
-                              locale.languageCode == 'ur'
-                                  ? l10n.languageUrdu
-                                  : locale.languageCode == 'ar'
-                                      ? 'العربية'
-                                      : l10n.languageEnglish,
-                            ),
-                            selected: locale.languageCode ==
-                                _selectedLocale.languageCode,
-                            onSelected: (selected) {
-                              if (selected) _select(locale);
-                            },
-                          ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: LanguageSelector<Locale>(
+                          key: const Key('onboarding_language_selector'),
+                          options: AppLocalizations.supportedLocales
+                              .map(
+                                (locale) => LanguageOption<Locale>(
+                                  value: locale,
+                                  languageCode: locale.languageCode,
+                                ),
+                              )
+                              .toList(growable: false),
+                          value: _selectedLocale,
+                          layout: LanguageSelectorLayout.fullWidth,
+                          semanticLabel: l10n.profileLanguageTitle,
+                          optionKeyPrefix: 'onboarding_language',
+                          enabled: !_isContinuing,
+                          onChanged: _select,
                         ),
+                      ),
                     ],
                   ),
                 ),
