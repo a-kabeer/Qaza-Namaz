@@ -294,26 +294,26 @@ class AppTheme {
     }
 
     return TextTheme(
-      displayLarge: arabic(48, 62, FontWeight.w400),
-      displayMedium: arabic(36, 48, FontWeight.w400),
-      displaySmall: arabic(30, 41, FontWeight.w500),
-      headlineLarge: arabic(30, 41, FontWeight.w500),
-      headlineMedium: arabic(25, 35, FontWeight.w500),
-      headlineSmall: arabic(21, 30, FontWeight.w500),
-      titleLarge: arabic(21, 30, FontWeight.w600),
-      titleMedium: arabic(17, 26, FontWeight.w600),
-      titleSmall: arabic(15, 23, FontWeight.w600),
-      bodyLarge: arabic(17, 29, FontWeight.w400),
-      bodyMedium: arabic(15, 25, FontWeight.w400),
+      displayLarge: arabic(48, 68, FontWeight.w400),
+      displayMedium: arabic(36, 51, FontWeight.w400),
+      displaySmall: arabic(30, 42, FontWeight.w500),
+      headlineLarge: arabic(30, 42, FontWeight.w500),
+      headlineMedium: arabic(24, 34, FontWeight.w500),
+      headlineSmall: arabic(20, 29, FontWeight.w500),
+      titleLarge: arabic(20, 29, FontWeight.w600),
+      titleMedium: arabic(16, 23, FontWeight.w600),
+      titleSmall: arabic(14, 20, FontWeight.w600),
+      bodyLarge: arabic(16, 23, FontWeight.w400),
+      bodyMedium: arabic(14, 20, FontWeight.w400),
       bodySmall: arabic(
-        13,
-        21,
+        12,
+        17,
         FontWeight.w400,
         color: scheme.onSurfaceVariant,
       ),
-      labelLarge: arabic(15, 24, FontWeight.w600),
-      labelMedium: arabic(13, 21, FontWeight.w600),
-      labelSmall: arabic(12, 19, FontWeight.w700),
+      labelLarge: arabic(14, 20, FontWeight.w600),
+      labelMedium: arabic(12, 17, FontWeight.w600),
+      labelSmall: arabic(11, 16, FontWeight.w700),
     );
   }
 
