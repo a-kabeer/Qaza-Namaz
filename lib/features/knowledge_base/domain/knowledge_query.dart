@@ -45,19 +45,32 @@ class KnowledgeQuery {
   /// True when [article] satisfies every set part of the query.
   ///
   /// Free text is matched against [language] only, so results always contain
-  /// the words the reader typed in the text they are shown.
+  /// the words the reader typed in the text they are shown. Arabic marks,
+  /// tatweel and common alef/ya variants are normalized for easier searching.
   bool matches(KnowledgeArticle article) {
     if (category != null && article.category != category) return false;
     if (topicId != null && article.topicId != topicId) return false;
-    final needle = text.trim().toLowerCase();
+
+    final needle = _normalizeSearchText(text);
     if (needle.isEmpty) return true;
-    return article
-        .searchableTextFor(
-          urdu: language.isUrdu,
-          arabic: language.isArabic,
-        )
-        .contains(needle);
+    final searchable = article.searchableTextFor(
+      urdu: language.isUrdu,
+      arabic: language.isArabic,
+    );
+    return _normalizeSearchText(searchable).contains(needle);
   }
+
+  static final RegExp _arabicMarks = RegExp(
+    r'[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]',
+  );
+  static final RegExp _alefVariants = RegExp(r'[أإآٱ]');
+
+  static String _normalizeSearchText(String value) => value
+      .toLowerCase()
+      .replaceAll(_arabicMarks, '')
+      .replaceAll('ـ', '')
+      .replaceAll(_alefVariants, 'ا')
+      .replaceAll('ى', 'ي');
 
   @override
   bool operator ==(Object other) =>
