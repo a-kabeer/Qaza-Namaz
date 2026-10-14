@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/widgets/language_selector.dart';
-
 import '../../app/providers.dart';
+import '../../core/widgets/language_selector.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../l10n/app_localizations.dart';
 import 'profile_setup_screen.dart';
