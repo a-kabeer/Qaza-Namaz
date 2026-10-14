@@ -76,6 +76,7 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                         topicId: article.topicId,
                         direction: direction,
                         textAlign: textAlign,
+                        labelStyle: type.labelLarge!,
                       ),
                       const SizedBox(height: 20),
                       SelectableText(
@@ -263,12 +264,14 @@ class _CategoryBadge extends ConsumerWidget {
     required this.topicId,
     required this.direction,
     required this.textAlign,
+    required this.labelStyle,
   });
 
   final KnowledgeCategory category;
   final String topicId;
   final TextDirection direction;
   final TextAlign textAlign;
+  final TextStyle labelStyle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -291,6 +294,7 @@ class _CategoryBadge extends ConsumerWidget {
               section,
               textDirection: direction,
               textAlign: textAlign,
+              style: labelStyle,
             ),
           ),
           Chip(
