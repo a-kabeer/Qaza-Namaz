@@ -342,7 +342,7 @@ class _PrayerTimeContent extends ConsumerWidget {
     String? overnightTimeLabel;
     if (isOvernightFocus) {
       final upcomingName = _prayerLabel(l10n, nextPrayer!);
-      final upcomingTime = _formatTime(context, nextAt!, snapshot);
+      final upcomingTime = _formatTime(context, nextAt, snapshot);
       overnightTimeLabel = '$upcomingName · $upcomingTime';
     }
     tz.TZDateTime restrictedTimelineDisplayAt(RestrictedTimeWindow window) =>
