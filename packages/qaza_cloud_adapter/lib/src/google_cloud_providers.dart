@@ -40,7 +40,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   Future<CloudAccountSnapshot> restore() async {
     try {
       final CloudAccountScopedSyncStateStore? scopedState =
-          _state is CloudAccountScopedSyncStateStore ? _state : null;
+          _state is CloudAccountScopedSyncStateStore
+              ? _state as CloudAccountScopedSyncStateStore
+              : null;
       final activeAccountId = await scopedState?.activeAccountId();
       final accountState = scopedState != null && activeAccountId != null
           ? scopedState.scopedToAccount(activeAccountId)
