@@ -33,7 +33,9 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context).knowledgeArticleTitle),
-        bottom: const KnowledgeLanguageBar(),
+        bottom: KnowledgeLanguageBar(
+          height: KnowledgeLanguageBar.heightFor(context),
+        ),
       ),
       body: articleAsync.when(
         loading: () => const _KnowledgeArticleSkeleton(),
