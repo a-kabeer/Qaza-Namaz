@@ -103,27 +103,27 @@ void main() {
             body: Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const LanguageSelector<String>(
-                  key: Key('compact_language_selector'),
-                  options: expandedOptions,
-                  value: 'ar',
-                  optionKeyPrefix: 'compact_option',
-                  layout: LanguageSelectorLayout.compact,
-                  semanticLabel: 'Knowledge language',
-                  onChanged: _ignoreString,
-                ),
-                const SizedBox(height: 16),
-                const LanguageSelector<String>(
-                  key: Key('full_language_selector'),
-                  options: expandedOptions,
-                  value: 'ur',
-                  optionKeyPrefix: 'full_option',
-                  layout: LanguageSelectorLayout.fullWidth,
-                  semanticLabel: 'Application language',
-                  onChanged: _ignoreString,
-                ),
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const LanguageSelector<String>(
+                    key: Key('compact_language_selector'),
+                    options: expandedOptions,
+                    value: 'ar',
+                    optionKeyPrefix: 'compact_option',
+                    layout: LanguageSelectorLayout.compact,
+                    semanticLabel: 'Knowledge language',
+                    onChanged: _ignoreString,
+                  ),
+                  const SizedBox(height: 16),
+                  const LanguageSelector<String>(
+                    key: Key('full_language_selector'),
+                    options: expandedOptions,
+                    value: 'ur',
+                    optionKeyPrefix: 'full_option',
+                    layout: LanguageSelectorLayout.fullWidth,
+                    semanticLabel: 'Application language',
+                    onChanged: _ignoreString,
+                  ),
                 ],
               ),
             ),
