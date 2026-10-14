@@ -25,6 +25,8 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   final CloudSyncScheduler _scheduler;
   final String? serverClientId;
 
+  static const _cachedAccountIdKey =
+      'qaza_cloud_adapter.cached_account_id_v1';
   static const _cachedDisplayNameKey =
       'qaza_cloud_adapter.cached_account_display_name_v1';
   static const _cachedEmailKey = 'qaza_cloud_adapter.cached_account_email_v1';
@@ -37,32 +39,75 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> restore() async {
     try {
+      final scopedState = _state is CloudAccountScopedSyncStateStore
+          ? _state as CloudAccountScopedSyncStateStore
+          : null;
+      final activeAccountId = await scopedState?.activeAccountId();
+
+      if (scopedState != null && activeAccountId == null) {
+        if (_state is SharedPreferencesCloudSyncStateStore &&
+            await (_state as SharedPreferencesCloudSyncStateStore)
+                .hasUnscopedLegacyConnection()) {
+          // Older releases persisted a connected flag without a stable Google
+          // account ID. Show the saved profile only as a reconnect hint; never
+          // authorize or sync until the user verifies the account again.
+          return await _cachedProfileSnapshot(reconnectRequired: true);
+        }
+        return const CloudAccountSnapshot.disconnected();
+      }
+
       if (!await _state.isCloudSyncEnabled()) {
         return const CloudAccountSnapshot.disconnected();
       }
-      // An unset preference means no user choice has been saved. Default to
-      // ON for connected accounts, but preserve an explicit persisted OFF.
-      if (!await _state.hasAutomaticSyncPreference()) {
-        await _state.setAutomaticSyncEnabled(true);
-      }
-      if (await _state.isAutomaticSyncEnabled()) {
-        await _scheduler.initializeAndSchedule(
-          frequency: (await _state.backupFrequency()).interval,
-          serverClientId: serverClientId,
-        );
+
+      if (scopedState != null) {
+        final boundAccountId = await _gateway.accountIdForAuthorization();
+        if (boundAccountId == null || boundAccountId != activeAccountId) {
+          await _state.setReconnectRequired(true);
+          return await _cachedProfileSnapshot(reconnectRequired: true);
+        }
       }
 
       final account = await _gateway.currentAccount();
+      if (account != null &&
+          activeAccountId != null &&
+          account.id != activeAccountId) {
+        await _state.setReconnectRequired(true);
+        return CloudAccountSnapshot.reconnectRequired(
+          displayName: account.displayName,
+          email: account.email,
+          photoUrl: account.photoUrl,
+        );
+      }
+
       try {
-        // Connection is reported only after the required Drive scope can be
-        // obtained non-interactively. On Android this call uses the native
-        // Identity AuthorizationClient, including after process recreation.
+        // Require a fresh non-interactive Drive authorization before scheduling
+        // background work or exposing account-scoped sync status.
         final client = await _gateway.authorizeDrive(allowInteractive: false);
         client?.close();
+        if (scopedState != null &&
+            (await scopedState.activeAccountId() != activeAccountId ||
+                await _gateway.accountIdForAuthorization() !=
+                    activeAccountId)) {
+          throw const CloudAuthorizationUnavailable(
+            'The connected Google account changed during verification. Reconnect before syncing.',
+          );
+        }
         await _state.setReconnectRequired(false);
+
+        if (!await _state.hasAutomaticSyncPreference()) {
+          await _state.setAutomaticSyncEnabled(true);
+        }
+        if (await _state.isAutomaticSyncEnabled()) {
+          await _scheduler.initializeAndSchedule(
+            frequency: (await _state.backupFrequency()).interval,
+            serverClientId: serverClientId,
+          );
+        }
 
         if (account != null) {
           await _persistAccountProfile(
+            accountId: account.id,
             displayName: account.displayName,
             email: account.email,
             photoUrl: account.photoUrl,
@@ -75,14 +120,15 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
           );
         }
 
-        // A new Flutter runtime has no GoogleSignInAccount object. A successful
-        // native Drive authorization independently proves that the default
-        // account has a usable backup grant; cached fields are display-only.
+        // A new Flutter runtime has no GoogleSignInAccount object. The native
+        // authorization path returns the account it actually authorized, and
+        // the stable ID/email binding was verified before any sync state read.
         return await _cachedProfileSnapshot(reconnectRequired: false);
       } on CloudAuthorizationUnavailable {
         await _state.setReconnectRequired(true);
         if (account != null) {
           await _persistAccountProfile(
+            accountId: account.id,
             displayName: account.displayName,
             email: account.email,
             photoUrl: account.photoUrl,
@@ -101,6 +147,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   }
 
   Future<void> _persistAccountProfile({
+    required String accountId,
     String? displayName,
     String? email,
     String? photoUrl,
@@ -115,6 +162,10 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       }
     }
 
+    // Save a stable Google account ID alongside the email used only to select
+    // the native Android account. Both are written before activating the
+    // account-scoped sync namespace.
+    await writeValue(_cachedAccountIdKey, accountId);
     await writeValue(_cachedDisplayNameKey, displayName);
     await writeValue(_cachedEmailKey, email);
     await writeValue(_cachedPhotoUrlKey, photoUrl);
@@ -122,6 +173,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
 
   Future<void> _clearCachedAccountProfile() async {
     final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_cachedAccountIdKey);
     await preferences.remove(_cachedDisplayNameKey);
     await preferences.remove(_cachedEmailKey);
     await preferences.remove(_cachedPhotoUrlKey);
@@ -169,10 +221,15 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       client?.close();
 
       await _persistAccountProfile(
+        accountId: account.id,
         displayName: account.displayName,
         email: account.email,
         photoUrl: account.photoUrl,
       );
+      final scopedState = _state;
+      if (scopedState is CloudAccountScopedSyncStateStore) {
+        await scopedState.setActiveAccountId(account.id);
+      }
       await _state.setCloudSyncEnabled(true);
       await _state.setReconnectRequired(false);
       if (!automaticPreferenceConfigured) {
