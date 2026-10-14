@@ -108,7 +108,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                   scrollDirection: Axis.horizontal,
                   children: [
                     ChoiceChip(
-                      label: Text(contentL10n.filterAll, style: contentTextTheme.labelLarge),
+                      label: Text(
+                        contentL10n.filterAll,
+                        style: contentTextTheme.labelLarge,
+                      ),
                       selected: selectedCategory == null,
                       onSelected: (_) => ref
                           .read(knowledgeCategoryFilterProvider.notifier)
@@ -119,7 +122,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                       (category) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(category.localizedLabel(contentL10n), style: contentTextTheme.labelLarge),
+                          label: Text(
+                            category.localizedLabel(contentL10n),
+                            style: contentTextTheme.labelLarge,
+                          ),
                           selected: selectedCategory == category,
                           onSelected: (_) => ref
                               .read(knowledgeCategoryFilterProvider.notifier)
@@ -144,7 +150,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                     scrollDirection: Axis.horizontal,
                     children: [
                       ChoiceChip(
-                        label: Text(contentL10n.knowledgeBaseTopicAll, style: contentTextTheme.labelLarge),
+                        label: Text(
+                          contentL10n.knowledgeBaseTopicAll,
+                          style: contentTextTheme.labelLarge,
+                        ),
                         selected: selectedTopic == null,
                         onSelected: (_) => ref
                             .read(knowledgeTopicFilterProvider.notifier)
