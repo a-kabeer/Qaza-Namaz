@@ -126,7 +126,7 @@ void main() {
     );
     expect(source, contains('prayer == focusPrayer'));
     expect(source, contains('_prayerLabel(l10n, nextPrayer!)'));
-    expect(source, contains('_formatTime(context, nextAt!, snapshot)'));
+    expect(source, contains('_formatTime(context, nextAt, snapshot)'));
     expect(source, contains('final countdownPrayer = focusPrayer;'));
   });
 
