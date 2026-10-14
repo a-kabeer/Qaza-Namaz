@@ -16,8 +16,9 @@ enum KnowledgeLanguage {
   bool get isRightToLeft => isUrdu || isArabic;
 
   /// Urdu Nastaliq and Arabic both read from right to left.
-  TextDirection get direction =>
-      isRightToLeft ? TextDirection.rtl : TextDirection.ltr;
+  TextDirection get direction => isRightToLeft
+      ? TextDirection.rtl
+      : TextDirection.ltr;
 
   TextAlign get textAlign => isRightToLeft ? TextAlign.right : TextAlign.left;
 
