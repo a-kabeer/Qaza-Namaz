@@ -155,20 +155,104 @@ void main() {
   });
 
   group('AppTheme typography and mode', () {
-    test('Urdu theme keeps the bundled Nastaliq text scale', () {
+    test('Urdu theme uses Nastaliq with role-specific metrics', () {
       final theme = AppTheme.light(locale: const Locale('ur'));
-      final body = theme.textTheme.bodyMedium!;
+      final text = theme.textTheme;
 
-      expect(body.fontFamily, AppTheme.urduFamily);
-      expect(body.letterSpacing, 0);
-      expect(body.height, greaterThanOrEqualTo(1.9));
+      expect(text.bodyMedium!.fontFamily, AppTheme.urduFamily);
+      expect(text.bodyMedium!.letterSpacing, 0);
+      expect(text.bodyMedium!.fontSize, 15);
+      expect(text.bodyMedium!.height, closeTo(27 / 15, 0.001));
+
+      expect(text.labelSmall!.fontFamily, AppTheme.urduFamily);
+      expect(text.labelSmall!.fontSize, 12);
+      expect(text.labelSmall!.height, closeTo(21 / 12, 0.001));
+      expect(text.labelSmall!.height, lessThan(text.bodyMedium!.height!));
+      expect(text.bodyMedium!.height, lessThan(1.9));
     });
 
-    test('English theme uses the Latin type scale', () {
-      final theme = AppTheme.light(locale: const Locale('en'));
+    test('Arabic theme uses Noto Sans Arabic with independent metrics', () {
+      final arabic = AppTheme.light(locale: const Locale('ar')).textTheme;
+      final urdu = AppTheme.light(locale: const Locale('ur')).textTheme;
 
-      expect(theme.textTheme.bodyMedium?.fontFamily, 'Manrope');
+      expect(arabic.bodyMedium!.fontFamily, AppTheme.arabicFamily);
+      expect(arabic.bodyMedium!.fontSize, 15);
+      expect(arabic.bodyMedium!.height, closeTo(25 / 15, 0.001));
+      expect(arabic.labelSmall!.fontFamily, AppTheme.arabicFamily);
+      expect(arabic.labelSmall!.height, closeTo(19 / 12, 0.001));
+      expect(arabic.bodyMedium!.height, isNot(urdu.bodyMedium!.height));
+      expect(arabic.labelSmall!.height, isNot(urdu.labelSmall!.height));
     });
+
+    test('English theme keeps the existing Latin type scale', () {
+      final text = AppTheme.light(locale: const Locale('en')).textTheme;
+
+      expect(text.bodyMedium?.fontFamily, 'Manrope');
+      expect(text.bodyMedium?.fontSize, 14);
+      expect(text.bodyMedium?.height, closeTo(20 / 14, 0.001));
+    });
+
+    testWidgets(
+      'script typography wraps on narrow screens with enlarged text',
+      (tester) async {
+        final oldSurfaceSize = tester.binding.window.physicalSize;
+        final oldPixelRatio = tester.binding.window.devicePixelRatio;
+        await tester.binding.setSurfaceSize(const Size(320, 720));
+        addTearDown(() async {
+          await tester.binding.setSurfaceSize(null);
+          tester.binding.window.physicalSizeTestValue = oldSurfaceSize;
+          tester.binding.window.devicePixelRatioTestValue = oldPixelRatio;
+        });
+
+        for (final locale in <Locale>[
+          const Locale('ur'),
+          const Locale('ar'),
+        ]) {
+          for (final brightness in Brightness.values) {
+            final theme = brightness == Brightness.dark
+                ? AppTheme.dark(locale: locale)
+                : AppTheme.light(locale: locale);
+            final sample = locale.languageCode == 'ur'
+                ? 'قضا نماز کی ادائیگی کے لیے روزانہ کا ہدف مقرر کریں اور اپنی پیش رفت باقاعدگی سے دیکھیں۔'
+                : 'قضاء الصلاة تحتاج إلى تنظيم يومي ومتابعة التقدم بوضوح وانتظام.';
+            await tester.pumpWidget(
+              MaterialApp(
+                theme: theme,
+                home: Builder(
+                  builder: (context) => MediaQuery(
+                    data: MediaQuery.of(context).copyWith(
+                      textScaler: const TextScaler.linear(1.4),
+                    ),
+                    child: Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: Scaffold(
+                        body: ListView(
+                          padding: const EdgeInsets.all(16),
+                          children: [
+                            Text(sample, style: theme.textTheme.bodyMedium),
+                            const SizedBox(height: 12),
+                            Text(
+                              sample,
+                              style: theme.textTheme.labelSmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            );
+            expect(
+              tester.takeException(),
+              isNull,
+              reason:
+                  '${locale.languageCode} typography should lay out in $brightness mode',
+            );
+          }
+        }
+      },
+    );
 
     test('theme mode mapping preserves system, light and dark choices', () {
       expect(AppThemeMode.system.materialMode, ThemeMode.system);
