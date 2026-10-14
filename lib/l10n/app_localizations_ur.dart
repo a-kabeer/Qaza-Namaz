@@ -1091,7 +1091,8 @@ class AppLocalizationsUr extends AppLocalizations {
   String get knowledgeBaseTitle => 'نماز اور قضا کی رہنمائی';
 
   @override
-  String get knowledgeBaseSearchHint => 'نماز کے مسائل اور غلط فہمیاں تلاش کریں';
+  String get knowledgeBaseSearchHint =>
+      'نماز کے مسائل اور غلط فہمیاں تلاش کریں';
 
   @override
   String get knowledgeBaseClearSearch => 'تلاش صاف کریں';
@@ -1136,7 +1137,8 @@ class AppLocalizationsUr extends AppLocalizations {
   String get knowledgeBaseEmptyTitle => 'رہنمائی کا کوئی مضمون نہیں ملا';
 
   @override
-  String get knowledgeBaseEmptyMessage => 'کوئی اور لفظ تلاش کریں یا دوسرا موضوع منتخب کریں۔';
+  String get knowledgeBaseEmptyMessage =>
+      'کوئی اور لفظ تلاش کریں یا دوسرا موضوع منتخب کریں۔';
 
   @override
   String get knowledgeBaseLoadError => 'نماز کی رہنمائی لوڈ نہیں ہو سکی۔';
@@ -1167,7 +1169,8 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsGoogleSignIn => 'گوگل سائن اِن';
 
   @override
-  String get settingsKnowledgeBaseSubtitle => 'نماز کے مسائل اور عام غلط فہمیاں پڑھیں۔';
+  String get settingsKnowledgeBaseSubtitle =>
+      'نماز کے مسائل اور عام غلط فہمیاں پڑھیں۔';
 
   @override
   String get settingsDataSection => 'ڈیٹا و اسٹوریج';

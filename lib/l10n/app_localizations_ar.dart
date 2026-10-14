@@ -1087,7 +1087,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get knowledgeBaseTitle => 'إرشادات الصلاة والقضاء';
 
   @override
-  String get knowledgeBaseSearchHint => 'ابحث في أحكام الصلاة والمفاهيم الخاطئة';
+  String get knowledgeBaseSearchHint =>
+      'ابحث في أحكام الصلاة والمفاهيم الخاطئة';
 
   @override
   String get knowledgeBaseClearSearch => 'مسح البحث';
@@ -1132,7 +1133,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get knowledgeBaseEmptyTitle => 'لم يتم العثور على مقالات إرشادية';
 
   @override
-  String get knowledgeBaseEmptyMessage => 'جرّب البحث بكلمة أخرى أو اختر موضوعًا مختلفًا.';
+  String get knowledgeBaseEmptyMessage =>
+      'جرّب البحث بكلمة أخرى أو اختر موضوعًا مختلفًا.';
 
   @override
   String get knowledgeBaseLoadError => 'تعذر تحميل إرشادات الصلاة.';
@@ -1162,7 +1164,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsGoogleSignIn => 'تسجيل الدخول باستخدام Google';
 
   @override
-  String get settingsKnowledgeBaseSubtitle => 'تصفّح أحكام الصلاة والمفاهيم الخاطئة الشائعة.';
+  String get settingsKnowledgeBaseSubtitle =>
+      'تصفّح أحكام الصلاة والمفاهيم الخاطئة الشائعة.';
 
   @override
   String get settingsDataSection => 'البيانات والتخزين';

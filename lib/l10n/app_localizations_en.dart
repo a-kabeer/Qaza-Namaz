@@ -1096,7 +1096,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get knowledgeBaseTitle => 'Prayer Guidance';
 
   @override
-  String get knowledgeBaseSearchHint => 'Search prayer rulings & misconceptions';
+  String get knowledgeBaseSearchHint =>
+      'Search prayer rulings & misconceptions';
 
   @override
   String get knowledgeBaseClearSearch => 'Clear search';
@@ -1141,7 +1142,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get knowledgeBaseEmptyTitle => 'No guidance articles found';
 
   @override
-  String get knowledgeBaseEmptyMessage => 'Try another search or choose a different topic.';
+  String get knowledgeBaseEmptyMessage =>
+      'Try another search or choose a different topic.';
 
   @override
   String get knowledgeBaseLoadError => 'Prayer guidance could not be loaded.';
@@ -1172,7 +1174,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGoogleSignIn => 'Google sign-in';
 
   @override
-  String get settingsKnowledgeBaseSubtitle => 'Browse prayer rulings and common misconceptions.';
+  String get settingsKnowledgeBaseSubtitle =>
+      'Browse prayer rulings and common misconceptions.';
 
   @override
   String get settingsDataSection => 'Data & Storage';

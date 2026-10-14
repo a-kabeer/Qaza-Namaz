@@ -165,9 +165,9 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
                             label: Text(
-                                localizedKnowledgeTopic(topicId, contentL10n),
-                                style: contentTextTheme.labelLarge,
-                              ),
+                              localizedKnowledgeTopic(topicId, contentL10n),
+                              style: contentTextTheme.labelLarge,
+                            ),
                             selected: selectedTopic == topicId,
                             onSelected: (_) => ref
                                 .read(knowledgeTopicFilterProvider.notifier)
