@@ -133,9 +133,13 @@ class GoogleSignInGateway {
             (!allowInteractive || _resolvedAccount == null)) {
           try {
             return await _authorizeDriveSilentlyOnAndroid();
+          } on CloudAccountIdentityMismatch {
+            // An account mismatch is not a missing permission. Never let this
+            // fall through to an interactive account picker.
+            rethrow;
           } on CloudAuthorizationUnavailable {
-            // A foreground user action may now complete authentication or
-            // consent. Background callers must never fall through to UI.
+            // A foreground user action may now complete missing consent.
+            // Background callers must never fall through to UI.
             if (!allowInteractive) rethrow;
           }
         }
@@ -200,7 +204,10 @@ class GoogleSignInGateway {
     final response = await _backgroundAuthorizationChannel
         .invokeMapMethod<String, Object?>(
           'authorizeDriveSilently',
-          <String, Object?>{'accountEmail': expectedEmail},
+          <String, Object?>{
+            'accountId': expectedAccountId,
+            'accountEmail': expectedEmail,
+          },
         );
     final status = response?['status'];
 
@@ -212,7 +219,7 @@ class GoogleSignInGateway {
     }
     if (status == 'accountMismatch') {
       final message = response?['message'];
-      throw CloudAuthorizationUnavailable(
+      throw CloudAccountIdentityMismatch(
         message is String && message.trim().isNotEmpty
             ? message
             : 'Google Drive authorized a different or unverifiable account.',
@@ -234,13 +241,21 @@ class GoogleSignInGateway {
         ? rawScopes.whereType<String>().toSet()
         : <String>{};
 
+    final authorizedAccountId = response?['accountId'];
     final authorizedEmail = response?['accountEmail'];
-    if (accessToken is! String ||
-        accessToken.isEmpty ||
-        !grantedScopes.contains(cloudDriveScope) ||
+    if (authorizedAccountId is! String ||
+        authorizedAccountId.trim().isEmpty ||
+        authorizedAccountId != expectedAccountId ||
         authorizedEmail is! String ||
         authorizedEmail.trim().isEmpty ||
         authorizedEmail.trim().toLowerCase() != expectedEmail.toLowerCase()) {
+      throw const CloudAccountIdentityMismatch(
+        'Google Drive authorization did not confirm the previously connected Google account.',
+      );
+    }
+    if (accessToken is! String ||
+        accessToken.isEmpty ||
+        !grantedScopes.contains(cloudDriveScope)) {
       throw const CloudAuthorizationUnavailable(
         'Google Drive authorization is not available for the backup scope.',
       );
