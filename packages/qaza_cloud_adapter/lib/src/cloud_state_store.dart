@@ -248,12 +248,13 @@ class SharedPreferencesCloudSyncStateStore
     await prefs.setBool(key, enabled);
     if (!enabled) {
       // Cloud-enabled is the hard worker guard. Retain the user's automatic
-      // backup choice so reconnecting does not silently change that choice.
+      // backup choice and this account's conflict so reconnecting does not
+      // discard sync history. A preserved conflict is revalidated against the
+      // current remote backup before any resolution can mutate local data.
       await prefs.setBool(
         _requiredAccountKey(prefs, _reconnectRequiredKey),
         false,
       );
-      await prefs.remove(_requiredAccountKey(prefs, _pendingConflictKey));
     }
   }
 
