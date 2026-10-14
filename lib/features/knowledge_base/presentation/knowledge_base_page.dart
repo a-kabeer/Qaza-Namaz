@@ -56,7 +56,8 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
           filterLabelStyle?.fontSize ?? 14,
         ) *
         (filterLabelStyle?.height ?? 1.2);
-    final filterStripHeight = math.max(52.0, scaledFilterLineHeight + 20);
+    final filterStripHeight =
+        math.max(52.0, scaledFilterLineHeight + 20).toDouble();
 
     return Scaffold(
       appBar: AppBar(
