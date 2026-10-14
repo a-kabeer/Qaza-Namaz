@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/app_metadata.dart';
+import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
@@ -19,6 +20,7 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final locale = ref.watch(localeProvider);
+    final typography = AppTypography.of(context);
 
     void open(Widget screen) {
       Navigator.push(
@@ -89,9 +91,14 @@ class SettingsScreen extends ConsumerWidget {
                     value: 'ur',
                     label: Text(l10n.languageUrdu),
                   ),
-                  const ButtonSegment<String>(
+                  ButtonSegment<String>(
                     value: 'ar',
-                    label: Text('العربية'),
+                    label: Text(
+                      'العربية',
+                      textDirection: TextDirection.rtl,
+                      textAlign: TextAlign.center,
+                      style: typography.arabic.labelLarge,
+                    ),
                   ),
                 ],
                 selected: {locale.languageCode},
