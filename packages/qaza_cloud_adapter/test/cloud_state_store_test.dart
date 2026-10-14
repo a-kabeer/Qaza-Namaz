@@ -50,6 +50,7 @@ void main() {
         lastSyncedRemoteVersion: 'existing-version',
       ),
     );
+    await state.writePendingConflict(_conflict('existing-conflict'));
     expect(await state.isAutomaticSyncEnabled(), isTrue);
     expect(await state.isReconnectRequired(), isTrue);
 
@@ -66,8 +67,13 @@ void main() {
         lastSyncedRemoteVersion: 'existing-version',
       ),
     );
+    expect(
+      (await state.readPendingConflict())?.remoteLineage.backupId,
+      'existing-conflict',
+    );
 
-    // Reconnecting the same stable account keeps its verified sync cursor.
+    // Reconnecting the same stable account keeps its verified cursor and
+    // conflict, which will be revalidated before conflict resolution.
     await state.setCloudSyncEnabled(true);
     expect(
       await state.readCursor(),
@@ -76,6 +82,10 @@ void main() {
         lastSyncedBackupId: 'existing-backup',
         lastSyncedRemoteVersion: 'existing-version',
       ),
+    );
+    expect(
+      (await state.readPendingConflict())?.remoteLineage.backupId,
+      'existing-conflict',
     );
   });
 
