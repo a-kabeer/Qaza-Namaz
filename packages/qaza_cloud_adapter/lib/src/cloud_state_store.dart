@@ -59,8 +59,6 @@ class SharedPreferencesCloudSyncStateStore
       '${_keyPrefix}pending_conflict_v1';
   static const _legacyQuarantineMarkerKey =
       '${_keyPrefix}legacy_state_quarantined_v1';
-  static const _legacyQuarantineContainsStateKey =
-      '${_keyPrefix}legacy_state_quarantine_nonempty_v1';
   static const _legacyQuarantinePrefix =
       '${_keyPrefix}legacy_quarantine_v1.';
 
@@ -115,7 +113,6 @@ class SharedPreferencesCloudSyncStateStore
   ) async {
     if (prefs.getBool(_legacyQuarantineMarkerKey) == true) return;
 
-    var containsState = false;
     for (final key in _legacyAccountStateKeys) {
       if (!prefs.containsKey(key)) continue;
       final value = prefs.get(key);
@@ -136,10 +133,8 @@ class SharedPreferencesCloudSyncStateStore
         }
       }
       await prefs.remove(key);
-      containsState = true;
     }
 
-    await prefs.setBool(_legacyQuarantineContainsStateKey, containsState);
     await prefs.setBool(_legacyQuarantineMarkerKey, true);
   }
 
@@ -287,10 +282,8 @@ class SharedPreferencesCloudSyncStateStore
     final prefs = await _prefs;
     final key = _accountScopedKey(prefs, _reconnectRequiredKey);
     if (key == null) return;
-    if (required && !(prefs.getBool(
-          _accountScopedKey(prefs, _cloudEnabledKey) ?? '',
-        ) ??
-        false)) {
+    final cloudKey = _accountScopedKey(prefs, _cloudEnabledKey);
+    if (required && (cloudKey == null || !(prefs.getBool(cloudKey) ?? false))) {
       return;
     }
     await prefs.setBool(key, required);
