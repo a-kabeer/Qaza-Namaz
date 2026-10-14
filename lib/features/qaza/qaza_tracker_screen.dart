@@ -108,12 +108,17 @@ class _QazaTrackerHeader extends StatelessWidget {
       children: [
         const SizedBox(height: AppSpacing.sm),
         SizedBox(
-          height: _headerContentHeight,
-          child: selectionMode
-              ? const _SelectionContextHeader()
-              : Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: SegmentedButton<QazaStatusFilter>(
+          width: double.infinity,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: _headerContentHeight),
+            child: selectionMode
+                ? const _SelectionContextHeader()
+                : Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: AppSpacing.xs,
+                    ),
+                    child: SegmentedButton<QazaStatusFilter>(
                     key: const Key('qaza_status_switch'),
                     showSelectedIcon: false,
                     segments: [
@@ -125,15 +130,16 @@ class _QazaTrackerHeader extends StatelessWidget {
                         value: QazaStatusFilter.completed,
                         label: Text(l10n.statusCompleted),
                       ),
-                    ],
-                    selected: {statusFilter},
-                    onSelectionChanged: (value) {
-                      if (value.isNotEmpty) {
-                        controller.setStatusFilter(value.first);
-                      }
-                    },
+                      ],
+                      selected: {statusFilter},
+                      onSelectionChanged: (value) {
+                        if (value.isNotEmpty) {
+                          controller.setStatusFilter(value.first);
+                        }
+                      },
+                    ),
                   ),
-                ),
+          ),
         ),
       ],
     );
@@ -148,26 +154,31 @@ class _SelectionContextHeader extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Expanded(
-          child: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(
-                  Icons.checklist_rounded,
-                  size: 18,
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                Text(
+        Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: AppSpacing.xs,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.checklist_rounded,
+                size: 18,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: AppSpacing.xs),
+              Flexible(
+                child: Text(
                   l10n.addQazaSelectionLabel,
                   style: theme.textTheme.labelLarge?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
         const Divider(height: 1),
@@ -218,9 +229,12 @@ class _ProgressHeader extends ConsumerWidget {
             );
 
     return SizedBox(
-      key: const Key('qaza_tracker_progress_header'),
-      height: _headerHeight,
-      child: content,
+      width: double.infinity,
+      child: ConstrainedBox(
+        key: const Key('qaza_tracker_progress_header'),
+        constraints: const BoxConstraints(minHeight: _headerHeight),
+        child: content,
+      ),
     );
   }
 
@@ -1482,9 +1496,11 @@ class _FilterSheet extends ConsumerWidget {
         shrinkWrap: true,
         padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
         children: [
-          const Text(
-            'Prayer',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          Text(
+            l10n.qazaEditPrayer,
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: 8),
           Wrap(
