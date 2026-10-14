@@ -39,22 +39,21 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> restore() async {
     try {
-      final scopedState = _state is CloudAccountScopedSyncStateStore
-          ? _state
-          : null;
+      final CloudAccountScopedSyncStateStore? scopedState =
+          _state is CloudAccountScopedSyncStateStore ? _state : null;
       final activeAccountId = await scopedState?.activeAccountId();
       final accountState = scopedState != null && activeAccountId != null
           ? scopedState.scopedToAccount(activeAccountId)
           : _state;
 
       if (scopedState != null && activeAccountId == null) {
-        if (_state is SharedPreferencesCloudSyncStateStore &&
-            await (_state as SharedPreferencesCloudSyncStateStore)
-                .hasUnscopedLegacyConnection()) {
-          // Older releases persisted a connected flag without a stable Google
-          // account ID. Show the saved profile only as a reconnect hint; never
-          // authorize or sync until the user verifies the account again.
-          return await _cachedProfileSnapshot(reconnectRequired: true);
+        if (_state is SharedPreferencesCloudSyncStateStore) {
+          if (await _state.hasUnscopedLegacyConnection()) {
+            // Older releases persisted a connected flag without a stable
+            // Google account ID. Show the saved profile only as a reconnect
+            // hint; never authorize or sync until the account is verified.
+            return await _cachedProfileSnapshot(reconnectRequired: true);
+          }
         }
         return const CloudAccountSnapshot.disconnected();
       }
