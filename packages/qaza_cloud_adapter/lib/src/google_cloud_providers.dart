@@ -43,6 +43,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
           ? _state as CloudAccountScopedSyncStateStore
           : null;
       final activeAccountId = await scopedState?.activeAccountId();
+      final accountState = scopedState != null && activeAccountId != null
+          ? scopedState.scopedToAccount(activeAccountId)
+          : _state;
 
       if (scopedState != null && activeAccountId == null) {
         if (_state is SharedPreferencesCloudSyncStateStore &&
@@ -56,14 +59,16 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         return const CloudAccountSnapshot.disconnected();
       }
 
-      if (!await _state.isCloudSyncEnabled()) {
+      if (!await accountState.isCloudSyncEnabled()) {
         return const CloudAccountSnapshot.disconnected();
       }
 
       if (scopedState != null) {
         final boundAccountId = await _gateway.accountIdForAuthorization();
         if (boundAccountId == null || boundAccountId != activeAccountId) {
-          await _state.setReconnectRequired(true);
+          if (await scopedState.activeAccountId() == activeAccountId) {
+            await accountState.setReconnectRequired(true);
+          }
           return await _cachedProfileSnapshot(reconnectRequired: true);
         }
       }
@@ -72,7 +77,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       if (account != null &&
           activeAccountId != null &&
           account.id != activeAccountId) {
-        await _state.setReconnectRequired(true);
+        if (await scopedState?.activeAccountId() == activeAccountId) {
+          await accountState.setReconnectRequired(true);
+        }
         return CloudAccountSnapshot.reconnectRequired(
           displayName: account.displayName,
           email: account.email,
@@ -89,18 +96,16 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
             (await scopedState.activeAccountId() != activeAccountId ||
                 await _gateway.accountIdForAuthorization() !=
                     activeAccountId)) {
-          throw const CloudAuthorizationUnavailable(
-            'The connected Google account changed during verification. Reconnect before syncing.',
-          );
+          return await _cachedProfileSnapshot(reconnectRequired: true);
         }
-        await _state.setReconnectRequired(false);
+        await accountState.setReconnectRequired(false);
 
-        if (!await _state.hasAutomaticSyncPreference()) {
-          await _state.setAutomaticSyncEnabled(true);
+        if (!await accountState.hasAutomaticSyncPreference()) {
+          await accountState.setAutomaticSyncEnabled(true);
         }
-        if (await _state.isAutomaticSyncEnabled()) {
+        if (await accountState.isAutomaticSyncEnabled()) {
           await _scheduler.initializeAndSchedule(
-            frequency: (await _state.backupFrequency()).interval,
+            frequency: (await accountState.backupFrequency()).interval,
             serverClientId: serverClientId,
           );
         }
@@ -125,7 +130,13 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         // the stable ID/email binding was verified before any sync state read.
         return await _cachedProfileSnapshot(reconnectRequired: false);
       } on CloudAuthorizationUnavailable {
-        await _state.setReconnectRequired(true);
+        if (scopedState != null &&
+            (await scopedState.activeAccountId() != activeAccountId ||
+                await _gateway.accountIdForAuthorization() !=
+                    activeAccountId)) {
+          return await _cachedProfileSnapshot(reconnectRequired: true);
+        }
+        await accountState.setReconnectRequired(true);
         if (account != null) {
           await _persistAccountProfile(
             accountId: account.id,
@@ -248,7 +259,14 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         photoUrl: account.photoUrl,
       );
     } catch (error) {
-      if (await _state.isCloudSyncEnabled()) {
+      final scopedState = _state is CloudAccountScopedSyncStateStore
+          ? _state as CloudAccountScopedSyncStateStore
+          : null;
+      final activeAccountId = await scopedState?.activeAccountId();
+      final authenticatedAccountId = await _gateway.accountIdForAuthorization();
+      if (activeAccountId != null &&
+          authenticatedAccountId == activeAccountId &&
+          await _state.isCloudSyncEnabled()) {
         await _state.setReconnectRequired(true);
       }
       return CloudAccountSnapshot.failed(error.toString());
