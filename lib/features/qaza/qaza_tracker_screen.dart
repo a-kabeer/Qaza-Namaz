@@ -119,17 +119,17 @@ class _QazaTrackerHeader extends StatelessWidget {
                       vertical: AppSpacing.xs,
                     ),
                     child: SegmentedButton<QazaStatusFilter>(
-                    key: const Key('qaza_status_switch'),
-                    showSelectedIcon: false,
-                    segments: [
-                      ButtonSegment(
-                        value: QazaStatusFilter.pending,
-                        label: Text(l10n.statusPending),
-                      ),
-                      ButtonSegment(
-                        value: QazaStatusFilter.completed,
-                        label: Text(l10n.statusCompleted),
-                      ),
+                      key: const Key('qaza_status_switch'),
+                      showSelectedIcon: false,
+                      segments: [
+                        ButtonSegment(
+                          value: QazaStatusFilter.pending,
+                          label: Text(l10n.statusPending),
+                        ),
+                        ButtonSegment(
+                          value: QazaStatusFilter.completed,
+                          label: Text(l10n.statusCompleted),
+                        ),
                       ],
                       selected: {statusFilter},
                       onSelectionChanged: (value) {
