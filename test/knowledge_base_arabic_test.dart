@@ -86,6 +86,13 @@ void main() {
       ).matches(fajr),
       isFalse,
     );
+    expect(
+      const KnowledgeQuery(
+        text: 'الفَجْر',
+        language: KnowledgeLanguage.arabic,
+      ).matches(fajr),
+      isTrue,
+    );
   });
 
   test('the triple parser rejects an incomplete Arabic dataset', () {
