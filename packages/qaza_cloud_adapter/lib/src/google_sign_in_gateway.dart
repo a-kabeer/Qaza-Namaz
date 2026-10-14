@@ -14,8 +14,7 @@ const MethodChannel _backgroundAuthorizationChannel = MethodChannel(
 );
 const String _cachedAccountEmailKey =
     'qaza_cloud_adapter.cached_account_email_v1';
-const String _cachedAccountIdKey =
-    'qaza_cloud_adapter.cached_account_id_v1';
+const String _cachedAccountIdKey = 'qaza_cloud_adapter.cached_account_id_v1';
 
 class GoogleSignInGateway {
   GoogleSignInGateway({
@@ -126,8 +125,9 @@ class GoogleSignInGateway {
 
   Future<http.Client> _authorizeDriveSilentlyOnAndroid() async {
     final preferences = await SharedPreferences.getInstance();
-    final expectedAccountId =
-        preferences.getString(_cachedAccountIdKey)?.trim();
+    final expectedAccountId = preferences
+        .getString(_cachedAccountIdKey)
+        ?.trim();
     final expectedEmail = preferences.getString(_cachedAccountEmailKey)?.trim();
     if (expectedAccountId == null ||
         expectedAccountId.isEmpty ||

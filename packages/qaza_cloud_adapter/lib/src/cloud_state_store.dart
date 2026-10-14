@@ -44,23 +44,19 @@ class SharedPreferencesCloudSyncStateStore
 
   static const _keyPrefix = 'qaza_cloud_adapter.';
   static const _deviceIdKey = '${_keyPrefix}device_id';
-  static const _activeAccountIdKey =
-      '${_keyPrefix}active_account_id_v1';
+  static const _activeAccountIdKey = '${_keyPrefix}active_account_id_v1';
   static const _cursorKey = '${_keyPrefix}sync_cursor_v1';
   static const _cloudEnabledKey = '${_keyPrefix}cloud_enabled_v1';
   static const _automaticSyncEnabledKey =
       '${_keyPrefix}automatic_sync_enabled_v1';
   static const _backupFrequencyKey = '${_keyPrefix}backup_frequency_v1';
-  static const _reconnectRequiredKey =
-      '${_keyPrefix}reconnect_required_v1';
+  static const _reconnectRequiredKey = '${_keyPrefix}reconnect_required_v1';
   static const _lastSuccessfulSyncAtKey =
       '${_keyPrefix}last_successful_sync_at_v1';
-  static const _pendingConflictKey =
-      '${_keyPrefix}pending_conflict_v1';
+  static const _pendingConflictKey = '${_keyPrefix}pending_conflict_v1';
   static const _legacyQuarantineMarkerKey =
       '${_keyPrefix}legacy_state_quarantined_v1';
-  static const _legacyQuarantinePrefix =
-      '${_keyPrefix}legacy_quarantine_v1.';
+  static const _legacyQuarantinePrefix = '${_keyPrefix}legacy_quarantine_v1.';
 
   static const List<String> _legacyAccountStateKeys = <String>[
     _cursorKey,
@@ -108,9 +104,7 @@ class SharedPreferencesCloudSyncStateStore
     return prefs.getBool(_cloudEnabledKey) == true;
   }
 
-  Future<void> _quarantineLegacyAccountState(
-    SharedPreferences prefs,
-  ) async {
+  Future<void> _quarantineLegacyAccountState(SharedPreferences prefs) async {
     if (prefs.getBool(_legacyQuarantineMarkerKey) == true) return;
 
     for (final key in _legacyAccountStateKeys) {
