@@ -150,10 +150,7 @@ class GoogleSignInGateway {
     final response = await _backgroundAuthorizationChannel
         .invokeMapMethod<String, Object?>(
           'authorizeDriveSilently',
-          <String, Object?>{
-            'accountId': expectedAccountId,
-            'accountEmail': expectedEmail,
-          },
+          <String, Object?>{'accountEmail': expectedEmail},
         );
     final status = response?['status'];
 
