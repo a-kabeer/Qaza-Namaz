@@ -65,6 +65,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                 child: TextField(
                   controller: _searchController,
                   textDirection: language.direction,
+                  style: contentType.bodyLarge,
                   textInputAction: TextInputAction.search,
                   onChanged: (value) {
                     ref.read(knowledgeSearchQueryProvider.notifier).state =
@@ -73,6 +74,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                   },
                   decoration: InputDecoration(
                     hintText: contentL10n.knowledgeBaseSearchHint,
+                    hintStyle: contentType.bodyMedium,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isEmpty
                         ? null
