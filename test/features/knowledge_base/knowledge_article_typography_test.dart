@@ -1,0 +1,236 @@
+import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/theme/app_theme.dart';
+import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/features/knowledge_base/data/knowledge_base_repository.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_article.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_language.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_localized_text.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_query.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_reference.dart';
+import 'package:qaza_namaz/features/knowledge_base/presentation/knowledge_article_detail_page.dart';
+import 'package:qaza_namaz/features/knowledge_base/presentation/providers/knowledge_base_providers.dart';
+import 'package:qaza_namaz/l10n/app_localizations.dart';
+
+const _primaryArticle = KnowledgeArticle(
+  id: 'masala_001',
+  category: KnowledgeCategory.masail,
+  topicId: 'qaza_namaz',
+  sortOrder: 1,
+  isPublished: true,
+  title: KnowledgeLocalizedText(
+    ur: 'قضا نماز کا عنوان',
+    en: 'English article title',
+  ),
+  question: KnowledgeLocalizedText(
+    ur: 'قضا نماز کے بارے میں سوال',
+    en: 'A question about missed prayers',
+  ),
+  summary: KnowledgeLocalizedText(
+    ur: 'یہ قضا نماز کے بارے میں ایک طویل خلاصہ ہے۔',
+    en: 'A longer summary about making up missed prayers.',
+  ),
+  body: KnowledgeLocalizedText(
+    ur: 'قضا نماز کی ادائیگی کے لیے روزانہ کا ہدف مقرر کریں۔ '
+        'اپنی پیش رفت باقاعدگی سے دیکھیں اور ضرورت کے مطابق ہدف تبدیل کریں۔ '
+        'اس مضمون میں طویل عبارت، اعداد ۱۲۳ اور English mixed text شامل ہے۔ '
+        'یہ متن کئی سطروں میں لپٹنا چاہیے اور اگلے متن سے نہیں ٹکرانا چاہیے۔',
+    en: 'Set a daily target for making up missed prayers. '
+        'Review your progress regularly and adjust the target when needed.',
+  ),
+  keywords: KnowledgeLocalizedKeywords.empty,
+  references: [
+    KnowledgeReference(
+      sourceName: 'Test source',
+      bookName: 'Test fiqh book',
+      author: 'Test author',
+    ),
+  ],
+  relatedArticleIds: ['masala_002'],
+);
+
+const _relatedArticle = KnowledgeArticle(
+  id: 'masala_002',
+  category: KnowledgeCategory.masail,
+  topicId: 'qaza_namaz',
+  sortOrder: 2,
+  isPublished: true,
+  title: KnowledgeLocalizedText(
+    ur: 'متعلقہ مضمون کا عنوان',
+    en: 'Related article title',
+  ),
+  question: KnowledgeLocalizedText(
+    ur: 'متعلقہ سوال',
+    en: 'Related question',
+  ),
+  summary: KnowledgeLocalizedText(
+    ur: 'متعلقہ خلاصہ',
+    en: 'Related summary',
+  ),
+  body: KnowledgeLocalizedText(
+    ur: 'متعلقہ مضمون کی عبارت',
+    en: 'Related article body',
+  ),
+  keywords: KnowledgeLocalizedKeywords.empty,
+  references: [],
+);
+
+class _FakeKnowledgeBaseRepository implements KnowledgeBaseRepository {
+  _FakeKnowledgeBaseRepository(this.articles);
+
+  final List<KnowledgeArticle> articles;
+
+  @override
+  Future<List<KnowledgeArticle>> getArticles() async => articles;
+
+  @override
+  Future<List<KnowledgeArticle>> getArticlesByCategory(
+    KnowledgeCategory category,
+  ) async =>
+      articles.where((article) => article.category == category).toList();
+
+  @override
+  Future<KnowledgeArticle?> getArticleById(String id) async {
+    for (final article in articles) {
+      if (article.id == id) return article;
+    }
+    return null;
+  }
+
+  @override
+  Future<List<KnowledgeArticle>> search(KnowledgeQuery query) async =>
+      articles.where(query.matches).toList();
+
+  @override
+  Future<List<String>> getTopicIds() async =>
+      articles.map((article) => article.topicId).toSet().toList();
+}
+
+void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  late AppDatabase database;
+  late ProviderContainer container;
+
+  setUp(() {
+    database = AppDatabase(NativeDatabase.memory());
+    container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        knowledgeBaseRepositoryProvider.overrideWithValue(
+          _FakeKnowledgeBaseRepository([_primaryArticle, _relatedArticle]),
+        ),
+      ],
+    );
+    container
+        .read(knowledgeLanguageProvider.notifier)
+        .set(KnowledgeLanguage.urdu);
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+  });
+
+  testWidgets(
+    'Urdu article stays RTL while English interface headings stay LTR',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(360, 720);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            theme: AppTheme.light(locale: const Locale('en')),
+            home: const KnowledgeArticleDetailPage(articleId: 'masala_001'),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final urduTitle = tester.widget<Text>(find.text('قضا نماز کا عنوان'));
+      expect(urduTitle.textDirection, TextDirection.rtl);
+
+      final context = tester.element(find.byType(KnowledgeArticleDetailPage));
+      final referencesText =
+          AppLocalizations.of(context).knowledgeArticleReferences;
+      final referencesHeading = tester.widget<Text>(
+        find.text(referencesText),
+      );
+      // No explicit article direction: the heading follows the English
+      // interface's ambient Directionality rather than inheriting Urdu RTL.
+      expect(referencesHeading.textDirection, isNull);
+      expect(tester.takeException(), isNull);
+
+      container
+          .read(knowledgeLanguageProvider.notifier)
+          .set(KnowledgeLanguage.english);
+      await tester.pumpAndSettle();
+
+      final englishTitle =
+          tester.widget<Text>(find.text('English article title'));
+      expect(englishTitle.textDirection, TextDirection.ltr);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'long Urdu article lays out at narrow width with enlarged text in both themes',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 720);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      for (final brightness in Brightness.values) {
+        final theme = brightness == Brightness.dark
+            ? AppTheme.dark(locale: const Locale('en'))
+            : AppTheme.light(locale: const Locale('en'));
+        await tester.pumpWidget(
+          UncontrolledProviderScope(
+            container: container,
+            child: MaterialApp(
+              locale: const Locale('en'),
+              supportedLocales: AppLocalizations.supportedLocales,
+              localizationsDelegates: AppLocalizations.localizationsDelegates,
+              theme: theme,
+              home: Builder(
+                builder: (context) => MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                    textScaler: const TextScaler.linear(1.4),
+                  ),
+                  child: const KnowledgeArticleDetailPage(
+                    articleId: 'masala_001',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        expect(
+          find.text('قضا نماز کا عنوان'),
+          findsOneWidget,
+          reason: 'Article title should remain visible in $brightness mode',
+        );
+        expect(
+          tester.takeException(),
+          isNull,
+          reason: 'Urdu article should lay out in $brightness mode',
+        );
+      }
+    },
+  );
+}
