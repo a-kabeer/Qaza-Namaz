@@ -20,6 +20,8 @@ class KnowledgeLanguageSwitcher extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final selected = ref.watch(knowledgeLanguageProvider);
+    // This model lists only languages with a bundled, validated content file.
+    // Do not derive Knowledge options from application UI locales.
     return LanguageSelector<KnowledgeLanguage>(
       key: const Key('knowledge_language_switcher'),
       options: KnowledgeLanguage.values
