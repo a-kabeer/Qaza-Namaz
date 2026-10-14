@@ -119,6 +119,7 @@ void main() {
 
   setUp(() {
     database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
     container = ProviderContainer(
       overrides: [
         appDatabaseProvider.overrideWithValue(database),
@@ -127,11 +128,10 @@ void main() {
         ),
       ],
     );
+    addTearDown(container.dispose);
     container
         .read(knowledgeLanguageProvider.notifier)
         .set(KnowledgeLanguage.urdu);
-    addTearDown(container.dispose);
-    addTearDown(database.close);
   });
 
   testWidgets(
