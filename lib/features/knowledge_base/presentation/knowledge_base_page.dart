@@ -44,7 +44,9 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     final appTypography = AppTypography.of(context);
     final contentTextTheme = language.isArabic
         ? appTypography.arabic
-        : appTypography.forScript(urduScript: language.isUrdu);
+        : appTypography.forScript(
+            urduScript: language.isUrdu,
+          );
     final articles = ref.watch(knowledgeFilteredArticlesProvider);
     final selectedCategory = ref.watch(knowledgeCategoryFilterProvider);
     final selectedTopic = ref.watch(knowledgeTopicFilterProvider);
