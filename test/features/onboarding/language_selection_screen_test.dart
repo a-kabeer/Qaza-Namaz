@@ -91,10 +91,7 @@ void main() {
     expect(find.byType(ProfileSetupScreen), findsNothing);
     expect(repository.saveCount, 0);
     expect(prefs.getString(LocaleNotifier.storageKey), isNull);
-    expect(
-      find.byKey(const Key('onboarding_language_ur')),
-      findsOneWidget,
-    );
+    expect(find.text('اردو'), findsOneWidget);
     expect(find.text('جاری رکھیں'), findsOneWidget);
   });
 
