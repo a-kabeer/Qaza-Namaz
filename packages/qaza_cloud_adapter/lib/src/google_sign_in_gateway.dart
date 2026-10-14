@@ -210,6 +210,14 @@ class GoogleSignInGateway {
         'and reconnect Google.',
       );
     }
+    if (status == 'accountMismatch') {
+      final message = response?['message'];
+      throw CloudAuthorizationUnavailable(
+        message is String && message.trim().isNotEmpty
+            ? message
+            : 'Google Drive authorized a different or unverifiable account.',
+      );
+    }
 
     if (status != 'authorized') {
       final message = response?['message'];
