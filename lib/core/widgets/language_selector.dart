@@ -210,7 +210,6 @@ class LanguageSelector<T> extends StatelessWidget {
         : dropdown;
 
     return Semantics(
-      key: key,
       container: true,
       label: semanticLabel,
       value: selected?.displayName,
