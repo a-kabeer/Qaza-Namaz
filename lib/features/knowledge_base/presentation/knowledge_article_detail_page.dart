@@ -72,7 +72,11 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
                       _CategoryBadge(
-                          category: article.category, topicId: article.topicId),
+                        category: article.category,
+                        topicId: article.topicId,
+                        direction: direction,
+                        textAlign: textAlign,
+                      ),
                       const SizedBox(height: 20),
                       SelectableText(
                         body,
@@ -85,9 +89,7 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                         Text(
                           AppLocalizations.of(context)
                               .knowledgeArticleReferences,
-                          textDirection: direction,
-                          textAlign: textAlign,
-                          style: type.titleLarge,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 8),
                         ...article.references.map(
@@ -125,9 +127,7 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                           child: Text(
                             AppLocalizations.of(context)
                                 .knowledgeArticleRelated,
-                            textDirection: direction,
-                            textAlign: textAlign,
-                            style: type.titleLarge,
+                            style: Theme.of(context).textTheme.titleLarge,
                           ),
                         ),
                         const SliverToBoxAdapter(child: SizedBox(height: 8)),
@@ -258,10 +258,17 @@ class _RelatedArticleSkeleton extends StatelessWidget {
 }
 
 class _CategoryBadge extends ConsumerWidget {
-  const _CategoryBadge({required this.category, required this.topicId});
+  const _CategoryBadge({
+    required this.category,
+    required this.topicId,
+    required this.direction,
+    required this.textAlign,
+  });
 
   final KnowledgeCategory category;
   final String topicId;
+  final TextDirection direction;
+  final TextAlign textAlign;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -280,9 +287,19 @@ class _CategoryBadge extends ConsumerWidget {
         children: [
           Chip(
             avatar: const Icon(Icons.category_outlined, size: 18),
-            label: Text(section),
+            label: Text(
+              section,
+              textDirection: direction,
+              textAlign: textAlign,
+            ),
           ),
-          Chip(label: Text(localizedKnowledgeTopic(topicId, l10n))),
+          Chip(
+            label: Text(
+              localizedKnowledgeTopic(topicId, l10n),
+              textDirection: direction,
+              textAlign: textAlign,
+            ),
+          ),
         ],
       ),
     );
