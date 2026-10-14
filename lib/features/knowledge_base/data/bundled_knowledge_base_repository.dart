@@ -24,6 +24,8 @@ class BundledKnowledgeBaseRepository implements KnowledgeBaseRepository {
       'assets/knowledge_base/content/qaza_masail_mugalat_en.json';
   static const String urduAssetPath =
       'assets/knowledge_base/content/qaza_masail_mugalat_ur.json';
+  static const String arabicAssetPath =
+      'assets/knowledge_base/content/qaza_masail_mugalat_ar.json';
 
   final KnowledgeBaseParser _parser;
   final AssetBundle? _bundle;
@@ -37,13 +39,16 @@ class BundledKnowledgeBaseRepository implements KnowledgeBaseRepository {
     final bundle = _bundle ?? rootBundle;
     final english = await loadQazaAssetString(englishAssetPath, bundle: bundle);
     final urdu = await loadQazaAssetString(urduAssetPath, bundle: bundle);
+    final arabic = await loadQazaAssetString(arabicAssetPath, bundle: bundle);
 
     final articles = _parser
-        .parsePair(
+        .parseTriple(
           english: english,
           urdu: urdu,
+          arabic: arabic,
           englishSource: englishAssetPath,
           urduSource: urduAssetPath,
+          arabicSource: arabicAssetPath,
         )
         // isPublished is honoured, not just preserved: an unpublished entry
         // stays in the dataset and out of the reader's hands.
