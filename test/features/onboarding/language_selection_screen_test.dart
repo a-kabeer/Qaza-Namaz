@@ -46,7 +46,7 @@ Future<void> _chooseLanguage(
 ) async {
   await tester.tap(find.byKey(const Key('onboarding_language_selector')));
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(Key('onboarding_language_${languageCode}')));
+  await tester.tap(find.byKey(Key('onboarding_language_$languageCode')));
   await tester.pumpAndSettle();
 }
 
