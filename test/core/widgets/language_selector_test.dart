@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/widgets/language_selector.dart';
+import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
   const options = <LanguageOption<String>>[
@@ -14,6 +15,23 @@ void main() {
     expect(NativeLanguageNames.forCode('ur'), 'اردو');
     expect(NativeLanguageNames.forCode('ar'), 'العربية');
     expect(NativeLanguageNames.forCode('xx'), 'xx');
+  });
+
+  test('application options use only supported locales and native labels', () {
+    final options = AppLocalizations.supportedLocales
+        .map(
+          (locale) => LanguageOption<Locale>(
+            value: locale,
+            languageCode: locale.languageCode,
+          ),
+        )
+        .toList(growable: false);
+
+    expect(options.map((option) => option.languageCode), ['ar', 'en', 'ur']);
+    expect(
+      options.map((option) => option.displayName),
+      ['العربية', 'English', 'اردو'],
+    );
   });
 
   testWidgets('renders native names and reports the selected value',
@@ -53,8 +71,23 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('fits a narrow RTL viewport in both compact and full layouts',
+  testWidgets('fits many language options in a narrow RTL viewport',
       (tester) async {
+    const expandedOptions = <LanguageOption<String>>[
+      LanguageOption<String>(value: 'en', languageCode: 'en'),
+      LanguageOption<String>(value: 'ur', languageCode: 'ur'),
+      LanguageOption<String>(value: 'ar', languageCode: 'ar'),
+      LanguageOption<String>(value: 'bn', languageCode: 'bn'),
+      LanguageOption<String>(value: 'de', languageCode: 'de'),
+      LanguageOption<String>(value: 'es', languageCode: 'es'),
+      LanguageOption<String>(value: 'fa', languageCode: 'fa'),
+      LanguageOption<String>(value: 'fr', languageCode: 'fr'),
+      LanguageOption<String>(value: 'id', languageCode: 'id'),
+      LanguageOption<String>(value: 'ms', languageCode: 'ms'),
+      LanguageOption<String>(value: 'tr', languageCode: 'tr'),
+      LanguageOption<String>(value: 'zh', languageCode: 'zh'),
+    ];
+
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(320, 720);
     addTearDown(tester.view.resetPhysicalSize);
@@ -71,8 +104,9 @@ void main() {
               children: [
                 const LanguageSelector<String>(
                   key: Key('compact_language_selector'),
-                  options: options,
+                  options: expandedOptions,
                   value: 'ar',
+                  optionKeyPrefix: 'compact_option',
                   layout: LanguageSelectorLayout.compact,
                   semanticLabel: 'Knowledge language',
                   onChanged: _ignoreString,
@@ -80,8 +114,9 @@ void main() {
                 const SizedBox(height: 16),
                 const LanguageSelector<String>(
                   key: Key('full_language_selector'),
-                  options: options,
+                  options: expandedOptions,
                   value: 'ur',
+                  optionKeyPrefix: 'full_option',
                   layout: LanguageSelectorLayout.fullWidth,
                   semanticLabel: 'Application language',
                   onChanged: _ignoreString,
@@ -95,6 +130,9 @@ void main() {
 
     expect(find.byKey(const Key('compact_language_selector')), findsOneWidget);
     expect(find.byKey(const Key('full_language_selector')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('compact_language_selector')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('compact_option_ar')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }
