@@ -1,37 +1,49 @@
-/// Bilingual content used by the Knowledge Base.
-///
-/// The data layer keeps Urdu and English explicit so the presentation layer
-/// can choose the correct language and text direction without inspecting raw
-/// JSON maps.
+import 'knowledge_language.dart';
+
+/// Localized article text kept explicitly for all supported content languages.
 class KnowledgeLocalizedText {
   const KnowledgeLocalizedText({
     required this.ur,
     required this.en,
+    this.ar = '',
   });
 
   final String ur;
   final String en;
+  final String ar;
 
-  bool get isComplete => ur.trim().isNotEmpty && en.trim().isNotEmpty;
+  String forLanguage(KnowledgeLanguage language) => switch (language) {
+        KnowledgeLanguage.urdu => ur,
+        KnowledgeLanguage.english => en,
+        KnowledgeLanguage.arabic => ar,
+      };
+
+  bool get isComplete =>
+      ur.trim().isNotEmpty && en.trim().isNotEmpty && ar.trim().isNotEmpty;
 }
 
-/// The same pairing for the per-language keyword lists.
-///
-/// Keywords are not translations of one another — each language has its own
-/// search vocabulary — so they are kept as two lists rather than flattened
-/// into one.
+/// Per-language search vocabulary. Keywords are reader vocabulary, not
+/// necessarily literal translations, so each language keeps its own list.
 class KnowledgeLocalizedKeywords {
   const KnowledgeLocalizedKeywords({
     required this.ur,
     required this.en,
+    this.ar = const [],
   });
 
-  static const empty = KnowledgeLocalizedKeywords(ur: [], en: []);
+  static const empty = KnowledgeLocalizedKeywords(ur: [], en: [], ar: []);
 
   final List<String> ur;
   final List<String> en;
+  final List<String> ar;
 
-  /// Both vocabularies, for search that should hit regardless of the language
-  /// the reader typed in.
-  Iterable<String> get all => [...en, ...ur];
+  List<String> forLanguage(KnowledgeLanguage language) => switch (language) {
+        KnowledgeLanguage.urdu => ur,
+        KnowledgeLanguage.english => en,
+        KnowledgeLanguage.arabic => ar,
+      };
+
+  /// Combined search vocabulary for operations that intentionally search all
+  /// supported language terms.
+  Iterable<String> get all => [...en, ...ur, ...ar];
 }
