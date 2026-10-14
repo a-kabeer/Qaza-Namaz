@@ -286,14 +286,68 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   @override
   bool get isSupported => true;
 
+  Future<({String? accountId, CloudSyncStateStore state})>
+  _verifyAccountBeforeSync({required bool allowInteractive}) async {
+    final scopedState = _state is CloudAccountScopedSyncStateStore
+        ? _state as CloudAccountScopedSyncStateStore
+        : null;
+    if (scopedState == null) return (accountId: null, state: _state);
+
+    final expectedAccountId = await scopedState.activeAccountId();
+    if (expectedAccountId == null || expectedAccountId.isEmpty) {
+      throw const CloudAuthorizationUnavailable(
+        'A verified Google account is required before cloud sync.',
+      );
+    }
+
+    final initiallyResolvedId = await _gateway.accountIdForAuthorization();
+    if (initiallyResolvedId != expectedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The authenticated Google account does not match the account selected for backup.',
+      );
+    }
+
+    // Verify the Drive grant before the sync engine reads a cursor or conflict.
+    // This may present UI only for explicit foreground actions.
+    final client = await _gateway.authorizeDrive(
+      allowInteractive: allowInteractive,
+    );
+    client?.close();
+
+    if (await _gateway.accountIdForAuthorization() != expectedAccountId ||
+        await scopedState.activeAccountId() != expectedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The Google account changed during verification. Sync was stopped safely.',
+      );
+    }
+
+    return (
+      accountId: expectedAccountId,
+      state: scopedState.scopedToAccount(expectedAccountId),
+    );
+  }
+
   @override
   Future<CloudBackupDiscoverySnapshot> discoverBackup({
     bool allowInteractive = false,
   }) async {
-    final result = await _engine().discoverBackup(
-      allowInteractive: allowInteractive,
-    );
-    switch (result.kind) {
+    if (!await _state.isCloudSyncEnabled()) {
+      return const CloudBackupDiscoverySnapshot.failed(
+        'Cloud sync is disabled.',
+      );
+    }
+
+    try {
+      final verified = await _verifyAccountBeforeSync(
+        allowInteractive: allowInteractive,
+      );
+      final accountId = verified.accountId;
+      if (accountId != null) _gateway.pinAccountForOperation(accountId);
+      try {
+        final result = await _engine(state: verified.state).discoverBackup(
+          allowInteractive: allowInteractive,
+        );
+        switch (result.kind) {
       case CloudBackupDiscoveryKind.noBackup:
         return const CloudBackupDiscoverySnapshot.noBackup();
       case CloudBackupDiscoveryKind.found:
@@ -310,10 +364,18 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         return CloudBackupDiscoverySnapshot.invalidBackup(
           result.message ?? 'The cloud backup is invalid or incompatible.',
         );
-      case CloudBackupDiscoveryKind.failed:
-        return CloudBackupDiscoverySnapshot.failed(
-          result.message ?? 'Cloud backup discovery failed.',
-        );
+          case CloudBackupDiscoveryKind.failed:
+            return CloudBackupDiscoverySnapshot.failed(
+              result.message ?? 'Cloud backup discovery failed.',
+            );
+        }
+      } finally {
+        if (accountId != null) _gateway.releaseAccountOperation(accountId);
+      }
+    } catch (error) {
+      return CloudBackupDiscoverySnapshot.failed(
+        'Could not verify the Google account before backup discovery: $error',
+      );
     }
   }
 
