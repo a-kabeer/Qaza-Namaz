@@ -348,22 +348,22 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           allowInteractive: allowInteractive,
         );
         switch (result.kind) {
-      case CloudBackupDiscoveryKind.noBackup:
-        return const CloudBackupDiscoverySnapshot.noBackup();
-      case CloudBackupDiscoveryKind.found:
-        final conflict = result.conflict;
-        if (conflict == null) {
-          return const CloudBackupDiscoverySnapshot.failed(
-            'The discovered backup could not be prepared for safe restoration.',
-          );
-        }
-        return CloudBackupDiscoverySnapshot.backupFound(
-          _toCoreConflict(conflict),
-        );
-      case CloudBackupDiscoveryKind.invalidBackup:
-        return CloudBackupDiscoverySnapshot.invalidBackup(
-          result.message ?? 'The cloud backup is invalid or incompatible.',
-        );
+          case CloudBackupDiscoveryKind.noBackup:
+            return const CloudBackupDiscoverySnapshot.noBackup();
+          case CloudBackupDiscoveryKind.found:
+            final conflict = result.conflict;
+            if (conflict == null) {
+              return const CloudBackupDiscoverySnapshot.failed(
+                'The discovered backup could not be prepared for safe restoration.',
+              );
+            }
+            return CloudBackupDiscoverySnapshot.backupFound(
+              _toCoreConflict(conflict),
+            );
+          case CloudBackupDiscoveryKind.invalidBackup:
+            return CloudBackupDiscoverySnapshot.invalidBackup(
+              result.message ?? 'The cloud backup is invalid or incompatible.',
+            );
           case CloudBackupDiscoveryKind.failed:
             return CloudBackupDiscoverySnapshot.failed(
               result.message ?? 'Cloud backup discovery failed.',
