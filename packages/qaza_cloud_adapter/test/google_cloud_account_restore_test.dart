@@ -204,6 +204,15 @@ class _CountingGateway extends GoogleSignInGateway {
   }
 
   @override
+  Future<String?> accountIdForAuthorization() async {
+    // A restored process has no in-memory GoogleSignInAccount. Keep this unit
+    // test deterministic by supplying the stable ID persisted by the fake
+    // native authorization setup instead of initializing the real plugin.
+    final preferences = await SharedPreferences.getInstance();
+    return preferences.getString('qaza_cloud_adapter.cached_account_id_v1');
+  }
+
+  @override
   Future<http.Client?> authorizeDrive({required bool allowInteractive}) async {
     authorizeDriveCalls++;
     expect(allowInteractive, isFalse);
