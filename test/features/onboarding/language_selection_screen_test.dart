@@ -163,6 +163,7 @@ void main() {
     expect(prefs.getString(LocaleNotifier.storageKey), 'ar');
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
   });
+
   testWidgets('profile-save failure does not persist locale or navigate',
       (tester) async {
     final repository = _FakeUserProfileRepository(
@@ -208,7 +209,6 @@ void main() {
       findsOneWidget,
     );
   });
-
 }
 
 class _FailingLocaleNotifier extends LocaleNotifier {
