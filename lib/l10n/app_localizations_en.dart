@@ -18,7 +18,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get navQaza => 'Qaza';
 
   @override
-  String get navKnowledge => 'Knowledge';
+  String get navKnowledge => 'Guidance';
 
   @override
   String get settingsRemindersSection => 'Reminders';
@@ -1093,10 +1093,10 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get knowledgeBaseTitle => 'Knowledge Base';
+  String get knowledgeBaseTitle => 'Prayer Guidance';
 
   @override
-  String get knowledgeBaseSearchHint => 'Search Masail & Mugalat';
+  String get knowledgeBaseSearchHint => 'Search prayer rulings & misconceptions';
 
   @override
   String get knowledgeBaseClearSearch => 'Clear search';
@@ -1138,16 +1138,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get knowledgeTopicMisconceptions => 'Misconceptions';
 
   @override
-  String get knowledgeBaseEmptyTitle => 'No articles found';
+  String get knowledgeBaseEmptyTitle => 'No guidance articles found';
 
   @override
-  String get knowledgeBaseEmptyMessage => 'Try another search or category.';
+  String get knowledgeBaseEmptyMessage => 'Try another search or choose a different topic.';
 
   @override
-  String get knowledgeBaseLoadError => 'Knowledge Base could not be loaded.';
+  String get knowledgeBaseLoadError => 'Prayer guidance could not be loaded.';
 
   @override
-  String get knowledgeBaseLanguage => 'Knowledge Base language';
+  String get knowledgeBaseLanguage => 'Guidance language';
 
   @override
   String get knowledgeArticleTitle => 'Article';
@@ -1172,7 +1172,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsGoogleSignIn => 'Google sign-in';
 
   @override
-  String get settingsKnowledgeBaseSubtitle => 'Browse Masail & Mugalat';
+  String get settingsKnowledgeBaseSubtitle => 'Browse prayer rulings and common misconceptions.';
 
   @override
   String get settingsDataSection => 'Data & Storage';
