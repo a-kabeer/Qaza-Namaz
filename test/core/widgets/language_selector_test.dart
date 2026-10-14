@@ -96,10 +96,13 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('ar'),
-        home: Scaffold(
-          body: Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
+        supportedLocales: const [Locale('ar'), Locale('en')],
+        home: Directionality(
+          textDirection: TextDirection.rtl,
+          child: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 const LanguageSelector<String>(
@@ -121,7 +124,8 @@ void main() {
                   semanticLabel: 'Application language',
                   onChanged: _ignoreString,
                 ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
