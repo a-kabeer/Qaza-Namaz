@@ -109,6 +109,27 @@ void main() {
     expect(source, contains('scheme.tertiary'));
   });
 
+  test('overnight focus shows Isha while countdown boundary remains Fajr', () {
+    final source =
+        File('lib/features/prayer_time/presentation/prayer_time_page.dart')
+            .readAsStringSync();
+
+    expect(
+      source,
+      contains(
+        'final focusPrayer = current?.focusPrayer ?? currentPrayer ?? nextPrayer;',
+      ),
+    );
+    expect(
+      source,
+      contains('final isOvernightFocus = currentPrayer == null &&'),
+    );
+    expect(source, contains('prayer == focusPrayer'));
+    expect(source, contains('_prayerLabel(l10n, nextPrayer!)'));
+    expect(source, contains('_formatTime(context, nextAt, snapshot)'));
+    expect(source, contains('final countdownPrayer = focusPrayer;'));
+  });
+
   test('Home reuses the shared active restricted-time row', () {
     final source = File('lib/features/home/widgets/home_today_progress.dart')
         .readAsStringSync();

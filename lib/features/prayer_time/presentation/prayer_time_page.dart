@@ -333,7 +333,18 @@ class _PrayerTimeContent extends ConsumerWidget {
     final nextPrayer = current?.next;
     final nextAt = current?.nextAt;
     final nextRemaining = nextAt?.difference(localNow);
-    final countdownPrayer = currentPrayer ?? nextPrayer;
+    final focusPrayer = current?.focusPrayer ?? currentPrayer ?? nextPrayer;
+    final isOvernightFocus = currentPrayer == null &&
+        focusPrayer == PrayerSlot.isha &&
+        nextPrayer == PrayerSlot.fajr &&
+        nextAt != null;
+    final countdownPrayer = focusPrayer;
+    String? overnightTimeLabel;
+    if (isOvernightFocus) {
+      final upcomingName = _prayerLabel(l10n, nextPrayer!);
+      final upcomingTime = _formatTime(context, nextAt, snapshot);
+      overnightTimeLabel = '$upcomingName · $upcomingTime';
+    }
     tz.TZDateTime restrictedTimelineDisplayAt(RestrictedTimeWindow window) =>
         window.timelineDisplayAt;
 
@@ -389,7 +400,7 @@ class _PrayerTimeContent extends ConsumerWidget {
           name: _prayerLabel(l10n, prayer),
           time: _formatTime(context, prayerTimeUtc, snapshot),
           icon: _prayerIcon(prayer),
-          active: activeRestriction != null ? false : prayer == currentPrayer,
+          active: activeRestriction != null ? false : prayer == focusPrayer,
           countdown: null,
           isRestricted: false,
           prayer: prayer,
@@ -446,7 +457,10 @@ class _PrayerTimeContent extends ConsumerWidget {
       for (final item in timeline) {
         if (!item.isRestricted && item.prayer == countdownPrayer) {
           focusName = item.name;
-          focusTime = item.time;
+          // During the overnight Isha phase, the countdown ends at Fajr.
+          // Label that boundary explicitly rather than showing tonight's
+          // future Isha time as though it were the current overnight interval.
+          focusTime = overnightTimeLabel ?? item.time;
           focusIcon = item.icon;
           focusCountdown = nextRemaining == null
               ? null
