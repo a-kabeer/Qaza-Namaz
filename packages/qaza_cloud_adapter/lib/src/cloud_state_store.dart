@@ -35,12 +35,18 @@ abstract interface class CloudAccountScopedSyncStateStore {
   /// Selects a verified GoogleSignInAccount.id as the account-state namespace.
   /// Passing null is supported for explicit account reset/maintenance flows.
   Future<void> setActiveAccountId(String? accountId);
+
+  /// Captures an immutable account namespace for one in-flight sync operation.
+  CloudSyncStateStore scopedToAccount(String accountId);
 }
 
 class SharedPreferencesCloudSyncStateStore
     implements CloudSyncStateStore, CloudAccountScopedSyncStateStore {
-  SharedPreferencesCloudSyncStateStore({SharedPreferences? preferences})
-    : _preferences = preferences;
+  SharedPreferencesCloudSyncStateStore({
+    SharedPreferences? preferences,
+    String? accountId,
+  }) : _preferences = preferences,
+       _accountIdOverride = accountId;
 
   static const _keyPrefix = 'qaza_cloud_adapter.';
   static const _deviceIdKey = '${_keyPrefix}device_id';
@@ -67,6 +73,7 @@ class SharedPreferencesCloudSyncStateStore
   ];
 
   SharedPreferences? _preferences;
+  final String? _accountIdOverride;
 
   Future<SharedPreferences> get _prefs async {
     return _preferences ??= await SharedPreferences.getInstance();
@@ -74,12 +81,31 @@ class SharedPreferencesCloudSyncStateStore
 
   @override
   Future<String?> activeAccountId() async {
+    final override = _accountIdOverride?.trim();
+    if (override != null && override.isNotEmpty) return override;
     final value = (await _prefs).getString(_activeAccountIdKey)?.trim();
     return value == null || value.isEmpty ? null : value;
   }
 
   @override
+  CloudSyncStateStore scopedToAccount(String accountId) {
+    final normalized = accountId.trim();
+    if (normalized.isEmpty) {
+      throw ArgumentError.value(accountId, 'accountId', 'Must not be empty.');
+    }
+    return SharedPreferencesCloudSyncStateStore(
+      preferences: _preferences,
+      accountId: normalized,
+    );
+  }
+
+  @override
   Future<void> setActiveAccountId(String? accountId) async {
+    if (_accountIdOverride != null) {
+      throw const CloudAdapterException(
+        'An account-scoped sync state view cannot change the active account.',
+      );
+    }
     final prefs = await _prefs;
     final normalized = accountId?.trim();
     if (normalized == null || normalized.isEmpty) {
@@ -133,7 +159,9 @@ class SharedPreferencesCloudSyncStateStore
   }
 
   String? _accountScopedKey(SharedPreferences prefs, String legacyKey) {
-    final accountId = prefs.getString(_activeAccountIdKey)?.trim();
+    final accountId =
+        _accountIdOverride?.trim() ??
+        prefs.getString(_activeAccountIdKey)?.trim();
     if (accountId == null || accountId.isEmpty) return null;
     final encodedId = base64Url
         .encode(utf8.encode(accountId))
