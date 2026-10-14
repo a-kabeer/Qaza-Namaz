@@ -538,8 +538,19 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     CloudBackupProgressCallback? onProgress,
   }) async {
     CloudBackupProgress? latestProgress;
+    CloudSyncStateStore? operationState;
+    String? operationAccountId;
+    var accountPinned = false;
     try {
-      final result = await _engine().resolveConflict(
+      final verified = await _verifyAccountBeforeSync(allowInteractive: true);
+      operationState = verified.state;
+      operationAccountId = verified.accountId;
+      if (operationAccountId != null) {
+        _gateway.pinAccountForOperation(operationAccountId);
+        accountPinned = true;
+      }
+
+      final result = await _engine(state: operationState).resolveConflict(
         conflict: _toAdapterConflict(conflict),
         decision: choice == CloudConflictChoice.keepLocal
             ? CloudConflictDecision.keepLocal
@@ -551,7 +562,10 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           onProgress?.call(progress);
         },
       );
-      final snapshot = await _snapshotFromResult(result);
+      final snapshot = await _snapshotFromResult(
+        result,
+        state: operationState,
+      );
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&
           latestProgress!.totalBytes > 0) {
@@ -561,7 +575,16 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       }
       return snapshot;
     } catch (error) {
-      return await _snapshot(CloudSyncStatus.failed, message: error.toString());
+      return await _snapshot(
+        CloudSyncStatus.failed,
+        message: error.toString(),
+        state: operationState,
+        includeAccountState: operationState != null,
+      );
+    } finally {
+      if (accountPinned && operationAccountId != null) {
+        _gateway.releaseAccountOperation(operationAccountId);
+      }
     }
   }
 
