@@ -74,7 +74,11 @@ void main() {
   testWidgets('fits many language options in a narrow RTL viewport',
       (tester) async {
     const expandedOptions = <LanguageOption<String>>[
-      LanguageOption<String>(value: 'en', languageCode: 'en'),
+      LanguageOption<String>(
+        value: 'en',
+        languageCode: 'en',
+        nativeName: 'English (extended display name)',
+      ),
       LanguageOption<String>(value: 'ur', languageCode: 'ur'),
       LanguageOption<String>(value: 'ar', languageCode: 'ar'),
       LanguageOption<String>(value: 'bn', languageCode: 'bn'),
@@ -97,6 +101,7 @@ void main() {
       MaterialApp(
         locale: const Locale('ar'),
         supportedLocales: const [Locale('ar'), Locale('en')],
+        theme: ThemeData.dark(useMaterial3: true),
         home: Directionality(
           textDirection: TextDirection.rtl,
           child: Scaffold(
