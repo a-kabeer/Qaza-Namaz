@@ -112,6 +112,17 @@ class _FakeKnowledgeBaseRepository implements KnowledgeBaseRepository {
       articles.map((article) => article.topicId).toSet().toList();
 }
 
+Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
+  // Article pages can contain repeating skeleton animations while an async
+  // provider resolves, so pumpAndSettle may wait forever. Pump bounded frames
+  // until the expected article text is present instead.
+  for (var frame = 0; frame < 60; frame++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (finder.evaluate().isNotEmpty) return;
+  }
+  fail('Timed out waiting for $finder to appear');
+}
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
@@ -157,7 +168,7 @@ void main() {
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await _pumpUntilFound(tester, find.text('قضا نماز کا عنوان'));
 
       final urduTitle = tester.widget<Text>(find.text('قضا نماز کا عنوان'));
       expect(urduTitle.textDirection, TextDirection.rtl);
@@ -176,7 +187,7 @@ void main() {
       container
           .read(knowledgeLanguageProvider.notifier)
           .set(KnowledgeLanguage.english);
-      await tester.pumpAndSettle();
+      await _pumpUntilFound(tester, find.text('English article title'));
 
       final englishTitle =
           tester.widget<Text>(find.text('English article title'));
