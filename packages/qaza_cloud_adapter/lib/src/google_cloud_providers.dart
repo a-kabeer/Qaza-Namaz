@@ -66,9 +66,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       if (scopedState != null) {
         final boundAccountId = await _gateway.accountIdForAuthorization();
         if (boundAccountId == null || boundAccountId != activeAccountId) {
-          if (await scopedState.activeAccountId() == activeAccountId) {
-            await accountState.setReconnectRequired(true);
-          }
+          // The profile binding can belong to a partially completed account
+          // switch. Do not mutate the currently selected namespace based on an
+          // identity mismatch; require explicit reconnection instead.
           return await _cachedProfileSnapshot(reconnectRequired: true);
         }
       }
