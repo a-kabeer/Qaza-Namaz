@@ -14,6 +14,8 @@ const MethodChannel _backgroundAuthorizationChannel = MethodChannel(
 );
 const String _cachedAccountEmailKey =
     'qaza_cloud_adapter.cached_account_email_v1';
+const String _cachedAccountIdKey =
+    'qaza_cloud_adapter.cached_account_id_v1';
 
 class GoogleSignInGateway {
   GoogleSignInGateway({
@@ -39,12 +41,25 @@ class GoogleSignInGateway {
   Future<GoogleSignInAccount> authenticate() =>
       _serialized(() => _authenticateUnlocked());
 
-  /// Revokes the app's Google authorization as well as signing out. The
-  /// cloud provider calls this only after automatic work has been disabled.
+  /// Signs out of this app without revoking the user's Google authorization.
+  /// Callers must stop scheduled work before invoking this method.
   Future<void> signOut() => _serialized(() async {
     await _initializeUnlocked();
-    await _signIn.disconnect();
+    await _signIn.signOut();
     _resolvedAccount = null;
+  });
+
+  /// Stable Google account identifier associated with the current runtime or
+  /// the previously verified account binding. Cached profile data alone is
+  /// not an authorization grant; Drive authorization is still checked before
+  /// any sync operation uses account-scoped state.
+  Future<String?> accountIdForAuthorization() => _serialized(() async {
+    await _initializeUnlocked();
+    final account = _resolvedAccount;
+    if (account != null) return account.id.trim().isEmpty ? null : account.id;
+    final preferences = await SharedPreferences.getInstance();
+    final value = preferences.getString(_cachedAccountIdKey)?.trim();
+    return value == null || value.isEmpty ? null : value;
   });
 
   /// Returns an account resolved by this runtime's explicit sign-in flow.
@@ -111,19 +126,34 @@ class GoogleSignInGateway {
 
   Future<http.Client> _authorizeDriveSilentlyOnAndroid() async {
     final preferences = await SharedPreferences.getInstance();
+    final expectedAccountId =
+        preferences.getString(_cachedAccountIdKey)?.trim();
     final expectedEmail = preferences.getString(_cachedAccountEmailKey)?.trim();
-    if (expectedEmail == null || expectedEmail.isEmpty) {
+    if (expectedAccountId == null ||
+        expectedAccountId.isEmpty ||
+        expectedEmail == null ||
+        expectedEmail.isEmpty) {
       throw const CloudAuthorizationUnavailable(
         'Google Drive authorization cannot be restored because the previously '
-        'connected account could not be identified. Open Settings → Account '
-        'and reconnect Google.',
+        'connected account identity could not be verified. Open Settings → '
+        'Account and reconnect Google.',
+      );
+    }
+    final runtimeAccount = _resolvedAccount;
+    if (runtimeAccount != null && runtimeAccount.id != expectedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The authenticated Google account does not match the saved backup '
+        'account. Reconnect the intended account before syncing.',
       );
     }
 
     final response = await _backgroundAuthorizationChannel
         .invokeMapMethod<String, Object?>(
           'authorizeDriveSilently',
-          <String, Object?>{'accountEmail': expectedEmail},
+          <String, Object?>{
+            'accountId': expectedAccountId,
+            'accountEmail': expectedEmail,
+          },
         );
     final status = response?['status'];
 
@@ -149,9 +179,13 @@ class GoogleSignInGateway {
         ? rawScopes.whereType<String>().toSet()
         : <String>{};
 
+    final authorizedEmail = response?['accountEmail'];
     if (accessToken is! String ||
         accessToken.isEmpty ||
-        !grantedScopes.contains(cloudDriveScope)) {
+        !grantedScopes.contains(cloudDriveScope) ||
+        authorizedEmail is! String ||
+        authorizedEmail.trim().isEmpty ||
+        authorizedEmail.trim().toLowerCase() != expectedEmail.toLowerCase()) {
       throw const CloudAuthorizationUnavailable(
         'Google Drive authorization is not available for the backup scope.',
       );
