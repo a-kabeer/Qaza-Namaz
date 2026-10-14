@@ -58,8 +58,7 @@ Widget _app({
     overrides: [
       if (repository != null)
         userProfileRepositoryProvider.overrideWithValue(repository),
-      if (localeNotifier != null)
-        localeProvider.overrideWith(localeNotifier),
+      if (localeNotifier != null) localeProvider.overrideWith(localeNotifier),
     ],
     child: Consumer(
       builder: (context, ref, child) => MaterialApp(

@@ -74,7 +74,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(container.read(localeProvider).languageCode, 'en');
-    expect(container.read(knowledgeLanguageProvider), KnowledgeLanguage.english);
+    expect(
+        container.read(knowledgeLanguageProvider), KnowledgeLanguage.english);
 
     await tester.tap(find.byKey(const Key('knowledge_language_switcher')));
     await tester.pumpAndSettle();

@@ -97,7 +97,8 @@ class LanguageSelector<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    assert(options.isNotEmpty, 'A language selector needs at least one option.');
+    assert(
+        options.isNotEmpty, 'A language selector needs at least one option.');
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final typography = AppTypography.of(context);
