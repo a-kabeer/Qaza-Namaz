@@ -61,7 +61,7 @@ class KnowledgeQuery {
   }
 
   static final RegExp _arabicMarks = RegExp(
-    r'[\\u0610-\\u061A\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]',
+    r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]',
   );
   static final RegExp _alefVariants = RegExp(r'[أإآٱ]');
 
