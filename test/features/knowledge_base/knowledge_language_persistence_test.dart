@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -6,6 +7,8 @@ import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_language.dart';
 import 'package:qaza_namaz/features/knowledge_base/presentation/providers/knowledge_base_providers.dart';
+import 'package:qaza_namaz/features/knowledge_base/presentation/widgets/knowledge_language_switcher.dart';
+import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -39,4 +42,62 @@ void main() {
     await secondNotifier.restore();
     expect(second.read(knowledgeLanguageProvider), KnowledgeLanguage.urdu);
   });
+  testWidgets(
+      'Knowledge selector changes reading language without changing app locale',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        localeProvider.overrideWith(_EnglishLocaleNotifier.new),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: Consumer(
+          builder: (context, ref, child) => MaterialApp(
+            locale: ref.watch(localeProvider),
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            home: const Scaffold(
+              body: Center(child: KnowledgeLanguageSwitcher()),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(container.read(localeProvider).languageCode, 'en');
+    expect(container.read(knowledgeLanguageProvider), KnowledgeLanguage.english);
+
+    await tester.tap(find.byKey(const Key('knowledge_language_switcher')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('knowledge_language_option_ar')),
+    );
+    await tester.pumpAndSettle();
+    await Future<void>.delayed(Duration.zero);
+
+    expect(container.read(knowledgeLanguageProvider), KnowledgeLanguage.arabic);
+    expect(container.read(localeProvider).languageCode, 'en');
+
+    final rows = await database
+        .customSelect(
+          "SELECT value FROM meta_store WHERE key = 'qaza_knowledge_language'",
+        )
+        .get();
+    expect(rows.single.read<String>('value'), 'ar');
+    expect(tester.takeException(), isNull);
+  });
+
+}
+
+class _EnglishLocaleNotifier extends LocaleNotifier {
+  @override
+  Locale build() => const Locale('en');
 }
