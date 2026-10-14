@@ -40,6 +40,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     // Category, topic and search labels describe content, so they follow the
     // Knowledge Base switcher rather than the interface language.
     final contentL10n = ref.watch(knowledgeLocalizationsProvider);
+    final appTypography = AppTypography.of(context);
+    final contentTextTheme = language.isArabic
+        ? appTypography.arabic
+        : appTypography.forScript(urduScript: language.isUrdu);
     final articles = ref.watch(knowledgeFilteredArticlesProvider);
     final selectedCategory = ref.watch(knowledgeCategoryFilterProvider);
     final selectedTopic = ref.watch(knowledgeTopicFilterProvider);
@@ -63,6 +67,9 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                 child: TextField(
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
+                  textDirection: language.direction,
+                  textAlign: language.textAlign,
+                  style: contentTextTheme.bodyLarge,
                   onChanged: (value) {
                     ref.read(knowledgeSearchQueryProvider.notifier).state =
                         value;
@@ -70,6 +77,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                   },
                   decoration: InputDecoration(
                     hintText: contentL10n.knowledgeBaseSearchHint,
+                    hintStyle: contentTextTheme.bodyMedium,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isEmpty
                         ? null
@@ -100,7 +108,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                   scrollDirection: Axis.horizontal,
                   children: [
                     ChoiceChip(
-                      label: Text(contentL10n.filterAll),
+                      label: Text(contentL10n.filterAll, style: contentTextTheme.labelLarge),
                       selected: selectedCategory == null,
                       onSelected: (_) => ref
                           .read(knowledgeCategoryFilterProvider.notifier)
@@ -111,7 +119,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                       (category) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(category.localizedLabel(contentL10n)),
+                          label: Text(category.localizedLabel(contentL10n), style: contentTextTheme.labelLarge),
                           selected: selectedCategory == category,
                           onSelected: (_) => ref
                               .read(knowledgeCategoryFilterProvider.notifier)
@@ -136,7 +144,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                     scrollDirection: Axis.horizontal,
                     children: [
                       ChoiceChip(
-                        label: Text(contentL10n.knowledgeBaseTopicAll),
+                        label: Text(contentL10n.knowledgeBaseTopicAll, style: contentTextTheme.labelLarge),
                         selected: selectedTopic == null,
                         onSelected: (_) => ref
                             .read(knowledgeTopicFilterProvider.notifier)
@@ -148,7 +156,9 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
                             label: Text(
-                                localizedKnowledgeTopic(topicId, contentL10n)),
+                                localizedKnowledgeTopic(topicId, contentL10n),
+                                style: contentTextTheme.labelLarge,
+                              ),
                             selected: selectedTopic == topicId,
                             onSelected: (_) => ref
                                 .read(knowledgeTopicFilterProvider.notifier)
@@ -291,7 +301,7 @@ class _ArticleCard extends StatelessWidget {
                       '${article.category.localizedLabel(contentL10n)} • '
                       '${localizedKnowledgeTopic(article.topicId, contentL10n)}',
                       textAlign: language.textAlign,
-                      style: Theme.of(context).textTheme.labelMedium,
+                      style: type.labelMedium,
                     );
                   }),
                 ],
