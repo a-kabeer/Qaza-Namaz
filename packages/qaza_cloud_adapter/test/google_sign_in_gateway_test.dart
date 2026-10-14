@@ -45,10 +45,12 @@ void main() {
           authorizationCalls++;
           expect(call.method, 'authorizeDriveSilently');
           expect(call.arguments, <String, Object?>{
+            'accountId': 'google-id-A',
             'accountEmail': 'a@example.com',
           });
           return <String, Object?>{
             'status': 'authorized',
+            'accountId': 'google-id-A',
             'accountEmail': 'a@example.com',
             'accessToken': 'test-access-token',
             'grantedScopes': <String>[_driveScope],
@@ -69,6 +71,7 @@ void main() {
         .setMockMethodCallHandler(_authorizationChannel, (call) async {
           return <String, Object?>{
             'status': 'authorized',
+            'accountId': 'google-id-B',
             'accountEmail': 'b@example.com',
             'accessToken': 'wrong-account-token',
             'grantedScopes': <String>[_driveScope],
