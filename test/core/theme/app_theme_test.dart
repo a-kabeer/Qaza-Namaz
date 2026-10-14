@@ -176,10 +176,10 @@ void main() {
       final urdu = AppTheme.light(locale: const Locale('ur')).textTheme;
 
       expect(arabic.bodyMedium!.fontFamily, AppTheme.arabicFamily);
-      expect(arabic.bodyMedium!.fontSize, 15);
-      expect(arabic.bodyMedium!.height, closeTo(25 / 15, 0.001));
+      expect(arabic.bodyMedium!.fontSize, 14);
+      expect(arabic.bodyMedium!.height, closeTo(20 / 14, 0.001));
       expect(arabic.labelSmall!.fontFamily, AppTheme.arabicFamily);
-      expect(arabic.labelSmall!.height, closeTo(19 / 12, 0.001));
+      expect(arabic.labelSmall!.height, closeTo(16 / 11, 0.001));
       expect(arabic.bodyMedium!.height, isNot(urdu.bodyMedium!.height));
       expect(arabic.labelSmall!.height, isNot(urdu.labelSmall!.height));
     });
