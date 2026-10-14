@@ -384,6 +384,28 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     final enabled = await _state.isCloudSyncEnabled();
     final automatic = await _state.isAutomaticSyncEnabled();
     final frequency = await _state.backupFrequency();
+
+    if (enabled && _state is CloudAccountScopedSyncStateStore) {
+      final scopedState = _state as CloudAccountScopedSyncStateStore;
+      final activeAccountId = await scopedState.activeAccountId();
+      final authenticatedAccountId = await _gateway.accountIdForAuthorization();
+      if (activeAccountId == null ||
+          authenticatedAccountId == null ||
+          authenticatedAccountId != activeAccountId) {
+        // Do not expose timestamps or conflict details from the selected
+        // namespace until its stable identity binding matches again.
+        return CloudSyncSnapshot(
+          status: CloudSyncStatus.reconnectRequired,
+          automaticSyncEnabled: automatic,
+          backupFrequency: frequency,
+          lastSuccessAt: null,
+          message: 'Reconnect the Google account to verify backup ownership.',
+          hasLocalRecoverySnapshot:
+              (await _phase1.readRecoverySnapshot()) != null,
+        );
+      }
+    }
+
     final reconnectRequired = enabled && await _state.isReconnectRequired();
     final pendingConflict = enabled ? await _state.readPendingConflict() : null;
     return CloudSyncSnapshot(
@@ -545,10 +567,10 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     }
   }
 
-  CloudSyncEngine _engine() => CloudSyncEngine(
+  CloudSyncEngine _engine({CloudSyncStateStore? state}) => CloudSyncEngine(
     phase1: _phase1,
     remote: GoogleDriveAppDataStore(_gateway),
-    state: _state,
+    state: state ?? _state,
   );
 
   CloudConflict _toAdapterConflict(CloudConflictInfo conflict) => CloudConflict(
