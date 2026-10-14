@@ -52,7 +52,10 @@ class KnowledgeQuery {
     final needle = text.trim().toLowerCase();
     if (needle.isEmpty) return true;
     return article
-        .searchableTextFor(urdu: language.isUrdu, arabic: language.isArabic)
+        .searchableTextFor(
+          urdu: language.isUrdu,
+          arabic: language.isArabic,
+        )
         .contains(needle);
   }
 
