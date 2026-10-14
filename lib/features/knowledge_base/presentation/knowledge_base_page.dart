@@ -40,6 +40,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     // Category, topic and search labels describe content, so they follow the
     // Knowledge Base switcher rather than the interface language.
     final contentL10n = ref.watch(knowledgeLocalizationsProvider);
+    final language = ref.watch(knowledgeLanguageProvider);
     final appTypography = AppTypography.of(context);
     final contentTextTheme = language.isArabic
         ? appTypography.arabic
@@ -49,7 +50,6 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     final selectedTopic = ref.watch(knowledgeTopicFilterProvider);
     final topicIds =
         ref.watch(knowledgeTopicIdsProvider).valueOrNull ?? const <String>[];
-    final language = ref.watch(knowledgeLanguageProvider);
 
     return Scaffold(
       appBar: AppBar(
