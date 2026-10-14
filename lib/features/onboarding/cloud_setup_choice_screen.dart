@@ -3,6 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/widgets/language_selector.dart';
+
 import '../../app/providers.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
 import '../../l10n/app_localizations.dart';
@@ -282,48 +284,22 @@ class _CloudSetupChoiceScreenState
         actions: [
           Padding(
             padding: const EdgeInsets.only(right: 12),
-            child: DropdownButtonHideUnderline(
-              child: DropdownButton<Locale>(
-                key: const Key('cloud_setup_language_selector'),
-                value: _selectedLocale,
-                isDense: true,
-                icon: const Icon(Icons.expand_more_rounded),
-                iconEnabledColor: scheme.onSurfaceVariant,
-                dropdownColor: scheme.surface,
-                borderRadius: BorderRadius.circular(12),
-                menuMaxHeight: 360,
-                style: theme.textTheme.labelLarge?.copyWith(
-                  color: scheme.onSurface,
-                ),
-                onChanged: _working
-                    ? null
-                    : (locale) {
-                        if (locale != null) _selectLanguage(locale);
-                      },
-                items: [
-                  for (final locale in AppLocalizations.supportedLocales)
-                    DropdownMenuItem<Locale>(
-                      key: Key(
-                        'cloud_setup_language_${locale.languageCode}',
-                      ),
+            child: LanguageSelector<Locale>(
+              key: const Key('cloud_setup_language_selector'),
+              options: AppLocalizations.supportedLocales
+                  .map(
+                    (locale) => LanguageOption<Locale>(
                       value: locale,
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(_nativeLanguageName(locale)),
-                          if (locale == _selectedLocale) ...[
-                            const SizedBox(width: 8),
-                            Icon(
-                              Icons.check_rounded,
-                              size: 16,
-                              color: scheme.primary,
-                            ),
-                          ],
-                        ],
-                      ),
+                      languageCode: locale.languageCode,
                     ),
-                ],
-              ),
+                  )
+                  .toList(growable: false),
+              value: _selectedLocale,
+              layout: LanguageSelectorLayout.compact,
+              semanticLabel: l10n.profileLanguageTitle,
+              optionKeyPrefix: 'cloud_setup_language',
+              enabled: !_working,
+              onChanged: _selectLanguage,
             ),
           ),
         ],
@@ -468,28 +444,6 @@ class _CloudSetupChoiceScreenState
     );
   }
 }
-
-const Map<String, String> _nativeLanguageNames = <String, String>{
-  'ar': 'العربية',
-  'bn': 'বাংলা',
-  'de': 'Deutsch',
-  'en': 'English',
-  'es': 'Español',
-  'fa': 'فارسی',
-  'fr': 'Français',
-  'hi': 'हिन्दी',
-  'id': 'Bahasa Indonesia',
-  'ms': 'Bahasa Melayu',
-  'tr': 'Türkçe',
-  'ur': 'اردو',
-  'zh': '中文',
-};
-
-/// Keeps the selector data-driven: adding a supported locale needs a native
-/// display-name entry, not a screen redesign. Unknown locales remain
-/// selectable while their native name is added to this registry.
-String _nativeLanguageName(Locale locale) =>
-    _nativeLanguageNames[locale.languageCode] ?? locale.languageCode;
 
 /// Google sign-in mark drawn with the four Google brand colors. Drawing the
 /// mark locally avoids a platform-specific monochrome icon or white asset.
