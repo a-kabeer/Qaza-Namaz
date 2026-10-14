@@ -1,0 +1,1904 @@
+[
+  {
+    "id": "masala_001",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "هل الصلوات الخمس المفروضة واجبة؟",
+    "questionAr": "هل الصلوات الخمس المفروضة واجبة؟",
+    "summaryAr": "نعم. فرض الله الصلوات الخمس على المسلمين المكلَّفين.",
+    "contentAr": "نعم. فرض الله الصلوات الخمس على المسلمين المكلَّفين.",
+    "keywordsAr": [
+      "الفرائض",
+      "وجوب الصلاة"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 1,
+    "isPublished": true
+  },
+  {
+    "id": "masala_002",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "هل أوقات الصلاة محددة؟",
+    "questionAr": "هل أوقات الصلاة محددة؟",
+    "summaryAr": "نعم. للصلوات المفروضة أوقات محددة، فإذا خرج وقت الصلاة ولم تُؤدَّ صارت من الفوائت التي يُبحث حكم قضائها.",
+    "contentAr": "نعم. للصلوات المفروضة أوقات محددة، فإذا خرج وقت الصلاة ولم تُؤدَّ صارت من الفوائت التي يُبحث حكم قضائها.",
+    "keywordsAr": [
+      "الوقت",
+      "قضاء الصلاة"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      }
+    ],
+    "sortOrder": 2,
+    "isPublished": true
+  },
+  {
+    "id": "masala_003",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "ما المقصود بقضاء الصلاة؟",
+    "questionAr": "ما المقصود بقضاء الصلاة؟",
+    "summaryAr": "قضاء الصلاة هو أداء الصلاة المفروضة التي فات وقتها بعد انتهاء وقتها المحدد.",
+    "contentAr": "قضاء الصلاة هو أداء الصلاة المفروضة التي فات وقتها بعد انتهاء وقتها المحدد.",
+    "keywordsAr": [
+      "تعريف القضاء"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 3,
+    "isPublished": true
+  },
+  {
+    "id": "masala_004",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "هل تسقط الصلاة المفروضة الفائتة بمجرد خروج وقتها؟",
+    "questionAr": "هل تسقط الصلاة المفروضة الفائتة بمجرد خروج وقتها؟",
+    "summaryAr": "لا. تبقى الصلاة المفروضة الفائتة في الذمة، ويكون تداركها بالقضاء.",
+    "contentAr": "لا. تبقى الصلاة المفروضة الفائتة في الذمة، ويكون تداركها بالقضاء.",
+    "keywordsAr": [
+      "الوجوب",
+      "الصلوات المتراكمة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 4,
+    "isPublished": true
+  },
+  {
+    "id": "masala_005",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "هل يبرئ قضاء الصلاة ذمة المكلَّف من الصلاة الفائتة؟",
+    "questionAr": "هل يبرئ قضاء الصلاة ذمة المكلَّف من الصلاة الفائتة؟",
+    "summaryAr": "نعم. قضاء الصلاة هو الطريق الشرعي لأداء الصلاة المفروضة التي فاتت.",
+    "contentAr": "نعم. قضاء الصلاة هو الطريق الشرعي لأداء الصلاة المفروضة التي فاتت.",
+    "keywordsAr": [
+      "إبراء الذمة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 5,
+    "isPublished": true
+  },
+  {
+    "id": "masala_006",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "هل قضاء الصلاة هو نفسه أداؤها في وقتها؟",
+    "questionAr": "هل قضاء الصلاة هو نفسه أداؤها في وقتها؟",
+    "summaryAr": "أصل العبادة واحد، لكن القضاء هو أداء الصلاة بعد خروج وقتها المحدد.",
+    "contentAr": "أصل العبادة واحد، لكن القضاء هو أداء الصلاة بعد خروج وقتها المحدد.",
+    "keywordsAr": [
+      "الأداء",
+      "القضاء"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 6,
+    "isPublished": true
+  },
+  {
+    "id": "masala_007",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "هل تسقط الصلوات الفائتة إذا مضت عليها سنوات؟",
+    "questionAr": "هل تسقط الصلوات الفائتة إذا مضت عليها سنوات؟",
+    "summaryAr": "لا. مرور السنوات وحده لا يُسقط ما في الذمة؛ بل تبقى الصلوات المفروضة الفائتة مما يُقضى.",
+    "contentAr": "لا. مرور السنوات وحده لا يُسقط ما في الذمة؛ بل تبقى الصلوات المفروضة الفائتة مما يُقضى.",
+    "keywordsAr": [
+      "تراكم الفوائت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 7,
+    "isPublished": true
+  },
+  {
+    "id": "masala_008",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "هل يمكن للصدقة وحدها أن تكون بديلًا عن قضاء الصلاة المفروضة؟",
+    "questionAr": "هل يمكن للصدقة وحدها أن تكون بديلًا عن قضاء الصلاة المفروضة؟",
+    "summaryAr": "بحسب القول المنقول عن المذاهب الفقهية الأربعة في الصلوات الفائتة، يبقى القضاء مطلوبًا، ولا تُعدّ الصدقة وحدها بديلًا عن الصلاة الفائتة.",
+    "contentAr": "بحسب القول المنقول عن المذاهب الفقهية الأربعة في الصلوات الفائتة، يبقى القضاء مطلوبًا، ولا تُعدّ الصدقة وحدها بديلًا عن الصلاة الفائتة.",
+    "keywordsAr": [
+      "الصدقة",
+      "البديل عن القضاء"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 8,
+    "isPublished": true
+  },
+  {
+    "id": "masala_009",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "هل تُعدّ كل صلاة مفروضة فائتة التزامًا مستقلًا؟",
+    "questionAr": "هل تُعدّ كل صلاة مفروضة فائتة التزامًا مستقلًا؟",
+    "summaryAr": "نعم. كل صلاة مفروضة فاتت تُعدّ صلاة مستقلة، ويمكن تسجيلها وقضاؤها على حدة.",
+    "contentAr": "نعم. كل صلاة مفروضة فاتت تُعدّ صلاة مستقلة، ويمكن تسجيلها وقضاؤها على حدة.",
+    "keywordsAr": [
+      "السجل",
+      "كل صلاة على حدة"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 9,
+    "isPublished": true
+  },
+  {
+    "id": "masala_010",
+    "type": "masala",
+    "categoryId": "basic",
+    "titleAr": "هل يجب الاستمرار في أداء الصلوات الحاضرة أثناء قضاء الفوائت؟",
+    "questionAr": "هل يجب الاستمرار في أداء الصلوات الحاضرة أثناء قضاء الفوائت؟",
+    "summaryAr": "نعم. برنامج قضاء الفوائت لا يحل محل الصلوات اليومية الحاضرة؛ بل تبقى الصلوات الحاضرة واجبة في أوقاتها.",
+    "contentAr": "نعم. برنامج قضاء الفوائت لا يحل محل الصلوات اليومية الحاضرة؛ بل تبقى الصلوات الحاضرة واجبة في أوقاتها.",
+    "keywordsAr": [
+      "الصلاة الحاضرة",
+      "تراكم الفوائت"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 10,
+    "isPublished": true
+  },
+  {
+    "id": "masala_011",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "ماذا يفعل من فاتته الصلاة بسبب النوم؟",
+    "questionAr": "ماذا يفعل من فاتته الصلاة بسبب النوم؟",
+    "summaryAr": "يقضي الصلاة التي فاتته بسبب النوم.",
+    "contentAr": "يقضي الصلاة التي فاتته بسبب النوم.",
+    "keywordsAr": [
+      "النوم"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 11,
+    "isPublished": true
+  },
+  {
+    "id": "masala_012",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "ماذا يفعل من نسي الصلاة؟",
+    "questionAr": "ماذا يفعل من نسي الصلاة؟",
+    "summaryAr": "إذا تذكّر الصلاة، فعليه أن يؤديها.",
+    "contentAr": "إذا تذكّر الصلاة، فعليه أن يؤديها.",
+    "keywordsAr": [
+      "النسيان"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 12,
+    "isPublished": true
+  },
+  {
+    "id": "masala_013",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "متى يقضي من نسي الصلاة؟",
+    "questionAr": "متى يقضي من نسي الصلاة؟",
+    "summaryAr": "يؤدي الصلاة فور تذكّرها.",
+    "contentAr": "يؤدي الصلاة فور تذكّرها.",
+    "keywordsAr": [
+      "الفورية"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 13,
+    "isPublished": true
+  },
+  {
+    "id": "masala_014",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "هل هناك كفارة مستقلة بالإضافة إلى قضاء الصلاة المنسية؟",
+    "questionAr": "هل هناك كفارة مستقلة بالإضافة إلى قضاء الصلاة المنسية؟",
+    "summaryAr": "ورد في الحديث الصحيح أن كفارة الصلاة المنسية هي أداؤها عند تذكّرها.",
+    "contentAr": "ورد في الحديث الصحيح أن كفارة الصلاة المنسية هي أداؤها عند تذكّرها.",
+    "keywordsAr": [
+      "الكفارة"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 14,
+    "isPublished": true
+  },
+  {
+    "id": "masala_015",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "هل يكفي مجرد القول إن الصلاة فاتت بسبب النوم أو النسيان؟",
+    "questionAr": "هل يكفي مجرد القول إن الصلاة فاتت بسبب النوم أو النسيان؟",
+    "summaryAr": "لا. المطلوب هو أداء الصلاة الفائتة؛ فمجرد التفسير أو الاعتذار لا يُسقطها.",
+    "contentAr": "لا. المطلوب هو أداء الصلاة الفائتة؛ فمجرد التفسير أو الاعتذار لا يُسقطها.",
+    "keywordsAr": [
+      "إتمام الصلاة"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 15,
+    "isPublished": true
+  },
+  {
+    "id": "masala_016",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "إذا نام شخص حتى خرج وقت الصلاة، فهل تبقى الصلاة في ذمته؟",
+    "questionAr": "إذا نام شخص حتى خرج وقت الصلاة، فهل تبقى الصلاة في ذمته؟",
+    "summaryAr": "نعم. يجب قضاء الصلاة؛ فخروج وقتها أثناء النوم لا يُسقط حكم القضاء.",
+    "contentAr": "نعم. يجب قضاء الصلاة؛ فخروج وقتها أثناء النوم لا يُسقط حكم القضاء.",
+    "keywordsAr": [
+      "النوم",
+      "الوجوب"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 16,
+    "isPublished": true
+  },
+  {
+    "id": "masala_017",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "إذا تذكّر الصلاة المنسية بعد مدة طويلة، فهل يلزمه قضاؤها؟",
+    "questionAr": "إذا تذكّر الصلاة المنسية بعد مدة طويلة، فهل يلزمه قضاؤها؟",
+    "summaryAr": "نعم. يؤدي الصلاة عندما يتذكّرها، ولو كان تذكّره بعد مدة طويلة.",
+    "contentAr": "نعم. يؤدي الصلاة عندما يتذكّرها، ولو كان تذكّره بعد مدة طويلة.",
+    "keywordsAr": [
+      "تذكّر متأخر"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 17,
+    "isPublished": true
+  },
+  {
+    "id": "masala_018",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "هل يُحدد وقت خاص جديد لقضاء الصلاة الفائتة بالنوم أو النسيان؟",
+    "questionAr": "هل يُحدد وقت خاص جديد لقضاء الصلاة الفائتة بالنوم أو النسيان؟",
+    "summaryAr": "لا. التوجيه النبوي الأساسي هو أداء الصلاة عند التذكّر أو الاستيقاظ.",
+    "contentAr": "لا. التوجيه النبوي الأساسي هو أداء الصلاة عند التذكّر أو الاستيقاظ.",
+    "keywordsAr": [
+      "وقت القضاء"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 18,
+    "isPublished": true
+  },
+  {
+    "id": "masala_019",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "هل يقتصر قضاء الصلاة التي فاتت بالنوم أو النسيان على اليوم نفسه؟",
+    "questionAr": "هل يقتصر قضاء الصلاة التي فاتت بالنوم أو النسيان على اليوم نفسه؟",
+    "summaryAr": "لا. لا يحصر التوجيه الصحيح قضاءها في اليوم نفسه؛ بل تُؤدّى عند تذكّرها.",
+    "contentAr": "لا. لا يحصر التوجيه الصحيح قضاءها في اليوم نفسه؛ بل تُؤدّى عند تذكّرها.",
+    "keywordsAr": [
+      "وهم اليوم نفسه"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 19,
+    "isPublished": true
+  },
+  {
+    "id": "masala_020",
+    "type": "masala",
+    "categoryId": "sleep_forgetfulness",
+    "titleAr": "هل يدل الحديث على جواز تأخير قضاء الصلاة عمدًا بعد تذكّرها؟",
+    "questionAr": "هل يدل الحديث على جواز تأخير قضاء الصلاة عمدًا بعد تذكّرها؟",
+    "summaryAr": "لا. يأمر الحديث بأداء الصلاة عند تذكّرها، فلا ينبغي اعتبار التأخير بلا حاجة هو الأصل.",
+    "contentAr": "لا. يأمر الحديث بأداء الصلاة عند تذكّرها، فلا ينبغي اعتبار التأخير بلا حاجة هو الأصل.",
+    "keywordsAr": [
+      "التأخير"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 20,
+    "isPublished": true
+  },
+  {
+    "id": "masala_021",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل يأثم من يتعمد ترك الصلاة المفروضة بلا عذر معتبر؟",
+    "questionAr": "هل يأثم من يتعمد ترك الصلاة المفروضة بلا عذر معتبر؟",
+    "summaryAr": "نعم. تعمّد عدم أداء الصلاة المفروضة في وقتها من غير عذر معتبر إثم.",
+    "contentAr": "نعم. تعمّد عدم أداء الصلاة المفروضة في وقتها من غير عذر معتبر إثم.",
+    "keywordsAr": [
+      "ترك الصلاة عمدًا",
+      "الإثم"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 21,
+    "isPublished": true
+  },
+  {
+    "id": "masala_022",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل يجب قضاء الصلاة التي تُركت عمدًا أيضًا؟",
+    "questionAr": "هل يجب قضاء الصلاة التي تُركت عمدًا أيضًا؟",
+    "summaryAr": "تنقل دار الإفتاء المصرية القول المعتمد في المذاهب الفقهية الأربعة بوجوب قضاء الصلوات المفروضة الفائتة، بما فيها ما تُرك عمدًا.",
+    "contentAr": "تنقل دار الإفتاء المصرية القول المعتمد في المذاهب الفقهية الأربعة بوجوب قضاء الصلوات المفروضة الفائتة، بما فيها ما تُرك عمدًا.",
+    "keywordsAr": [
+      "ترك الصلاة عمدًا",
+      "القضاء"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 22,
+    "isPublished": true
+  },
+  {
+    "id": "masala_023",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل تسقط مسؤولية قضاء الصلاة المتروكة عمدًا بالتوبة وحدها؟",
+    "questionAr": "هل تسقط مسؤولية قضاء الصلاة المتروكة عمدًا بالتوبة وحدها؟",
+    "summaryAr": "وفق القول المنقول عن دار الإفتاء في المذاهب الأربعة، لا تحل التوبة محل قضاء الصلوات المفروضة الفائتة.",
+    "contentAr": "وفق القول المنقول عن دار الإفتاء في المذاهب الأربعة، لا تحل التوبة محل قضاء الصلوات المفروضة الفائتة.",
+    "keywordsAr": [
+      "التوبة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 23,
+    "isPublished": true
+  },
+  {
+    "id": "masala_024",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل ينبغي لمن تعمّد ترك الصلاة أن يتوب أيضًا؟",
+    "questionAr": "هل ينبغي لمن تعمّد ترك الصلاة أن يتوب أيضًا؟",
+    "summaryAr": "نعم. تعمّد ترك الصلاة يستلزم التوبة، مع بقاء الصلاة المفروضة الفائتة واجبة القضاء.",
+    "contentAr": "نعم. تعمّد ترك الصلاة يستلزم التوبة، مع بقاء الصلاة المفروضة الفائتة واجبة القضاء.",
+    "keywordsAr": [
+      "التوبة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 24,
+    "isPublished": true
+  },
+  {
+    "id": "masala_025",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل التوبة وقضاء الصلاة شيء واحد؟",
+    "questionAr": "هل التوبة وقضاء الصلاة شيء واحد؟",
+    "summaryAr": "لا. التوبة هي الرجوع عن الذنب، أما القضاء فهو أداء الصلاة المفروضة التي فاتت.",
+    "contentAr": "لا. التوبة هي الرجوع عن الذنب، أما القضاء فهو أداء الصلاة المفروضة التي فاتت.",
+    "keywordsAr": [
+      "التوبة",
+      "الفرق بينهما"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 25,
+    "isPublished": true
+  },
+  {
+    "id": "masala_026",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل يبقى حكم قضاء الصلاة قائمًا إذا فاتت صلوات كثيرة لسنوات طويلة؟",
+    "questionAr": "هل يبقى حكم قضاء الصلاة قائمًا إذا فاتت صلوات كثيرة لسنوات طويلة؟",
+    "summaryAr": "نعم. يبقى قضاء الصلوات المفروضة الفائتة على مدى طويل مطلوبًا؛ أما تقدير العدد وترتيب الأداء فمسألتان عمليتان منفصلتان.",
+    "contentAr": "نعم. يبقى قضاء الصلوات المفروضة الفائتة على مدى طويل مطلوبًا؛ أما تقدير العدد وترتيب الأداء فمسألتان عمليتان منفصلتان.",
+    "keywordsAr": [
+      "تراكم الفوائت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 26,
+    "isPublished": true
+  },
+  {
+    "id": "masala_027",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل تنقضي قضاء الصلوات بعد مدة محددة؟",
+    "questionAr": "هل تنقضي قضاء الصلوات بعد مدة محددة؟",
+    "summaryAr": "لا. لا تنقضي الصلوات المفروضة الفائتة لمجرد مرور الزمن.",
+    "contentAr": "لا. لا تنقضي الصلوات المفروضة الفائتة لمجرد مرور الزمن.",
+    "keywordsAr": [
+      "انقضاء المدة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 27,
+    "isPublished": true
+  },
+  {
+    "id": "masala_028",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل يجوز ترك الصلوات المفروضة الحاضرة بسبب كثرة الفوائت؟",
+    "questionAr": "هل يجوز ترك الصلوات المفروضة الحاضرة بسبب كثرة الفوائت؟",
+    "summaryAr": "لا. كثرة الصلوات الفائتة ليست مبررًا لترك الصلوات المفروضة الحاضرة.",
+    "contentAr": "لا. كثرة الصلوات الفائتة ليست مبررًا لترك الصلوات المفروضة الحاضرة.",
+    "keywordsAr": [
+      "الصلاة الحاضرة"
+    ],
+    "references": [
+      {
+        "sourceName": "Quran.com",
+        "bookName": "The Qur'an",
+        "author": "The Qur'an"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 28,
+    "isPublished": true
+  },
+  {
+    "id": "masala_029",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل لقضاء الصلاة حد أقصى ثابت في العدد؟",
+    "questionAr": "هل لقضاء الصلاة حد أقصى ثابت في العدد؟",
+    "summaryAr": "لا. تبقى الفوائت الكثيرة مما يُقضى؛ أما بعض تفاصيل الترتيب والأوقات فتختلف باختلاف المذهب الفقهي.",
+    "contentAr": "لا. تبقى الفوائت الكثيرة مما يُقضى؛ أما بعض تفاصيل الترتيب والأوقات فتختلف باختلاف المذهب الفقهي.",
+    "keywordsAr": [
+      "العدد",
+      "تراكم الفوائت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Islamweb",
+        "bookName": "Fatwa 96811: The positions of scholars on ordering missed prayers",
+        "author": "Islamweb"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 7962: Making up missed prayers at disliked times",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 29,
+    "isPublished": true
+  },
+  {
+    "id": "masala_030",
+    "type": "masala",
+    "categoryId": "intentional_omission",
+    "titleAr": "هل يجب إعداد قائمة كاملة يدويًا بكل الصلوات الفائتة لسنوات قبل البدء بالقضاء؟",
+    "questionAr": "هل يجب إعداد قائمة كاملة يدويًا بكل الصلوات الفائتة لسنوات قبل البدء بالقضاء؟",
+    "summaryAr": "لا. يمكن البدء بالقضاء بناءً على ما عُلم أو غلب على الظن ثبوته في الذمة؛ أما طريقة تقدير العدد بدقة فهي مسألة عملية منفصلة.",
+    "contentAr": "لا. يمكن البدء بالقضاء بناءً على ما عُلم أو غلب على الظن ثبوته في الذمة؛ أما طريقة تقدير العدد بدقة فهي مسألة عملية منفصلة.",
+    "keywordsAr": [
+      "التقدير",
+      "البدء بالقضاء"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 30,
+    "isPublished": true
+  },
+  {
+    "id": "masala_031",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "كم ركعة في قضاء فرض الفجر؟",
+    "questionAr": "كم ركعة في قضاء فرض الفجر؟",
+    "summaryAr": "فرض الفجر ركعتان، ولذلك يكون قضاؤه ركعتين.",
+    "contentAr": "فرض الفجر ركعتان، ولذلك يكون قضاؤه ركعتين.",
+    "keywordsAr": [
+      "الفجر",
+      "ركعتان"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 31,
+    "isPublished": true
+  },
+  {
+    "id": "masala_032",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "كم ركعة في قضاء فرض الظهر؟",
+    "questionAr": "كم ركعة في قضاء فرض الظهر؟",
+    "summaryAr": "فرض الظهر أربع ركعات، ولذلك يكون قضاؤه أربع ركعات في الحالة المعتادة.",
+    "contentAr": "فرض الظهر أربع ركعات، ولذلك يكون قضاؤه أربع ركعات في الحالة المعتادة.",
+    "keywordsAr": [
+      "الظهر",
+      "أربع ركعات"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 32,
+    "isPublished": true
+  },
+  {
+    "id": "masala_033",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "كم ركعة في قضاء فرض العصر؟",
+    "questionAr": "كم ركعة في قضاء فرض العصر؟",
+    "summaryAr": "فرض العصر أربع ركعات، ولذلك يكون قضاؤه أربع ركعات في الحالة المعتادة.",
+    "contentAr": "فرض العصر أربع ركعات، ولذلك يكون قضاؤه أربع ركعات في الحالة المعتادة.",
+    "keywordsAr": [
+      "العصر",
+      "أربع ركعات"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 33,
+    "isPublished": true
+  },
+  {
+    "id": "masala_034",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "كم ركعة في قضاء فرض المغرب؟",
+    "questionAr": "كم ركعة في قضاء فرض المغرب؟",
+    "summaryAr": "فرض المغرب ثلاث ركعات، ولذلك يكون قضاؤه ثلاث ركعات.",
+    "contentAr": "فرض المغرب ثلاث ركعات، ولذلك يكون قضاؤه ثلاث ركعات.",
+    "keywordsAr": [
+      "المغرب",
+      "ثلاث ركعات"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 34,
+    "isPublished": true
+  },
+  {
+    "id": "masala_035",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "كم ركعة في قضاء فرض العشاء؟",
+    "questionAr": "كم ركعة في قضاء فرض العشاء؟",
+    "summaryAr": "فرض العشاء أربع ركعات، ولذلك يكون قضاؤه أربع ركعات في الحالة المعتادة.",
+    "contentAr": "فرض العشاء أربع ركعات، ولذلك يكون قضاؤه أربع ركعات في الحالة المعتادة.",
+    "keywordsAr": [
+      "العشاء",
+      "أربع ركعات"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 35,
+    "isPublished": true
+  },
+  {
+    "id": "masala_036",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "كم عدد ركعات الفرض في الصلوات الخمس؟",
+    "questionAr": "كم عدد ركعات الفرض في الصلوات الخمس؟",
+    "summaryAr": "الفجر ركعتان، والظهر أربع، والعصر أربع، والمغرب ثلاث، والعشاء أربع؛ ومجموع ركعات الفرائض اليومية سبع عشرة ركعة.",
+    "contentAr": "الفجر ركعتان، والظهر أربع، والعصر أربع، والمغرب ثلاث، والعشاء أربع؛ ومجموع ركعات الفرائض اليومية سبع عشرة ركعة.",
+    "keywordsAr": [
+      "سبع عشرة ركعة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 36,
+    "isPublished": true
+  },
+  {
+    "id": "masala_037",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "هل يكون قضاء الصلاة بعدد ركعات الفرض الأصلي نفسه؟",
+    "questionAr": "هل يكون قضاء الصلاة بعدد ركعات الفرض الأصلي نفسه؟",
+    "summaryAr": "نعم. يكون القضاء للصلاة المفروضة نفسها: الفجر ركعتان، والظهر أربع، والعصر أربع، والمغرب ثلاث، والعشاء أربع، مع مراعاة التفاصيل الفقهية الخاصة عند وجودها.",
+    "contentAr": "نعم. يكون القضاء للصلاة المفروضة نفسها: الفجر ركعتان، والظهر أربع، والعصر أربع، والمغرب ثلاث، والعشاء أربع، مع مراعاة التفاصيل الفقهية الخاصة عند وجودها.",
+    "keywordsAr": [
+      "الصلاة نفسها"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 37,
+    "isPublished": true
+  },
+  {
+    "id": "masala_038",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "هل يجب قضاء فرض الفجر بأربع ركعات؟",
+    "questionAr": "هل يجب قضاء فرض الفجر بأربع ركعات؟",
+    "summaryAr": "لا. قضاء فرض الفجر ركعتان.",
+    "contentAr": "لا. قضاء فرض الفجر ركعتان.",
+    "keywordsAr": [
+      "الفجر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 38,
+    "isPublished": true
+  },
+  {
+    "id": "masala_039",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "هل يكون قضاء الظهر دائمًا ركعتين؟",
+    "questionAr": "هل يكون قضاء الظهر دائمًا ركعتين؟",
+    "summaryAr": "الأصل في فرض الظهر أربع ركعات. وللقضاء المتعلق بالسفر تفاصيل فقهية مستقلة، فلا يصح عرضها على أنها حكم موحّد عند المذاهب الأربعة.",
+    "contentAr": "الأصل في فرض الظهر أربع ركعات. وللقضاء المتعلق بالسفر تفاصيل فقهية مستقلة، فلا يصح عرضها على أنها حكم موحّد عند المذاهب الأربعة.",
+    "keywordsAr": [
+      "الظهر",
+      "أحكام السفر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 21959: How to make up prayer regarding audible/silent recitation",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 39,
+    "isPublished": true
+  },
+  {
+    "id": "masala_040",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "هل الأصل في قضاء فرض العصر أربع ركعات؟",
+    "questionAr": "هل الأصل في قضاء فرض العصر أربع ركعات؟",
+    "summaryAr": "نعم. فرض العصر في حالته المعتادة أربع ركعات، وكذلك قضاؤه.",
+    "contentAr": "نعم. فرض العصر في حالته المعتادة أربع ركعات، وكذلك قضاؤه.",
+    "keywordsAr": [
+      "العصر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 40,
+    "isPublished": true
+  },
+  {
+    "id": "masala_041",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "هل الأصل في قضاء فرض المغرب ثلاث ركعات؟",
+    "questionAr": "هل الأصل في قضاء فرض المغرب ثلاث ركعات؟",
+    "summaryAr": "نعم. فرض المغرب ثلاث ركعات، وكذلك قضاؤه.",
+    "contentAr": "نعم. فرض المغرب ثلاث ركعات، وكذلك قضاؤه.",
+    "keywordsAr": [
+      "المغرب"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 41,
+    "isPublished": true
+  },
+  {
+    "id": "masala_042",
+    "type": "masala",
+    "categoryId": "prayer_units",
+    "titleAr": "هل يكون قضاء فرض العشاء ثلاث ركعات؟",
+    "questionAr": "هل يكون قضاء فرض العشاء ثلاث ركعات؟",
+    "summaryAr": "لا. قضاء فرض العشاء أربع ركعات. أما الوتر فهو صلاة مستقلة وله تفاصيل فقهية خاصة.",
+    "contentAr": "لا. قضاء فرض العشاء أربع ركعات. أما الوتر فهو صلاة مستقلة وله تفاصيل فقهية خاصة.",
+    "keywordsAr": [
+      "العشاء",
+      "الوتر صلاة مستقلة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "AskQadi",
+        "bookName": "Does one have to make up Witr prayer?",
+        "author": "Yasir Qadhi"
+      }
+    ],
+    "sortOrder": 42,
+    "isPublished": true
+  },
+  {
+    "id": "masala_043",
+    "type": "masala",
+    "categoryId": "menstruation",
+    "titleAr": "هل يجب قضاء الصلوات التي فاتت أثناء الحيض؟",
+    "questionAr": "هل يجب قضاء الصلوات التي فاتت أثناء الحيض؟",
+    "summaryAr": "لا. لا تُقضى الصلوات التي فاتت أثناء الحيض.",
+    "contentAr": "لا. لا تُقضى الصلوات التي فاتت أثناء الحيض.",
+    "keywordsAr": [
+      "الحيض"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 43,
+    "isPublished": true
+  },
+  {
+    "id": "masala_044",
+    "type": "masala",
+    "categoryId": "menstruation",
+    "titleAr": "ما دليل عدم قضاء الصلاة أثناء الحيض؟",
+    "questionAr": "ما دليل عدم قضاء الصلاة أثناء الحيض؟",
+    "summaryAr": "ورد في الرواية الصحيحة عن عائشة رضي الله عنها أن النساء في الحيض لم يُؤمرن بقضاء الصلوات التي فاتتهن.",
+    "contentAr": "ورد في الرواية الصحيحة عن عائشة رضي الله عنها أن النساء في الحيض لم يُؤمرن بقضاء الصلوات التي فاتتهن.",
+    "keywordsAr": [
+      "الدليل",
+      "عائشة رضي الله عنها"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 44,
+    "isPublished": true
+  },
+  {
+    "id": "masala_045",
+    "type": "masala",
+    "categoryId": "nifas",
+    "titleAr": "هل يجب قضاء الصلوات المفروضة التي فاتت أثناء النفاس؟",
+    "questionAr": "هل يجب قضاء الصلوات المفروضة التي فاتت أثناء النفاس؟",
+    "summaryAr": "لا. لا تُقضى الصلوات التي فاتت أثناء النفاس كذلك.",
+    "contentAr": "لا. لا تُقضى الصلوات التي فاتت أثناء النفاس كذلك.",
+    "keywordsAr": [
+      "النفاس"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 45,
+    "isPublished": true
+  },
+  {
+    "id": "masala_046",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleAr": "هل تصبح الصلوات التي فاتت أثناء الحيض والنفاس واجبة القضاء لاحقًا؟",
+    "questionAr": "هل تصبح الصلوات التي فاتت أثناء الحيض والنفاس واجبة القضاء لاحقًا؟",
+    "summaryAr": "لا تُقضى لاحقًا الصلوات التي فاتت تحديدًا خلال هاتين الفترتين.",
+    "contentAr": "لا تُقضى لاحقًا الصلوات التي فاتت تحديدًا خلال هاتين الفترتين.",
+    "keywordsAr": [
+      "عذر النساء"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 46,
+    "isPublished": true
+  },
+  {
+    "id": "masala_047",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleAr": "هل ينبغي إدراج أيام الحيض ضمن سجل الصلوات المعتادة الفائتة؟",
+    "questionAr": "هل ينبغي إدراج أيام الحيض ضمن سجل الصلوات المعتادة الفائتة؟",
+    "summaryAr": "لا. لا تُدرج تلك الفترات ضمن قضاء الصلوات المعتاد، إذ لا قضاء مطلوبًا عن الصلوات التي فاتت أثناء الحيض.",
+    "contentAr": "لا. لا تُدرج تلك الفترات ضمن قضاء الصلوات المعتاد، إذ لا قضاء مطلوبًا عن الصلوات التي فاتت أثناء الحيض.",
+    "keywordsAr": [
+      "سجل التطبيق",
+      "الحيض"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 47,
+    "isPublished": true
+  },
+  {
+    "id": "masala_048",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleAr": "هل تُحسب أيام النفاس من الأيام التي يجب قضاء الصلاة عنها؟",
+    "questionAr": "هل تُحسب أيام النفاس من الأيام التي يجب قضاء الصلاة عنها؟",
+    "summaryAr": "لا. الصلوات التي فاتت أثناء النفاس لا تُقضى.",
+    "contentAr": "لا. الصلوات التي فاتت أثناء النفاس لا تُقضى.",
+    "keywordsAr": [
+      "سجل التطبيق",
+      "النفاس"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 48,
+    "isPublished": true
+  },
+  {
+    "id": "masala_049",
+    "type": "masala",
+    "categoryId": "menstruation",
+    "titleAr": "ما الفرق بين قضاء الصلاة وقضاء الصوم أثناء الحيض؟",
+    "questionAr": "ما الفرق بين قضاء الصلاة وقضاء الصوم أثناء الحيض؟",
+    "summaryAr": "تُقضى أيام الصوم الفائتة من رمضان، أما الصلوات التي فاتت أثناء الحيض فلا تُقضى.",
+    "contentAr": "تُقضى أيام الصوم الفائتة من رمضان، أما الصلوات التي فاتت أثناء الحيض فلا تُقضى.",
+    "keywordsAr": [
+      "الصوم مقابل الصلاة"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 49,
+    "isPublished": true
+  },
+  {
+    "id": "masala_050",
+    "type": "masala",
+    "categoryId": "menstruation_nifas",
+    "titleAr": "هل تُعامل الصلوات التي فاتت أثناء الحيض والنفاس كفوائت عادية في المذاهب الأربعة؟",
+    "questionAr": "هل تُعامل الصلوات التي فاتت أثناء الحيض والنفاس كفوائت عادية في المذاهب الأربعة؟",
+    "summaryAr": "لا. الحكم المشترك بين المذاهب الأربعة هو عدم قضاء الصلوات التي فاتت تحديدًا أثناء الحيض والنفاس.",
+    "contentAr": "لا. الحكم المشترك بين المذاهب الأربعة هو عدم قضاء الصلوات التي فاتت تحديدًا أثناء الحيض والنفاس.",
+    "keywordsAr": [
+      "المذاهب الأربعة",
+      "أحكام النساء"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 50,
+    "isPublished": true
+  },
+  {
+    "id": "masala_051",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleAr": "إذا فاتت صلاة الجمعة، فهل تُقضى بركعتين على أنها جمعة؟",
+    "questionAr": "إذا فاتت صلاة الجمعة، فهل تُقضى بركعتين على أنها جمعة؟",
+    "summaryAr": "لا. إذا فاتت صلاة الجمعة، تُؤدّى بدلًا منها صلاة الظهر أربع ركعات.",
+    "contentAr": "لا. إذا فاتت صلاة الجمعة، تُؤدّى بدلًا منها صلاة الظهر أربع ركعات.",
+    "keywordsAr": [
+      "الجمعة",
+      "الظهر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 51,
+    "isPublished": true
+  },
+  {
+    "id": "masala_052",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleAr": "ما الصلاة التي تُؤدّى بدل الجمعة إذا فاتت؟",
+    "questionAr": "ما الصلاة التي تُؤدّى بدل الجمعة إذا فاتت؟",
+    "summaryAr": "تُؤدّى أربع ركعات من فرض الظهر.",
+    "contentAr": "تُؤدّى أربع ركعات من فرض الظهر.",
+    "keywordsAr": [
+      "الجمعة",
+      "البديل"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 52,
+    "isPublished": true
+  },
+  {
+    "id": "masala_053",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleAr": "هل يمكن أداء ركعتي الجمعة في البيت بعد خروج وقتها؟",
+    "questionAr": "هل يمكن أداء ركعتي الجمعة في البيت بعد خروج وقتها؟",
+    "summaryAr": "لا. لا تُعاد صلاة الجمعة الفائتة على هيئة الجمعة؛ بل تُقضى بأربع ركعات من الظهر.",
+    "contentAr": "لا. لا تُعاد صلاة الجمعة الفائتة على هيئة الجمعة؛ بل تُقضى بأربع ركعات من الظهر.",
+    "keywordsAr": [
+      "الجمعة",
+      "البيت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 53,
+    "isPublished": true
+  },
+  {
+    "id": "masala_054",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleAr": "إذا فاتت الجمعة لعذر معتبر، فهل يجب أداء ركعتي الجمعة؟",
+    "questionAr": "إذا فاتت الجمعة لعذر معتبر، فهل يجب أداء ركعتي الجمعة؟",
+    "summaryAr": "لا. إذا فاتت الجمعة لعذر معتبر، تُؤدّى أربع ركعات من صلاة الظهر.",
+    "contentAr": "لا. إذا فاتت الجمعة لعذر معتبر، تُؤدّى أربع ركعات من صلاة الظهر.",
+    "keywordsAr": [
+      "الجمعة",
+      "العذر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 54,
+    "isPublished": true
+  },
+  {
+    "id": "masala_055",
+    "type": "masala",
+    "categoryId": "friday",
+    "titleAr": "إذا ترك شخص الجمعة بلا عذر، فهل يمكنه قضاؤها لاحقًا بركعتين؟",
+    "questionAr": "إذا ترك شخص الجمعة بلا عذر، فهل يمكنه قضاؤها لاحقًا بركعتين؟",
+    "summaryAr": "لا. لا تُقضى الجمعة بركعتين، بل تُؤدّى أربع ركعات من الظهر. وترك الجمعة بلا عذر معتبر إثم.",
+    "contentAr": "لا. لا تُقضى الجمعة بركعتين، بل تُؤدّى أربع ركعات من الظهر. وترك الجمعة بلا عذر معتبر إثم.",
+    "keywordsAr": [
+      "الجمعة",
+      "بلا عذر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 55,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_001",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "إذا فاتت الصلاة أثناء النوم، فلا قضاء لها.",
+    "questionAr": "إذا فاتت الصلاة أثناء النوم، فلا قضاء لها.",
+    "summaryAr": "هذا اعتقاد غير صحيح. تُقضى الصلاة التي فاتت بسبب النوم بعد الاستيقاظ.",
+    "contentAr": "هذا اعتقاد غير صحيح. تُقضى الصلاة التي فاتت بسبب النوم بعد الاستيقاظ.",
+    "keywordsAr": [
+      "النوم"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 1,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_002",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "إذا نسي المرء الصلاة، فيكفيه أن يستغفر.",
+    "questionAr": "إذا نسي المرء الصلاة، فيكفيه أن يستغفر.",
+    "summaryAr": "هذا اعتقاد غير صحيح. يأمر الحديث بأداء الصلاة عند تذكّرها.",
+    "contentAr": "هذا اعتقاد غير صحيح. يأمر الحديث بأداء الصلاة عند تذكّرها.",
+    "keywordsAr": [
+      "النسيان"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      }
+    ],
+    "sortOrder": 2,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_003",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "إذا تبتُ، سقطت تلقائيًا قضاء الصلوات التي فاتتني سابقًا.",
+    "questionAr": "إذا تبتُ، سقطت تلقائيًا قضاء الصلوات التي فاتتني سابقًا.",
+    "summaryAr": "هذا اعتقاد غير صحيح. وفق القول المنقول عن دار الإفتاء في المذاهب الأربعة، يبقى قضاء الصلوات الفائتة مطلوبًا.",
+    "contentAr": "هذا اعتقاد غير صحيح. وفق القول المنقول عن دار الإفتاء في المذاهب الأربعة، يبقى قضاء الصلوات الفائتة مطلوبًا.",
+    "keywordsAr": [
+      "التوبة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 3,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_004",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "تكفي الصدقة وحدها بدلًا عن قضاء الصلاة.",
+    "questionAr": "تكفي الصدقة وحدها بدلًا عن قضاء الصلاة.",
+    "summaryAr": "هذا اعتقاد غير صحيح. تبقى الصلوات المفروضة الفائتة واجبة القضاء.",
+    "contentAr": "هذا اعتقاد غير صحيح. تبقى الصلوات المفروضة الفائتة واجبة القضاء.",
+    "keywordsAr": [
+      "الصدقة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 4,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_005",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "مرور سنوات على ترك الصلاة يُسقط الفوائت تلقائيًا.",
+    "questionAr": "مرور سنوات على ترك الصلاة يُسقط الفوائت تلقائيًا.",
+    "summaryAr": "هذا اعتقاد غير صحيح. مجرد مرور الزمن لا يُسقط واجب القضاء.",
+    "contentAr": "هذا اعتقاد غير صحيح. مجرد مرور الزمن لا يُسقط واجب القضاء.",
+    "keywordsAr": [
+      "انقضاء المدة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 5,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_006",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "يقتصر قضاء الصلاة على ما فات خلال اليوم نفسه.",
+    "questionAr": "يقتصر قضاء الصلاة على ما فات خلال اليوم نفسه.",
+    "summaryAr": "هذا اعتقاد غير صحيح. يشمل القضاء أيضًا الصلوات المفروضة المتراكمة على مدى طويل.",
+    "contentAr": "هذا اعتقاد غير صحيح. يشمل القضاء أيضًا الصلوات المفروضة المتراكمة على مدى طويل.",
+    "keywordsAr": [
+      "تراكم الفوائت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 6,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_007",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "يمكن قضاء كل صلاة فائتة بركعتين فقط.",
+    "questionAr": "يمكن قضاء كل صلاة فائتة بركعتين فقط.",
+    "summaryAr": "هذا اعتقاد غير صحيح. يتبع القضاء عدد ركعات الفرض الأصلي: الفجر 2، والظهر 4، والعصر 4، والمغرب 3، والعشاء 4.",
+    "contentAr": "هذا اعتقاد غير صحيح. يتبع القضاء عدد ركعات الفرض الأصلي: الفجر 2، والظهر 4، والعصر 4، والمغرب 3، والعشاء 4.",
+    "keywordsAr": [
+      "عدد الركعات"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 7,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_008",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "قضاء الفجر أربع ركعات.",
+    "questionAr": "قضاء الفجر أربع ركعات.",
+    "summaryAr": "هذا اعتقاد غير صحيح. قضاء فرض الفجر ركعتان.",
+    "contentAr": "هذا اعتقاد غير صحيح. قضاء فرض الفجر ركعتان.",
+    "keywordsAr": [
+      "الفجر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 8,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_009",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "قضاء المغرب ركعتان.",
+    "questionAr": "قضاء المغرب ركعتان.",
+    "summaryAr": "هذا اعتقاد غير صحيح. قضاء فرض المغرب ثلاث ركعات.",
+    "contentAr": "هذا اعتقاد غير صحيح. قضاء فرض المغرب ثلاث ركعات.",
+    "keywordsAr": [
+      "المغرب"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 9,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_010",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "قضاء فرض العشاء ثلاث ركعات لأن الوتر أيضًا صلاة ليلية.",
+    "questionAr": "قضاء فرض العشاء ثلاث ركعات لأن الوتر أيضًا صلاة ليلية.",
+    "summaryAr": "هذا اعتقاد غير صحيح. قضاء فرض العشاء أربع ركعات، والوتر صلاة مستقلة.",
+    "contentAr": "هذا اعتقاد غير صحيح. قضاء فرض العشاء أربع ركعات، والوتر صلاة مستقلة.",
+    "keywordsAr": [
+      "العشاء",
+      "الوتر"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "AskQadi",
+        "bookName": "Does one have to make up Witr prayer?",
+        "author": "Yasir Qadhi"
+      }
+    ],
+    "sortOrder": 10,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_011",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "إذا فاتت الجمعة، يمكن قضاؤها بركعتين في البيت.",
+    "questionAr": "إذا فاتت الجمعة، يمكن قضاؤها بركعتين في البيت.",
+    "summaryAr": "هذا اعتقاد غير صحيح. تُقضى الجمعة الفائتة بأربع ركعات من الظهر.",
+    "contentAr": "هذا اعتقاد غير صحيح. تُقضى الجمعة الفائتة بأربع ركعات من الظهر.",
+    "keywordsAr": [
+      "الجمعة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 11,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_012",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "إذا فاتت الجمعة، فلا تلزم أي صلاة بعدها.",
+    "questionAr": "إذا فاتت الجمعة، فلا تلزم أي صلاة بعدها.",
+    "summaryAr": "هذا اعتقاد غير صحيح. تُؤدّى أربع ركعات من الظهر بدلًا عن الجمعة الفائتة.",
+    "contentAr": "هذا اعتقاد غير صحيح. تُؤدّى أربع ركعات من الظهر بدلًا عن الجمعة الفائتة.",
+    "keywordsAr": [
+      "الجمعة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 22217: Manner of making up the missed Friday prayer",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 12,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_013",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "يجب قضاء الصلوات الفائتة أثناء الحيض كما تُقضى أيام رمضان.",
+    "questionAr": "يجب قضاء الصلوات الفائتة أثناء الحيض كما تُقضى أيام رمضان.",
+    "summaryAr": "هذا اعتقاد غير صحيح. ورد في صحيح مسلم عن عائشة رضي الله عنها أن النساء لم يُؤمرن بقضاء الصلوات التي فاتتهن أثناء الحيض.",
+    "contentAr": "هذا اعتقاد غير صحيح. ورد في صحيح مسلم عن عائشة رضي الله عنها أن النساء لم يُؤمرن بقضاء الصلوات التي فاتتهن أثناء الحيض.",
+    "keywordsAr": [
+      "الحيض"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      }
+    ],
+    "sortOrder": 13,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_014",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "يجب قضاء جميع الصلوات الفائتة أثناء النفاس بعد انقطاع دم ما بعد الولادة.",
+    "questionAr": "يجب قضاء جميع الصلوات الفائتة أثناء النفاس بعد انقطاع دم ما بعد الولادة.",
+    "summaryAr": "هذا اعتقاد غير صحيح. لا تُقضى الصلوات التي فاتت أثناء النفاس.",
+    "contentAr": "هذا اعتقاد غير صحيح. لا تُقضى الصلوات التي فاتت أثناء النفاس.",
+    "keywordsAr": [
+      "النفاس"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 14,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_015",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "ينبغي احتساب أيام الحيض ضمن أيام قضاء الصلاة في سجل المتابعة.",
+    "questionAr": "ينبغي احتساب أيام الحيض ضمن أيام قضاء الصلاة في سجل المتابعة.",
+    "summaryAr": "هذا اعتقاد غير صحيح. لا تُعدّ تلك الفترات واجبًا للقضاء، فلا ينبغي احتسابها ضمن سجل الفوائت.",
+    "contentAr": "هذا اعتقاد غير صحيح. لا تُعدّ تلك الفترات واجبًا للقضاء، فلا ينبغي احتسابها ضمن سجل الفوائت.",
+    "keywordsAr": [
+      "سجل التطبيق"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 335a",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 10548: The obligation to make up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 15,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_016",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "القضاء هو فقط أداء صلاة الأمس في اليوم التالي، أما الصلوات القديمة فلا تُقضى.",
+    "questionAr": "القضاء هو فقط أداء صلاة الأمس في اليوم التالي، أما الصلوات القديمة فلا تُقضى.",
+    "summaryAr": "هذا اعتقاد غير صحيح. يشمل القول المنقول عن دار الإفتاء في المذاهب الأربعة الصلوات المفروضة المتراكمة على مدى طويل.",
+    "contentAr": "هذا اعتقاد غير صحيح. يشمل القول المنقول عن دار الإفتاء في المذاهب الأربعة الصلوات المفروضة المتراكمة على مدى طويل.",
+    "keywordsAr": [
+      "الفوائت المتراكمة"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 16,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_017",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "لا يجوز البدء بالقضاء حتى تُكتب قائمة يدوية كاملة بكل الصلوات الفائتة.",
+    "questionAr": "لا يجوز البدء بالقضاء حتى تُكتب قائمة يدوية كاملة بكل الصلوات الفائتة.",
+    "summaryAr": "هذا اعتقاد غير صحيح. يمكن البدء بالقضاء؛ أما حساب عدد الفوائت بالتفصيل فهو مسألة عملية منفصلة.",
+    "contentAr": "هذا اعتقاد غير صحيح. يمكن البدء بالقضاء؛ أما حساب عدد الفوائت بالتفصيل فهو مسألة عملية منفصلة.",
+    "keywordsAr": [
+      "تسجيل الفوائت"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6472: Making up missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 17,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_018",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "اتفقَت المذاهب الأربعة على وجوب الترتيب نفسه في قضاء الصلاة في كل حالة.",
+    "questionAr": "اتفقَت المذاهب الأربعة على وجوب الترتيب نفسه في قضاء الصلاة في كل حالة.",
+    "summaryAr": "هذا اعتقاد غير صحيح. توجد اختلافات فقهية بين المذاهب بشأن ترتيب القضاء وشروطه؛ فلا ينبغي وصف هذه التفاصيل بأنها محل إجماع مطلق.",
+    "contentAr": "هذا اعتقاد غير صحيح. توجد اختلافات فقهية بين المذاهب بشأن ترتيب القضاء وشروطه؛ فلا ينبغي وصف هذه التفاصيل بأنها محل إجماع مطلق.",
+    "keywordsAr": [
+      "الترتيب",
+      "الخلاف الفقهي"
+    ],
+    "references": [
+      {
+        "sourceName": "Islamweb",
+        "bookName": "Fatwa 96811: The positions of scholars on ordering missed prayers",
+        "author": "Islamweb"
+      }
+    ],
+    "sortOrder": 18,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_019",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "يقتصر القضاء على صلاة فائتة واحدة في اليوم.",
+    "questionAr": "يقتصر القضاء على صلاة فائتة واحدة في اليوم.",
+    "summaryAr": "هذا اعتقاد غير صحيح. لا يوجد حكم واحد متفق عليه بين المذاهب الأربعة يحصر القضاء في صلاة واحدة يوميًا؛ أما تنظيم الجدول والترتيب فلهما تفاصيل مستقلة.",
+    "contentAr": "هذا اعتقاد غير صحيح. لا يوجد حكم واحد متفق عليه بين المذاهب الأربعة يحصر القضاء في صلاة واحدة يوميًا؛ أما تنظيم الجدول والترتيب فلهما تفاصيل مستقلة.",
+    "keywordsAr": [
+      "صلاة واحدة يوميًا"
+    ],
+    "references": [
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      },
+      {
+        "sourceName": "Islamweb",
+        "bookName": "Fatwa 96811: The positions of scholars on ordering missed prayers",
+        "author": "Islamweb"
+      }
+    ],
+    "sortOrder": 19,
+    "isPublished": true
+  },
+  {
+    "id": "mugalata_020",
+    "type": "mugalata",
+    "categoryId": "misconceptions",
+    "titleAr": "يمكن جمع كل الصلوات الفائتة في صلاة واحدة بنية عامة.",
+    "questionAr": "يمكن جمع كل الصلوات الفائتة في صلاة واحدة بنية عامة.",
+    "summaryAr": "هذا اعتقاد غير صحيح. كل صلاة مفروضة فاتت صلاة مستقلة، ويُقضى كل منها على حدة.",
+    "contentAr": "هذا اعتقاد غير صحيح. كل صلاة مفروضة فاتت صلاة مستقلة، ويُقضى كل منها على حدة.",
+    "keywordsAr": [
+      "النية",
+      "كل صلاة على حدة"
+    ],
+    "references": [
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih Muslim 684a/684d",
+        "author": "Imam Muslim ibn al-Hajjaj"
+      },
+      {
+        "sourceName": "Sunnah.com",
+        "bookName": "Sahih al-Bukhari 597",
+        "author": "Imam Muhammad ibn Isma'il al-Bukhari"
+      },
+      {
+        "sourceName": "Egypt's Dar al-Ifta",
+        "bookName": "Fatwa 6471 / 617: Making up accumulated missed prayers",
+        "author": "Dar al-Ifta al-Misriyyah"
+      }
+    ],
+    "sortOrder": 20,
+    "isPublished": true
+  }
+]

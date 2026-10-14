@@ -40,12 +40,18 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     // Category, topic and search labels describe content, so they follow the
     // Knowledge Base switcher rather than the interface language.
     final contentL10n = ref.watch(knowledgeLocalizationsProvider);
+    final language = ref.watch(knowledgeLanguageProvider);
+    final appTypography = AppTypography.of(context);
+    final contentTextTheme = language.isArabic
+        ? appTypography.arabic
+        : appTypography.forScript(
+            urduScript: language.isUrdu,
+          );
     final articles = ref.watch(knowledgeFilteredArticlesProvider);
     final selectedCategory = ref.watch(knowledgeCategoryFilterProvider);
     final selectedTopic = ref.watch(knowledgeTopicFilterProvider);
     final topicIds =
         ref.watch(knowledgeTopicIdsProvider).valueOrNull ?? const <String>[];
-    final language = ref.watch(knowledgeLanguageProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -63,6 +69,9 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                 child: TextField(
                   controller: _searchController,
                   textInputAction: TextInputAction.search,
+                  textDirection: language.direction,
+                  textAlign: language.textAlign,
+                  style: contentTextTheme.bodyLarge,
                   onChanged: (value) {
                     ref.read(knowledgeSearchQueryProvider.notifier).state =
                         value;
@@ -70,6 +79,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                   },
                   decoration: InputDecoration(
                     hintText: contentL10n.knowledgeBaseSearchHint,
+                    hintStyle: contentTextTheme.bodyMedium,
                     prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchController.text.isEmpty
                         ? null
@@ -100,7 +110,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                   scrollDirection: Axis.horizontal,
                   children: [
                     ChoiceChip(
-                      label: Text(contentL10n.filterAll),
+                      label: Text(
+                        contentL10n.filterAll,
+                        style: contentTextTheme.labelLarge,
+                      ),
                       selected: selectedCategory == null,
                       onSelected: (_) => ref
                           .read(knowledgeCategoryFilterProvider.notifier)
@@ -111,7 +124,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                       (category) => Padding(
                         padding: const EdgeInsets.only(right: 8),
                         child: ChoiceChip(
-                          label: Text(category.localizedLabel(contentL10n)),
+                          label: Text(
+                            category.localizedLabel(contentL10n),
+                            style: contentTextTheme.labelLarge,
+                          ),
                           selected: selectedCategory == category,
                           onSelected: (_) => ref
                               .read(knowledgeCategoryFilterProvider.notifier)
@@ -136,7 +152,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                     scrollDirection: Axis.horizontal,
                     children: [
                       ChoiceChip(
-                        label: Text(contentL10n.knowledgeBaseTopicAll),
+                        label: Text(
+                          contentL10n.knowledgeBaseTopicAll,
+                          style: contentTextTheme.labelLarge,
+                        ),
                         selected: selectedTopic == null,
                         onSelected: (_) => ref
                             .read(knowledgeTopicFilterProvider.notifier)
@@ -148,7 +167,9 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                           padding: const EdgeInsets.only(right: 8),
                           child: ChoiceChip(
                             label: Text(
-                                localizedKnowledgeTopic(topicId, contentL10n)),
+                              localizedKnowledgeTopic(topicId, contentL10n),
+                              style: contentTextTheme.labelLarge,
+                            ),
                             selected: selectedTopic == topicId,
                             onSelected: (_) => ref
                                 .read(knowledgeTopicFilterProvider.notifier)
@@ -173,6 +194,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                         itemBuilder: (context, index) => _ArticleCard(
                           article: items[index],
                           language: language,
+                          contentL10n: contentL10n,
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) => KnowledgeArticleDetailPage(
@@ -236,19 +258,24 @@ class _ArticleCard extends StatelessWidget {
   const _ArticleCard({
     required this.article,
     required this.language,
+    required this.contentL10n,
     required this.onTap,
   });
 
   final KnowledgeArticle article;
   final KnowledgeLanguage language;
+  final AppLocalizations contentL10n;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final urdu = language.isUrdu;
-    final title = urdu ? article.title.ur : article.title.en;
-    final summary = urdu ? article.summary.ur : article.summary.en;
-    final type = AppTypography.of(context).forScript(urduScript: urdu);
+    final title = article.title.forLanguage(language);
+    final summary = article.summary.forLanguage(language);
+    final typography = AppTypography.of(context);
+    final type = language.isArabic
+        ? typography.arabic
+        : typography.forScript(urduScript: urdu);
 
     return RepaintBoundary(
       child: Semantics(
@@ -281,12 +308,11 @@ class _ArticleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Builder(builder: (context) {
-                    final l10n = AppLocalizations.of(context);
                     return Text(
-                      '${article.category.localizedLabel(l10n)} • '
-                      '${localizedKnowledgeTopic(article.topicId, l10n)}',
+                      '${article.category.localizedLabel(contentL10n)} • '
+                      '${localizedKnowledgeTopic(article.topicId, contentL10n)}',
                       textAlign: language.textAlign,
-                      style: Theme.of(context).textTheme.labelMedium,
+                      style: type.labelMedium,
                     );
                   }),
                 ],

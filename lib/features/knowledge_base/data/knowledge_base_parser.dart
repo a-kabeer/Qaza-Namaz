@@ -14,7 +14,8 @@ class KnowledgeBaseParseException implements Exception {
   String toString() => 'KnowledgeBaseParseException: $message';
 }
 
-/// Turns the two shipped datasets into [KnowledgeArticle] records.
+/// Turns the English and Urdu datasets into a base article set. The strict
+/// [parseTriple] entry point adds and validates the Arabic translation.
 ///
 /// The Urdu and English content are authored and shipped as separate files, so
 /// the parser reads both and joins them on `id`. Everything the files agree on
@@ -53,6 +54,111 @@ class KnowledgeBaseParser {
     ];
     _rejectDuplicateOrder(articles);
     return articles;
+  }
+
+  /// Parses and validates all three language datasets.
+  ///
+  /// The existing two-language parser remains available for its focused
+  /// legacy tests; production loading must use this strict triple parser so
+  /// missing Arabic articles never silently fall back to another language.
+  List<KnowledgeArticle> parseTriple({
+    required String english,
+    required String urdu,
+    required String arabic,
+    String englishSource = 'english dataset',
+    String urduSource = 'urdu dataset',
+    String arabicSource = 'arabic dataset',
+  }) {
+    final baseArticles = parsePair(
+      english: english,
+      urdu: urdu,
+      englishSource: englishSource,
+      urduSource: urduSource,
+    );
+    final englishEntries = _entriesById(english, englishSource);
+    final arabicEntries = _entriesById(arabic, arabicSource);
+
+    final missingArabic = englishEntries.keys.toSet()
+      ..removeAll(arabicEntries.keys);
+    if (missingArabic.isNotEmpty) {
+      throw KnowledgeBaseParseException(
+        '$arabicSource: missing entries for ${_sample(missingArabic)}.',
+      );
+    }
+    final missingEnglish = arabicEntries.keys.toSet()
+      ..removeAll(englishEntries.keys);
+    if (missingEnglish.isNotEmpty) {
+      throw KnowledgeBaseParseException(
+        '$englishSource: missing entries for ${_sample(missingEnglish)}.',
+      );
+    }
+
+    final articles = <KnowledgeArticle>[];
+    for (final article in baseArticles) {
+      final source = englishEntries[article.id]!;
+      final translated = arabicEntries[article.id]!;
+      final prefix = 'entry "${article.id}"';
+
+      for (final field in const [
+        'type',
+        'categoryId',
+        'sortOrder',
+        'isPublished',
+      ]) {
+        _requireSame(prefix, field, source[field], translated[field]);
+      }
+
+      final sourceReferences = _parseReferences(source['references'], prefix);
+      final arabicReferences = _parseReferences(
+        translated['references'],
+        '$arabicSource: $prefix',
+      );
+      if (sourceReferences.length != arabicReferences.length ||
+          !_sameReferences(sourceReferences, arabicReferences)) {
+        throw KnowledgeBaseParseException(
+          '$prefix: references differ between English and Arabic datasets.',
+        );
+      }
+
+      articles.add(
+        KnowledgeArticle(
+          id: article.id,
+          category: article.category,
+          topicId: article.topicId,
+          sortOrder: article.sortOrder,
+          isPublished: article.isPublished,
+          title: KnowledgeLocalizedText(
+            en: article.title.en,
+            ur: article.title.ur,
+            ar: _requiredString(translated, 'titleAr', prefix),
+          ),
+          question: KnowledgeLocalizedText(
+            en: article.question.en,
+            ur: article.question.ur,
+            ar: _requiredString(translated, 'questionAr', prefix),
+          ),
+          summary: KnowledgeLocalizedText(
+            en: article.summary.en,
+            ur: article.summary.ur,
+            ar: _requiredString(translated, 'summaryAr', prefix),
+          ),
+          body: KnowledgeLocalizedText(
+            en: article.body.en,
+            ur: article.body.ur,
+            ar: _requiredString(translated, 'contentAr', prefix),
+          ),
+          keywords: KnowledgeLocalizedKeywords(
+            en: article.keywords.en,
+            ur: article.keywords.ur,
+            ar: _stringList(translated, 'keywordsAr', prefix),
+          ),
+          references: article.references,
+          relatedArticleIds: article.relatedArticleIds,
+        ),
+      );
+    }
+
+    return List.unmodifiable(articles);
   }
 
   Map<String, Map<String, dynamic>> _entriesById(String raw, String source) {

@@ -18,7 +18,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get navQaza => 'قضا';
 
   @override
-  String get navKnowledge => 'معلومات';
+  String get navKnowledge => 'رہنمائی';
 
   @override
   String get settingsRemindersSection => 'یاد دہانیاں';
@@ -1088,10 +1088,11 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
-  String get knowledgeBaseTitle => 'معلومات';
+  String get knowledgeBaseTitle => 'نماز اور قضا کی رہنمائی';
 
   @override
-  String get knowledgeBaseSearchHint => 'مسائل و مغالطے تلاش کریں';
+  String get knowledgeBaseSearchHint =>
+      'نماز کے مسائل اور غلط فہمیاں تلاش کریں';
 
   @override
   String get knowledgeBaseClearSearch => 'تلاش صاف کریں';
@@ -1133,16 +1134,17 @@ class AppLocalizationsUr extends AppLocalizations {
   String get knowledgeTopicMisconceptions => 'مغالطے';
 
   @override
-  String get knowledgeBaseEmptyTitle => 'کوئی مضمون نہیں ملا';
+  String get knowledgeBaseEmptyTitle => 'رہنمائی کا کوئی مضمون نہیں ملا';
 
   @override
-  String get knowledgeBaseEmptyMessage => 'کوئی اور تلاش یا زمرہ آزمائیں۔';
+  String get knowledgeBaseEmptyMessage =>
+      'کوئی اور لفظ تلاش کریں یا دوسرا موضوع منتخب کریں۔';
 
   @override
-  String get knowledgeBaseLoadError => 'معلومات لوڈ نہیں ہو سکیں۔';
+  String get knowledgeBaseLoadError => 'نماز کی رہنمائی لوڈ نہیں ہو سکی۔';
 
   @override
-  String get knowledgeBaseLanguage => 'نولج بیس کی زبان';
+  String get knowledgeBaseLanguage => 'رہنمائی کے مضامین کی زبان';
 
   @override
   String get knowledgeArticleTitle => 'مضمون';
@@ -1167,7 +1169,8 @@ class AppLocalizationsUr extends AppLocalizations {
   String get settingsGoogleSignIn => 'گوگل سائن اِن';
 
   @override
-  String get settingsKnowledgeBaseSubtitle => 'مسائل و مغالطے دیکھیں';
+  String get settingsKnowledgeBaseSubtitle =>
+      'نماز کے مسائل اور عام غلط فہمیاں پڑھیں۔';
 
   @override
   String get settingsDataSection => 'ڈیٹا و اسٹوریج';

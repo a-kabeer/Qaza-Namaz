@@ -37,6 +37,10 @@ class KnowledgeLanguageSwitcher extends ConsumerWidget {
             value: KnowledgeLanguage.english,
             label: Text('English'),
           ),
+          ButtonSegment<KnowledgeLanguage>(
+            value: KnowledgeLanguage.arabic,
+            label: Text('العربية', style: typography.arabic.labelLarge),
+          ),
         ],
         selected: {selected},
         onSelectionChanged: (selection) =>
