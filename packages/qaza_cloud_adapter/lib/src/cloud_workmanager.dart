@@ -61,7 +61,8 @@ void initializeQazaCloudBackgroundDispatcher() {
 
     try {
       if (await gateway.accountIdForAuthorization() != accountId) {
-        await operationState.setReconnectRequired(true);
+        // A foreground account switch can temporarily change the persisted
+        // identity binding. Stop without marking either account as broken.
         return true;
       }
 
@@ -73,7 +74,6 @@ void initializeQazaCloudBackgroundDispatcher() {
       authorization?.close();
       if (await accountScopedState.activeAccountId() != accountId ||
           await gateway.accountIdForAuthorization() != accountId) {
-        await operationState.setReconnectRequired(true);
         return true;
       }
 
@@ -106,8 +106,13 @@ void initializeQazaCloudBackgroundDispatcher() {
       // A conflict needs a user choice, not an automatic WorkManager retry.
       return result.kind != CloudSyncResultKind.failed &&
           result.kind != CloudSyncResultKind.remoteMissing;
-    } on CloudAuthorizationUnavailable {
-      await operationState.setReconnectRequired(true);
+    } on CloudAuthorizationUnavailable catch (error) {
+      final message = error.message.toLowerCase();
+      if (!message.contains('changed') &&
+          !message.contains('different') &&
+          !message.contains('does not match')) {
+        await operationState.setReconnectRequired(true);
+      }
       return true;
     } on CloudAdapterException {
       return true;
