@@ -203,7 +203,14 @@ void main() {
             supportedLocales: AppLocalizations.supportedLocales,
             localizationsDelegates: AppLocalizations.localizationsDelegates,
             theme: AppTheme.light(locale: const Locale('en')),
-            home: const KnowledgeBasePage(),
+            home: Builder(
+              builder: (context) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(
+                  textScaler: const TextScaler.linear(1.4),
+                ),
+                child: const KnowledgeBasePage(),
+              ),
+            ),
           ),
         ),
       );
