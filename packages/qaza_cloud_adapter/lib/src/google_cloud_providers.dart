@@ -635,7 +635,11 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     lastSyncedBackupId: conflict.lastSyncedBackupId,
   );
 
-  Future<CloudSyncSnapshot> _snapshotFromResult(CloudSyncResult result) async {
+  Future<CloudSyncSnapshot> _snapshotFromResult(
+    CloudSyncResult result, {
+    CloudSyncStateStore? state,
+  }) async {
+    final stateStore = state ?? _state;
     final status = switch (result.kind) {
       CloudSyncResultKind.noOp => CloudSyncStatus.synced,
       CloudSyncResultKind.uploaded => CloudSyncStatus.synced,
@@ -648,7 +652,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
 
     if (status == CloudSyncStatus.synced &&
         result.kind != CloudSyncResultKind.noOp) {
-      await _state.setLastSuccessfulSyncAt(DateTime.now().toUtc());
+      await stateStore.setLastSuccessfulSyncAt(DateTime.now().toUtc());
     }
     return await _snapshot(
       status,
@@ -658,6 +662,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           : _toCoreConflict(result.conflict!),
       restoredRemoteBackup: result.kind == CloudSyncResultKind.downloaded,
       backupAlreadyUpToDate: result.kind == CloudSyncResultKind.noOp,
+      state: stateStore,
     );
   }
 
@@ -682,15 +687,22 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     CloudConflictInfo? conflict,
     bool restoredRemoteBackup = false,
     bool backupAlreadyUpToDate = false,
-  }) async => CloudSyncSnapshot(
-    status: status,
-    automaticSyncEnabled: await _state.isAutomaticSyncEnabled(),
-    backupFrequency: await _state.backupFrequency(),
-    lastSuccessAt: await _state.lastSuccessfulSyncAt(),
-    message: message,
-    conflict: conflict,
-    hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
-    restoredRemoteBackup: restoredRemoteBackup,
-    backupAlreadyUpToDate: backupAlreadyUpToDate,
-  );
+    CloudSyncStateStore? state,
+    bool includeAccountState = true,
+  }) async {
+    final stateStore = state ?? _state;
+    return CloudSyncSnapshot(
+      status: status,
+      automaticSyncEnabled: await _state.isAutomaticSyncEnabled(),
+      backupFrequency: await _state.backupFrequency(),
+      lastSuccessAt: includeAccountState
+          ? await stateStore.lastSuccessfulSyncAt()
+          : null,
+      message: message,
+      conflict: conflict,
+      hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
+      restoredRemoteBackup: restoredRemoteBackup,
+      backupAlreadyUpToDate: backupAlreadyUpToDate,
+    );
+  }
 }
