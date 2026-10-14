@@ -51,7 +51,9 @@ class KnowledgeQuery {
     if (topicId != null && article.topicId != topicId) return false;
     final needle = text.trim().toLowerCase();
     if (needle.isEmpty) return true;
-    return article.searchableTextFor(urdu: language.isUrdu).contains(needle);
+    return article
+        .searchableTextFor(urdu: language.isUrdu, arabic: language.isArabic)
+        .contains(needle);
   }
 
   @override
