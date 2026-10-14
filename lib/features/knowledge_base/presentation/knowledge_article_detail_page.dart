@@ -271,6 +271,13 @@ class _CategoryBadge extends ConsumerWidget {
     // The section and topic name the content, so they follow the article's
     // language rather than the interface language.
     final l10n = ref.watch(knowledgeLocalizationsProvider);
+    final language = ref.watch(knowledgeLanguageProvider);
+    final typography = AppTypography.of(context);
+    final labelStyle = language.isArabic
+        ? typography.arabic.labelLarge
+        : language.isUrdu
+            ? typography.urdu.labelLarge
+            : typography.latin.labelLarge;
     final section = switch (category) {
       KnowledgeCategory.masail => l10n.knowledgeCategoryMasail,
       KnowledgeCategory.mugalat => l10n.knowledgeCategoryMugalat,
@@ -283,9 +290,14 @@ class _CategoryBadge extends ConsumerWidget {
         children: [
           Chip(
             avatar: const Icon(Icons.category_outlined, size: 18),
-            label: Text(section),
+            label: Text(section, style: labelStyle),
           ),
-          Chip(label: Text(localizedKnowledgeTopic(topicId, l10n))),
+          Chip(
+            label: Text(
+              localizedKnowledgeTopic(topicId, l10n),
+              style: labelStyle,
+            ),
+          ),
         ],
       ),
     );
