@@ -31,6 +31,7 @@ class GoogleSignInGateway {
 
   bool _initialized = false;
   GoogleSignInAccount? _resolvedAccount;
+  String? _pinnedAccountId;
   Future<void> _tail = Future<void>.value();
 
   Future<void> initialize() => _serialized<void>(() async {
@@ -56,10 +57,40 @@ class GoogleSignInGateway {
     await _initializeUnlocked();
     final account = _resolvedAccount;
     if (account != null) return account.id.trim().isEmpty ? null : account.id;
+    return _storedAccountId();
+  });
+
+  /// Pins all subsequent Drive authorizations during one sync to its verified
+  /// account. This prevents a concurrent account switch from redirecting later
+  /// Drive requests to a different user's backup.
+  void pinAccountForOperation(String accountId) {
+    final normalized = accountId.trim();
+    if (normalized.isEmpty) {
+      throw ArgumentError.value(accountId, 'accountId', 'Must not be empty.');
+    }
+    if (_pinnedAccountId != null && _pinnedAccountId != normalized) {
+      throw const CloudAuthorizationUnavailable(
+        'Another Google account operation is already in progress.',
+      );
+    }
+    final runtimeId = _resolvedAccount?.id;
+    if (runtimeId != null && runtimeId != normalized) {
+      throw const CloudAuthorizationUnavailable(
+        'The authenticated Google account changed before sync could start.',
+      );
+    }
+    _pinnedAccountId = normalized;
+  }
+
+  void releaseAccountOperation(String accountId) {
+    if (_pinnedAccountId == accountId) _pinnedAccountId = null;
+  }
+
+  Future<String?> _storedAccountId() async {
     final preferences = await SharedPreferences.getInstance();
     final value = preferences.getString(_cachedAccountIdKey)?.trim();
     return value == null || value.isEmpty ? null : value;
-  });
+  }
 
   /// Returns an account resolved by this runtime's explicit sign-in flow.
   ///
@@ -77,6 +108,20 @@ class GoogleSignInGateway {
   Future<http.Client?> authorizeDrive({required bool allowInteractive}) =>
       _serialized(() async {
         await _initializeUnlocked();
+
+        final pinnedAccountId = _pinnedAccountId;
+        if (pinnedAccountId != null) {
+          final runtimeId = _resolvedAccount?.id;
+          final persistedId = runtimeId == null
+              ? await _storedAccountId()
+              : runtimeId;
+          if (persistedId != pinnedAccountId) {
+            throw const CloudAuthorizationUnavailable(
+              'The Google account changed during sync. No further Drive '
+              'requests will be made until the account is reverified.',
+            );
+          }
+        }
 
         // WorkManager runs in a separate Flutter engine and cannot depend on
         // this gateway's in-memory GoogleSignInAccount. A foreground caller
@@ -140,6 +185,11 @@ class GoogleSignInGateway {
       );
     }
     final runtimeAccount = _resolvedAccount;
+    if (_pinnedAccountId != null && _pinnedAccountId != expectedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The selected Google account changed during sync. Reconnect before retrying.',
+      );
+    }
     if (runtimeAccount != null && runtimeAccount.id != expectedAccountId) {
       throw const CloudAuthorizationUnavailable(
         'The authenticated Google account does not match the saved backup '
@@ -226,6 +276,13 @@ class GoogleSignInGateway {
       );
     }
     final account = await _signIn.authenticate();
+    final pinnedAccountId = _pinnedAccountId;
+    if (pinnedAccountId != null && account.id != pinnedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The selected Google account does not match the account whose backup '
+        'is being synchronized.',
+      );
+    }
     _resolvedAccount = account;
     return account;
   }
