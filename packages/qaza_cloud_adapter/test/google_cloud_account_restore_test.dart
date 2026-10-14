@@ -19,6 +19,15 @@ void main() {
       final state = SharedPreferencesCloudSyncStateStore(
         preferences: preferences,
       );
+      await state.setActiveAccountId('google-account-A');
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_id_v1',
+        'google-account-A',
+      );
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_email_v1',
+        'saved@example.com',
+      );
       await state.setCloudSyncEnabled(true);
       await state.setAutomaticSyncEnabled(true);
       await preferences.setString(
@@ -61,6 +70,15 @@ void main() {
       final state = SharedPreferencesCloudSyncStateStore(
         preferences: preferences,
       );
+      await state.setActiveAccountId('google-account-A');
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_id_v1',
+        'google-account-A',
+      );
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_email_v1',
+        'saved@example.com',
+      );
       await state.setCloudSyncEnabled(true);
       await state.setAutomaticSyncEnabled(true);
       await preferences.setString(
@@ -91,6 +109,16 @@ void main() {
     'restore defaults an unset automatic-backup choice to Daily ON',
     () async {
       final state = SharedPreferencesCloudSyncStateStore();
+      await state.setActiveAccountId('google-account-A');
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_id_v1',
+        'google-account-A',
+      );
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_email_v1',
+        'saved@example.com',
+      );
       await state.setCloudSyncEnabled(true);
       final gateway = _CountingGateway();
       final scheduler = _CountingScheduler(state: state);
@@ -114,6 +142,16 @@ void main() {
     'restore preserves an existing explicit automatic-backup OFF choice',
     () async {
       final state = SharedPreferencesCloudSyncStateStore();
+      await state.setActiveAccountId('google-account-A');
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_id_v1',
+        'google-account-A',
+      );
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_email_v1',
+        'saved@example.com',
+      );
       await state.setCloudSyncEnabled(true);
       await state.setAutomaticSyncEnabled(false);
       final gateway = _CountingGateway();
