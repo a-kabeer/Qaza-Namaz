@@ -195,13 +195,11 @@ void main() {
     testWidgets(
       'script typography wraps on narrow screens with enlarged text',
       (tester) async {
-        final oldSurfaceSize = tester.binding.window.physicalSize;
-        final oldPixelRatio = tester.binding.window.devicePixelRatio;
-        await tester.binding.setSurfaceSize(const Size(320, 720));
-        addTearDown(() async {
-          await tester.binding.setSurfaceSize(null);
-          tester.binding.window.physicalSizeTestValue = oldSurfaceSize;
-          tester.binding.window.devicePixelRatioTestValue = oldPixelRatio;
+        tester.view.devicePixelRatio = 1;
+        tester.view.physicalSize = const Size(320, 720);
+        addTearDown(() {
+          tester.view.resetPhysicalSize();
+          tester.view.resetDevicePixelRatio();
         });
 
         for (final locale in <Locale>[
