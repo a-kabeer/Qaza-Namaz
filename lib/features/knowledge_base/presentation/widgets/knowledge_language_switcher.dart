@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/widgets/language_selector.dart';
-
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/knowledge_language.dart';
 import '../providers/knowledge_base_providers.dart';
