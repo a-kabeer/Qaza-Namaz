@@ -14,6 +14,7 @@ import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_localized_te
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_query.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_reference.dart';
 import 'package:qaza_namaz/features/knowledge_base/presentation/knowledge_article_detail_page.dart';
+import 'package:qaza_namaz/features/knowledge_base/presentation/knowledge_base_page.dart';
 import 'package:qaza_namaz/features/knowledge_base/presentation/providers/knowledge_base_providers.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
@@ -180,6 +181,42 @@ void main() {
       final englishTitle =
           tester.widget<Text>(find.text('English article title'));
       expect(englishTitle.textDirection, TextDirection.ltr);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'Urdu Knowledge list keeps cards and filter labels readable on narrow screens',
+    (tester) async {
+      tester.view.devicePixelRatio = 1;
+      tester.view.physicalSize = const Size(320, 720);
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            theme: AppTheme.light(locale: const Locale('en')),
+            home: const KnowledgeBasePage(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final articleTitle = tester.widget<Text>(
+        find.text('قضا نماز کا عنوان'),
+      );
+      expect(articleTitle.textDirection, TextDirection.rtl);
+      expect(
+        find.text('یہ قضا نماز کے بارے میں ایک طویل خلاصہ ہے۔'),
+        findsOneWidget,
+      );
       expect(tester.takeException(), isNull);
     },
   );
