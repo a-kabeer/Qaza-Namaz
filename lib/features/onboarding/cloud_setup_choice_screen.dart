@@ -3,9 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/widgets/language_selector.dart';
-
 import '../../app/providers.dart';
+import '../../core/widgets/language_selector.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
 import '../../l10n/app_localizations.dart';
 
