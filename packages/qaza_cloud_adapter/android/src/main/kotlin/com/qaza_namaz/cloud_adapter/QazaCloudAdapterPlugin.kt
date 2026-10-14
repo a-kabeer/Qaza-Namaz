@@ -46,8 +46,12 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
     private fun authorizeDriveSilently(call: MethodCall, result: MethodChannel.Result) {
         val context = appContext
+        val accountId = call.argument<String>("accountId")?.trim()
         val accountEmail = call.argument<String>("accountEmail")?.trim()
-        if (context == null || accountEmail.isNullOrEmpty()) {
+        if (context == null ||
+            accountId.isNullOrEmpty() ||
+            accountEmail.isNullOrEmpty()
+        ) {
             result.success(
                 mapOf(
                     "status" to "unavailable",
@@ -78,24 +82,32 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                     val accessToken = authorization.accessToken
                     val grantedScopes = authorization.grantedScopes
-                    val authorizedEmail = authorization.account?.name?.trim()
 
-                    // The native API must return the identity it actually
-                    // authorized. Never treat a requested/cached email alone
-                    // as proof that the token belongs to that account.
+                    // AuthorizationResult can provide the Google account
+                    // represented by this authorization. Validate its stable
+                    // Google ID as well as the email used to target the native
+                    // account. A cached email alone must never select a
+                    // different sync-state namespace.
+                    @Suppress("DEPRECATION")
+                    val authorizedAccount = authorization.toGoogleSignInAccount()
+                    val authorizedAccountId = authorizedAccount?.id?.trim()
+                    val authorizedEmail = authorizedAccount?.email?.trim()
+
                     if (accessToken.isNullOrBlank() ||
                         !grantedScopes.contains(DRIVE_APPDATA_SCOPE)
                     ) {
                         result.success(mapOf("status" to "interactionRequired"))
                         return@addOnSuccessListener
                     }
-                    if (authorizedEmail.isNullOrEmpty() ||
+                    if (authorizedAccountId.isNullOrEmpty() ||
+                        authorizedAccountId != accountId ||
+                        authorizedEmail.isNullOrEmpty() ||
                         !authorizedEmail.equals(accountEmail, ignoreCase = true)
                     ) {
                         result.success(
                             mapOf(
                                 "status" to "accountMismatch",
-                                "message" to "Google Drive authorized a different or unverifiable account.",
+                                "message" to "Google Drive authorization did not confirm the previously connected Google account.",
                             ),
                         )
                         return@addOnSuccessListener
@@ -104,6 +116,7 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     result.success(
                         mapOf(
                             "status" to "authorized",
+                            "accountId" to authorizedAccountId,
                             "accountEmail" to authorizedEmail,
                             "accessToken" to accessToken,
                             "grantedScopes" to grantedScopes,
