@@ -10,9 +10,9 @@ import 'knowledge_base_repository.dart';
 
 /// Serves the Masail and Mugalat content bundled with the app.
 ///
-/// The Urdu and English files ship separately, exactly as authored; this is
-/// the only place that knows they are two files. Everything above it sees one
-/// list of bilingual articles.
+/// The English, Urdu and Arabic files ship separately, exactly as authored;
+/// this is the only place that knows they are three files. Everything above it
+/// sees one list of localized articles.
 class BundledKnowledgeBaseRepository implements KnowledgeBaseRepository {
   BundledKnowledgeBaseRepository({
     KnowledgeBaseParser parser = const KnowledgeBaseParser(),
