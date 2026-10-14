@@ -23,7 +23,7 @@ class AppTheme {
   static const String _serif = 'Noto Serif';
   static const String _sans = 'Manrope';
 
-  /// Bundled script-specific families. Urdu uses Nastaliq; Arabic uses Naskh-style
+  /// Bundled script-specific families. Urdu uses Nastaliq, and Arabic uses
   /// Noto Sans Arabic. The active interface locale selects the UI text theme.
   static const String urduFamily = 'Noto Nastaliq Urdu';
   static const String arabicFamily = 'Noto Sans Arabic';
@@ -461,11 +461,10 @@ class AppTheme {
 
 /// The Latin, Urdu and Arabic type scales, carried on the theme.
 ///
-/// The app's locale picks which one becomes [ThemeData.textTheme]. Content
-/// that knows its own language regardless of the locale — a Knowledge Base
-/// article shown in Urdu while the interface is English, the Urdu wordmark —
-/// resolves the other one through here instead of hardcoding a font family in
-/// the widget.
+/// The app's locale selects the active [ThemeData.textTheme]. Content that
+/// knows its own language regardless of the locale — such as a Knowledge Base
+/// article shown in Urdu while the interface is English — resolves its script
+/// scale through here instead of hardcoding a font family in the widget.
 @immutable
 class AppTypography extends ThemeExtension<AppTypography> {
   const AppTypography(
