@@ -286,6 +286,56 @@ void main() {
     expect(await state.isAutomaticSyncEnabled(), isTrue);
     expect(await state.backupFrequency(), CloudBackupFrequency.weekly);
   });
+  test('in-flight account state stays pinned after active account switches', () async {
+    final state = SharedPreferencesCloudSyncStateStore();
+    await state.setActiveAccountId('google-account-A');
+    await state.setCloudSyncEnabled(true);
+    final operationState = state.scopedToAccount('google-account-A');
+
+    await state.setActiveAccountId('google-account-B');
+    expect(await state.readCursor(), const CloudSyncCursor.empty());
+
+    await operationState.writeCursor(
+      const CloudSyncCursor(
+        lastSyncedLocalRevision: 6,
+        lastSyncedBackupId: 'backup-from-A',
+        lastSyncedRemoteVersion: 'version-from-A',
+      ),
+    );
+    await operationState.setLastSuccessfulSyncAt(
+      DateTime.utc(2026, 10, 12, 9),
+    );
+
+    expect(await state.readCursor(), const CloudSyncCursor.empty());
+    expect(await state.lastSuccessfulSyncAt(), isNull);
+
+    await state.setActiveAccountId('google-account-A');
+    expect(
+      await state.readCursor(),
+      const CloudSyncCursor(
+        lastSyncedLocalRevision: 6,
+        lastSyncedBackupId: 'backup-from-A',
+        lastSyncedRemoteVersion: 'version-from-A',
+      ),
+    );
+    expect(await state.lastSuccessfulSyncAt(), DateTime.utc(2026, 10, 12, 9));
+  });
+
+  test('cursor writes require a selected account namespace', () async {
+    final state = SharedPreferencesCloudSyncStateStore();
+
+    await expectLater(
+      state.writeCursor(
+        const CloudSyncCursor(
+          lastSyncedLocalRevision: 2,
+          lastSyncedBackupId: 'backup',
+          lastSyncedRemoteVersion: 'version',
+        ),
+      ),
+      throwsA(isA<CloudAdapterException>()),
+    );
+  });
+
 }
 
 CloudConflict _conflict(String backupId) => CloudConflict(
