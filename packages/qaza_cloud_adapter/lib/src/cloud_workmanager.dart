@@ -56,11 +56,10 @@ void initializeQazaCloudBackgroundDispatcher() {
     final operationState = accountScopedState.scopedToAccount(accountId);
     final appDatabase = AppDatabase();
     final phase1 = LocalPhase1BackupSource(appDatabase);
-    GoogleSignInGateway? gateway;
+    final gateway = GoogleSignInGateway(serverClientId: serverClientId);
     var accountPinned = false;
 
     try {
-      gateway = GoogleSignInGateway(serverClientId: serverClientId);
       if (await gateway.accountIdForAuthorization() != accountId) {
         await operationState.setReconnectRequired(true);
         return true;
@@ -115,7 +114,7 @@ void initializeQazaCloudBackgroundDispatcher() {
     } catch (_) {
       return false;
     } finally {
-      if (accountPinned) gateway?.releaseAccountOperation(accountId);
+      if (accountPinned) gateway.releaseAccountOperation(accountId);
       await appDatabase.close();
     }
   });
