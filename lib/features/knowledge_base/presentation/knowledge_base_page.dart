@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -48,11 +50,20 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     final language = ref.watch(knowledgeLanguageProvider);
     final contentType =
         AppTypography.of(context).forScript(urduScript: language.isUrdu);
+    final filterLabelStyle = contentType.labelLarge;
+    final textScaler = MediaQuery.textScalerOf(context);
+    final scaledFilterLineHeight = textScaler.scale(
+          filterLabelStyle?.fontSize ?? 14,
+        ) *
+        (filterLabelStyle?.height ?? 1.2);
+    final filterStripHeight = math.max(52.0, scaledFilterLineHeight + 20);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.knowledgeBaseTitle),
-        bottom: const KnowledgeLanguageBar(),
+        bottom: KnowledgeLanguageBar(
+          height: KnowledgeLanguageBar.heightFor(context),
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(knowledgeArticlesProvider),
@@ -96,7 +107,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
             ),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 52,
+                height: filterStripHeight,
                 child: ListView(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
