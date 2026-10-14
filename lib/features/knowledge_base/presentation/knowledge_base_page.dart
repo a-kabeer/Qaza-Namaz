@@ -173,6 +173,7 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
                         itemBuilder: (context, index) => _ArticleCard(
                           article: items[index],
                           language: language,
+                          contentL10n: contentL10n,
                           onTap: () => Navigator.of(context).push(
                             MaterialPageRoute<void>(
                               builder: (_) => KnowledgeArticleDetailPage(
@@ -236,19 +237,24 @@ class _ArticleCard extends StatelessWidget {
   const _ArticleCard({
     required this.article,
     required this.language,
+    required this.contentL10n,
     required this.onTap,
   });
 
   final KnowledgeArticle article;
   final KnowledgeLanguage language;
+  final AppLocalizations contentL10n;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final urdu = language.isUrdu;
-    final title = urdu ? article.title.ur : article.title.en;
-    final summary = urdu ? article.summary.ur : article.summary.en;
-    final type = AppTypography.of(context).forScript(urduScript: urdu);
+    final title = article.title.forLanguage(language);
+    final summary = article.summary.forLanguage(language);
+    final typography = AppTypography.of(context);
+    final type = language.isArabic
+        ? typography.arabic
+        : typography.forScript(urduScript: urdu);
 
     return RepaintBoundary(
       child: Semantics(
@@ -281,10 +287,9 @@ class _ArticleCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 10),
                   Builder(builder: (context) {
-                    final l10n = AppLocalizations.of(context);
                     return Text(
-                      '${article.category.localizedLabel(l10n)} • '
-                      '${localizedKnowledgeTopic(article.topicId, l10n)}',
+                      '${article.category.localizedLabel(contentL10n)} • '
+                      '${localizedKnowledgeTopic(article.topicId, contentL10n)}',
                       textAlign: language.textAlign,
                       style: Theme.of(context).textTheme.labelMedium,
                     );
