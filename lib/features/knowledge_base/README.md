@@ -4,7 +4,7 @@ This directory is the dedicated feature boundary for the app's offline Knowledge
 
 ## Scope
 
-The module will provide bilingual reference content for:
+The module will provide English, Urdu and Arabic reference content for:
 
 - Masail
 - Mugalat
@@ -26,8 +26,8 @@ Non-programmer content authors will work with structured content files under `as
 ## UI constraints
 
 - Existing navigation structure must not be reordered, removed, or redesigned as part of this module.
-- Urdu content is rendered RTL and English content LTR.
-- Urdu typography will use the app's approved Noto Nastaliq font integration where appropriate.
+- Urdu and Arabic content are rendered right-to-left; English content is left-to-right.
+- Urdu uses Noto Nastaliq Urdu, while Arabic uses Noto Sans Arabic.
 - Existing light/dark/system theme behavior remains the source of truth.
 
 ## Offline requirement
