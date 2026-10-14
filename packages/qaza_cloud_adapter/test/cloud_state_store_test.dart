@@ -69,11 +69,14 @@ void main() {
 
     // Reconnecting the same stable account keeps its verified sync cursor.
     await state.setCloudSyncEnabled(true);
-    expect(await state.readCursor(), const CloudSyncCursor(
-      lastSyncedLocalRevision: 7,
-      lastSyncedBackupId: 'existing-backup',
-      lastSyncedRemoteVersion: 'existing-version',
-    ));
+    expect(
+      await state.readCursor(),
+      const CloudSyncCursor(
+        lastSyncedLocalRevision: 7,
+        lastSyncedBackupId: 'existing-backup',
+        lastSyncedRemoteVersion: 'existing-version',
+      ),
+    );
   });
 
   test('reconnect-required cannot be set when cloud is disabled', () async {
@@ -174,152 +177,163 @@ void main() {
       expect(await state.readPendingConflict(), isNull);
     },
   );
-  test('sync cursor, conflict, timestamp and reconnect flag are isolated A-B-A', () async {
-    final state = SharedPreferencesCloudSyncStateStore();
-    final accountAConflict = _conflict('backup-A');
-    final accountBConflict = _conflict('backup-B');
-    final timestampA = DateTime.utc(2026, 10, 10, 8);
-    final timestampB = DateTime.utc(2026, 10, 11, 9);
+  test(
+    'sync cursor, conflict, timestamp and reconnect flag are isolated A-B-A',
+    () async {
+      final state = SharedPreferencesCloudSyncStateStore();
+      final accountAConflict = _conflict('backup-A');
+      final accountBConflict = _conflict('backup-B');
+      final timestampA = DateTime.utc(2026, 10, 10, 8);
+      final timestampB = DateTime.utc(2026, 10, 11, 9);
 
-    await state.setActiveAccountId('google-account-A');
-    await state.setCloudSyncEnabled(true);
-    await state.writeCursor(
-      const CloudSyncCursor(
-        lastSyncedLocalRevision: 5,
-        lastSyncedBackupId: 'backup-A',
-        lastSyncedRemoteVersion: 'version-A',
-      ),
-    );
-    await state.writePendingConflict(accountAConflict);
-    await state.setLastSuccessfulSyncAt(timestampA);
-    await state.setReconnectRequired(true);
-    await state.setAutomaticSyncEnabled(true);
-    await state.setBackupFrequency(CloudBackupFrequency.weekly);
+      await state.setActiveAccountId('google-account-A');
+      await state.setCloudSyncEnabled(true);
+      await state.writeCursor(
+        const CloudSyncCursor(
+          lastSyncedLocalRevision: 5,
+          lastSyncedBackupId: 'backup-A',
+          lastSyncedRemoteVersion: 'version-A',
+        ),
+      );
+      await state.writePendingConflict(accountAConflict);
+      await state.setLastSuccessfulSyncAt(timestampA);
+      await state.setReconnectRequired(true);
+      await state.setAutomaticSyncEnabled(true);
+      await state.setBackupFrequency(CloudBackupFrequency.weekly);
 
-    await state.setActiveAccountId('google-account-B');
-    expect(await state.isCloudSyncEnabled(), isFalse);
-    expect(await state.readCursor(), const CloudSyncCursor.empty());
-    expect(await state.readPendingConflict(), isNull);
-    expect(await state.lastSuccessfulSyncAt(), isNull);
-    expect(await state.isReconnectRequired(), isFalse);
+      await state.setActiveAccountId('google-account-B');
+      expect(await state.isCloudSyncEnabled(), isFalse);
+      expect(await state.readCursor(), const CloudSyncCursor.empty());
+      expect(await state.readPendingConflict(), isNull);
+      expect(await state.lastSuccessfulSyncAt(), isNull);
+      expect(await state.isReconnectRequired(), isFalse);
 
-    await state.setCloudSyncEnabled(true);
-    await state.writeCursor(
-      const CloudSyncCursor(
-        lastSyncedLocalRevision: 8,
-        lastSyncedBackupId: 'backup-B',
-        lastSyncedRemoteVersion: 'version-B',
-      ),
-    );
-    await state.writePendingConflict(accountBConflict);
-    await state.setLastSuccessfulSyncAt(timestampB);
+      await state.setCloudSyncEnabled(true);
+      await state.writeCursor(
+        const CloudSyncCursor(
+          lastSyncedLocalRevision: 8,
+          lastSyncedBackupId: 'backup-B',
+          lastSyncedRemoteVersion: 'version-B',
+        ),
+      );
+      await state.writePendingConflict(accountBConflict);
+      await state.setLastSuccessfulSyncAt(timestampB);
 
-    await state.setActiveAccountId('google-account-A');
-    expect(await state.isCloudSyncEnabled(), isTrue);
-    expect(
-      await state.readCursor(),
-      const CloudSyncCursor(
-        lastSyncedLocalRevision: 5,
-        lastSyncedBackupId: 'backup-A',
-        lastSyncedRemoteVersion: 'version-A',
-      ),
-    );
-    expect(
-      (await state.readPendingConflict())?.remoteLineage.backupId,
-      'backup-A',
-    );
-    expect(await state.lastSuccessfulSyncAt(), timestampA);
-    expect(await state.isReconnectRequired(), isTrue);
+      await state.setActiveAccountId('google-account-A');
+      expect(await state.isCloudSyncEnabled(), isTrue);
+      expect(
+        await state.readCursor(),
+        const CloudSyncCursor(
+          lastSyncedLocalRevision: 5,
+          lastSyncedBackupId: 'backup-A',
+          lastSyncedRemoteVersion: 'version-A',
+        ),
+      );
+      expect(
+        (await state.readPendingConflict())?.remoteLineage.backupId,
+        'backup-A',
+      );
+      expect(await state.lastSuccessfulSyncAt(), timestampA);
+      expect(await state.isReconnectRequired(), isTrue);
 
-    await state.setActiveAccountId('google-account-B');
-    expect(await state.isCloudSyncEnabled(), isTrue);
-    expect(
-      await state.readCursor(),
-      const CloudSyncCursor(
-        lastSyncedLocalRevision: 8,
-        lastSyncedBackupId: 'backup-B',
-        lastSyncedRemoteVersion: 'version-B',
-      ),
-    );
-    expect(
-      (await state.readPendingConflict())?.remoteLineage.backupId,
-      'backup-B',
-    );
-    expect(await state.lastSuccessfulSyncAt(), timestampB);
+      await state.setActiveAccountId('google-account-B');
+      expect(await state.isCloudSyncEnabled(), isTrue);
+      expect(
+        await state.readCursor(),
+        const CloudSyncCursor(
+          lastSyncedLocalRevision: 8,
+          lastSyncedBackupId: 'backup-B',
+          lastSyncedRemoteVersion: 'version-B',
+        ),
+      );
+      expect(
+        (await state.readPendingConflict())?.remoteLineage.backupId,
+        'backup-B',
+      );
+      expect(await state.lastSuccessfulSyncAt(), timestampB);
 
-    // Cadence is a user preference, not account sync state.
-    expect(await state.isAutomaticSyncEnabled(), isTrue);
-    expect(await state.backupFrequency(), CloudBackupFrequency.weekly);
-  });
+      // Cadence is a user preference, not account sync state.
+      expect(await state.isAutomaticSyncEnabled(), isTrue);
+      expect(await state.backupFrequency(), CloudBackupFrequency.weekly);
+    },
+  );
 
-  test('ambiguous legacy state is quarantined instead of assigned to account', () async {
-    const legacyCursor =
-        '{"last_synced_local_revision":4,"last_synced_backup_id":"legacy-backup","last_synced_remote_version":"legacy-version"}';
-    SharedPreferences.setMockInitialValues(<String, Object>{
-      'qaza_cloud_adapter.cached_account_email_v1': 'old@example.com',
-      'qaza_cloud_adapter.cloud_enabled_v1': true,
-      'qaza_cloud_adapter.sync_cursor_v1': legacyCursor,
-      'qaza_cloud_adapter.last_successful_sync_at_v1':
-          '2026-10-09T07:30:00.000Z',
-      'qaza_cloud_adapter.automatic_sync_enabled_v1': true,
-      'qaza_cloud_adapter.backup_frequency_v1': 'weekly',
-    });
-    final preferences = await SharedPreferences.getInstance();
-    final state = SharedPreferencesCloudSyncStateStore(preferences: preferences);
+  test(
+    'ambiguous legacy state is quarantined instead of assigned to account',
+    () async {
+      const legacyCursor =
+          '{"last_synced_local_revision":4,"last_synced_backup_id":"legacy-backup","last_synced_remote_version":"legacy-version"}';
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'qaza_cloud_adapter.cached_account_email_v1': 'old@example.com',
+        'qaza_cloud_adapter.cloud_enabled_v1': true,
+        'qaza_cloud_adapter.sync_cursor_v1': legacyCursor,
+        'qaza_cloud_adapter.last_successful_sync_at_v1':
+            '2026-10-09T07:30:00.000Z',
+        'qaza_cloud_adapter.automatic_sync_enabled_v1': true,
+        'qaza_cloud_adapter.backup_frequency_v1': 'weekly',
+      });
+      final preferences = await SharedPreferences.getInstance();
+      final state = SharedPreferencesCloudSyncStateStore(
+        preferences: preferences,
+      );
 
-    expect(await state.hasUnscopedLegacyConnection(), isTrue);
-    await state.setActiveAccountId('new-account-B');
+      expect(await state.hasUnscopedLegacyConnection(), isTrue);
+      await state.setActiveAccountId('new-account-B');
 
-    expect(await state.isCloudSyncEnabled(), isFalse);
-    expect(await state.readCursor(), const CloudSyncCursor.empty());
-    expect(await state.lastSuccessfulSyncAt(), isNull);
-    expect(
-      preferences.getString(
-        'qaza_cloud_adapter.legacy_quarantine_v1.sync_cursor_v1',
-      ),
-      legacyCursor,
-    );
-    expect(
-      preferences.containsKey('qaza_cloud_adapter.sync_cursor_v1'),
-      isFalse,
-    );
-    expect(await state.isAutomaticSyncEnabled(), isTrue);
-    expect(await state.backupFrequency(), CloudBackupFrequency.weekly);
-  });
-  test('in-flight account state stays pinned after active account switches', () async {
-    final state = SharedPreferencesCloudSyncStateStore();
-    await state.setActiveAccountId('google-account-A');
-    await state.setCloudSyncEnabled(true);
-    final operationState = state.scopedToAccount('google-account-A');
+      expect(await state.isCloudSyncEnabled(), isFalse);
+      expect(await state.readCursor(), const CloudSyncCursor.empty());
+      expect(await state.lastSuccessfulSyncAt(), isNull);
+      expect(
+        preferences.getString(
+          'qaza_cloud_adapter.legacy_quarantine_v1.sync_cursor_v1',
+        ),
+        legacyCursor,
+      );
+      expect(
+        preferences.containsKey('qaza_cloud_adapter.sync_cursor_v1'),
+        isFalse,
+      );
+      expect(await state.isAutomaticSyncEnabled(), isTrue);
+      expect(await state.backupFrequency(), CloudBackupFrequency.weekly);
+    },
+  );
+  test(
+    'in-flight account state stays pinned after active account switches',
+    () async {
+      final state = SharedPreferencesCloudSyncStateStore();
+      await state.setActiveAccountId('google-account-A');
+      await state.setCloudSyncEnabled(true);
+      final operationState = state.scopedToAccount('google-account-A');
 
-    await state.setActiveAccountId('google-account-B');
-    expect(await state.readCursor(), const CloudSyncCursor.empty());
+      await state.setActiveAccountId('google-account-B');
+      expect(await state.readCursor(), const CloudSyncCursor.empty());
 
-    await operationState.writeCursor(
-      const CloudSyncCursor(
-        lastSyncedLocalRevision: 6,
-        lastSyncedBackupId: 'backup-from-A',
-        lastSyncedRemoteVersion: 'version-from-A',
-      ),
-    );
-    await operationState.setLastSuccessfulSyncAt(
-      DateTime.utc(2026, 10, 12, 9),
-    );
+      await operationState.writeCursor(
+        const CloudSyncCursor(
+          lastSyncedLocalRevision: 6,
+          lastSyncedBackupId: 'backup-from-A',
+          lastSyncedRemoteVersion: 'version-from-A',
+        ),
+      );
+      await operationState.setLastSuccessfulSyncAt(
+        DateTime.utc(2026, 10, 12, 9),
+      );
 
-    expect(await state.readCursor(), const CloudSyncCursor.empty());
-    expect(await state.lastSuccessfulSyncAt(), isNull);
+      expect(await state.readCursor(), const CloudSyncCursor.empty());
+      expect(await state.lastSuccessfulSyncAt(), isNull);
 
-    await state.setActiveAccountId('google-account-A');
-    expect(
-      await state.readCursor(),
-      const CloudSyncCursor(
-        lastSyncedLocalRevision: 6,
-        lastSyncedBackupId: 'backup-from-A',
-        lastSyncedRemoteVersion: 'version-from-A',
-      ),
-    );
-    expect(await state.lastSuccessfulSyncAt(), DateTime.utc(2026, 10, 12, 9));
-  });
+      await state.setActiveAccountId('google-account-A');
+      expect(
+        await state.readCursor(),
+        const CloudSyncCursor(
+          lastSyncedLocalRevision: 6,
+          lastSyncedBackupId: 'backup-from-A',
+          lastSyncedRemoteVersion: 'version-from-A',
+        ),
+      );
+      expect(await state.lastSuccessfulSyncAt(), DateTime.utc(2026, 10, 12, 9));
+    },
+  );
 
   test('cursor writes require a selected account namespace', () async {
     final state = SharedPreferencesCloudSyncStateStore();
@@ -335,7 +349,6 @@ void main() {
       throwsA(isA<CloudAdapterException>()),
     );
   });
-
 }
 
 CloudConflict _conflict(String backupId) => CloudConflict(

@@ -27,66 +27,75 @@ void main() {
         .setMockMethodCallHandler(_authorizationChannel, null);
   });
 
-  test('normal sign out does not invoke Google authorization revocation', () async {
-    final googleSignIn = _FakeGoogleSignIn();
-    final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+  test(
+    'normal sign out does not invoke Google authorization revocation',
+    () async {
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
 
-    await gateway.signOut();
+      await gateway.signOut();
 
-    expect(googleSignIn.initializeCalls, 1);
-    expect(googleSignIn.signOutCalls, 1);
-    expect(googleSignIn.disconnectCalls, 0);
-  });
+      expect(googleSignIn.initializeCalls, 1);
+      expect(googleSignIn.signOutCalls, 1);
+      expect(googleSignIn.disconnectCalls, 0);
+    },
+  );
 
-  test('same-account reconnect reuses valid silent Drive authorization', () async {
-    var authorizationCalls = 0;
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(_authorizationChannel, (call) async {
-          authorizationCalls++;
-          expect(call.method, 'authorizeDriveSilently');
-          expect(call.arguments, <String, Object?>{
-            'accountId': 'google-id-A',
-            'accountEmail': 'a@example.com',
+  test(
+    'same-account reconnect reuses valid silent Drive authorization',
+    () async {
+      var authorizationCalls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            authorizationCalls++;
+            expect(call.method, 'authorizeDriveSilently');
+            expect(call.arguments, <String, Object?>{
+              'accountId': 'google-id-A',
+              'accountEmail': 'a@example.com',
+            });
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-A',
+              'accountEmail': 'a@example.com',
+              'accessToken': 'test-access-token',
+              'grantedScopes': <String>[_driveScope],
+            };
           });
-          return <String, Object?>{
-            'status': 'authorized',
-            'accountId': 'google-id-A',
-            'accountEmail': 'a@example.com',
-            'accessToken': 'test-access-token',
-            'grantedScopes': <String>[_driveScope],
-          };
-        });
 
-    final googleSignIn = _FakeGoogleSignIn();
-    final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
-    final client = await gateway.authorizeDrive(allowInteractive: true);
-    client?.close();
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+      final client = await gateway.authorizeDrive(allowInteractive: true);
+      client?.close();
 
-    expect(authorizationCalls, 1);
-    expect(googleSignIn.authenticateCalls, 0);
-  });
+      expect(authorizationCalls, 1);
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
 
-  test('silent authorization rejects an account mismatch without a picker', () async {
-    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-        .setMockMethodCallHandler(_authorizationChannel, (call) async {
-          return <String, Object?>{
-            'status': 'authorized',
-            'accountId': 'google-id-B',
-            'accountEmail': 'b@example.com',
-            'accessToken': 'wrong-account-token',
-            'grantedScopes': <String>[_driveScope],
-          };
-        });
+  test(
+    'silent authorization rejects an account mismatch without a picker',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-B',
+              'accountEmail': 'b@example.com',
+              'accessToken': 'wrong-account-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
 
-    final googleSignIn = _FakeGoogleSignIn();
-    final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
 
-    await expectLater(
-      gateway.authorizeDrive(allowInteractive: true),
-      throwsA(isA<CloudAuthorizationUnavailable>()),
-    );
-    expect(googleSignIn.authenticateCalls, 0);
-  });
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: true),
+        throwsA(isA<CloudAuthorizationUnavailable>()),
+      );
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
 }
 
 class _FakeGoogleSignIn implements GoogleSignIn {

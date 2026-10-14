@@ -25,8 +25,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   final CloudSyncScheduler _scheduler;
   final String? serverClientId;
 
-  static const _cachedAccountIdKey =
-      'qaza_cloud_adapter.cached_account_id_v1';
+  static const _cachedAccountIdKey = 'qaza_cloud_adapter.cached_account_id_v1';
   static const _cachedDisplayNameKey =
       'qaza_cloud_adapter.cached_account_display_name_v1';
   static const _cachedEmailKey = 'qaza_cloud_adapter.cached_account_email_v1';
@@ -41,8 +40,8 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     try {
       final CloudAccountScopedSyncStateStore? scopedState =
           _state is CloudAccountScopedSyncStateStore
-              ? _state as CloudAccountScopedSyncStateStore
-              : null;
+          ? _state as CloudAccountScopedSyncStateStore
+          : null;
       final activeAccountId = await scopedState?.activeAccountId();
       final accountState = scopedState != null && activeAccountId != null
           ? scopedState.scopedToAccount(activeAccountId)
@@ -239,8 +238,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         photoUrl: account.photoUrl,
       );
       if (_state is CloudAccountScopedSyncStateStore) {
-        await (_state as CloudAccountScopedSyncStateStore)
-            .setActiveAccountId(account.id);
+        await (_state as CloudAccountScopedSyncStateStore).setActiveAccountId(
+          account.id,
+        );
       }
       await _state.setCloudSyncEnabled(true);
       await _state.setReconnectRequired(false);
@@ -363,9 +363,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       final accountId = verified.accountId;
       if (accountId != null) _gateway.pinAccountForOperation(accountId);
       try {
-        final result = await _engine(state: verified.state).discoverBackup(
-          allowInteractive: allowInteractive,
-        );
+        final result = await _engine(
+          state: verified.state,
+        ).discoverBackup(allowInteractive: allowInteractive);
         switch (result.kind) {
           case CloudBackupDiscoveryKind.noBackup:
             return const CloudBackupDiscoverySnapshot.noBackup();
@@ -479,10 +479,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         },
       );
       // Persist the successful-sync state before emitting 100% completion.
-      final snapshot = await _snapshotFromResult(
-        result,
-        state: operationState,
-      );
+      final snapshot = await _snapshotFromResult(result, state: operationState);
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&
           latestProgress!.totalBytes > 0) {
@@ -581,10 +578,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           onProgress?.call(progress);
         },
       );
-      final snapshot = await _snapshotFromResult(
-        result,
-        state: operationState,
-      );
+      final snapshot = await _snapshotFromResult(result, state: operationState);
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&
           latestProgress!.totalBytes > 0) {
