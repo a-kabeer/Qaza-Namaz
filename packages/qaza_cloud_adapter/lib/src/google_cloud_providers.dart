@@ -237,9 +237,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         email: account.email,
         photoUrl: account.photoUrl,
       );
-      final scopedState = _state;
-      if (scopedState is CloudAccountScopedSyncStateStore) {
-        await scopedState.setActiveAccountId(account.id);
+      if (_state is CloudAccountScopedSyncStateStore) {
+        await (_state as CloudAccountScopedSyncStateStore)
+            .setActiveAccountId(account.id);
       }
       await _state.setCloudSyncEnabled(true);
       await _state.setReconnectRequired(false);
