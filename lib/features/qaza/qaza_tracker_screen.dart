@@ -155,6 +155,7 @@ class _SelectionContextHeader extends StatelessWidget {
     final theme = Theme.of(context);
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(
@@ -162,7 +163,6 @@ class _SelectionContextHeader extends StatelessWidget {
             vertical: AppSpacing.xs,
           ),
           child: Row(
-            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
                 Icons.checklist_rounded,
@@ -170,7 +170,7 @@ class _SelectionContextHeader extends StatelessWidget {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
               const SizedBox(width: AppSpacing.xs),
-              Flexible(
+              Expanded(
                 child: Text(
                   l10n.addQazaSelectionLabel,
                   style: theme.textTheme.labelLarge?.copyWith(
