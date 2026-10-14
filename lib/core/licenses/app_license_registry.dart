@@ -27,10 +27,12 @@ void registerAppLicenses() {
 /// verify the bundled notices without consuming unrelated package registries.
 Future<List<LicenseEntry>> loadBundledAppLicenseEntries() async {
   final fontNotice = await _loadBundledNotice('noto_nastaliq_urdu.txt');
+  final arabicFontNotice = await _loadBundledNotice('noto_sans_arabic.txt');
   final sqliteNotice = await _loadBundledNotice('sqlite3_multiple_ciphers.txt');
 
   return [
     LicenseEntryWithLineBreaks(['Noto Nastaliq Urdu font'], fontNotice),
+    LicenseEntryWithLineBreaks(['Noto Sans Arabic font'], arabicFontNotice),
     LicenseEntryWithLineBreaks(
       ['SQLite3MultipleCiphers (sqlite3mc)'],
       sqliteNotice,

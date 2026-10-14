@@ -89,6 +89,10 @@ class SettingsScreen extends ConsumerWidget {
                     value: 'ur',
                     label: Text(l10n.languageUrdu),
                   ),
+                  const ButtonSegment<String>(
+                    value: 'ar',
+                    label: Text('العربية'),
+                  ),
                 ],
                 selected: {locale.languageCode},
                 onSelectionChanged: (value) {

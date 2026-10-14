@@ -44,6 +44,21 @@ void main() {
     expect(intl.Intl.defaultLocale, 'en');
   });
 
+  test('Arabic selection is persisted and restored after restart', () async {
+    final first = ProviderContainer();
+    await first.read(localeRestorationProvider.future);
+    await first.read(localeProvider.notifier).set(const Locale('ar'));
+    expect(first.read(localeProvider).languageCode, 'ar');
+    expect(intl.Intl.defaultLocale, 'ar');
+    first.dispose();
+
+    final restarted = ProviderContainer();
+    addTearDown(restarted.dispose);
+    await restarted.read(localeRestorationProvider.future);
+    expect(restarted.read(localeProvider).languageCode, 'ar');
+    expect(intl.Intl.defaultLocale, 'ar');
+  });
+
   test('unsupported saved language preserves a supported fallback', () async {
     SharedPreferences.setMockInitialValues({'language_code': 'fr'});
     final container = ProviderContainer();
