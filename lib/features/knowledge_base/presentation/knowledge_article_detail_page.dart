@@ -302,6 +302,7 @@ class _CategoryBadge extends ConsumerWidget {
               localizedKnowledgeTopic(topicId, l10n),
               textDirection: direction,
               textAlign: textAlign,
+              style: labelStyle,
             ),
           ),
         ],
