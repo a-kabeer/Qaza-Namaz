@@ -298,6 +298,21 @@ class CloudSyncCursor {
   final String? lastSyncedBackupId;
   final String? lastSyncedRemoteVersion;
 
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CloudSyncCursor &&
+          other.lastSyncedLocalRevision == lastSyncedLocalRevision &&
+          other.lastSyncedBackupId == lastSyncedBackupId &&
+          other.lastSyncedRemoteVersion == lastSyncedRemoteVersion;
+
+  @override
+  int get hashCode => Object.hash(
+    lastSyncedLocalRevision,
+    lastSyncedBackupId,
+    lastSyncedRemoteVersion,
+  );
+
   Map<String, dynamic> toJson() => <String, dynamic>{
     'last_synced_local_revision': lastSyncedLocalRevision,
     'last_synced_backup_id': lastSyncedBackupId,
