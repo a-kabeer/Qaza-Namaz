@@ -79,8 +79,7 @@ class LanguageSelector<T> extends StatelessWidget {
     this.optionKeyPrefix,
     this.compactWidth = 156,
     super.key,
-  })  : assert(options.length > 0),
-        assert(compactWidth > 0);
+  }) : assert(compactWidth > 0);
 
   final List<LanguageOption<T>> options;
   final T value;
@@ -90,7 +89,7 @@ class LanguageSelector<T> extends StatelessWidget {
   final bool enabled;
 
   /// When supplied, menu options receive keys like
-  /// '<prefix>_<language-code>' for stable integration tests.
+  /// `<prefix>_<language-code>` for stable integration tests.
   final String? optionKeyPrefix;
 
   /// Maximum width used by the compact app-bar presentation.
@@ -98,6 +97,7 @@ class LanguageSelector<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    assert(options.isNotEmpty, 'A language selector needs at least one option.');
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final typography = AppTypography.of(context);
