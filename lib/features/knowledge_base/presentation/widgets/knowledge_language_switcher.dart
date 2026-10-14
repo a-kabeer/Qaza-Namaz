@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/language_selector.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/knowledge_language.dart';
 import '../providers/knowledge_base_providers.dart';
@@ -19,33 +19,25 @@ class KnowledgeLanguageSwitcher extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final selected = ref.watch(knowledgeLanguageProvider);
-    final typography = AppTypography.of(context);
-
-    return Semantics(
-      label: l10n.knowledgeBaseLanguage,
-      child: SegmentedButton<KnowledgeLanguage>(
-        key: const Key('knowledge_language_switcher'),
-        showSelectedIcon: false,
-        segments: [
-          // Urdu leads, as the content's first language. In an Urdu interface
-          // the row mirrors, which is the correct reading order there.
-          ButtonSegment<KnowledgeLanguage>(
-            value: KnowledgeLanguage.urdu,
-            label: Text('اردو', style: typography.urdu.labelLarge),
-          ),
-          const ButtonSegment<KnowledgeLanguage>(
-            value: KnowledgeLanguage.english,
-            label: Text('English'),
-          ),
-          ButtonSegment<KnowledgeLanguage>(
-            value: KnowledgeLanguage.arabic,
-            label: Text('العربية', style: typography.arabic.labelLarge),
-          ),
-        ],
-        selected: {selected},
-        onSelectionChanged: (selection) =>
-            ref.read(knowledgeLanguageProvider.notifier).set(selection.single),
-      ),
+    // This model lists only languages with a bundled, validated content file.
+    // Do not derive Knowledge options from application UI locales.
+    return LanguageSelector<KnowledgeLanguage>(
+      key: const Key('knowledge_language_switcher'),
+      options: KnowledgeLanguage.values
+          .map(
+            (language) => LanguageOption<KnowledgeLanguage>(
+              value: language,
+              languageCode: language.code,
+            ),
+          )
+          .toList(growable: false),
+      value: selected,
+      layout: LanguageSelectorLayout.compact,
+      semanticLabel: l10n.knowledgeBaseLanguage,
+      optionKeyPrefix: 'knowledge_language_option',
+      onChanged: (language) {
+        ref.read(knowledgeLanguageProvider.notifier).set(language);
+      },
     );
   }
 }

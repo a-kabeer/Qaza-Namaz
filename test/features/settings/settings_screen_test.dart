@@ -35,6 +35,18 @@ class _FakeUserProfileRepository implements UserProfileRepository {
   }
 }
 
+Future<void> _chooseLanguage(
+  WidgetTester tester,
+  String languageCode,
+) async {
+  await tester.tap(find.byKey(const Key('settings_language')));
+  await tester.pumpAndSettle();
+  await tester.tap(
+    find.byKey(Key('settings_language_option_$languageCode')),
+  );
+  await tester.pumpAndSettle();
+}
+
 Widget _app(ProviderContainer container) {
   registerAppLicenses();
   return UncontrolledProviderScope(
@@ -90,8 +102,7 @@ void main() {
       expect(find.byKey(const Key('account_data_management')), findsNothing);
       expect(find.byKey(const Key('account_reset_qaza_counter')), findsNothing);
 
-      await tester.tap(find.text('English'));
-      await tester.pumpAndSettle();
+      await _chooseLanguage(tester, 'en');
 
       final prefs = await SharedPreferences.getInstance();
       expect(repository.stored?.languageCode, 'ur');
@@ -118,8 +129,7 @@ void main() {
 
       await tester.pumpWidget(_app(container));
 
-      await tester.tap(find.text('English'));
-      await tester.pumpAndSettle();
+      await _chooseLanguage(tester, 'en');
 
       container.invalidate(userProfileProvider);
       final reloaded = await container.read(userProfileProvider.future);
@@ -146,8 +156,7 @@ void main() {
 
       await tester.pumpWidget(_app(container));
 
-      await tester.tap(find.text('اردو'));
-      await tester.pumpAndSettle();
+      await _chooseLanguage(tester, 'ur');
 
       final prefs = await SharedPreferences.getInstance();
       expect(repository.stored?.languageCode, 'en');

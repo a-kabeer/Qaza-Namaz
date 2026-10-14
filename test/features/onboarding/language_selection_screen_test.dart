@@ -13,9 +13,10 @@ import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeUserProfileRepository implements UserProfileRepository {
-  _FakeUserProfileRepository({this.saveCompleter});
+  _FakeUserProfileRepository({this.saveCompleter, this.saveError});
 
   final Completer<void>? saveCompleter;
+  final Object? saveError;
   UserProfile? savedProfile;
   int saveCount = 0;
 
@@ -25,6 +26,7 @@ class _FakeUserProfileRepository implements UserProfileRepository {
   @override
   Future<void> save(UserProfile profile) async {
     saveCount++;
+    if (saveError != null) throw saveError!;
     savedProfile = profile;
     if (saveCompleter != null) {
       await saveCompleter!.future;
@@ -38,13 +40,25 @@ class _FakeUserProfileRepository implements UserProfileRepository {
   Future<void> clear() async {}
 }
 
+Future<void> _chooseLanguage(
+  WidgetTester tester,
+  String languageCode,
+) async {
+  await tester.tap(find.byKey(const Key('onboarding_language_selector')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(Key('onboarding_language_$languageCode')));
+  await tester.pumpAndSettle();
+}
+
 Widget _app({
   UserProfileRepository? repository,
+  LocaleNotifier Function()? localeNotifier,
 }) {
   return ProviderScope(
     overrides: [
       if (repository != null)
         userProfileRepositoryProvider.overrideWithValue(repository),
+      if (localeNotifier != null) localeProvider.overrideWith(localeNotifier),
     ],
     child: Consumer(
       builder: (context, ref, child) => MaterialApp(
@@ -68,10 +82,7 @@ void main() {
     final repository = _FakeUserProfileRepository();
 
     await tester.pumpWidget(_app(repository: repository));
-    await tester.tap(
-      find.byKey(const Key('onboarding_language_ur')),
-    );
-    await tester.pump();
+    await _chooseLanguage(tester, 'ur');
 
     final prefs = await SharedPreferences.getInstance();
 
@@ -79,10 +90,7 @@ void main() {
     expect(find.byType(ProfileSetupScreen), findsNothing);
     expect(repository.saveCount, 0);
     expect(prefs.getString(LocaleNotifier.storageKey), isNull);
-    expect(
-      find.byKey(const Key('onboarding_language_ur')),
-      findsOneWidget,
-    );
+    expect(find.text('اردو'), findsOneWidget);
     expect(find.text('جاری رکھیں'), findsOneWidget);
   });
 
@@ -91,10 +99,7 @@ void main() {
     final repository = _FakeUserProfileRepository();
 
     await tester.pumpWidget(_app(repository: repository));
-    await tester.tap(
-      find.byKey(const Key('onboarding_language_ur')),
-    );
-    await tester.pump();
+    await _chooseLanguage(tester, 'ur');
 
     await tester.tap(find.text('جاری رکھیں'));
     await tester.pumpAndSettle();
@@ -121,10 +126,7 @@ void main() {
     );
 
     await tester.pumpWidget(_app(repository: repository));
-    await tester.tap(
-      find.byKey(const Key('onboarding_language_ur')),
-    );
-    await tester.pump();
+    await _chooseLanguage(tester, 'ur');
 
     final continueButton = find.byType(FilledButton);
     await tester.tap(continueButton);
@@ -150,8 +152,7 @@ void main() {
   testWidgets('Arabic can be selected during onboarding', (tester) async {
     final repository = _FakeUserProfileRepository();
     await tester.pumpWidget(_app(repository: repository));
-    await tester.tap(find.byKey(const Key('onboarding_language_ar')));
-    await tester.pump();
+    await _chooseLanguage(tester, 'ar');
     expect(find.text('اختر لغتك'), findsOneWidget);
     expect(find.text('العربية'), findsOneWidget);
     await tester.tap(find.text('متابعة'));
@@ -161,4 +162,60 @@ void main() {
     expect(prefs.getString(LocaleNotifier.storageKey), 'ar');
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
   });
+
+  testWidgets('profile-save failure does not persist locale or navigate',
+      (tester) async {
+    final repository = _FakeUserProfileRepository(
+      saveError: StateError('profile storage unavailable'),
+    );
+
+    await tester.pumpWidget(_app(repository: repository));
+    await _chooseLanguage(tester, 'ur');
+    await tester.tap(find.text('جاری رکھیں'));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(repository.saveCount, 1);
+    expect(prefs.getString(LocaleNotifier.storageKey), isNull);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
+    expect(
+      find.text(lookupAppLocalizations(const Locale('ur')).errorStorage),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('locale-persistence failure does not complete onboarding',
+      (tester) async {
+    final repository = _FakeUserProfileRepository();
+    await tester.pumpWidget(
+      _app(
+        repository: repository,
+        localeNotifier: _FailingLocaleNotifier.new,
+      ),
+    );
+
+    await _chooseLanguage(tester, 'ur');
+    await tester.tap(find.text('جاري رکھیں'));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(repository.saveCount, 1);
+    expect(repository.savedProfile?.languageCode, 'ur');
+    expect(prefs.getString(LocaleNotifier.storageKey), isNull);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
+    expect(
+      find.text(lookupAppLocalizations(const Locale('ur')).errorStorage),
+      findsOneWidget,
+    );
+  });
+}
+
+class _FailingLocaleNotifier extends LocaleNotifier {
+  @override
+  Locale build() => const Locale('en');
+
+  @override
+  Future<void> set(Locale locale) async {
+    throw StateError('preference storage unavailable');
+  }
 }
