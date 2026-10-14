@@ -42,6 +42,7 @@ void main() {
     await secondNotifier.restore();
     expect(second.read(knowledgeLanguageProvider), KnowledgeLanguage.urdu);
   });
+
   testWidgets(
       'Knowledge selector changes reading language without changing app locale',
       (tester) async {
@@ -94,7 +95,6 @@ void main() {
     expect(rows.single.read<String>('value'), 'ar');
     expect(tester.takeException(), isNull);
   });
-
 }
 
 class _EnglishLocaleNotifier extends LocaleNotifier {
