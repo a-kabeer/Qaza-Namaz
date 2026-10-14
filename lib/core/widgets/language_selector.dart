@@ -14,7 +14,7 @@ enum LanguageSelectorLayout {
 /// A language that may be offered by a particular language domain.
 ///
 /// The caller owns the list of options. Application locales should come from
-/// [AppLocalizations.supportedLocales]; Knowledge options should come only from
+/// `AppLocalizations.supportedLocales`; Knowledge options should come only from
 /// the Knowledge content catalogue. This type intentionally has no provider
 /// or persistence responsibilities.
 @immutable
