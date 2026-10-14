@@ -43,6 +43,13 @@ void main() {
     await state.setCloudSyncEnabled(true);
     await state.setAutomaticSyncEnabled(true);
     await state.setReconnectRequired(true);
+    await state.writeCursor(
+      const CloudSyncCursor(
+        lastSyncedLocalRevision: 7,
+        lastSyncedBackupId: 'existing-backup',
+        lastSyncedRemoteVersion: 'existing-version',
+      ),
+    );
     expect(await state.isAutomaticSyncEnabled(), isTrue);
     expect(await state.isReconnectRequired(), isTrue);
 
@@ -51,6 +58,22 @@ void main() {
     expect(await state.isCloudSyncEnabled(), isFalse);
     expect(await state.isAutomaticSyncEnabled(), isTrue);
     expect(await state.isReconnectRequired(), isFalse);
+    expect(
+      await state.readCursor(),
+      const CloudSyncCursor(
+        lastSyncedLocalRevision: 7,
+        lastSyncedBackupId: 'existing-backup',
+        lastSyncedRemoteVersion: 'existing-version',
+      ),
+    );
+
+    // Reconnecting the same stable account keeps its verified sync cursor.
+    await state.setCloudSyncEnabled(true);
+    expect(await state.readCursor(), const CloudSyncCursor(
+      lastSyncedLocalRevision: 7,
+      lastSyncedBackupId: 'existing-backup',
+      lastSyncedRemoteVersion: 'existing-version',
+    ));
   });
 
   test('reconnect-required cannot be set when cloud is disabled', () async {
