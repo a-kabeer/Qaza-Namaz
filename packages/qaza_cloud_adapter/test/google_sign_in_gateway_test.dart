@@ -82,7 +82,7 @@ void main() {
     final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
 
     await expectLater(
-      gateway.authorizeDrive(allowInteractive: false),
+      gateway.authorizeDrive(allowInteractive: true),
       throwsA(isA<CloudAuthorizationUnavailable>()),
     );
     expect(googleSignIn.authenticateCalls, 0);
