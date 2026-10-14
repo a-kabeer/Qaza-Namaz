@@ -239,6 +239,10 @@ class SharedPreferencesCloudSyncStateStore
           'Verify a Google account before connecting cloud backup.',
         );
       }
+      // An explicit disconnect during legacy migration must also stop the old
+      // unscoped connection. Quarantine its sync metadata instead of assigning
+      // it to an unknown account, while preserving recoverable data.
+      await _quarantineLegacyAccountState(prefs);
       return;
     }
     await prefs.setBool(key, enabled);
