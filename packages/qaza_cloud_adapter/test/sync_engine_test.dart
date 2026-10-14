@@ -155,7 +155,13 @@ void main() {
           remote.written!.lineage.backupId,
         );
         expect(state.cursor!.lastSyncedLocalRevision, 10);
-        expect(progress.first.stage, CloudBackupProgressStage.preparing);
+        expect(progress.first.stage, CloudBackupProgressStage.checking);
+        expect(
+          progress.any(
+            (item) => item.stage == CloudBackupProgressStage.preparing,
+          ),
+          isTrue,
+        );
         expect(
           progress.any(
             (item) => item.stage == CloudBackupProgressStage.uploading,
@@ -186,6 +192,135 @@ void main() {
           state.cursor!.lastSyncedBackupId,
           remote.written!.lineage.backupId,
         );
+      },
+    );
+
+    test(
+      'verified matching Drive metadata skips full backup download on no-op',
+      () async {
+        final phase1 = FakePhase1(revision: 10);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeMetadataRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-100',
+            baseBackupId: null,
+            revision: 10,
+            modifiedAt: DateTime.utc(2026, 10, 8),
+            remoteVersion: '1',
+          ),
+          metadata: const CloudRemoteMetadata(
+            fileId: 'file-backup-100',
+            backupId: 'backup-100',
+            remoteVersion: '1',
+            modifiedAt: null,
+            hasAuthoritativeVersion: true,
+          ),
+        );
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
+
+        expect(result.kind, CloudSyncResultKind.noOp);
+        expect(remote.metadataCount, 1);
+        expect(remote.downloadCount, 0);
+        expect(remote.writeCount, 0);
+      },
+    );
+
+    test(
+      'local changes upload against matching remote metadata without downloading',
+      () async {
+        final phase1 = FakePhase1(revision: 11);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeMetadataRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-100',
+            baseBackupId: null,
+            revision: 10,
+            modifiedAt: DateTime.utc(2026, 10, 8),
+            remoteVersion: '1',
+          ),
+          metadata: const CloudRemoteMetadata(
+            fileId: 'file-backup-100',
+            backupId: 'backup-100',
+            remoteVersion: '1',
+            modifiedAt: null,
+            hasAuthoritativeVersion: true,
+          ),
+        );
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
+
+        expect(result.kind, CloudSyncResultKind.uploaded);
+        expect(remote.downloadCount, 0);
+        expect(remote.writeCount, 1);
+        expect(remote.written!.lineage.baseBackupId, 'backup-100');
+      },
+    );
+
+    test(
+      'unknown remote version downloads and is never treated as unchanged',
+      () async {
+        final phase1 = FakePhase1(revision: 10);
+        final state = FakeState(
+          deviceIdValue: 'device-B',
+          cursor: const CloudSyncCursor(
+            lastSyncedLocalRevision: 10,
+            lastSyncedBackupId: 'backup-100',
+            lastSyncedRemoteVersion: '1',
+          ),
+        );
+        final remote = FakeMetadataRemote(
+          latestSnapshot: _snapshot(
+            deviceId: 'device-A',
+            backupId: 'backup-100',
+            baseBackupId: null,
+            revision: 10,
+            modifiedAt: DateTime.utc(2026, 10, 8),
+            remoteVersion: '2026-10-08T00:00:00.000Z',
+          ),
+          metadata: const CloudRemoteMetadata(
+            fileId: 'file-backup-100',
+            backupId: 'backup-100',
+            remoteVersion: null,
+            modifiedAt: null,
+            hasAuthoritativeVersion: false,
+          ),
+        );
+
+        final result = await CloudSyncEngine(
+          phase1: phase1,
+          remote: remote,
+          state: state,
+        ).sync();
+
+        expect(result.kind, CloudSyncResultKind.downloaded);
+        expect(remote.downloadCount, 1);
+        expect(remote.writeCount, 0);
+        expect(phase1.importCount, 1);
       },
     );
 
@@ -1022,6 +1157,34 @@ class FakeState implements CloudSyncStateStore {
   @override
   Future<void> clearPendingConflict() async {
     pendingConflict = null;
+  }
+}
+
+class FakeMetadataRemote extends FakeRemote
+    implements CloudRemoteMetadataStore {
+  FakeMetadataRemote({required super.latestSnapshot, required this.metadata});
+
+  final CloudRemoteMetadata? metadata;
+  int metadataCount = 0;
+  int downloadCount = 0;
+
+  @override
+  Future<CloudRemoteMetadata?> latestMetadata({
+    required bool allowInteractive,
+  }) async {
+    metadataCount++;
+    return metadata;
+  }
+
+  @override
+  Future<CloudRemoteSnapshot> download(
+    CloudRemoteMetadata metadata, {
+    required bool allowInteractive,
+  }) async {
+    downloadCount++;
+    final snapshot = latestSnapshot;
+    if (snapshot == null) throw StateError('No fake remote snapshot');
+    return snapshot;
   }
 }
 

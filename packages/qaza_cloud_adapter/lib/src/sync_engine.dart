@@ -91,19 +91,42 @@ class CloudSyncEngine {
     final cursor = await _state.readCursor();
     final deviceId = await _state.deviceId();
     final localRevision = await _phase1.readDbRevision();
+    onProgress?.call(const CloudBackupProgress.checking());
 
     CloudRemoteSnapshot? remote;
+    CloudRemoteMetadata? remoteMetadata;
+    var remoteFound = false;
+    var metadataMatchesCursor = false;
     try {
       if (!await _state.isCloudSyncEnabled()) {
         return CloudSyncResult.skipped('Cloud sync was disabled.');
       }
-      remote = await _remote.latest(allowInteractive: allowInteractive);
+      if (_remote is CloudRemoteMetadataStore) {
+        final metadataStore = _remote as CloudRemoteMetadataStore;
+        remoteMetadata = await metadataStore.latestMetadata(
+          allowInteractive: allowInteractive,
+        );
+        remoteFound = remoteMetadata != null;
+        metadataMatchesCursor = remoteMetadata?.matchesCursor(cursor) ?? false;
+        if (remoteMetadata != null && !metadataMatchesCursor) {
+          // Unknown or changed metadata must be verified using the full payload.
+          remote = await metadataStore.download(
+            remoteMetadata,
+            allowInteractive: allowInteractive,
+          );
+        }
+      } else {
+        remote = await _remote.latest(allowInteractive: allowInteractive);
+        remoteFound = remote != null;
+      }
     } on CloudAuthorizationUnavailable catch (error) {
       return CloudSyncResult.skipped(error.message);
     } on CloudAdapterException catch (error) {
       return CloudSyncResult.failed(error.message);
-    } catch (error) {
-      return CloudSyncResult.failed('Cloud read failed: $error');
+    } catch (_) {
+      return CloudSyncResult.failed(
+        'Could not check Google Drive backup status. Check your connection and try again.',
+      );
     }
 
     final hasLocalChanges = cursor.lastSyncedLocalRevision == null
@@ -114,7 +137,13 @@ class CloudSyncEngine {
 
     // An initial connection that finds a remote backup always requires an
     // explicit user decision, even when local revision looks pristine.
-    if (cursor.lastSyncedBackupId == null && remote != null) {
+    if (cursor.lastSyncedBackupId == null && remoteFound) {
+      final initialRemote = remote;
+      if (initialRemote == null) {
+        return CloudSyncResult.failed(
+          'The existing Google Drive backup could not be verified safely.',
+        );
+      }
       final localPreview = await _localPreview();
       return await _persistConflict(
         CloudConflict(
@@ -122,17 +151,23 @@ class CloudSyncEngine {
           localTimestamp: localPreview.timestamp,
           localRevision: localRevision,
           localBaseBackupId: null,
-          remoteLineage: remote.backup.lineage,
-          remoteTimestamp: remote.modifiedAt,
-          remoteVersion: remote.remoteVersion,
+          remoteLineage: initialRemote.backup.lineage,
+          remoteTimestamp: initialRemote.modifiedAt,
+          remoteVersion: initialRemote.remoteVersion,
           lastSyncedBackupId: null,
         ),
       );
     }
 
-    final remoteChanged = cursor.lastSyncedBackupId == null
-        ? remote != null
-        : remote == null ||
+    final remoteChanged =
+        remoteMetadata != null && !remoteMetadata.hasAuthoritativeVersion
+        ? true
+        : metadataMatchesCursor
+        ? false
+        : cursor.lastSyncedBackupId == null
+        ? remoteFound
+        : !remoteFound ||
+              remote == null ||
               remote.backup.lineage.backupId != cursor.lastSyncedBackupId ||
               cursor.lastSyncedRemoteVersion == null ||
               remote.remoteVersion != cursor.lastSyncedRemoteVersion;
@@ -142,7 +177,7 @@ class CloudSyncEngine {
       return CloudSyncResult.noOp();
     }
 
-    if (remote == null) {
+    if (!remoteFound) {
       if (cursor.lastSyncedBackupId != null) {
         await _state.clearPendingConflict();
         return CloudSyncResult.remoteMissing(

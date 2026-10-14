@@ -39,6 +39,13 @@ class CloudAuthorizationUnavailable extends CloudAdapterException {
   ]);
 }
 
+class CloudDriveRequestException extends CloudAdapterException {
+  const CloudDriveRequestException(super.message, this.cause);
+
+  /// Original exception retained for diagnostics; never displayed by default.
+  final Object cause;
+}
+
 class CloudRemoteFormatException extends CloudAdapterException {
   const CloudRemoteFormatException(super.message);
 }
@@ -238,6 +245,32 @@ class CloudRemoteSnapshot {
   final String remoteVersion;
   final DateTime modifiedAt;
   final CloudBackup backup;
+}
+
+class CloudRemoteMetadata {
+  const CloudRemoteMetadata({
+    required this.fileId,
+    required this.backupId,
+    required this.remoteVersion,
+    required this.modifiedAt,
+    required this.hasAuthoritativeVersion,
+  });
+
+  final String fileId;
+  final String? backupId;
+  final String? remoteVersion;
+  final DateTime? modifiedAt;
+  final bool hasAuthoritativeVersion;
+
+  /// Unknown versions must never qualify for the metadata-only fast path.
+  bool matchesCursor(CloudSyncCursor cursor) =>
+      hasAuthoritativeVersion &&
+      backupId != null &&
+      remoteVersion != null &&
+      cursor.lastSyncedBackupId != null &&
+      cursor.lastSyncedRemoteVersion != null &&
+      backupId == cursor.lastSyncedBackupId &&
+      remoteVersion == cursor.lastSyncedRemoteVersion;
 }
 
 class CloudSyncCursor {

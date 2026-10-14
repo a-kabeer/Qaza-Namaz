@@ -17,6 +17,17 @@ abstract interface class Phase1BackupSource {
   Future<void> clearRecoverySnapshot();
 }
 
+/// Optional metadata-first capability. Drive can avoid downloading the full
+/// snapshot when its backup identity and authoritative version match the cursor.
+abstract interface class CloudRemoteMetadataStore {
+  Future<CloudRemoteMetadata?> latestMetadata({required bool allowInteractive});
+
+  Future<CloudRemoteSnapshot> download(
+    CloudRemoteMetadata metadata, {
+    required bool allowInteractive,
+  });
+}
+
 class LocalPhase1BackupSource implements Phase1BackupSource {
   LocalPhase1BackupSource(this.database)
     : _backupService = LocalBackupService(database);
