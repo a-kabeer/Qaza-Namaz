@@ -42,7 +42,7 @@ Future<void> _chooseLanguage(
   await tester.tap(find.byKey(const Key('settings_language')));
   await tester.pumpAndSettle();
   await tester.tap(
-    find.byKey(Key('settings_language_option_${languageCode}')),
+    find.byKey(Key('settings_language_option_$languageCode')),
   );
   await tester.pumpAndSettle();
 }
