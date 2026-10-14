@@ -78,17 +78,33 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
 
                     val accessToken = authorization.accessToken
                     val grantedScopes = authorization.grantedScopes
+                    val authorizedEmail = authorization.account?.name?.trim()
 
+                    // The native API must return the identity it actually
+                    // authorized. Never treat a requested/cached email alone
+                    // as proof that the token belongs to that account.
                     if (accessToken.isNullOrBlank() ||
                         !grantedScopes.contains(DRIVE_APPDATA_SCOPE)
                     ) {
                         result.success(mapOf("status" to "interactionRequired"))
                         return@addOnSuccessListener
                     }
+                    if (authorizedEmail.isNullOrEmpty() ||
+                        !authorizedEmail.equals(accountEmail, ignoreCase = true)
+                    ) {
+                        result.success(
+                            mapOf(
+                                "status" to "accountMismatch",
+                                "message" to "Google Drive authorized a different or unverifiable account.",
+                            ),
+                        )
+                        return@addOnSuccessListener
+                    }
 
                     result.success(
                         mapOf(
                             "status" to "authorized",
+                            "accountEmail" to authorizedEmail,
                             "accessToken" to accessToken,
                             "grantedScopes" to grantedScopes,
                         ),
