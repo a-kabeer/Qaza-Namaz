@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flex_color_scheme/flex_color_scheme.dart';
 import 'package:flutter/material.dart';
 
@@ -25,32 +23,12 @@ class AppTheme {
   static const String _serif = 'Noto Serif';
   static const String _sans = 'Manrope';
 
-  /// Bundled Nastaliq face used for every Urdu string in the app.
-  ///
-  /// Nastaliq, not Naskh: Urdu readers expect the cascading Nastaliq style,
-  /// and the system default on most devices is a Naskh face. Arabic content
-  /// keeps the platform face, which is Naskh and correct for it.
+  /// Bundled script-specific families. Urdu uses Nastaliq; Arabic uses Naskh-style
+  /// Noto Sans Arabic. The active interface locale selects the UI text theme.
   static const String urduFamily = 'Noto Nastaliq Urdu';
   static const String arabicFamily = 'Noto Sans Arabic';
+
   static bool isArabic(Locale? locale) => locale?.languageCode == 'ar';
-
-  /// Nastaliq sets on a steep diagonal, so a line box sized for Manrope clips
-  /// the cascade and collides with the line below. Every Latin style is
-  /// derived into its Urdu counterpart with these factors rather than being
-  /// written out twice, which keeps the two scales from drifting apart.
-  static const double _urduSizeFactor = 1.08;
-  static const double _urduHeightFactor = 1.7;
-
-  /// Floor for the derived line height. Display styles are set tight in Latin;
-  /// Nastaliq still needs room there, or the cascade of one line lands on the
-  /// ascenders of the next.
-  static const double _urduMinHeight = 1.9;
-
-  /// Above this size the derived leading is capped: large text needs
-  /// proportionally less of it, and a headline at 2.4 reads as two headlines.
-  static const double _urduLargeSize = 24;
-  static const double _urduLargeMaxHeight = 2.0;
-
   static bool isUrdu(Locale? locale) => locale?.languageCode == 'ur';
 
   /// Large tally counter; tabular so an incrementing count never shifts layout.
@@ -234,96 +212,108 @@ class AppTheme {
     );
   }
 
-  /// Derives the Urdu scale from the Latin one, slot for slot, so no slot can
-  /// be forgotten and the two scales cannot drift apart.
+  /// Urdu typography is intentionally specified by semantic role rather than
+  /// derived from the Latin scale. Nastaliq needs more vertical room than
+  /// Manrope, but a single large minimum line-height makes compact labels and
+  /// controls unnecessarily tall. These role-specific metrics retain space for
+  /// the cascade while allowing cards, rows, chips and navigation to stay tidy.
   static TextTheme _urduTextTheme(ColorScheme scheme, {String? assetPackage}) {
-    final latin = _latinTextTheme(scheme);
+    TextStyle nastaliq(
+      double size,
+      double lineHeight,
+      FontWeight weight, {
+      Color? color,
+    }) {
+      final family = assetPackage == null
+          ? urduFamily
+          : 'packages/$assetPackage/$urduFamily';
+      return TextStyle(
+        fontFamily: family,
+        fontSize: size,
+        height: lineHeight / size,
+        fontWeight: weight,
+        letterSpacing: 0,
+        wordSpacing: 0,
+        color: color ?? scheme.onSurface,
+        fontVariations: [
+          FontVariation.weight(weight.value.clamp(400, 700).toDouble()),
+        ],
+      );
+    }
+
     return TextTheme(
-      displayLarge: _toUrdu(latin.displayLarge!, assetPackage: assetPackage),
-      displayMedium: _toUrdu(latin.displayMedium!, assetPackage: assetPackage),
-      displaySmall: _toUrdu(latin.displaySmall!, assetPackage: assetPackage),
-      headlineLarge: _toUrdu(latin.headlineLarge!, assetPackage: assetPackage),
-      headlineMedium:
-          _toUrdu(latin.headlineMedium!, assetPackage: assetPackage),
-      headlineSmall: _toUrdu(latin.headlineSmall!, assetPackage: assetPackage),
-      titleLarge: _toUrdu(latin.titleLarge!, assetPackage: assetPackage),
-      titleMedium: _toUrdu(latin.titleMedium!, assetPackage: assetPackage),
-      titleSmall: _toUrdu(latin.titleSmall!, assetPackage: assetPackage),
-      bodyLarge: _toUrdu(latin.bodyLarge!, assetPackage: assetPackage),
-      bodyMedium: _toUrdu(latin.bodyMedium!, assetPackage: assetPackage),
-      bodySmall: _toUrdu(latin.bodySmall!, assetPackage: assetPackage),
-      labelLarge: _toUrdu(latin.labelLarge!, assetPackage: assetPackage),
-      labelMedium: _toUrdu(latin.labelMedium!, assetPackage: assetPackage),
-      labelSmall: _toUrdu(latin.labelSmall!, assetPackage: assetPackage),
+      displayLarge: nastaliq(50, 82, FontWeight.w400),
+      displayMedium: nastaliq(38, 62, FontWeight.w400),
+      displaySmall: nastaliq(32, 52, FontWeight.w500),
+      headlineLarge: nastaliq(32, 52, FontWeight.w500),
+      headlineMedium: nastaliq(26, 43, FontWeight.w500),
+      headlineSmall: nastaliq(22, 37, FontWeight.w500),
+      titleLarge: nastaliq(22, 37, FontWeight.w600),
+      titleMedium: nastaliq(17, 30, FontWeight.w600),
+      titleSmall: nastaliq(15, 27, FontWeight.w600),
+      bodyLarge: nastaliq(17, 31, FontWeight.w400),
+      bodyMedium: nastaliq(15, 27, FontWeight.w400),
+      bodySmall: nastaliq(
+        13,
+        23,
+        FontWeight.w400,
+        color: scheme.onSurfaceVariant,
+      ),
+      labelLarge: nastaliq(15, 27, FontWeight.w600),
+      labelMedium: nastaliq(13, 23, FontWeight.w600),
+      labelSmall: nastaliq(12, 21, FontWeight.w700),
     );
   }
 
-  /// Arabic interface typography uses the bundled Noto Sans Arabic face.
-  /// Unlike Nastaliq, Arabic UI text does not need Urdu-specific leading.
+  /// Arabic receives its own role-based scale and uses Noto Sans Arabic. It
+  /// must not inherit Nastaliq leading, because the two scripts have different
+  /// vertical metrics and shaping expectations.
   static TextTheme _arabicTextTheme(ColorScheme scheme,
       {String? assetPackage}) {
-    final latin = _latinTextTheme(scheme);
-    TextStyle arabic(TextStyle style) =>
-        _toArabic(style, assetPackage: assetPackage);
-    return TextTheme(
-      displayLarge: arabic(latin.displayLarge!),
-      displayMedium: arabic(latin.displayMedium!),
-      displaySmall: arabic(latin.displaySmall!),
-      headlineLarge: arabic(latin.headlineLarge!),
-      headlineMedium: arabic(latin.headlineMedium!),
-      headlineSmall: arabic(latin.headlineSmall!),
-      titleLarge: arabic(latin.titleLarge!),
-      titleMedium: arabic(latin.titleMedium!),
-      titleSmall: arabic(latin.titleSmall!),
-      bodyLarge: arabic(latin.bodyLarge!),
-      bodyMedium: arabic(latin.bodyMedium!),
-      bodySmall: arabic(latin.bodySmall!),
-      labelLarge: arabic(latin.labelLarge!),
-      labelMedium: arabic(latin.labelMedium!),
-      labelSmall: arabic(latin.labelSmall!),
-    );
-  }
-
-  static TextStyle _toArabic(TextStyle latin, {String? assetPackage}) {
-    final weight = latin.fontWeight ?? FontWeight.w400;
-    return latin.copyWith(
-      fontFamily: assetPackage == null
+    TextStyle arabic(
+      double size,
+      double lineHeight,
+      FontWeight weight, {
+      Color? color,
+    }) {
+      final family = assetPackage == null
           ? arabicFamily
-          : 'packages/$assetPackage/$arabicFamily',
-      height: math.max(latin.height ?? 1.2, 1.4),
-      letterSpacing: 0,
-      wordSpacing: 0,
-      fontVariations: [
-        FontVariation.weight(weight.value.clamp(100, 900).toDouble())
-      ],
-    );
-  }
+          : 'packages/$assetPackage/$arabicFamily';
+      return TextStyle(
+        fontFamily: family,
+        fontSize: size,
+        height: lineHeight / size,
+        fontWeight: weight,
+        letterSpacing: 0,
+        wordSpacing: 0,
+        color: color ?? scheme.onSurface,
+        fontVariations: [
+          FontVariation.weight(weight.value.clamp(100, 900).toDouble()),
+        ],
+      );
+    }
 
-  /// One Latin style, restated for Nastaliq.
-  ///
-  /// The size grows a little (Nastaliq's letterforms read small at a nominal
-  /// size), the line box grows a lot, and letter spacing goes to zero: spacing
-  /// out Arabic-script letters breaks the cursive join between them.
-  static TextStyle _toUrdu(TextStyle latin, {String? assetPackage}) {
-    final size = (latin.fontSize ?? 14) * _urduSizeFactor;
-    final scaled = (latin.height ?? 1.2) * _urduHeightFactor;
-    final height = size >= _urduLargeSize
-        ? scaled.clamp(_urduMinHeight, _urduLargeMaxHeight)
-        : math.max(scaled, _urduMinHeight);
-    final weight = latin.fontWeight ?? FontWeight.w400;
-    return latin.copyWith(
-      fontFamily: assetPackage == null
-          ? urduFamily
-          : 'packages/$assetPackage/$urduFamily',
-      fontSize: size,
-      height: height,
-      letterSpacing: 0,
-      wordSpacing: 0,
-      // The bundled face is variable over wght 400-700; name the axis so the
-      // weight is rendered rather than synthesized.
-      fontVariations: [
-        FontVariation.weight(weight.value.clamp(400, 700).toDouble()),
-      ],
+    return TextTheme(
+      displayLarge: arabic(48, 62, FontWeight.w400),
+      displayMedium: arabic(36, 48, FontWeight.w400),
+      displaySmall: arabic(30, 41, FontWeight.w500),
+      headlineLarge: arabic(30, 41, FontWeight.w500),
+      headlineMedium: arabic(25, 35, FontWeight.w500),
+      headlineSmall: arabic(21, 30, FontWeight.w500),
+      titleLarge: arabic(21, 30, FontWeight.w600),
+      titleMedium: arabic(17, 26, FontWeight.w600),
+      titleSmall: arabic(15, 23, FontWeight.w600),
+      bodyLarge: arabic(17, 29, FontWeight.w400),
+      bodyMedium: arabic(15, 25, FontWeight.w400),
+      bodySmall: arabic(
+        13,
+        21,
+        FontWeight.w400,
+        color: scheme.onSurfaceVariant,
+      ),
+      labelLarge: arabic(15, 24, FontWeight.w600),
+      labelMedium: arabic(13, 21, FontWeight.w600),
+      labelSmall: arabic(12, 19, FontWeight.w700),
     );
   }
 
@@ -469,7 +459,7 @@ class AppTheme {
   }
 }
 
-/// Both type scales, carried on the theme.
+/// The Latin, Urdu and Arabic type scales, carried on the theme.
 ///
 /// The app's locale picks which one becomes [ThemeData.textTheme]. Content
 /// that knows its own language regardless of the locale — a Knowledge Base
