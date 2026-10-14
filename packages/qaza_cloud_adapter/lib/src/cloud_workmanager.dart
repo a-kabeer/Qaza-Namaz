@@ -47,43 +47,75 @@ void initializeQazaCloudBackgroundDispatcher() {
       return true;
     }
 
+    final accountScopedState = state as CloudAccountScopedSyncStateStore;
+    final accountId = await accountScopedState.activeAccountId();
+    if (accountId == null || accountId.isEmpty) {
+      // A legacy or disconnected installation must reconnect interactively.
+      return true;
+    }
+    final operationState = accountScopedState.scopedToAccount(accountId);
     final appDatabase = AppDatabase();
     final phase1 = LocalPhase1BackupSource(appDatabase);
+    GoogleSignInGateway? gateway;
+    var accountPinned = false;
 
     try {
-      final gateway = GoogleSignInGateway(serverClientId: serverClientId);
+      gateway = GoogleSignInGateway(serverClientId: serverClientId);
+      if (await gateway.accountIdForAuthorization() != accountId) {
+        await operationState.setReconnectRequired(true);
+        return true;
+      }
+
+      // Verify the Drive grant and its returned account before the engine reads
+      // this account's cursor or pending conflict. This path never shows UI.
+      final authorization = await gateway.authorizeDrive(
+        allowInteractive: false,
+      );
+      authorization?.close();
+      if (await accountScopedState.activeAccountId() != accountId ||
+          await gateway.accountIdForAuthorization() != accountId) {
+        await operationState.setReconnectRequired(true);
+        return true;
+      }
+
+      gateway.pinAccountForOperation(accountId);
+      accountPinned = true;
       final remote = GoogleDriveAppDataStore(gateway);
       final engine = CloudSyncEngine(
         phase1: phase1,
         remote: remote,
-        state: state,
+        state: operationState,
       );
       final result = await engine.sync(allowInteractive: false);
       if (result.kind == CloudSyncResultKind.uploaded ||
           result.kind == CloudSyncResultKind.downloaded) {
-        await state.setLastSuccessfulSyncAt(DateTime.now().toUtc());
+        await operationState.setLastSuccessfulSyncAt(DateTime.now().toUtc());
       }
 
       // A missing token/account in a background isolate must never trigger an
-      // account picker. Persist a reconnect hint without disabling cloud sync
-      // or erasing the user's daily-backup preference.
+      // account picker. Persist reconnect state only in the account namespace
+      // captured at the beginning of this run.
       if (result.kind == CloudSyncResultKind.skipped &&
           (result.message?.toLowerCase().contains('authorization') ?? false)) {
-        await state.setReconnectRequired(true);
+        await operationState.setReconnectRequired(true);
       } else if (result.kind != CloudSyncResultKind.skipped &&
           result.kind != CloudSyncResultKind.failed &&
           result.kind != CloudSyncResultKind.remoteMissing) {
-        await state.setReconnectRequired(false);
+        await operationState.setReconnectRequired(false);
       }
 
       // A conflict needs a user choice, not an automatic WorkManager retry.
       return result.kind != CloudSyncResultKind.failed &&
           result.kind != CloudSyncResultKind.remoteMissing;
+    } on CloudAuthorizationUnavailable {
+      await operationState.setReconnectRequired(true);
+      return true;
     } on CloudAdapterException {
       return true;
     } catch (_) {
       return false;
     } finally {
+      if (accountPinned) gateway?.releaseAccountOperation(accountId);
       await appDatabase.close();
     }
   });
