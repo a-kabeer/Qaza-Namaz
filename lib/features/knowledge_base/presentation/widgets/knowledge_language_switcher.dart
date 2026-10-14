@@ -31,11 +31,21 @@ class KnowledgeLanguageSwitcher extends ConsumerWidget {
           // the row mirrors, which is the correct reading order there.
           ButtonSegment<KnowledgeLanguage>(
             value: KnowledgeLanguage.urdu,
-            label: Text('اردو', style: typography.urdu.labelLarge),
+            label: Text(
+              'اردو',
+              textDirection: TextDirection.rtl,
+              textAlign: TextAlign.center,
+              style: typography.urdu.labelLarge,
+            ),
           ),
-          const ButtonSegment<KnowledgeLanguage>(
+          ButtonSegment<KnowledgeLanguage>(
             value: KnowledgeLanguage.english,
-            label: Text('English'),
+            label: Text(
+              'English',
+              textDirection: TextDirection.ltr,
+              textAlign: TextAlign.center,
+              style: typography.latin.labelLarge,
+            ),
           ),
         ],
         selected: {selected},
