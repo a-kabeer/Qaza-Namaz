@@ -285,8 +285,7 @@ void main() {
     );
     expect(await state.isAutomaticSyncEnabled(), isTrue);
     expect(await state.backupFrequency(), CloudBackupFrequency.weekly);
-  );
-
+  });
 }
 
 CloudConflict _conflict(String backupId) => CloudConflict(
