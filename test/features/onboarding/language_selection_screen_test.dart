@@ -187,4 +187,39 @@ void main() {
     );
   });
 
+  testWidgets('locale-persistence failure does not complete onboarding',
+      (tester) async {
+    final repository = _FakeUserProfileRepository();
+    await tester.pumpWidget(
+      _app(
+        repository: repository,
+        localeNotifier: _FailingLocaleNotifier.new,
+      ),
+    );
+
+    await _chooseLanguage(tester, 'ur');
+    await tester.tap(find.text('جاري رکھیں'));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(repository.saveCount, 1);
+    expect(repository.savedProfile?.languageCode, 'ur');
+    expect(prefs.getString(LocaleNotifier.storageKey), isNull);
+    expect(find.byType(ProfileSetupScreen), findsNothing);
+    expect(
+      find.text(lookupAppLocalizations(const Locale('ur')).errorStorage),
+      findsOneWidget,
+    );
+  });
+
+}
+
+class _FailingLocaleNotifier extends LocaleNotifier {
+  @override
+  Locale build() => const Locale('en');
+
+  @override
+  Future<void> set(Locale locale) async {
+    throw StateError('preference storage unavailable');
+  }
 }
