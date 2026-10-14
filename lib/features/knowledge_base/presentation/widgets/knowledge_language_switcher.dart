@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -62,17 +64,42 @@ class KnowledgeLanguageSwitcher extends ConsumerWidget {
 /// list and an article.
 class KnowledgeLanguageBar extends StatelessWidget
     implements PreferredSizeWidget {
-  const KnowledgeLanguageBar({super.key});
+  const KnowledgeLanguageBar({
+    super.key,
+    required this.height,
+  }) : assert(height > 0);
 
-  static const double _height = 56;
+  static const double _minimumHeight = 56;
+
+  final double height;
+
+  /// Keeps the pinned control tall enough for the larger script's actual
+  /// scaled line metrics instead of clipping when system text is enlarged.
+  static double heightFor(BuildContext context) {
+    final typography = AppTypography.of(context);
+    final scaler = MediaQuery.textScalerOf(context);
+
+    double scaledLineBox(TextStyle style) {
+      final size = style.fontSize ?? 14;
+      return scaler.scale(size) * (style.height ?? 1.2) + 20;
+    }
+
+    return math.max(
+      _minimumHeight,
+      math.max(
+        scaledLineBox(typography.urdu.labelLarge!),
+        scaledLineBox(typography.latin.labelLarge!),
+      ),
+    );
+  }
 
   @override
-  Size get preferredSize => const Size.fromHeight(_height);
+  Size get preferredSize => Size.fromHeight(height);
 
   @override
-  Widget build(BuildContext context) => const SizedBox(
-        height: _height,
-        child: Center(
+  Widget build(BuildContext context) => SizedBox(
+        height: height,
+        child: const Center(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),
             child: KnowledgeLanguageSwitcher(),
