@@ -349,31 +349,35 @@ void main() {
       throwsA(isA<CloudAdapterException>()),
     );
   });
-  test('disconnect quarantines ambiguous legacy state and stops cloud work', () async {
-    const legacyCursor =
-        '{"last_synced_local_revision":3,"last_synced_backup_id":"legacy","last_synced_remote_version":"v3"}';
-    SharedPreferences.setMockInitialValues(<String, Object>{
-      'qaza_cloud_adapter.cloud_enabled_v1': true,
-      'qaza_cloud_adapter.sync_cursor_v1': legacyCursor,
-      'qaza_cloud_adapter.automatic_sync_enabled_v1': true,
-    });
-    final preferences = await SharedPreferences.getInstance();
-    final state = SharedPreferencesCloudSyncStateStore(preferences: preferences);
+  test(
+    'disconnect quarantines ambiguous legacy state and stops cloud work',
+    () async {
+      const legacyCursor =
+          '{"last_synced_local_revision":3,"last_synced_backup_id":"legacy","last_synced_remote_version":"v3"}';
+      SharedPreferences.setMockInitialValues(<String, Object>{
+        'qaza_cloud_adapter.cloud_enabled_v1': true,
+        'qaza_cloud_adapter.sync_cursor_v1': legacyCursor,
+        'qaza_cloud_adapter.automatic_sync_enabled_v1': true,
+      });
+      final preferences = await SharedPreferences.getInstance();
+      final state = SharedPreferencesCloudSyncStateStore(
+        preferences: preferences,
+      );
 
-    expect(await state.hasUnscopedLegacyConnection(), isTrue);
-    await state.setCloudSyncEnabled(false);
+      expect(await state.hasUnscopedLegacyConnection(), isTrue);
+      await state.setCloudSyncEnabled(false);
 
-    expect(await state.isCloudSyncEnabled(), isFalse);
-    expect(await state.hasUnscopedLegacyConnection(), isFalse);
-    expect(
-      preferences.getString(
-        'qaza_cloud_adapter.legacy_quarantine_v1.sync_cursor_v1',
-      ),
-      legacyCursor,
-    );
-    expect(await state.isAutomaticSyncEnabled(), isTrue);
-  });
-
+      expect(await state.isCloudSyncEnabled(), isFalse);
+      expect(await state.hasUnscopedLegacyConnection(), isFalse);
+      expect(
+        preferences.getString(
+          'qaza_cloud_adapter.legacy_quarantine_v1.sync_cursor_v1',
+        ),
+        legacyCursor,
+      );
+      expect(await state.isAutomaticSyncEnabled(), isTrue);
+    },
+  );
 }
 
 CloudConflict _conflict(String backupId) => CloudConflict(
