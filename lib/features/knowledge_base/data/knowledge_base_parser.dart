@@ -14,7 +14,8 @@ class KnowledgeBaseParseException implements Exception {
   String toString() => 'KnowledgeBaseParseException: $message';
 }
 
-/// Turns the two shipped datasets into [KnowledgeArticle] records.
+/// Turns the English and Urdu datasets into a base article set. The strict
+/// [parseTriple] entry point adds and validates the Arabic translation.
 ///
 /// The Urdu and English content are authored and shipped as separate files, so
 /// the parser reads both and joins them on `id`. Everything the files agree on
