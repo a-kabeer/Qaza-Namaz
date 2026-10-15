@@ -224,49 +224,14 @@ void main() {
   });
 
   test(
-    'fresh gateway restores the same stable account before status verification',
+    'passive restore does not attempt lightweight sign-in UI',
     () async {
-      final account = _FakeGoogleSignInAccount(
-        id: 'google-id-A',
-        email: 'renamed@example.com',
-      );
-      final googleSignIn = _FakeGoogleSignIn()..lightweightAccount = account;
+      final googleSignIn = _FakeGoogleSignIn();
       final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
 
-      final restored = await gateway.restoreLightweightAuthentication();
-      final preferences = await SharedPreferences.getInstance();
-
-      expect(restored?.id, 'google-id-A');
-      expect(await gateway.currentAccount(), same(account));
-      expect(await gateway.accountIdForAuthorization(), 'google-id-A');
-      expect(googleSignIn.lightweightAuthenticationCalls, 1);
-      expect(
-        preferences.getString('qaza_cloud_adapter.cached_account_email_v1'),
-        'renamed@example.com',
-      );
-    },
-  );
-
-  test(
-    'fresh gateway rejects a lightweight identity that differs from the saved account',
-    () async {
-      final googleSignIn = _FakeGoogleSignIn()
-        ..lightweightAccount = _FakeGoogleSignInAccount(
-          id: 'google-id-B',
-          email: 'b@example.com',
-        );
-      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
-      final preferences = await SharedPreferences.getInstance();
-
-      await expectLater(
-        gateway.restoreLightweightAuthentication(),
-        throwsA(isA<CloudAccountIdentityMismatch>()),
-      );
-      expect(await gateway.currentAccount(), isNull);
-      expect(
-        preferences.getString('qaza_cloud_adapter.cached_account_id_v1'),
-        'google-id-A',
-      );
+      expect(await gateway.restoreLightweightAuthentication(), isNull);
+      expect(googleSignIn.lightweightAuthenticationCalls, 0);
+      expect(googleSignIn.authenticateCalls, 0);
     },
   );
 
@@ -280,12 +245,12 @@ void main() {
             return <String, Object?>{'status': 'accountMismatch'};
           });
       final googleSignIn = _FakeGoogleSignIn()
-        ..lightweightAccount = _FakeGoogleSignInAccount(
+        ..authenticatedAccount = _FakeGoogleSignInAccount(
           id: 'google-id-A',
           email: 'a@example.com',
         );
       final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
-      await gateway.restoreLightweightAuthentication();
+      await gateway.authenticate();
 
       await expectLater(
         gateway.authorizeDrive(allowInteractive: false),
@@ -293,7 +258,7 @@ void main() {
       );
 
       expect(nativeAuthorizationCalls, 0);
-      expect(googleSignIn.authenticateCalls, 0);
+      expect(googleSignIn.authenticateCalls, 1);
     },
   );
 }
@@ -304,7 +269,7 @@ class _FakeGoogleSignIn implements GoogleSignIn {
   int disconnectCalls = 0;
   int authenticateCalls = 0;
   int lightweightAuthenticationCalls = 0;
-  GoogleSignInAccount? lightweightAccount;
+  GoogleSignInAccount? authenticatedAccount;
 
   @override
   dynamic noSuchMethod(Invocation invocation) {
@@ -322,11 +287,13 @@ class _FakeGoogleSignIn implements GoogleSignIn {
     }
     if (invocation.memberName == #attemptLightweightAuthentication) {
       lightweightAuthenticationCalls++;
-      return Future<GoogleSignInAccount?>.value(lightweightAccount);
+      return Future<GoogleSignInAccount?>.value(null);
     }
     if (invocation.memberName == #supportsAuthenticate) return true;
     if (invocation.memberName == #authenticate) {
       authenticateCalls++;
+      final account = authenticatedAccount;
+      if (account != null) return Future<GoogleSignInAccount>.value(account);
       return Future<GoogleSignInAccount>.error(
         StateError('Unexpected interactive authentication in this test.'),
       );
@@ -358,13 +325,4 @@ class _FakeGoogleSignInAccount implements GoogleSignInAccount {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeGoogleSignInAuthorizationClient
-    implements GoogleSignInAuthorizationClient {
-  @override
-  dynamic noSuchMethod(Invocation invocation) {
-    if (invocation.memberName == #authorizationForScopes) {
-      return Future<GoogleSignInClientAuthorization?>.value(null);
-    }
-    return super.noSuchMethod(invocation);
-  }
-}
+
