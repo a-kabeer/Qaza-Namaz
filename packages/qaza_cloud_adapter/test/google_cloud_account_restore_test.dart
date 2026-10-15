@@ -170,6 +170,48 @@ void main() {
     },
   );
 
+  test(
+    'account restore stays connected when the same verified identity is restored',
+    () async {
+      final preferences = await SharedPreferences.getInstance();
+      final state = SharedPreferencesCloudSyncStateStore(
+        preferences: preferences,
+      );
+      await state.setActiveAccountId('google-account-A');
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_id_v1',
+        'google-account-A',
+      );
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_email_v1',
+        'saved@example.com',
+      );
+      await preferences.setString(
+        'qaza_cloud_adapter.cached_account_display_name_v1',
+        'Saved Google User',
+      );
+      await state.setCloudSyncEnabled(true);
+      await state.setAutomaticSyncEnabled(true);
+
+      final gateway = _CountingGateway();
+      final scheduler = _CountingScheduler(state: state);
+      final provider = GoogleCloudAccountProvider(
+        gateway: gateway,
+        state: state,
+        scheduler: scheduler,
+      );
+
+      final snapshot = await provider.restore();
+
+      expect(snapshot.status, CloudAccountStatus.connected);
+      expect(snapshot.isConnected, isTrue);
+      expect(gateway.lightweightRestoreCalls, 0);
+      expect(gateway.currentAccountCalls, 1);
+      expect(gateway.authorizeDriveCalls, 1);
+      expect(await state.isReconnectRequired(), isFalse);
+    },
+  );
+
   test('restore while cloud is disabled does not call Google APIs', () async {
     final state = SharedPreferencesCloudSyncStateStore();
     final gateway = _CountingGateway();
@@ -194,6 +236,7 @@ class _CountingGateway extends GoogleSignInGateway {
   _CountingGateway({this.authorizationAvailable = true}) : super();
 
   final bool authorizationAvailable;
+  int lightweightRestoreCalls = 0;
   int currentAccountCalls = 0;
   int authorizeDriveCalls = 0;
 
@@ -204,10 +247,15 @@ class _CountingGateway extends GoogleSignInGateway {
   }
 
   @override
+  Future<GoogleSignInAccount?> restoreLightweightAuthentication() async {
+    lightweightRestoreCalls++;
+    return null;
+  }
+
+  @override
   Future<String?> accountIdForAuthorization() async {
-    // A restored process has no in-memory GoogleSignInAccount. Keep this unit
-    // test deterministic by supplying the stable ID persisted by the fake
-    // native authorization setup instead of initializing the real plugin.
+    // Keep the process-recreation fallback deterministic without initializing
+    // the real Google Sign-In plugin from this provider-level unit test.
     final preferences = await SharedPreferences.getInstance();
     return preferences.getString('qaza_cloud_adapter.cached_account_id_v1');
   }

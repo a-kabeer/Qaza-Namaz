@@ -99,10 +99,22 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         result.success(mapOf("status" to "interactionRequired"))
                         return@addOnSuccessListener
                     }
-                    if (authorizedAccountId.isNullOrEmpty() ||
-                        authorizedAccountId != accountId ||
-                        authorizedEmail.isNullOrEmpty() ||
-                        !authorizedEmail.equals(accountEmail, ignoreCase = true)
+                    val hasAuthorizedAccountId = !authorizedAccountId.isNullOrEmpty()
+                    val hasAuthorizedEmail = !authorizedEmail.isNullOrEmpty()
+                    val emailMatches = hasAuthorizedEmail &&
+                        authorizedEmail.equals(accountEmail, ignoreCase = true)
+
+                    // AuthorizationResult's deprecated GoogleSignInAccount can
+                    // omit the stable ID because this is an authorization-only
+                    // request, not a Google Sign-In ID request. The Android
+                    // AuthorizationRequest is explicitly pinned to Account(email).
+                    // If a native ID is present, require an exact ID match; if it
+                    // is absent, require the returned email to match the pinned
+                    // account. Never accept a result with no identity data or
+                    // contradictory identity claims.
+                    if ((hasAuthorizedAccountId && authorizedAccountId != accountId) ||
+                        (hasAuthorizedEmail && !emailMatches) ||
+                        (!hasAuthorizedAccountId && !hasAuthorizedEmail)
                     ) {
                         result.success(
                             mapOf(
@@ -113,11 +125,20 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         return@addOnSuccessListener
                     }
 
+                    val identitySource = if (hasAuthorizedAccountId) {
+                        "googleId"
+                    } else {
+                        "targetAccountEmail"
+                    }
                     result.success(
                         mapOf(
                             "status" to "authorized",
-                            "accountId" to authorizedAccountId,
-                            "accountEmail" to authorizedEmail,
+                            // For the email-only fallback, the stable ID is the
+                            // previously verified ID bound to this exact target
+                            // email, not a newly inferred native ID.
+                            "accountId" to (authorizedAccountId ?: accountId),
+                            "accountEmail" to (authorizedEmail ?: accountEmail),
+                            "identitySource" to identitySource,
                             "accessToken" to accessToken,
                             "grantedScopes" to grantedScopes,
                         ),
