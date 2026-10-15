@@ -17,7 +17,19 @@ void main() {
     expect(l10n.navQaza, 'Qaza');
     expect(l10n.navKnowledge, 'Rehnumai');
     expect(l10n.prayerFajr, 'Fajr');
-    expect(l10n.commonContinue, 'jari rakhein');
+    expect(l10n.commonContinue, 'Jari rakhein');
+    expect(l10n.navPrayerTime, 'Auqat');
+    expect(l10n.prayerTimeTitle, 'Namaz ke auqat');
+
+    // Keep the compact Roman Urdu navigation label isolated to ur_Latn.
+    expect(
+      lookupAppLocalizations(const Locale('en')).navPrayerTime,
+      'Prayer Time',
+    );
+    expect(
+      lookupAppLocalizations(const Locale('ur')).navPrayerTime,
+      'نماز کے اوقات',
+    );
 
     final arabicScript = RegExp(r'[\u0600-\u06FF]');
     for (final value in [
@@ -42,6 +54,58 @@ void main() {
       AppTheme.dark(locale: romanUrduLocale).textTheme.bodyMedium?.fontFamily,
       'Manrope',
     );
+  });
+
+  testWidgets(
+      'Roman Urdu Prayer Time navigation label fits on one line at 320px',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 640);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final l10n = lookupAppLocalizations(romanUrduLocale);
+    await tester.pumpWidget(
+      MaterialApp(
+        locale: romanUrduLocale,
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: <LocalizationsDelegate<dynamic>>[
+          const RomanUrduWidgetsLocalizationsDelegate(),
+          ...AppLocalizations.localizationsDelegates,
+        ],
+        home: Scaffold(
+          bottomNavigationBar: NavigationBar(
+            destinations: <NavigationDestination>[
+              NavigationDestination(
+                icon: const Icon(Icons.home_outlined),
+                label: l10n.navHome,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.checklist_outlined),
+                label: l10n.navQaza,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.schedule_outlined),
+                label: l10n.navPrayerTime,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.menu_book_outlined),
+                label: l10n.navKnowledge,
+              ),
+              NavigationDestination(
+                icon: const Icon(Icons.tune_outlined),
+                label: l10n.navSettings,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Auqat'), findsOneWidget);
+    expect(tester.widget<Text>(find.text('Auqat')).maxLines, 1);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('Roman Urdu resolves to left-to-right layout', (tester) async {
