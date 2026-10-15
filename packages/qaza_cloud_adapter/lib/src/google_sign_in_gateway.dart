@@ -14,6 +14,7 @@ const MethodChannel _backgroundAuthorizationChannel = MethodChannel(
 );
 const String _cachedAccountEmailKey =
     'qaza_cloud_adapter.cached_account_email_v1';
+const String _cachedAccountIdKey = 'qaza_cloud_adapter.cached_account_id_v1';
 
 class GoogleSignInGateway {
   GoogleSignInGateway({
@@ -30,6 +31,7 @@ class GoogleSignInGateway {
 
   bool _initialized = false;
   GoogleSignInAccount? _resolvedAccount;
+  String? _pinnedAccountId;
   Future<void> _tail = Future<void>.value();
 
   Future<void> initialize() => _serialized<void>(() async {
@@ -39,13 +41,56 @@ class GoogleSignInGateway {
   Future<GoogleSignInAccount> authenticate() =>
       _serialized(() => _authenticateUnlocked());
 
-  /// Revokes the app's Google authorization as well as signing out. The
-  /// cloud provider calls this only after automatic work has been disabled.
+  /// Signs out of this app without revoking the user's Google authorization.
+  /// Callers must stop scheduled work before invoking this method.
   Future<void> signOut() => _serialized(() async {
     await _initializeUnlocked();
-    await _signIn.disconnect();
+    await _signIn.signOut();
     _resolvedAccount = null;
   });
+
+  /// Stable Google account identifier associated with the current runtime or
+  /// the previously verified account binding. Cached profile data alone is
+  /// not an authorization grant; Drive authorization is still checked before
+  /// any sync operation uses account-scoped state.
+  Future<String?> accountIdForAuthorization() => _serialized(() async {
+    await _initializeUnlocked();
+    final account = _resolvedAccount;
+    if (account != null) return account.id.trim().isEmpty ? null : account.id;
+    return _storedAccountId();
+  });
+
+  /// Pins all subsequent Drive authorizations during one sync to its verified
+  /// account. This prevents a concurrent account switch from redirecting later
+  /// Drive requests to a different user's backup.
+  void pinAccountForOperation(String accountId) {
+    final normalized = accountId.trim();
+    if (normalized.isEmpty) {
+      throw ArgumentError.value(accountId, 'accountId', 'Must not be empty.');
+    }
+    if (_pinnedAccountId != null && _pinnedAccountId != normalized) {
+      throw const CloudAuthorizationUnavailable(
+        'Another Google account operation is already in progress.',
+      );
+    }
+    final runtimeId = _resolvedAccount?.id;
+    if (runtimeId != null && runtimeId != normalized) {
+      throw const CloudAuthorizationUnavailable(
+        'The authenticated Google account changed before sync could start.',
+      );
+    }
+    _pinnedAccountId = normalized;
+  }
+
+  void releaseAccountOperation(String accountId) {
+    if (_pinnedAccountId == accountId) _pinnedAccountId = null;
+  }
+
+  Future<String?> _storedAccountId() async {
+    final preferences = await SharedPreferences.getInstance();
+    final value = preferences.getString(_cachedAccountIdKey)?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
 
   /// Returns an account resolved by this runtime's explicit sign-in flow.
   ///
@@ -64,6 +109,20 @@ class GoogleSignInGateway {
       _serialized(() async {
         await _initializeUnlocked();
 
+        final pinnedAccountId = _pinnedAccountId;
+        if (pinnedAccountId != null) {
+          final runtimeId = _resolvedAccount?.id;
+          final persistedId = runtimeId == null
+              ? await _storedAccountId()
+              : runtimeId;
+          if (persistedId != pinnedAccountId) {
+            throw const CloudAuthorizationUnavailable(
+              'The Google account changed during sync. No further Drive '
+              'requests will be made until the account is reverified.',
+            );
+          }
+        }
+
         // WorkManager runs in a separate Flutter engine and cannot depend on
         // this gateway's in-memory GoogleSignInAccount. A foreground caller
         // can also be a fresh runtime (for example, Backup Now after relaunch).
@@ -74,9 +133,13 @@ class GoogleSignInGateway {
             (!allowInteractive || _resolvedAccount == null)) {
           try {
             return await _authorizeDriveSilentlyOnAndroid();
+          } on CloudAccountIdentityMismatch {
+            // An account mismatch is not a missing permission. Never let this
+            // fall through to an interactive account picker.
+            rethrow;
           } on CloudAuthorizationUnavailable {
-            // A foreground user action may now complete authentication or
-            // consent. Background callers must never fall through to UI.
+            // A foreground user action may now complete missing consent.
+            // Background callers must never fall through to UI.
             if (!allowInteractive) rethrow;
           }
         }
@@ -111,19 +174,40 @@ class GoogleSignInGateway {
 
   Future<http.Client> _authorizeDriveSilentlyOnAndroid() async {
     final preferences = await SharedPreferences.getInstance();
+    final expectedAccountId = preferences
+        .getString(_cachedAccountIdKey)
+        ?.trim();
     final expectedEmail = preferences.getString(_cachedAccountEmailKey)?.trim();
-    if (expectedEmail == null || expectedEmail.isEmpty) {
+    if (expectedAccountId == null ||
+        expectedAccountId.isEmpty ||
+        expectedEmail == null ||
+        expectedEmail.isEmpty) {
       throw const CloudAuthorizationUnavailable(
         'Google Drive authorization cannot be restored because the previously '
-        'connected account could not be identified. Open Settings → Account '
-        'and reconnect Google.',
+        'connected account identity could not be verified. Open Settings → '
+        'Account and reconnect Google.',
+      );
+    }
+    final runtimeAccount = _resolvedAccount;
+    if (_pinnedAccountId != null && _pinnedAccountId != expectedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The selected Google account changed during sync. Reconnect before retrying.',
+      );
+    }
+    if (runtimeAccount != null && runtimeAccount.id != expectedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The authenticated Google account does not match the saved backup '
+        'account. Reconnect the intended account before syncing.',
       );
     }
 
     final response = await _backgroundAuthorizationChannel
         .invokeMapMethod<String, Object?>(
           'authorizeDriveSilently',
-          <String, Object?>{'accountEmail': expectedEmail},
+          <String, Object?>{
+            'accountId': expectedAccountId,
+            'accountEmail': expectedEmail,
+          },
         );
     final status = response?['status'];
 
@@ -131,6 +215,14 @@ class GoogleSignInGateway {
       throw const CloudAuthorizationUnavailable(
         'Google Drive authorization needs attention. Open Settings → Account '
         'and reconnect Google.',
+      );
+    }
+    if (status == 'accountMismatch') {
+      final message = response?['message'];
+      throw CloudAccountIdentityMismatch(
+        message is String && message.trim().isNotEmpty
+            ? message
+            : 'Google Drive authorized a different or unverifiable account.',
       );
     }
 
@@ -149,6 +241,18 @@ class GoogleSignInGateway {
         ? rawScopes.whereType<String>().toSet()
         : <String>{};
 
+    final authorizedAccountId = response?['accountId'];
+    final authorizedEmail = response?['accountEmail'];
+    if (authorizedAccountId is! String ||
+        authorizedAccountId.trim().isEmpty ||
+        authorizedAccountId != expectedAccountId ||
+        authorizedEmail is! String ||
+        authorizedEmail.trim().isEmpty ||
+        authorizedEmail.trim().toLowerCase() != expectedEmail.toLowerCase()) {
+      throw const CloudAccountIdentityMismatch(
+        'Google Drive authorization did not confirm the previously connected Google account.',
+      );
+    }
     if (accessToken is! String ||
         accessToken.isEmpty ||
         !grantedScopes.contains(cloudDriveScope)) {
@@ -195,6 +299,13 @@ class GoogleSignInGateway {
       );
     }
     final account = await _signIn.authenticate();
+    final pinnedAccountId = _pinnedAccountId;
+    if (pinnedAccountId != null && account.id != pinnedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The selected Google account does not match the account whose backup '
+        'is being synchronized.',
+      );
+    }
     _resolvedAccount = account;
     return account;
   }

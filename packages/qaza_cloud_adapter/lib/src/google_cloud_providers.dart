@@ -25,6 +25,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   final CloudSyncScheduler _scheduler;
   final String? serverClientId;
 
+  static const _cachedAccountIdKey = 'qaza_cloud_adapter.cached_account_id_v1';
   static const _cachedDisplayNameKey =
       'qaza_cloud_adapter.cached_account_display_name_v1';
   static const _cachedEmailKey = 'qaza_cloud_adapter.cached_account_email_v1';
@@ -37,32 +38,81 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> restore() async {
     try {
-      if (!await _state.isCloudSyncEnabled()) {
+      final CloudAccountScopedSyncStateStore? scopedState =
+          _state is CloudAccountScopedSyncStateStore
+          ? _state as CloudAccountScopedSyncStateStore
+          : null;
+      final activeAccountId = await scopedState?.activeAccountId();
+      final accountState = scopedState != null && activeAccountId != null
+          ? scopedState.scopedToAccount(activeAccountId)
+          : _state;
+
+      if (scopedState != null && activeAccountId == null) {
+        if (_state is SharedPreferencesCloudSyncStateStore) {
+          if (await _state.hasUnscopedLegacyConnection()) {
+            // Older releases persisted a connected flag without a stable
+            // Google account ID. Show the saved profile only as a reconnect
+            // hint; never authorize or sync until the account is verified.
+            return await _cachedProfileSnapshot(reconnectRequired: true);
+          }
+        }
         return const CloudAccountSnapshot.disconnected();
       }
-      // An unset preference means no user choice has been saved. Default to
-      // ON for connected accounts, but preserve an explicit persisted OFF.
-      if (!await _state.hasAutomaticSyncPreference()) {
-        await _state.setAutomaticSyncEnabled(true);
+
+      if (!await accountState.isCloudSyncEnabled()) {
+        return const CloudAccountSnapshot.disconnected();
       }
-      if (await _state.isAutomaticSyncEnabled()) {
-        await _scheduler.initializeAndSchedule(
-          frequency: (await _state.backupFrequency()).interval,
-          serverClientId: serverClientId,
-        );
+
+      if (scopedState != null) {
+        final boundAccountId = await _gateway.accountIdForAuthorization();
+        if (boundAccountId == null || boundAccountId != activeAccountId) {
+          // The profile binding can belong to a partially completed account
+          // switch. Do not mutate the currently selected namespace based on an
+          // identity mismatch; require explicit reconnection instead.
+          return await _cachedProfileSnapshot(reconnectRequired: true);
+        }
       }
 
       final account = await _gateway.currentAccount();
+      if (account != null &&
+          activeAccountId != null &&
+          account.id != activeAccountId) {
+        if (await scopedState?.activeAccountId() == activeAccountId) {
+          await accountState.setReconnectRequired(true);
+        }
+        return CloudAccountSnapshot.reconnectRequired(
+          displayName: account.displayName,
+          email: account.email,
+          photoUrl: account.photoUrl,
+        );
+      }
+
       try {
-        // Connection is reported only after the required Drive scope can be
-        // obtained non-interactively. On Android this call uses the native
-        // Identity AuthorizationClient, including after process recreation.
+        // Require a fresh non-interactive Drive authorization before scheduling
+        // background work or exposing account-scoped sync status.
         final client = await _gateway.authorizeDrive(allowInteractive: false);
         client?.close();
-        await _state.setReconnectRequired(false);
+        if (scopedState != null &&
+            (await scopedState.activeAccountId() != activeAccountId ||
+                await _gateway.accountIdForAuthorization() !=
+                    activeAccountId)) {
+          return await _cachedProfileSnapshot(reconnectRequired: true);
+        }
+        await accountState.setReconnectRequired(false);
+
+        if (!await accountState.hasAutomaticSyncPreference()) {
+          await accountState.setAutomaticSyncEnabled(true);
+        }
+        if (await accountState.isAutomaticSyncEnabled()) {
+          await _scheduler.initializeAndSchedule(
+            frequency: (await accountState.backupFrequency()).interval,
+            serverClientId: serverClientId,
+          );
+        }
 
         if (account != null) {
           await _persistAccountProfile(
+            accountId: account.id,
             displayName: account.displayName,
             email: account.email,
             photoUrl: account.photoUrl,
@@ -75,14 +125,21 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
           );
         }
 
-        // A new Flutter runtime has no GoogleSignInAccount object. A successful
-        // native Drive authorization independently proves that the default
-        // account has a usable backup grant; cached fields are display-only.
+        // A new Flutter runtime has no GoogleSignInAccount object. The native
+        // authorization path returns the account it actually authorized, and
+        // the stable ID/email binding was verified before any sync state read.
         return await _cachedProfileSnapshot(reconnectRequired: false);
       } on CloudAuthorizationUnavailable {
-        await _state.setReconnectRequired(true);
+        if (scopedState != null &&
+            (await scopedState.activeAccountId() != activeAccountId ||
+                await _gateway.accountIdForAuthorization() !=
+                    activeAccountId)) {
+          return await _cachedProfileSnapshot(reconnectRequired: true);
+        }
+        await accountState.setReconnectRequired(true);
         if (account != null) {
           await _persistAccountProfile(
+            accountId: account.id,
             displayName: account.displayName,
             email: account.email,
             photoUrl: account.photoUrl,
@@ -101,6 +158,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   }
 
   Future<void> _persistAccountProfile({
+    required String accountId,
     String? displayName,
     String? email,
     String? photoUrl,
@@ -115,6 +173,10 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       }
     }
 
+    // Save a stable Google account ID alongside the email used only to select
+    // the native Android account. Both are written before activating the
+    // account-scoped sync namespace.
+    await writeValue(_cachedAccountIdKey, accountId);
     await writeValue(_cachedDisplayNameKey, displayName);
     await writeValue(_cachedEmailKey, email);
     await writeValue(_cachedPhotoUrlKey, photoUrl);
@@ -122,6 +184,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
 
   Future<void> _clearCachedAccountProfile() async {
     final preferences = await SharedPreferences.getInstance();
+    await preferences.remove(_cachedAccountIdKey);
     await preferences.remove(_cachedDisplayNameKey);
     await preferences.remove(_cachedEmailKey);
     await preferences.remove(_cachedPhotoUrlKey);
@@ -169,10 +232,16 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       client?.close();
 
       await _persistAccountProfile(
+        accountId: account.id,
         displayName: account.displayName,
         email: account.email,
         photoUrl: account.photoUrl,
       );
+      if (_state is CloudAccountScopedSyncStateStore) {
+        await (_state as CloudAccountScopedSyncStateStore).setActiveAccountId(
+          account.id,
+        );
+      }
       await _state.setCloudSyncEnabled(true);
       await _state.setReconnectRequired(false);
       if (!automaticPreferenceConfigured) {
@@ -191,7 +260,14 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         photoUrl: account.photoUrl,
       );
     } catch (error) {
-      if (await _state.isCloudSyncEnabled()) {
+      final scopedState = _state is CloudAccountScopedSyncStateStore
+          ? _state as CloudAccountScopedSyncStateStore
+          : null;
+      final activeAccountId = await scopedState?.activeAccountId();
+      final authenticatedAccountId = await _gateway.accountIdForAuthorization();
+      if (activeAccountId != null &&
+          authenticatedAccountId == activeAccountId &&
+          await _state.isCloudSyncEnabled()) {
         await _state.setReconnectRequired(true);
       }
       return CloudAccountSnapshot.failed(error.toString());
@@ -229,34 +305,96 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
   @override
   bool get isSupported => true;
 
+  Future<({String? accountId, CloudSyncStateStore state})>
+  _verifyAccountBeforeSync({required bool allowInteractive}) async {
+    final scopedState = _state is CloudAccountScopedSyncStateStore
+        ? _state as CloudAccountScopedSyncStateStore
+        : null;
+    if (scopedState == null) return (accountId: null, state: _state);
+
+    final expectedAccountId = await scopedState.activeAccountId();
+    if (expectedAccountId == null || expectedAccountId.isEmpty) {
+      throw const CloudAuthorizationUnavailable(
+        'A verified Google account is required before cloud sync.',
+      );
+    }
+
+    final initiallyResolvedId = await _gateway.accountIdForAuthorization();
+    if (initiallyResolvedId != expectedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The authenticated Google account does not match the account selected for backup.',
+      );
+    }
+
+    // Verify the Drive grant before the sync engine reads a cursor or conflict.
+    // This may present UI only for explicit foreground actions.
+    final client = await _gateway.authorizeDrive(
+      allowInteractive: allowInteractive,
+    );
+    client?.close();
+
+    if (await _gateway.accountIdForAuthorization() != expectedAccountId ||
+        await scopedState.activeAccountId() != expectedAccountId) {
+      throw const CloudAuthorizationUnavailable(
+        'The Google account changed during verification. Sync was stopped safely.',
+      );
+    }
+
+    return (
+      accountId: expectedAccountId,
+      state: scopedState.scopedToAccount(expectedAccountId),
+    );
+  }
+
   @override
   Future<CloudBackupDiscoverySnapshot> discoverBackup({
     bool allowInteractive = false,
   }) async {
-    final result = await _engine().discoverBackup(
-      allowInteractive: allowInteractive,
-    );
-    switch (result.kind) {
-      case CloudBackupDiscoveryKind.noBackup:
-        return const CloudBackupDiscoverySnapshot.noBackup();
-      case CloudBackupDiscoveryKind.found:
-        final conflict = result.conflict;
-        if (conflict == null) {
-          return const CloudBackupDiscoverySnapshot.failed(
-            'The discovered backup could not be prepared for safe restoration.',
-          );
+    if (!await _state.isCloudSyncEnabled()) {
+      return const CloudBackupDiscoverySnapshot.failed(
+        'Cloud sync is disabled.',
+      );
+    }
+
+    try {
+      final verified = await _verifyAccountBeforeSync(
+        allowInteractive: allowInteractive,
+      );
+      final accountId = verified.accountId;
+      if (accountId != null) _gateway.pinAccountForOperation(accountId);
+      try {
+        final result = await _engine(
+          state: verified.state,
+        ).discoverBackup(allowInteractive: allowInteractive);
+        switch (result.kind) {
+          case CloudBackupDiscoveryKind.noBackup:
+            return const CloudBackupDiscoverySnapshot.noBackup();
+          case CloudBackupDiscoveryKind.found:
+            final conflict = result.conflict;
+            if (conflict == null) {
+              return const CloudBackupDiscoverySnapshot.failed(
+                'The discovered backup could not be prepared for safe restoration.',
+              );
+            }
+            return CloudBackupDiscoverySnapshot.backupFound(
+              _toCoreConflict(conflict),
+            );
+          case CloudBackupDiscoveryKind.invalidBackup:
+            return CloudBackupDiscoverySnapshot.invalidBackup(
+              result.message ?? 'The cloud backup is invalid or incompatible.',
+            );
+          case CloudBackupDiscoveryKind.failed:
+            return CloudBackupDiscoverySnapshot.failed(
+              result.message ?? 'Cloud backup discovery failed.',
+            );
         }
-        return CloudBackupDiscoverySnapshot.backupFound(
-          _toCoreConflict(conflict),
-        );
-      case CloudBackupDiscoveryKind.invalidBackup:
-        return CloudBackupDiscoverySnapshot.invalidBackup(
-          result.message ?? 'The cloud backup is invalid or incompatible.',
-        );
-      case CloudBackupDiscoveryKind.failed:
-        return CloudBackupDiscoverySnapshot.failed(
-          result.message ?? 'Cloud backup discovery failed.',
-        );
+      } finally {
+        if (accountId != null) _gateway.releaseAccountOperation(accountId);
+      }
+    } catch (error) {
+      return CloudBackupDiscoverySnapshot.failed(
+        'Could not verify the Google account before backup discovery: $error',
+      );
     }
   }
 
@@ -265,6 +403,28 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     final enabled = await _state.isCloudSyncEnabled();
     final automatic = await _state.isAutomaticSyncEnabled();
     final frequency = await _state.backupFrequency();
+
+    if (enabled && _state is CloudAccountScopedSyncStateStore) {
+      final scopedState = _state as CloudAccountScopedSyncStateStore;
+      final activeAccountId = await scopedState.activeAccountId();
+      final authenticatedAccountId = await _gateway.accountIdForAuthorization();
+      if (activeAccountId == null ||
+          authenticatedAccountId == null ||
+          authenticatedAccountId != activeAccountId) {
+        // Do not expose timestamps or conflict details from the selected
+        // namespace until its stable identity binding matches again.
+        return CloudSyncSnapshot(
+          status: CloudSyncStatus.reconnectRequired,
+          automaticSyncEnabled: automatic,
+          backupFrequency: frequency,
+          lastSuccessAt: null,
+          message: 'Reconnect the Google account to verify backup ownership.',
+          hasLocalRecoverySnapshot:
+              (await _phase1.readRecoverySnapshot()) != null,
+        );
+      }
+    }
+
     final reconnectRequired = enabled && await _state.isReconnectRequired();
     final pendingConflict = enabled ? await _state.readPendingConflict() : null;
     return CloudSyncSnapshot(
@@ -298,8 +458,19 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
 
     _syncing = true;
     CloudBackupProgress? latestProgress;
+    CloudSyncStateStore? operationState;
+    String? operationAccountId;
+    var accountPinned = false;
     try {
-      final result = await _engine().sync(
+      final verified = await _verifyAccountBeforeSync(allowInteractive: true);
+      operationState = verified.state;
+      operationAccountId = verified.accountId;
+      if (operationAccountId != null) {
+        _gateway.pinAccountForOperation(operationAccountId);
+        accountPinned = true;
+      }
+
+      final result = await _engine(state: operationState).sync(
         allowInteractive: true,
         createInitialBackup: true,
         onProgress: (progress) {
@@ -308,7 +479,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         },
       );
       // Persist the successful-sync state before emitting 100% completion.
-      final snapshot = await _snapshotFromResult(result);
+      final snapshot = await _snapshotFromResult(result, state: operationState);
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&
           latestProgress!.totalBytes > 0) {
@@ -318,8 +489,16 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       }
       return snapshot;
     } catch (error) {
-      return await _snapshot(CloudSyncStatus.failed, message: error.toString());
+      return await _snapshot(
+        CloudSyncStatus.failed,
+        message: error.toString(),
+        state: operationState,
+        includeAccountState: operationState != null,
+      );
     } finally {
+      if (accountPinned && operationAccountId != null) {
+        _gateway.releaseAccountOperation(operationAccountId);
+      }
       _syncing = false;
     }
   }
@@ -375,8 +554,19 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     CloudBackupProgressCallback? onProgress,
   }) async {
     CloudBackupProgress? latestProgress;
+    CloudSyncStateStore? operationState;
+    String? operationAccountId;
+    var accountPinned = false;
     try {
-      final result = await _engine().resolveConflict(
+      final verified = await _verifyAccountBeforeSync(allowInteractive: true);
+      operationState = verified.state;
+      operationAccountId = verified.accountId;
+      if (operationAccountId != null) {
+        _gateway.pinAccountForOperation(operationAccountId);
+        accountPinned = true;
+      }
+
+      final result = await _engine(state: operationState).resolveConflict(
         conflict: _toAdapterConflict(conflict),
         decision: choice == CloudConflictChoice.keepLocal
             ? CloudConflictDecision.keepLocal
@@ -388,7 +578,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           onProgress?.call(progress);
         },
       );
-      final snapshot = await _snapshotFromResult(result);
+      final snapshot = await _snapshotFromResult(result, state: operationState);
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&
           latestProgress!.totalBytes > 0) {
@@ -398,7 +588,16 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       }
       return snapshot;
     } catch (error) {
-      return await _snapshot(CloudSyncStatus.failed, message: error.toString());
+      return await _snapshot(
+        CloudSyncStatus.failed,
+        message: error.toString(),
+        state: operationState,
+        includeAccountState: operationState != null,
+      );
+    } finally {
+      if (accountPinned && operationAccountId != null) {
+        _gateway.releaseAccountOperation(operationAccountId);
+      }
     }
   }
 
@@ -426,10 +625,10 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     }
   }
 
-  CloudSyncEngine _engine() => CloudSyncEngine(
+  CloudSyncEngine _engine({CloudSyncStateStore? state}) => CloudSyncEngine(
     phase1: _phase1,
     remote: GoogleDriveAppDataStore(_gateway),
-    state: _state,
+    state: state ?? _state,
   );
 
   CloudConflict _toAdapterConflict(CloudConflictInfo conflict) => CloudConflict(
@@ -449,7 +648,11 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     lastSyncedBackupId: conflict.lastSyncedBackupId,
   );
 
-  Future<CloudSyncSnapshot> _snapshotFromResult(CloudSyncResult result) async {
+  Future<CloudSyncSnapshot> _snapshotFromResult(
+    CloudSyncResult result, {
+    CloudSyncStateStore? state,
+  }) async {
+    final stateStore = state ?? _state;
     final status = switch (result.kind) {
       CloudSyncResultKind.noOp => CloudSyncStatus.synced,
       CloudSyncResultKind.uploaded => CloudSyncStatus.synced,
@@ -462,7 +665,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
 
     if (status == CloudSyncStatus.synced &&
         result.kind != CloudSyncResultKind.noOp) {
-      await _state.setLastSuccessfulSyncAt(DateTime.now().toUtc());
+      await stateStore.setLastSuccessfulSyncAt(DateTime.now().toUtc());
     }
     return await _snapshot(
       status,
@@ -472,6 +675,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           : _toCoreConflict(result.conflict!),
       restoredRemoteBackup: result.kind == CloudSyncResultKind.downloaded,
       backupAlreadyUpToDate: result.kind == CloudSyncResultKind.noOp,
+      state: stateStore,
     );
   }
 
@@ -496,15 +700,22 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     CloudConflictInfo? conflict,
     bool restoredRemoteBackup = false,
     bool backupAlreadyUpToDate = false,
-  }) async => CloudSyncSnapshot(
-    status: status,
-    automaticSyncEnabled: await _state.isAutomaticSyncEnabled(),
-    backupFrequency: await _state.backupFrequency(),
-    lastSuccessAt: await _state.lastSuccessfulSyncAt(),
-    message: message,
-    conflict: conflict,
-    hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
-    restoredRemoteBackup: restoredRemoteBackup,
-    backupAlreadyUpToDate: backupAlreadyUpToDate,
-  );
+    CloudSyncStateStore? state,
+    bool includeAccountState = true,
+  }) async {
+    final stateStore = state ?? _state;
+    return CloudSyncSnapshot(
+      status: status,
+      automaticSyncEnabled: await _state.isAutomaticSyncEnabled(),
+      backupFrequency: await _state.backupFrequency(),
+      lastSuccessAt: includeAccountState
+          ? await stateStore.lastSuccessfulSyncAt()
+          : null,
+      message: message,
+      conflict: conflict,
+      hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
+      restoredRemoteBackup: restoredRemoteBackup,
+      backupAlreadyUpToDate: backupAlreadyUpToDate,
+    );
+  }
 }

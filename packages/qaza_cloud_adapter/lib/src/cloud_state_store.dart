@@ -26,26 +26,158 @@ abstract interface class CloudSyncStateStore {
   Future<void> clearPendingConflict();
 }
 
-class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
-  SharedPreferencesCloudSyncStateStore({SharedPreferences? preferences})
-    : _preferences = preferences;
+/// Optional capability implemented by the production store. Keeping this
+/// separate avoids forcing unrelated/test-only CloudSyncStateStore
+/// implementations to carry account-selection responsibilities.
+abstract interface class CloudAccountScopedSyncStateStore {
+  Future<String?> activeAccountId();
 
-  static const _deviceIdKey = 'qaza_cloud_adapter.device_id';
-  static const _cursorKey = 'qaza_cloud_adapter.sync_cursor_v1';
-  static const _cloudEnabledKey = 'qaza_cloud_adapter.cloud_enabled_v1';
+  /// Selects a verified GoogleSignInAccount.id as the account-state namespace.
+  /// Passing null is supported for explicit account reset/maintenance flows.
+  Future<void> setActiveAccountId(String? accountId);
+
+  /// Captures an immutable account namespace for one in-flight sync operation.
+  CloudSyncStateStore scopedToAccount(String accountId);
+}
+
+class SharedPreferencesCloudSyncStateStore
+    implements CloudSyncStateStore, CloudAccountScopedSyncStateStore {
+  SharedPreferencesCloudSyncStateStore({
+    SharedPreferences? preferences,
+    String? accountId,
+  }) : _preferences = preferences,
+       _accountIdOverride = accountId;
+
+  static const _keyPrefix = 'qaza_cloud_adapter.';
+  static const _deviceIdKey = '${_keyPrefix}device_id';
+  static const _activeAccountIdKey = '${_keyPrefix}active_account_id_v1';
+  static const _cursorKey = '${_keyPrefix}sync_cursor_v1';
+  static const _cloudEnabledKey = '${_keyPrefix}cloud_enabled_v1';
   static const _automaticSyncEnabledKey =
-      'qaza_cloud_adapter.automatic_sync_enabled_v1';
-  static const _backupFrequencyKey = 'qaza_cloud_adapter.backup_frequency_v1';
-  static const _reconnectRequiredKey =
-      'qaza_cloud_adapter.reconnect_required_v1';
+      '${_keyPrefix}automatic_sync_enabled_v1';
+  static const _backupFrequencyKey = '${_keyPrefix}backup_frequency_v1';
+  static const _reconnectRequiredKey = '${_keyPrefix}reconnect_required_v1';
   static const _lastSuccessfulSyncAtKey =
-      'qaza_cloud_adapter.last_successful_sync_at_v1';
-  static const _pendingConflictKey = 'qaza_cloud_adapter.pending_conflict_v1';
+      '${_keyPrefix}last_successful_sync_at_v1';
+  static const _pendingConflictKey = '${_keyPrefix}pending_conflict_v1';
+  static const _legacyQuarantineMarkerKey =
+      '${_keyPrefix}legacy_state_quarantined_v1';
+  static const _legacyQuarantinePrefix = '${_keyPrefix}legacy_quarantine_v1.';
+
+  static const List<String> _legacyAccountStateKeys = <String>[
+    _cursorKey,
+    _cloudEnabledKey,
+    _reconnectRequiredKey,
+    _lastSuccessfulSyncAtKey,
+    _pendingConflictKey,
+  ];
 
   SharedPreferences? _preferences;
+  final String? _accountIdOverride;
 
   Future<SharedPreferences> get _prefs async {
     return _preferences ??= await SharedPreferences.getInstance();
+  }
+
+  @override
+  Future<String?> activeAccountId() async {
+    final override = _accountIdOverride?.trim();
+    if (override != null && override.isNotEmpty) return override;
+    final value = (await _prefs).getString(_activeAccountIdKey)?.trim();
+    return value == null || value.isEmpty ? null : value;
+  }
+
+  @override
+  CloudSyncStateStore scopedToAccount(String accountId) {
+    final normalized = accountId.trim();
+    if (normalized.isEmpty) {
+      throw ArgumentError.value(accountId, 'accountId', 'Must not be empty.');
+    }
+    return SharedPreferencesCloudSyncStateStore(
+      preferences: _preferences,
+      accountId: normalized,
+    );
+  }
+
+  @override
+  Future<void> setActiveAccountId(String? accountId) async {
+    if (_accountIdOverride != null) {
+      throw const CloudAdapterException(
+        'An account-scoped sync state view cannot change the active account.',
+      );
+    }
+    final prefs = await _prefs;
+    final normalized = accountId?.trim();
+    if (normalized == null || normalized.isEmpty) {
+      await prefs.remove(_activeAccountIdKey);
+      return;
+    }
+
+    // Older releases had a single unscoped cursor and conflict. Cached email
+    // from those releases is not enough to prove who owns that state, so keep
+    // a recoverable quarantined copy rather than attaching it to this account.
+    await _quarantineLegacyAccountState(prefs);
+    await prefs.setString(_activeAccountIdKey, normalized);
+  }
+
+  /// True only for an upgrade that still has a legacy connected flag but no
+  /// stable account identifier. The account UI should request reconnection.
+  Future<bool> hasUnscopedLegacyConnection() async {
+    final prefs = await _prefs;
+    if (prefs.getString(_activeAccountIdKey)?.trim().isNotEmpty ?? false) {
+      return false;
+    }
+    return prefs.getBool(_cloudEnabledKey) == true;
+  }
+
+  Future<void> _quarantineLegacyAccountState(SharedPreferences prefs) async {
+    if (prefs.getBool(_legacyQuarantineMarkerKey) == true) return;
+
+    for (final key in _legacyAccountStateKeys) {
+      if (!prefs.containsKey(key)) continue;
+      final value = prefs.get(key);
+      if (value == null) continue;
+      final quarantineKey =
+          '$_legacyQuarantinePrefix${key.substring(_keyPrefix.length)}';
+      if (!prefs.containsKey(quarantineKey)) {
+        if (value is String) {
+          await prefs.setString(quarantineKey, value);
+        } else if (value is bool) {
+          await prefs.setBool(quarantineKey, value);
+        } else if (value is int) {
+          await prefs.setInt(quarantineKey, value);
+        } else if (value is double) {
+          await prefs.setDouble(quarantineKey, value);
+        } else if (value is List<String>) {
+          await prefs.setStringList(quarantineKey, value);
+        }
+      }
+      await prefs.remove(key);
+    }
+
+    await prefs.setBool(_legacyQuarantineMarkerKey, true);
+  }
+
+  String? _accountScopedKey(SharedPreferences prefs, String legacyKey) {
+    final accountId =
+        _accountIdOverride?.trim() ??
+        prefs.getString(_activeAccountIdKey)?.trim();
+    if (accountId == null || accountId.isEmpty) return null;
+    final encodedId = base64Url
+        .encode(utf8.encode(accountId))
+        .replaceAll('=', '');
+    final suffix = legacyKey.substring(_keyPrefix.length);
+    return '${_keyPrefix}account.$encodedId.$suffix';
+  }
+
+  String _requiredAccountKey(SharedPreferences prefs, String legacyKey) {
+    final key = _accountScopedKey(prefs, legacyKey);
+    if (key == null) {
+      throw const CloudAdapterException(
+        'A verified Google account is required before using cloud sync state.',
+      );
+    }
+    return key;
   }
 
   @override
@@ -62,7 +194,9 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   @override
   Future<CloudSyncCursor> readCursor() async {
     final prefs = await _prefs;
-    final raw = prefs.getString(_cursorKey);
+    final key = _accountScopedKey(prefs, _cursorKey);
+    if (key == null) return const CloudSyncCursor.empty();
+    final raw = prefs.getString(key);
     if (raw == null || raw.isEmpty) return const CloudSyncCursor.empty();
 
     dynamic decoded;
@@ -84,24 +218,43 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   @override
   Future<void> writeCursor(CloudSyncCursor cursor) async {
     final prefs = await _prefs;
-    await prefs.setString(_cursorKey, jsonEncode(cursor.toJson()));
+    final key = _requiredAccountKey(prefs, _cursorKey);
+    await prefs.setString(key, jsonEncode(cursor.toJson()));
   }
 
   @override
   Future<bool> isCloudSyncEnabled() async {
     final prefs = await _prefs;
-    return prefs.getBool(_cloudEnabledKey) ?? false;
+    final key = _accountScopedKey(prefs, _cloudEnabledKey);
+    return key == null ? false : (prefs.getBool(key) ?? false);
   }
 
   @override
   Future<void> setCloudSyncEnabled(bool enabled) async {
     final prefs = await _prefs;
-    await prefs.setBool(_cloudEnabledKey, enabled);
+    final key = _accountScopedKey(prefs, _cloudEnabledKey);
+    if (key == null) {
+      if (enabled) {
+        throw const CloudAdapterException(
+          'Verify a Google account before connecting cloud backup.',
+        );
+      }
+      // An explicit disconnect during legacy migration must also stop the old
+      // unscoped connection. Quarantine its sync metadata instead of assigning
+      // it to an unknown account, while preserving recoverable data.
+      await _quarantineLegacyAccountState(prefs);
+      return;
+    }
+    await prefs.setBool(key, enabled);
     if (!enabled) {
       // Cloud-enabled is the hard worker guard. Retain the user's automatic
-      // backup choice so reconnecting does not silently change that choice.
-      await prefs.setBool(_reconnectRequiredKey, false);
-      await prefs.remove(_pendingConflictKey);
+      // backup choice and this account's conflict so reconnecting does not
+      // discard sync history. A preserved conflict is revalidated against the
+      // current remote backup before any resolution can mutate local data.
+      await prefs.setBool(
+        _requiredAccountKey(prefs, _reconnectRequiredKey),
+        false,
+      );
     }
   }
 
@@ -136,7 +289,7 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   @override
   Future<void> setAutomaticSyncEnabled(bool enabled) async {
     final prefs = await _prefs;
-    if (enabled && !(prefs.getBool(_cloudEnabledKey) ?? false)) {
+    if (enabled && !(await isCloudSyncEnabled())) {
       throw const CloudAdapterException(
         'Connect a Google account before enabling automatic cloud backup.',
       );
@@ -147,22 +300,28 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   @override
   Future<bool> isReconnectRequired() async {
     final prefs = await _prefs;
-    return prefs.getBool(_reconnectRequiredKey) ?? false;
+    final key = _accountScopedKey(prefs, _reconnectRequiredKey);
+    return key == null ? false : (prefs.getBool(key) ?? false);
   }
 
   @override
   Future<void> setReconnectRequired(bool required) async {
     final prefs = await _prefs;
-    if (required && !(prefs.getBool(_cloudEnabledKey) ?? false)) {
+    final key = _accountScopedKey(prefs, _reconnectRequiredKey);
+    if (key == null) return;
+    final cloudKey = _accountScopedKey(prefs, _cloudEnabledKey);
+    if (required && (cloudKey == null || !(prefs.getBool(cloudKey) ?? false))) {
       return;
     }
-    await prefs.setBool(_reconnectRequiredKey, required);
+    await prefs.setBool(key, required);
   }
 
   @override
   Future<DateTime?> lastSuccessfulSyncAt() async {
     final prefs = await _prefs;
-    final value = prefs.getString(_lastSuccessfulSyncAtKey);
+    final key = _accountScopedKey(prefs, _lastSuccessfulSyncAtKey);
+    if (key == null) return null;
+    final value = prefs.getString(key);
     if (value == null) return null;
     return DateTime.tryParse(value)?.toUtc();
   }
@@ -170,16 +329,16 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   @override
   Future<void> setLastSuccessfulSyncAt(DateTime value) async {
     final prefs = await _prefs;
-    await prefs.setString(
-      _lastSuccessfulSyncAtKey,
-      value.toUtc().toIso8601String(),
-    );
+    final key = _requiredAccountKey(prefs, _lastSuccessfulSyncAtKey);
+    await prefs.setString(key, value.toUtc().toIso8601String());
   }
 
   @override
   Future<CloudConflict?> readPendingConflict() async {
     final prefs = await _prefs;
-    final raw = prefs.getString(_pendingConflictKey);
+    final key = _accountScopedKey(prefs, _pendingConflictKey);
+    if (key == null) return null;
+    final raw = prefs.getString(key);
     if (raw == null || raw.isEmpty) return null;
 
     dynamic decoded;
@@ -201,13 +360,15 @@ class SharedPreferencesCloudSyncStateStore implements CloudSyncStateStore {
   @override
   Future<void> writePendingConflict(CloudConflict conflict) async {
     final prefs = await _prefs;
-    await prefs.setString(_pendingConflictKey, jsonEncode(conflict.toJson()));
+    final key = _requiredAccountKey(prefs, _pendingConflictKey);
+    await prefs.setString(key, jsonEncode(conflict.toJson()));
   }
 
   @override
   Future<void> clearPendingConflict() async {
     final prefs = await _prefs;
-    await prefs.remove(_pendingConflictKey);
+    final key = _accountScopedKey(prefs, _pendingConflictKey);
+    if (key != null) await prefs.remove(key);
   }
 
   String _newDeviceId() {

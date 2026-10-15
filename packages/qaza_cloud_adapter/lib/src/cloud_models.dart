@@ -39,6 +39,15 @@ class CloudAuthorizationUnavailable extends CloudAdapterException {
   ]);
 }
 
+/// Authorization resolved to a Google account different from the account
+/// captured for this operation. Unlike a missing scope, this must never fall
+/// through to another interactive account selection.
+class CloudAccountIdentityMismatch extends CloudAuthorizationUnavailable {
+  const CloudAccountIdentityMismatch([
+    super.message = 'Google Drive authorized a different Google account.',
+  ]);
+}
+
 class CloudDriveRequestException extends CloudAdapterException {
   const CloudDriveRequestException(super.message, this.cause);
 
@@ -288,6 +297,21 @@ class CloudSyncCursor {
   final int? lastSyncedLocalRevision;
   final String? lastSyncedBackupId;
   final String? lastSyncedRemoteVersion;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is CloudSyncCursor &&
+          other.lastSyncedLocalRevision == lastSyncedLocalRevision &&
+          other.lastSyncedBackupId == lastSyncedBackupId &&
+          other.lastSyncedRemoteVersion == lastSyncedRemoteVersion;
+
+  @override
+  int get hashCode => Object.hash(
+    lastSyncedLocalRevision,
+    lastSyncedBackupId,
+    lastSyncedRemoteVersion,
+  );
 
   Map<String, dynamic> toJson() => <String, dynamic>{
     'last_synced_local_revision': lastSyncedLocalRevision,
