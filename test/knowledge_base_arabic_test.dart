@@ -12,6 +12,7 @@ void main() {
   late String english;
   late String urdu;
   late String arabic;
+  late String romanUrdu;
   late List<dynamic> arabicEntries;
 
   setUpAll(() async {
@@ -23,6 +24,9 @@ void main() {
     );
     arabic = await rootBundle.loadString(
       'assets/knowledge_base/content/qaza_masail_mugalat_ar.json',
+    );
+    romanUrdu = await rootBundle.loadString(
+      'assets/knowledge_base/content/qaza_masail_mugalat_ur_Latn.json',
     );
     arabicEntries = jsonDecode(arabic) as List<dynamic>;
   });
@@ -38,10 +42,11 @@ void main() {
   });
 
   test('all published articles have complete Arabic translations', () {
-    final articles = const KnowledgeBaseParser().parseTriple(
+    final articles = const KnowledgeBaseParser().parseQuadruple(
       english: english,
       urdu: urdu,
       arabic: arabic,
+      romanUrdu: romanUrdu,
     );
 
     expect(articles, hasLength(75));
@@ -60,6 +65,11 @@ void main() {
       expect(article.summary.ar.trim(), isNotEmpty, reason: article.id);
       expect(article.body.ar.trim(), isNotEmpty, reason: article.id);
       expect(article.keywords.ar, isNotEmpty, reason: article.id);
+      expect(article.title.urLatn.trim(), isNotEmpty, reason: article.id);
+      expect(article.question.urLatn.trim(), isNotEmpty, reason: article.id);
+      expect(article.summary.urLatn.trim(), isNotEmpty, reason: article.id);
+      expect(article.body.urLatn.trim(), isNotEmpty, reason: article.id);
+      expect(article.keywords.urLatn, isNotEmpty, reason: article.id);
       expect(article.title.isComplete, isTrue, reason: article.id);
     }
   });
