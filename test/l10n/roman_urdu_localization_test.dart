@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/theme/app_theme.dart';
@@ -41,6 +44,31 @@ void main() {
       l10n.commonContinue,
     ]) {
       expect(value, isNot(matches(arabicScript)));
+    }
+  });
+
+  test('Roman Urdu ARB standalone text follows sentence case', () {
+    final arb = jsonDecode(
+      File('lib/l10n/app_ur_Latn.arb').readAsStringSync(),
+    ) as Map<String, dynamic>;
+
+    for (final entry in arb.entries) {
+      if (entry.key.startsWith('@') || entry.value is! String) continue;
+      final value = entry.value as String;
+      expect(value, isNot(matches(RegExp(r'^[a-z]'))), reason: entry.key);
+      expect(
+        value,
+        isNot(matches(RegExp(r'[.!?]\\s+[a-z]'))),
+        reason: entry.key,
+      );
+      expect(value, isNot(matches(RegExp(r'\\n[a-z]'))), reason: entry.key);
+      expect(
+        value,
+        isNot(
+          matches(RegExp(r'(?:=\\d+|other|one|zero|few|many)\\{[a-z]')),
+        ),
+        reason: entry.key,
+      );
     }
   });
 
