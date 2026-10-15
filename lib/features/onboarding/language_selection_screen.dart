@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../l10n/app_localizations.dart';
@@ -59,11 +60,9 @@ class _LanguageSelectionScreenState
       );
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).errorStorage),
-          ),
-        );
+        ref
+            .read(appSnackbarServiceProvider)
+            .error(AppLocalizations.of(context).errorStorage);
       }
     } finally {
       if (mounted) {
