@@ -3,6 +3,27 @@ import 'package:qaza_cloud_adapter/src/google_drive_store.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 void main() {
+  test('download progress records actual received bytes and known totals', () {
+    const progress = CloudBackupProgress.downloading(
+      receivedBytes: 512,
+      totalBytes: 1024,
+    );
+
+    expect(progress.stage, CloudBackupProgressStage.downloading);
+    expect(progress.sentBytes, 512);
+    expect(progress.totalBytes, 1024);
+  });
+
+  test('download progress permits unknown total without inventing a percent', () {
+    const progress = CloudBackupProgress.downloading(
+      receivedBytes: 512,
+      totalBytes: 0,
+    );
+
+    expect(progress.sentBytes, 512);
+    expect(progress.totalBytes, 0);
+  });
+
   test(
     'upload stream yields chunks and reports monotonic byte progress',
     () async {
