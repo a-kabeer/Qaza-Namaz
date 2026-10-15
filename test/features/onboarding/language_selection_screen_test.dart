@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/widgets/app_snackbar.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
@@ -44,9 +45,21 @@ Future<void> _chooseLanguage(
   WidgetTester tester,
   String languageCode,
 ) async {
-  await tester.tap(find.byKey(const Key('onboarding_language_selector')));
+  final selector = find.byKey(const Key('onboarding_language_selector'));
+  await tester.tap(
+    find.descendant(
+      of: selector,
+      matching: find.byType(DropdownButton<Locale>),
+    ),
+  );
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(Key('onboarding_language_$languageCode')));
+
+  final label = switch (languageCode) {
+    'ur' => 'اردو',
+    'ar' => 'العربية',
+    _ => languageCode,
+  };
+  await tester.tap(find.text(label));
   await tester.pumpAndSettle();
 }
 
@@ -65,6 +78,10 @@ Widget _app({
         locale: ref.watch(localeProvider),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => AppScaffoldMessenger(
+          key: appScaffoldMessengerKey,
+          child: child!,
+        ),
         home: const LanguageSelectionScreen(),
       ),
     ),
@@ -195,7 +212,9 @@ void main() {
     );
 
     await _chooseLanguage(tester, 'ur');
-    await tester.tap(find.text('جاري رکھیں'));
+    await tester.tap(
+      find.text(lookupAppLocalizations(const Locale('ur')).commonContinue),
+    );
     await tester.pumpAndSettle();
 
     final prefs = await SharedPreferences.getInstance();
