@@ -145,6 +145,26 @@ prove that the previously selected default account and granted Drive scope can
 be used after process recreation. WorkManager remains best-effort and does not
 guarantee an exact daily execution time.
 
+## Initial backup and fresh-install restore flow
+
+When Google Drive discovery returns no backup during first-run cloud setup, the
+app records a durable local `initial_cloud_backup_pending` marker before
+routing to profile setup. After the profile and Qaza plan have been committed,
+StartupGate routes to the initial-backup screen and invokes the existing sync
+engine with its initial-backup path. Transfer progress is based on request-body
+bytes; the UI caps this display at 99% until Drive confirms the write and the
+sync cursor is persisted. If the upload fails, the local data and pending marker
+remain, allowing a retry without repeating onboarding and another attempt on a
+later app launch.
+
+Automatic restore is limited to a verified fresh database: onboarding must be
+incomplete, the logical database revision must still be at its initial value,
+and no profile, Qaza record, plan revision, or mutation data may exist. The
+existing sync engine still revalidates the local revision, cloud cursor, and
+latest remote backup and persists a verified local recovery snapshot before
+import. A non-fresh local database continues through the explicit conflict
+resolution flow. The offline-only app remains independent of the cloud adapter.
+
 ## Owner setup checklist for Android OAuth and release
 
 1. In Google Cloud Console, select the project for this app and enable the
