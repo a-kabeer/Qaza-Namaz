@@ -45,7 +45,7 @@ class KnowledgeLanguageNotifier extends Notifier<KnowledgeLanguage> {
   @override
   KnowledgeLanguage build() {
     final fromApp =
-        KnowledgeLanguage.fromCode(ref.watch(localeProvider).languageCode) ??
+        KnowledgeLanguage.fromLocale(ref.watch(localeProvider)) ??
             KnowledgeLanguage.english;
     if (_chosen == null) Future.microtask(restore);
     return _chosen ?? fromApp;
