@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/widgets/app_snackbar.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
@@ -77,6 +78,10 @@ Widget _app({
         locale: ref.watch(localeProvider),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
+        builder: (context, child) => AppScaffoldMessenger(
+          key: appScaffoldMessengerKey,
+          child: child!,
+        ),
         home: const LanguageSelectionScreen(),
       ),
     ),
