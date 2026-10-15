@@ -366,8 +366,8 @@ class _CloudSetupChoiceScreenState
     final restoreReceivedBytes = restoreProgress?.sentBytes ?? 0;
     final hasRestoreByteProgress = _restoring &&
         restoreProgress?.stage == CloudBackupProgressStage.downloading &&
-        restoreTotalBytes > 0;
-    final restoreRatio = hasRestoreByteProgress
+        restoreReceivedBytes > 0;
+    final restoreRatio = hasRestoreByteProgress && restoreTotalBytes > 0
         ? (restoreReceivedBytes / restoreTotalBytes)
             .clamp(0.0, 1.0)
             .toDouble()
@@ -514,9 +514,11 @@ class _CloudSetupChoiceScreenState
                           if (hasRestoreByteProgress) ...[
                             const SizedBox(height: 8),
                             Text(
-                              '${(restoreReceivedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / '
-                              '${(restoreTotalBytes / (1024 * 1024)).toStringAsFixed(2)} MB'
-                              ' · ${visibleRestorePercent ?? 0}%',
+                              restoreTotalBytes > 0
+                                  ? '${(restoreReceivedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / '
+                                        '${(restoreTotalBytes / (1024 * 1024)).toStringAsFixed(2)} MB'
+                                        ' · ${visibleRestorePercent ?? 0}%'
+                                  : '${(restoreReceivedBytes / (1024 * 1024)).toStringAsFixed(2)} MB',
                               style: theme.textTheme.bodySmall,
                             ),
                           ],
