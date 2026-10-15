@@ -14,15 +14,18 @@ void main() {
     expect(progress.totalBytes, 1024);
   });
 
-  test('download progress permits unknown total without inventing a percent', () {
-    const progress = CloudBackupProgress.downloading(
-      receivedBytes: 512,
-      totalBytes: 0,
-    );
+  test(
+    'download progress permits unknown total without inventing a percent',
+    () {
+      const progress = CloudBackupProgress.downloading(
+        receivedBytes: 512,
+        totalBytes: 0,
+      );
 
-    expect(progress.sentBytes, 512);
-    expect(progress.totalBytes, 0);
-  });
+      expect(progress.sentBytes, 512);
+      expect(progress.totalBytes, 0);
+    },
+  );
 
   test(
     'upload stream yields chunks and reports monotonic byte progress',

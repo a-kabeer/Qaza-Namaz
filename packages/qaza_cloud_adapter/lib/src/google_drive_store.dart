@@ -210,11 +210,8 @@ class GoogleDriveAppDataStore
     CloudBackupProgressCallback? onProgress,
   }) => _withDrive<CloudRemoteSnapshot>(
     allowInteractive: allowInteractive,
-    action: (driveApi, _) => _downloadBackup(
-      driveApi,
-      metadata,
-      onProgress: onProgress,
-    ),
+    action: (driveApi, _) =>
+        _downloadBackup(driveApi, metadata, onProgress: onProgress),
   );
 
   Future<CloudRemoteMetadata?> _latestMetadata(drive.DriveApi driveApi) async {
