@@ -1068,5 +1068,6 @@
   "initialCloudBackupStageUploading": "Backup upload ho raha hai…",
   "initialCloudBackupStageCompleted": "Backup kamyabi se save ho gaya",
   "initialCloudBackupRetry": "Backup dobara try karein",
-  "initialCloudBackupContinueHome": "Home par jayein"
+  "initialCloudBackupContinueHome": "Home par jayein",
+  "initialCloudBackupStageDownloading": "Backup download ho raha hai…"
 }
