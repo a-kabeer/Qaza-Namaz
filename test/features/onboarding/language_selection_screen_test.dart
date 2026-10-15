@@ -207,7 +207,9 @@ void main() {
     );
 
     await _chooseLanguage(tester, 'ur');
-    await tester.tap(find.text('جاري رکھیں'));
+    await tester.tap(
+      find.text(lookupAppLocalizations(const Locale('ur')).commonContinue),
+    );
     await tester.pumpAndSettle();
 
     final prefs = await SharedPreferences.getInstance();
