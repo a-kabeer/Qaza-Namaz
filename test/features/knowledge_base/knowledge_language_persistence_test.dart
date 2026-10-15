@@ -122,6 +122,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    expect(find.text('Urdu'), findsOneWidget);
+    expect(find.text('Roman Urdu'), findsNothing);
     final romanUrduOption =
         find.byKey(const Key('knowledge_language_option_ur_Latn'));
     expect(romanUrduOption, findsOneWidget);
