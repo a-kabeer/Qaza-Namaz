@@ -59,11 +59,9 @@ class _LanguageSelectionScreenState
       );
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(AppLocalizations.of(context).errorStorage),
-          ),
-        );
+        ref
+            .read(appSnackbarServiceProvider)
+            .error(AppLocalizations.of(context).errorStorage);
       }
     } finally {
       if (mounted) {

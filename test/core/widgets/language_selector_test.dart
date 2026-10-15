@@ -100,7 +100,8 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         locale: const Locale('ar'),
-        supportedLocales: const [Locale('ar'), Locale('en')],
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
         theme: ThemeData.dark(useMaterial3: true),
         home: Directionality(
           textDirection: TextDirection.rtl,

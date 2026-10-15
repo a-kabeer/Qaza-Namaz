@@ -419,7 +419,14 @@ class _CloudSetupChoiceScreenState
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    child: Text(l10n.cloudSetupContinueLocal),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.check_rounded, size: 18),
+                        const SizedBox(width: 8),
+                        Text(l10n.cloudSetupContinueLocal),
+                      ],
+                    ),
                   ),
                 ),
                 if (_error != null) ...[
