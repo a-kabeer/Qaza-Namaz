@@ -1292,5 +1292,6 @@
   "initialCloudBackupStageUploading": "جارٍ رفع النسخة الاحتياطية…",
   "initialCloudBackupStageCompleted": "تم حفظ النسخة الاحتياطية بنجاح",
   "initialCloudBackupRetry": "إعادة محاولة النسخ الاحتياطي",
-  "initialCloudBackupContinueHome": "المتابعة إلى الرئيسية"
+  "initialCloudBackupContinueHome": "المتابعة إلى الرئيسية",
+  "initialCloudBackupStageDownloading": "جارٍ تنزيل النسخة الاحتياطية…"
 }
