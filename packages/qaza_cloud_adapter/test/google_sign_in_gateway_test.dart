@@ -325,4 +325,14 @@ class _FakeGoogleSignInAccount implements GoogleSignInAccount {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _FakeGoogleSignInAuthorizationClient
+    implements GoogleSignInAuthorizationClient {
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    if (invocation.memberName == #authorizationForScopes) {
+      return Future<GoogleSignInClientAuthorization?>.value(null);
+    }
+    return super.noSuchMethod(invocation);
+  }
+}
 
