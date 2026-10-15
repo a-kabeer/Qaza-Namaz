@@ -123,7 +123,7 @@ void main() {
     for (final entry in romanEntries.cast<Map<String, dynamic>>()) {
       for (final field in textFields) {
         final value = entry[field] as String;
-        final segments = value.split(RegExp(r'[.!?]+|\\r?\\n+'));
+        final segments = value.split(RegExp(r'[.!?]+|\r?\n+'));
         for (final segment in segments) {
           final firstLetter = RegExp(r'[A-Za-z]').firstMatch(segment);
           if (firstLetter == null) continue;
