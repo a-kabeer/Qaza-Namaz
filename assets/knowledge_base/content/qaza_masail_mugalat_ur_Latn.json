@@ -624,8 +624,8 @@
     "categoryId": "intentional_omission",
     "titleUrLatn": "kya tauba aur qaza aik hi cheez hain?",
     "questionUrLatn": "kya tauba aur qaza aik hi cheez hain?",
-    "summaryUrLatn": "nahin. tauba gunah se rajo hai aur qaza fawt shuda farz namaz ada karna hai; donon ka alag tlaq hai.",
-    "contentUrLatn": "nahin. tauba gunah se rajo hai aur qaza fawt shuda farz namaz ada karna hai; donon ka alag tlaq hai.",
+    "summaryUrLatn": "nahin. tauba gunah se rajo hai aur qaza fawt shuda farz namaz ada karna hai; donon ka alag talluq hai.",
+    "contentUrLatn": "nahin. tauba gunah se rajo hai aur qaza fawt shuda farz namaz ada karna hai; donon ka alag talluq hai.",
     "keywordsUrLatn": [
       "tauba",
       "farq"
@@ -680,7 +680,7 @@
     "summaryUrLatn": "nahin. fawt shuda farz namazein mehaz waqt guzarnay se saqit nahin hotin.",
     "contentUrLatn": "nahin. fawt shuda farz namazein mehaz waqt guzarnay se saqit nahin hotin.",
     "keywordsUrLatn": [
-      "waqt ka gazarana"
+      "waqt ka guzarna"
     ],
     "references": [
       {
@@ -761,10 +761,10 @@
     "categoryId": "intentional_omission",
     "titleUrLatn": "kya qaza shuru karne ke liye kai saal ki namazein pehle alag alag jama karna zaroori hai?",
     "questionUrLatn": "kya qaza shuru karne ke liye kai saal ki namazein pehle alag alag jama karna zaroori hai?",
-    "summaryUrLatn": "nahin. amali tor par mlom ya manasab tor par matin zimma ke mutabiq qaza shuru ki ja sakti hai; mukammal hisaab ka tareeqa alag amali masla hai.",
-    "contentUrLatn": "nahin. amali tor par mlom ya manasab tor par matin zimma ke mutabiq qaza shuru ki ja sakti hai; mukammal hisaab ka tareeqa alag amali masla hai.",
+    "summaryUrLatn": "nahin. amali tor par maloom ya munasib tor par mutayyan zimma ke mutabiq qaza shuru ki ja sakti hai; mukammal hisaab ka tareeqa alag amali masla hai.",
+    "contentUrLatn": "nahin. amali tor par maloom ya munasib tor par mutayyan zimma ke mutabiq qaza shuru ki ja sakti hai; mukammal hisaab ka tareeqa alag amali masla hai.",
     "keywordsUrLatn": [
-      "takhaminah",
+      "takhmeena",
       "aaghaz"
     ],
     "references": [
@@ -1275,10 +1275,10 @@
     "id": "masala_050",
     "type": "masala",
     "categoryId": "menstruation_nifas",
-    "titleUrLatn": "kya haiz o nifas ki wajah se reh janay wali namazein charon mazahib mein qaza ke liye aam qadah ban sakati hain?",
-    "questionUrLatn": "kya haiz o nifas ki wajah se reh janay wali namazein charon mazahib mein qaza ke liye aam qadah ban sakati hain?",
-    "summaryUrLatn": "nahin. charon mazahib ke bunyadi mashatarak hukm ke mutabiq in makhsoos ayaam ki namazein qaza nahin ki jatein.",
-    "contentUrLatn": "nahin. charon mazahib ke bunyadi mashatarak hukm ke mutabiq in makhsoos ayaam ki namazein qaza nahin ki jatein.",
+    "titleUrLatn": "kya haiz o nifas ki wajah se reh janay wali namazein charon mazahib mein qaza ke liye aam qaida ban sakati hain?",
+    "questionUrLatn": "kya haiz o nifas ki wajah se reh janay wali namazein charon mazahib mein qaza ke liye aam qaida ban sakati hain?",
+    "summaryUrLatn": "nahin. charon mazahib ke bunyadi mushtarak hukm ke mutabiq in makhsoos ayaam ki namazein qaza nahin ki jatein.",
+    "contentUrLatn": "nahin. charon mazahib ke bunyadi mushtarak hukm ke mutabiq in makhsoos ayaam ki namazein qaza nahin ki jatein.",
     "keywordsUrLatn": [
       "charon mazahib",
       "khawateen"
@@ -1412,8 +1412,8 @@
     "id": "mugalata_001",
     "type": "mugalata",
     "categoryId": "misconceptions",
-    "titleUrLatn": "neend mein namaz reh jaye to qaza nahin hoti。",
-    "questionUrLatn": "neend mein namaz reh jaye to qaza nahin hoti。",
+    "titleUrLatn": "neend mein namaz reh jaye to qaza nahin hoti.",
+    "questionUrLatn": "neend mein namaz reh jaye to qaza nahin hoti.",
     "summaryUrLatn": "ghalat. neend ki wajah se reh janay wali namaz jaganay par qaza ki jati hai.",
     "contentUrLatn": "ghalat. neend ki wajah se reh janay wali namaz jaganay par qaza ki jati hai.",
     "keywordsUrLatn": [
@@ -1506,12 +1506,12 @@
     "id": "mugalata_005",
     "type": "mugalata",
     "categoryId": "misconceptions",
-    "titleUrLatn": "kai saal guzar jayein to purani namazein khud bakhod khatam hojati hain.",
-    "questionUrLatn": "kai saal guzar jayein to purani namazein khud bakhod khatam hojati hain.",
+    "titleUrLatn": "kai saal guzar jayein to purani namazein khud ba khud khatam hojati hain.",
+    "questionUrLatn": "kai saal guzar jayein to purani namazein khud ba khud khatam hojati hain.",
     "summaryUrLatn": "ghalat. waqt guzarnay se qaza ka zimma khatam nahin hota.",
     "contentUrLatn": "ghalat. waqt guzarnay se qaza ka zimma khatam nahin hota.",
     "keywordsUrLatn": [
-      "waqt ka gazarana"
+      "waqt ka guzarna"
     ],
     "references": [
       {
@@ -1636,8 +1636,8 @@
     "id": "mugalata_010",
     "type": "mugalata",
     "categoryId": "misconceptions",
-    "titleUrLatn": "Isha ki farz qaza teen rakat hai kionakah Witr bhi raat ki namaz hai.",
-    "questionUrLatn": "Isha ki farz qaza teen rakat hai kionakah Witr bhi raat ki namaz hai.",
+    "titleUrLatn": "Isha ki farz qaza teen rakat hai kyunke Witr bhi raat ki namaz hai.",
+    "questionUrLatn": "Isha ki farz qaza teen rakat hai kyunke Witr bhi raat ki namaz hai.",
     "summaryUrLatn": "ghalat. Isha ke farz ki qaza chaar rakat hai; Witr alag namaz hai.",
     "contentUrLatn": "ghalat. Isha ke farz ki qaza chaar rakat hai; Witr alag namaz hai.",
     "keywordsUrLatn": [
