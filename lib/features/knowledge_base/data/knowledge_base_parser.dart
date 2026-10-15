@@ -161,7 +161,6 @@ class KnowledgeBaseParser {
     return List.unmodifiable(articles);
   }
 
-
   /// Parses all four bundled content datasets, including Roman Urdu.
   ///
   /// Roman Urdu is validated against the same stable IDs, shared metadata and

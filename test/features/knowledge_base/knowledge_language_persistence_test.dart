@@ -131,9 +131,11 @@ void main() {
       KnowledgeLanguage.romanUrdu,
     );
     expect(container.read(localeProvider).languageCode, 'en');
-    final romanRows = await database.customSelect(
-      "SELECT value FROM meta_store WHERE key = 'qaza_knowledge_language'",
-    ).get();
+    final romanRows = await database
+        .customSelect(
+          "SELECT value FROM meta_store WHERE key = 'qaza_knowledge_language'",
+        )
+        .get();
     expect(romanRows.single.read<String>('value'), 'ur_Latn');
     expect(tester.takeException(), isNull);
   });
