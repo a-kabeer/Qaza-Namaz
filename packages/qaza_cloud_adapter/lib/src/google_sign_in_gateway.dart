@@ -101,7 +101,9 @@ class GoogleSignInGateway {
     return _resolvedAccount;
   });
 
-  /// Compatibility alias retained for existing call sites.
+  /// Compatibility alias retained for existing call sites. Passive restore
+  /// must not call attemptLightweightAuthentication(), which can surface UI on
+  /// Android. A fresh runtime uses the native silent Drive path instead.
   Future<GoogleSignInAccount?> restoreLightweightAuthentication() =>
       currentAccount();
 
@@ -130,7 +132,7 @@ class GoogleSignInGateway {
         // account object, or when interaction is forbidden. A valid existing
         // grant then works without another sign-in sheet.
         if (defaultTargetPlatform == TargetPlatform.android &&
-            (!allowInteractive || _resolvedAccount == null)) {
+            _resolvedAccount == null) {
           try {
             return await _authorizeDriveSilentlyOnAndroid();
           } on CloudAccountIdentityMismatch {
@@ -243,12 +245,26 @@ class GoogleSignInGateway {
 
     final authorizedAccountId = response?['accountId'];
     final authorizedEmail = response?['accountEmail'];
-    if (authorizedAccountId is! String ||
-        authorizedAccountId.trim().isEmpty ||
-        authorizedAccountId != expectedAccountId ||
-        authorizedEmail is! String ||
-        authorizedEmail.trim().isEmpty ||
-        authorizedEmail.trim().toLowerCase() != expectedEmail.toLowerCase()) {
+    final identitySource = response?['identitySource'];
+    final idMatches =
+        authorizedAccountId is String &&
+        authorizedAccountId.trim().isNotEmpty &&
+        authorizedAccountId == expectedAccountId;
+    final emailMatches =
+        authorizedEmail is String &&
+        authorizedEmail.trim().isNotEmpty &&
+        authorizedEmail.trim().toLowerCase() == expectedEmail.toLowerCase();
+
+    // AuthorizationClient is pinned to the previously verified Android
+    // Account(email). Its legacy account projection can omit the stable ID.
+    // In that case native code returns the previously bound ID only as a
+    // namespace binding and explicitly labels the matching target-email proof.
+    final identityVerified = switch (identitySource) {
+      'googleId' => idMatches && emailMatches,
+      'targetAccountEmail' => idMatches && emailMatches,
+      _ => false,
+    };
+    if (!identityVerified) {
       throw const CloudAccountIdentityMismatch(
         'Google Drive authorization did not confirm the previously connected Google account.',
       );

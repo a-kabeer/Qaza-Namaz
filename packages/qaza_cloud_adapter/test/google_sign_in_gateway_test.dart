@@ -57,6 +57,7 @@ void main() {
               'status': 'authorized',
               'accountId': 'google-id-A',
               'accountEmail': 'a@example.com',
+              'identitySource': 'googleId',
               'accessToken': 'test-access-token',
               'grantedScopes': <String>[_driveScope],
             };
@@ -81,6 +82,7 @@ void main() {
               'status': 'authorized',
               'accountId': 'google-id-B',
               'accountEmail': 'b@example.com',
+              'identitySource': 'googleId',
               'accessToken': 'wrong-account-token',
               'grantedScopes': <String>[_driveScope],
             };
@@ -91,9 +93,195 @@ void main() {
 
       await expectLater(
         gateway.authorizeDrive(allowInteractive: true),
-        throwsA(isA<CloudAuthorizationUnavailable>()),
+        throwsA(isA<CloudAccountIdentityMismatch>()),
       );
       expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
+    'missing native identity data is rejected without opening the picker',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            return <String, Object?>{
+              'status': 'authorized',
+              'accessToken': 'unverified-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: true),
+        throwsA(isA<CloudAccountIdentityMismatch>()),
+      );
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
+    'required Drive consent never authorizes background work or opens a picker',
+    () async {
+      var authorizationCalls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            authorizationCalls++;
+            return <String, Object?>{'status': 'interactionRequired'};
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: false),
+        throwsA(isA<CloudAuthorizationUnavailable>()),
+      );
+      expect(authorizationCalls, 1);
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
+    'native email match restores authorization when legacy result omits Google ID',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-A',
+              'accountEmail': 'a@example.com',
+              'identitySource': 'targetAccountEmail',
+              'accessToken': 'test-access-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      final client = await gateway.authorizeDrive(allowInteractive: true);
+      client?.close();
+
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
+    'rejects a native authorization response without identity provenance',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-A',
+              'accountEmail': 'a@example.com',
+              'accessToken': 'unverified-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: true),
+        throwsA(isA<CloudAccountIdentityMismatch>()),
+      );
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
+    'rejects email-only native authorization for a different account',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-A',
+              'accountEmail': 'b@example.com',
+              'identitySource': 'targetAccountEmail',
+              'accessToken': 'wrong-account-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: true),
+        throwsA(isA<CloudAccountIdentityMismatch>()),
+      );
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test('missing saved identity cannot authorize background work', () async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove('qaza_cloud_adapter.cached_account_id_v1');
+    await preferences.remove('qaza_cloud_adapter.cached_account_email_v1');
+    var nativeAuthorizationCalls = 0;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_authorizationChannel, (call) async {
+          nativeAuthorizationCalls++;
+          return <String, Object?>{
+            'status': 'authorized',
+            'accountId': 'google-id-A',
+            'accountEmail': 'a@example.com',
+            'identitySource': 'googleId',
+            'accessToken': 'test-access-token',
+            'grantedScopes': <String>[_driveScope],
+          };
+        });
+
+    final googleSignIn = _FakeGoogleSignIn();
+    final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+    await expectLater(
+      gateway.authorizeDrive(allowInteractive: false),
+      throwsA(isA<CloudAuthorizationUnavailable>()),
+    );
+    expect(nativeAuthorizationCalls, 0);
+    expect(googleSignIn.authenticateCalls, 0);
+  });
+
+  test('passive restore does not attempt lightweight sign-in UI', () async {
+    final googleSignIn = _FakeGoogleSignIn();
+    final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+    expect(await gateway.restoreLightweightAuthentication(), isNull);
+    expect(googleSignIn.lightweightAuthenticationCalls, 0);
+    expect(googleSignIn.authenticateCalls, 0);
+  });
+
+  test(
+    'verified in-memory account bypasses brittle native identity conversion',
+    () async {
+      var nativeAuthorizationCalls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            nativeAuthorizationCalls++;
+            return <String, Object?>{'status': 'accountMismatch'};
+          });
+      final googleSignIn = _FakeGoogleSignIn()
+        ..authenticatedAccount = _FakeGoogleSignInAccount(
+          id: 'google-id-A',
+          email: 'a@example.com',
+        );
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+      await gateway.authenticate();
+
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: false),
+        throwsA(isA<CloudAuthorizationUnavailable>()),
+      );
+
+      expect(nativeAuthorizationCalls, 0);
+      expect(googleSignIn.authenticateCalls, 1);
     },
   );
 }
@@ -103,6 +291,8 @@ class _FakeGoogleSignIn implements GoogleSignIn {
   int signOutCalls = 0;
   int disconnectCalls = 0;
   int authenticateCalls = 0;
+  int lightweightAuthenticationCalls = 0;
+  GoogleSignInAccount? authenticatedAccount;
 
   @override
   dynamic noSuchMethod(Invocation invocation) {
@@ -118,12 +308,52 @@ class _FakeGoogleSignIn implements GoogleSignIn {
       disconnectCalls++;
       return Future<void>.value();
     }
+    if (invocation.memberName == #attemptLightweightAuthentication) {
+      lightweightAuthenticationCalls++;
+      return Future<GoogleSignInAccount?>.value(null);
+    }
     if (invocation.memberName == #supportsAuthenticate) return true;
     if (invocation.memberName == #authenticate) {
       authenticateCalls++;
+      final account = authenticatedAccount;
+      if (account != null) return Future<GoogleSignInAccount>.value(account);
       return Future<GoogleSignInAccount>.error(
         StateError('Unexpected interactive authentication in this test.'),
       );
+    }
+    return super.noSuchMethod(invocation);
+  }
+}
+
+class _FakeGoogleSignInAccount implements GoogleSignInAccount {
+  _FakeGoogleSignInAccount({required this.id, required this.email});
+
+  @override
+  final String id;
+
+  @override
+  final String email;
+
+  @override
+  String? get displayName => 'Test Google User';
+
+  @override
+  String? get photoUrl => null;
+
+  @override
+  GoogleSignInAuthorizationClient get authorizationClient =>
+      _FakeGoogleSignInAuthorizationClient();
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _FakeGoogleSignInAuthorizationClient
+    implements GoogleSignInAuthorizationClient {
+  @override
+  dynamic noSuchMethod(Invocation invocation) {
+    if (invocation.memberName == #authorizationForScopes) {
+      return Future<GoogleSignInClientAuthorization?>.value(null);
     }
     return super.noSuchMethod(invocation);
   }
