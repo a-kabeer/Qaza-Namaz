@@ -184,13 +184,8 @@ void main() {
 
       final title = tester.widget<Text>(find.text('Qaza namaz ka unwan'));
       expect(title.textDirection, TextDirection.ltr);
-      expect(
-        find.text(
-          'Qaza namaz ki adaigi ke liye rozana ka hadaf muqarrar karein. '
-          'Apni pesh raft baqaidgi se dekhein aur zaroorat ke mutabiq hadaf tabdeel karein.',
-        ),
-        findsOneWidget,
-      );
+      final body = tester.widget<SelectableText>(find.byType(SelectableText));
+      expect(body.textDirection, TextDirection.ltr);
       expect(tester.takeException(), isNull);
     },
   );
