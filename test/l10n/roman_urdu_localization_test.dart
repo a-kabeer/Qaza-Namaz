@@ -144,7 +144,8 @@ void main() {
     expect(
       labelPainter.computeLineMetrics(),
       hasLength(1),
-      reason: 'The compact Prayer Time navigation label must render on one line.',
+      reason:
+          'The compact Prayer Time navigation label must render on one line.',
     );
     labelPainter.dispose();
     expect(tester.takeException(), isNull);
