@@ -285,8 +285,8 @@ class _ArticleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final urdu = language.isUrdu;
-    final title = urdu ? article.title.ur : article.title.en;
-    final summary = urdu ? article.summary.ur : article.summary.en;
+    final title = article.title.forLanguage(language);
+    final summary = article.summary.forLanguage(language);
     final type = AppTypography.of(context).forScript(urduScript: urdu);
 
     return RepaintBoundary(
