@@ -37,6 +37,7 @@ class _InitialCloudBackupScreenState
       _progress = const CloudBackupProgress.checking();
     });
 
+    final l10n = AppLocalizations.of(context);
     try {
       final result = await ref.read(cloudSyncProvider).backupNow(
         onProgress: (progress) {
@@ -55,11 +56,10 @@ class _InitialCloudBackupScreenState
       }
 
       setState(() {
-        _error = result.message ??
-            AppLocalizations.of(context).cloudConnectionFailed;
+        _error = result.message ?? l10n.cloudConnectionFailed;
       });
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) setState(() => _error = l10n.cloudConnectionFailed);
     } finally {
       if (mounted) {
         setState(() {
@@ -86,20 +86,25 @@ class _InitialCloudBackupScreenState
     );
   }
 
-  String _stageLabel() {
+  String _stageLabel(AppLocalizations l10n) {
     final progress = _progress;
-    if (progress == null) return 'Preparing your first backup…';
+    if (progress == null) return l10n.initialCloudBackupStagePreparing;
     return switch (progress.stage) {
-      CloudBackupProgressStage.checking => 'Checking Google Drive…',
-      CloudBackupProgressStage.preparing => 'Preparing your backup…',
-      CloudBackupProgressStage.uploading => 'Uploading your backup…',
-      CloudBackupProgressStage.completed => 'Verifying backup completion…',
+      CloudBackupProgressStage.checking =>
+        l10n.initialCloudBackupStageChecking,
+      CloudBackupProgressStage.preparing =>
+        l10n.initialCloudBackupStagePreparing,
+      CloudBackupProgressStage.uploading =>
+        l10n.initialCloudBackupStageUploading,
+      CloudBackupProgressStage.completed =>
+        l10n.initialCloudBackupStageCompleted,
     };
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final l10n = AppLocalizations.of(context);
     final progress = _progress;
     final total = progress?.totalBytes ?? 0;
     final sent = progress?.sentBytes ?? 0;
@@ -119,7 +124,7 @@ class _InitialCloudBackupScreenState
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Protect your progress'),
+        title: Text(l10n.initialCloudBackupAppBarTitle),
       ),
       body: SafeArea(
         child: Center(
@@ -143,16 +148,16 @@ class _InitialCloudBackupScreenState
                   const SizedBox(height: 20),
                   Text(
                     _error == null
-                        ? 'Creating your first Google Drive backup'
-                        : 'Your data is saved on this device',
+                        ? l10n.initialCloudBackupTitle
+                        : l10n.initialCloudBackupFailedTitle,
                     style: theme.textTheme.headlineSmall,
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
                   Text(
                     _error == null
-                        ? 'Your profile and Qaza progress are saved locally. Keep the app open while the initial backup is created.'
-                        : 'The initial cloud backup could not be completed. Your local profile and Qaza progress have not been discarded.',
+                        ? l10n.initialCloudBackupBody
+                        : l10n.initialCloudBackupFailedBody,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
@@ -160,7 +165,7 @@ class _InitialCloudBackupScreenState
                   ),
                   const SizedBox(height: 24),
                   if (_working) ...[
-                    Text(_stageLabel(), textAlign: TextAlign.center),
+                    Text(_stageLabel(l10n), textAlign: TextAlign.center),
                     const SizedBox(height: 12),
                     LinearProgressIndicator(value: visibleRatio),
                     if (hasByteProgress) ...[
@@ -184,12 +189,12 @@ class _InitialCloudBackupScreenState
                     FilledButton.icon(
                       onPressed: _working ? null : _runBackup,
                       icon: const Icon(Icons.refresh),
-                      label: const Text('Retry backup'),
+                      label: Text(l10n.initialCloudBackupRetry),
                     ),
                     const SizedBox(height: 8),
                     OutlinedButton(
                       onPressed: _working ? null : _continueToHome,
-                      child: const Text('Continue to Home'),
+                      child: Text(l10n.initialCloudBackupContinueHome),
                     ),
                   ],
                 ],
