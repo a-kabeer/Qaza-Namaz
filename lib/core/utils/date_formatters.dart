@@ -108,7 +108,7 @@ class DateFormatters {
       final period = switch (value.hour) {
         < 5 => _isRomanUrdu ? 'raat' : 'رات',
         < 12 => _isRomanUrdu ? 'subah' : 'صبح',
-        < 16 => _isRomanUrdu ? 'dopahar' : 'دوپہر',
+        < 17 => _isRomanUrdu ? 'dopahar' : 'دوپہر',
         < 19 => _isRomanUrdu ? 'shaam' : 'شام',
         _ => _isRomanUrdu ? 'raat' : 'رات',
       };
