@@ -11,8 +11,8 @@ import 'knowledge_base_repository.dart';
 /// Serves the Masail and Mugalat content bundled with the app.
 ///
 /// The English, Urdu, Arabic and Roman Urdu files ship separately, exactly as
-/// authored; this is the only place that knows they are four files. Everything above it
-/// sees one list of localized articles.
+/// authored; this is the only place that knows they are four files.
+/// Everything above it sees one list of localized articles.
 class BundledKnowledgeBaseRepository implements KnowledgeBaseRepository {
   BundledKnowledgeBaseRepository({
     KnowledgeBaseParser parser = const KnowledgeBaseParser(),
@@ -42,7 +42,10 @@ class BundledKnowledgeBaseRepository implements KnowledgeBaseRepository {
     final english = await loadQazaAssetString(englishAssetPath, bundle: bundle);
     final urdu = await loadQazaAssetString(urduAssetPath, bundle: bundle);
     final arabic = await loadQazaAssetString(arabicAssetPath, bundle: bundle);
-    final romanUrdu = await loadQazaAssetString(romanUrduAssetPath, bundle: bundle);
+    final romanUrdu = await loadQazaAssetString(
+      romanUrduAssetPath,
+      bundle: bundle,
+    );
 
     final articles = _parser
         .parseQuadruple(
