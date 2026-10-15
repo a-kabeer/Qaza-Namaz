@@ -133,6 +133,7 @@ void main() {
       findsOneWidget,
       reason: 'The Latin-script option must display exactly Urdu.',
     );
+    expect(find.text('Roman Urdu'), findsNothing);
     await tester.tap(romanUrduOption);
     await tester.pumpAndSettle();
     await tester.pump();
