@@ -53,10 +53,7 @@ class KnowledgeQuery {
 
     final needle = _normalizeSearchText(text);
     if (needle.isEmpty) return true;
-    final searchable = article.searchableTextFor(
-      urdu: language.isUrdu,
-      arabic: language.isArabic,
-    );
+    final searchable = article.searchableTextFor(language: language);
     return _normalizeSearchText(searchable).contains(needle);
   }
 
