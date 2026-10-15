@@ -136,11 +136,17 @@ void main() {
     expect(find.text('Auqat'), findsOneWidget);
     final labelParagraph =
         tester.renderObject<RenderParagraph>(find.text('Auqat'));
+    final labelPainter = TextPainter(
+      text: labelParagraph.text,
+      textDirection: labelParagraph.textDirection,
+      maxLines: labelParagraph.maxLines,
+    )..layout(maxWidth: labelParagraph.size.width);
     expect(
-      labelParagraph.computeLineMetrics(),
+      labelPainter.computeLineMetrics(),
       hasLength(1),
       reason: 'The compact Prayer Time navigation label must render on one line.',
     );
+    labelPainter.dispose();
     expect(tester.takeException(), isNull);
   });
 
