@@ -4499,6 +4499,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Google connection could not be completed. Try again or continue locally.'**
   String get cloudConnectionFailed;
+
+  /// No description provided for @cloudRestoreProgressTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring your Google Drive backup'**
+  String get cloudRestoreProgressTitle;
+
+  /// No description provided for @cloudRestoreProgressBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading, validating, and safely restoring your data. Keep the app open.'**
+  String get cloudRestoreProgressBody;
+
+  /// No description provided for @cloudRestoreConnectingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connecting to Google Drive'**
+  String get cloudRestoreConnectingTitle;
+
+  /// No description provided for @cloudRestoreConnectingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking your Google account and looking for an existing backup.'**
+  String get cloudRestoreConnectingBody;
+
+  /// No description provided for @cloudRestoreStageChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking and validating your backup…'**
+  String get cloudRestoreStageChecking;
+
+  /// No description provided for @cloudRestoreStageRestoring.
+  ///
+  /// In en, this message translates to:
+  /// **'Restoring your verified backup…'**
+  String get cloudRestoreStageRestoring;
+
+  /// No description provided for @cloudRestoreStageTransferring.
+  ///
+  /// In en, this message translates to:
+  /// **'Transferring backup data…'**
+  String get cloudRestoreStageTransferring;
+
+  /// No description provided for @cloudRestoreStageFinishing.
+  ///
+  /// In en, this message translates to:
+  /// **'Finishing restore…'**
+  String get cloudRestoreStageFinishing;
+
+  /// No description provided for @initialCloudBackupAppBarTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect your progress'**
+  String get initialCloudBackupAppBarTitle;
+
+  /// No description provided for @initialCloudBackupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating your first Google Drive backup'**
+  String get initialCloudBackupTitle;
+
+  /// No description provided for @initialCloudBackupBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile and Qaza progress are saved locally. Keep the app open while the initial backup is created.'**
+  String get initialCloudBackupBody;
+
+  /// No description provided for @initialCloudBackupFailedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is saved on this device'**
+  String get initialCloudBackupFailedTitle;
+
+  /// No description provided for @initialCloudBackupFailedBody.
+  ///
+  /// In en, this message translates to:
+  /// **'The initial cloud backup could not be completed. Your local profile and Qaza progress have not been discarded.'**
+  String get initialCloudBackupFailedBody;
+
+  /// No description provided for @initialCloudBackupStageChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking Google Drive…'**
+  String get initialCloudBackupStageChecking;
+
+  /// No description provided for @initialCloudBackupStagePreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing your backup…'**
+  String get initialCloudBackupStagePreparing;
+
+  /// No description provided for @initialCloudBackupStageUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading your backup…'**
+  String get initialCloudBackupStageUploading;
+
+  /// No description provided for @initialCloudBackupStageCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup saved successfully'**
+  String get initialCloudBackupStageCompleted;
+
+  /// No description provided for @initialCloudBackupRetry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry backup'**
+  String get initialCloudBackupRetry;
+
+  /// No description provided for @initialCloudBackupContinueHome.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue to Home'**
+  String get initialCloudBackupContinueHome;
 }
 
 class _AppLocalizationsDelegate

@@ -60,5 +60,4 @@ void main() {
     await database.clearPendingInitialCloudBackup();
     expect(await database.hasPendingInitialCloudBackup(), isFalse);
   });
-
 }

@@ -90,8 +90,7 @@ class _InitialCloudBackupScreenState
     final progress = _progress;
     if (progress == null) return l10n.initialCloudBackupStagePreparing;
     return switch (progress.stage) {
-      CloudBackupProgressStage.checking =>
-        l10n.initialCloudBackupStageChecking,
+      CloudBackupProgressStage.checking => l10n.initialCloudBackupStageChecking,
       CloudBackupProgressStage.preparing =>
         l10n.initialCloudBackupStagePreparing,
       CloudBackupProgressStage.uploading =>
@@ -108,16 +107,13 @@ class _InitialCloudBackupScreenState
     final progress = _progress;
     final total = progress?.totalBytes ?? 0;
     final sent = progress?.sentBytes ?? 0;
-    final hasByteProgress = progress?.stage ==
-            CloudBackupProgressStage.uploading &&
-        total > 0;
-    final ratio = hasByteProgress
-        ? (sent / total).clamp(0.0, 1.0).toDouble()
-        : null;
+    final hasByteProgress =
+        progress?.stage == CloudBackupProgressStage.uploading && total > 0;
+    final ratio =
+        hasByteProgress ? (sent / total).clamp(0.0, 1.0).toDouble() : null;
     // Bytes consumed by the HTTP request are not server confirmation. Hold
     // the visible percentage below 100 until the adapter confirms success.
-    final visibleRatio =
-        ratio == null ? null : (ratio >= 1 ? 0.99 : ratio);
+    final visibleRatio = ratio == null ? null : (ratio >= 1 ? 0.99 : ratio);
     final visiblePercent =
         visibleRatio == null ? null : (visibleRatio * 100).round();
 

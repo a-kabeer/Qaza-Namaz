@@ -2647,7 +2647,8 @@ class AppLocalizationsUrLatn extends AppLocalizations {
       'Verified backup restore ho raha hai…';
 
   @override
-  String get cloudRestoreStageTransferring => 'Backup data transfer ho raha hai…';
+  String get cloudRestoreStageTransferring =>
+      'Backup data transfer ho raha hai…';
 
   @override
   String get cloudRestoreStageFinishing => 'Restore mukammal ho raha hai…';
@@ -2656,7 +2657,8 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get initialCloudBackupAppBarTitle => 'Apni progress mehfooz karein';
 
   @override
-  String get initialCloudBackupTitle => 'Pehla Google Drive backup ban raha hai';
+  String get initialCloudBackupTitle =>
+      'Pehla Google Drive backup ban raha hai';
 
   @override
   String get initialCloudBackupBody =>
@@ -2671,7 +2673,8 @@ class AppLocalizationsUrLatn extends AppLocalizations {
       'Cloud backup mukammal nahi ho saka. Aap ka local profile aur Qaza data mehfooz hai.';
 
   @override
-  String get initialCloudBackupStageChecking => 'Google Drive check ho raha hai…';
+  String get initialCloudBackupStageChecking =>
+      'Google Drive check ho raha hai…';
 
   @override
   String get initialCloudBackupStagePreparing => 'Backup tayyar ho raha hai…';
@@ -2680,12 +2683,12 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get initialCloudBackupStageUploading => 'Backup upload ho raha hai…';
 
   @override
-  String get initialCloudBackupStageCompleted => 'Backup kamyabi se save ho gaya';
+  String get initialCloudBackupStageCompleted =>
+      'Backup kamyabi se save ho gaya';
 
   @override
   String get initialCloudBackupRetry => 'Backup dobara try karein';
 
   @override
   String get initialCloudBackupContinueHome => 'Home par jayein';
-
 }

@@ -121,12 +121,14 @@ class StartupGate extends ConsumerWidget {
             // The offline host continues directly to Home without cloud work.
             if (cloudEnabled &&
                 !ref.watch(skipPendingInitialCloudBackupForSessionProvider)) {
-              final pendingBackup = ref.watch(initialCloudBackupPendingProvider);
+              final pendingBackup =
+                  ref.watch(initialCloudBackupPendingProvider);
               return pendingBackup.when(
                 loading: () => const SplashScreen(),
                 error: (_, __) => StartupProfileLoadErrorBoundary(
                   key: const Key('startup_initial_backup_error'),
-                  onRetry: () => ref.invalidate(initialCloudBackupPendingProvider),
+                  onRetry: () =>
+                      ref.invalidate(initialCloudBackupPendingProvider),
                 ),
                 data: (pending) => pending
                     ? const InitialCloudBackupScreen()
