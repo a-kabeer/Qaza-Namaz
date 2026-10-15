@@ -168,37 +168,34 @@ void main() {
     },
   );
 
-  test(
-    'missing saved identity cannot authorize background work',
-    () async {
-      final preferences = await SharedPreferences.getInstance();
-      await preferences.remove('qaza_cloud_adapter.cached_account_id_v1');
-      await preferences.remove('qaza_cloud_adapter.cached_account_email_v1');
-      var nativeAuthorizationCalls = 0;
-      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
-          .setMockMethodCallHandler(_authorizationChannel, (call) async {
-            nativeAuthorizationCalls++;
-            return <String, Object?>{
-              'status': 'authorized',
-              'accountId': 'google-id-A',
-              'accountEmail': 'a@example.com',
-              'identitySource': 'googleId',
-              'accessToken': 'test-access-token',
-              'grantedScopes': <String>[_driveScope],
-            };
-          });
+  test('missing saved identity cannot authorize background work', () async {
+    final preferences = await SharedPreferences.getInstance();
+    await preferences.remove('qaza_cloud_adapter.cached_account_id_v1');
+    await preferences.remove('qaza_cloud_adapter.cached_account_email_v1');
+    var nativeAuthorizationCalls = 0;
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(_authorizationChannel, (call) async {
+          nativeAuthorizationCalls++;
+          return <String, Object?>{
+            'status': 'authorized',
+            'accountId': 'google-id-A',
+            'accountEmail': 'a@example.com',
+            'identitySource': 'googleId',
+            'accessToken': 'test-access-token',
+            'grantedScopes': <String>[_driveScope],
+          };
+        });
 
-      final googleSignIn = _FakeGoogleSignIn();
-      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+    final googleSignIn = _FakeGoogleSignIn();
+    final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
 
-      await expectLater(
-        gateway.authorizeDrive(allowInteractive: false),
-        throwsA(isA<CloudAuthorizationUnavailable>()),
-      );
-      expect(nativeAuthorizationCalls, 0);
-      expect(googleSignIn.authenticateCalls, 0);
-    },
-  );
+    await expectLater(
+      gateway.authorizeDrive(allowInteractive: false),
+      throwsA(isA<CloudAuthorizationUnavailable>()),
+    );
+    expect(nativeAuthorizationCalls, 0);
+    expect(googleSignIn.authenticateCalls, 0);
+  });
 
   test(
     'fresh gateway restores the same stable account before status verification',
