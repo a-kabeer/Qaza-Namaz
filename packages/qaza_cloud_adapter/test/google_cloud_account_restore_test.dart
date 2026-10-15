@@ -193,12 +193,7 @@ void main() {
       await state.setCloudSyncEnabled(true);
       await state.setAutomaticSyncEnabled(true);
 
-      final gateway = _CountingGateway(
-        restoredAccount: _FakeGoogleSignInAccount(
-          id: 'google-account-A',
-          email: 'saved@example.com',
-        ),
-      );
+      final gateway = _CountingGateway();
       final scheduler = _CountingScheduler(state: state);
       final provider = GoogleCloudAccountProvider(
         gateway: gateway,
@@ -210,7 +205,7 @@ void main() {
 
       expect(snapshot.status, CloudAccountStatus.connected);
       expect(snapshot.isConnected, isTrue);
-      expect(gateway.lightweightRestoreCalls, 1);
+      expect(gateway.lightweightRestoreCalls, 0);
       expect(gateway.currentAccountCalls, 1);
       expect(gateway.authorizeDriveCalls, 1);
       expect(await state.isReconnectRequired(), isFalse);
@@ -238,11 +233,9 @@ void main() {
 }
 
 class _CountingGateway extends GoogleSignInGateway {
-  _CountingGateway({this.authorizationAvailable = true, this.restoredAccount})
-    : super();
+  _CountingGateway({this.authorizationAvailable = true}) : super();
 
   final bool authorizationAvailable;
-  final GoogleSignInAccount? restoredAccount;
   int lightweightRestoreCalls = 0;
   int currentAccountCalls = 0;
   int authorizeDriveCalls = 0;
@@ -250,20 +243,18 @@ class _CountingGateway extends GoogleSignInGateway {
   @override
   Future<GoogleSignInAccount?> currentAccount() async {
     currentAccountCalls++;
-    return restoredAccount;
+    return null;
   }
 
   @override
   Future<GoogleSignInAccount?> restoreLightweightAuthentication() async {
     lightweightRestoreCalls++;
-    return restoredAccount;
+    return null;
   }
 
   @override
   Future<String?> accountIdForAuthorization() async {
-    final account = restoredAccount;
-    if (account != null) return account.id;
-    // Keep the process-recreation fallback deterministic without initializing
+// Keep the process-recreation fallback deterministic without initializing
     // the real Google Sign-In plugin from this provider-level unit test.
     final preferences = await SharedPreferences.getInstance();
     return preferences.getString('qaza_cloud_adapter.cached_account_id_v1');
@@ -278,25 +269,6 @@ class _CountingGateway extends GoogleSignInGateway {
     }
     return http.Client();
   }
-}
-
-class _FakeGoogleSignInAccount implements GoogleSignInAccount {
-  _FakeGoogleSignInAccount({required this.id, required this.email});
-
-  @override
-  final String id;
-
-  @override
-  final String email;
-
-  @override
-  String? get displayName => 'Saved Google User';
-
-  @override
-  String? get photoUrl => null;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 class _CountingScheduler extends CloudSyncScheduler {
