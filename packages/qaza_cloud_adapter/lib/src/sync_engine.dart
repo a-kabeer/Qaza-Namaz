@@ -441,6 +441,7 @@ class CloudSyncEngine {
         return CloudSyncResult.uploaded(backup);
 
       case CloudConflictDecision.useRemote:
+        onProgress?.call(const CloudBackupProgress.checking());
         // Persist the old Phase 1 export in encrypted local SQLite before
         // replacing current application data. Import is not attempted if this
         // snapshot fails to save.
@@ -489,6 +490,7 @@ class CloudSyncEngine {
             onProgress: onProgress,
           );
         }
+        onProgress?.call(const CloudBackupProgress.preparing());
         await _phase1.importBackup(latest.backup.phase1BackupJson);
         final importedRevision = await _phase1.readDbRevision();
         await _state.writeCursor(
