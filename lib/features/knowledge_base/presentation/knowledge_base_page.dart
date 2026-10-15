@@ -289,7 +289,10 @@ class _ArticleCard extends StatelessWidget {
     final urdu = language.isUrdu;
     final title = article.title.forLanguage(language);
     final summary = article.summary.forLanguage(language);
-    final type = AppTypography.of(context).forScript(urduScript: urdu);
+    final typography = AppTypography.of(context);
+    final type = language.isArabic
+        ? typography.arabic
+        : typography.forScript(urduScript: urdu);
 
     return RepaintBoundary(
       child: Semantics(
