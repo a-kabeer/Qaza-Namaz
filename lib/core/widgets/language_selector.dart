@@ -162,11 +162,11 @@ class LanguageSelector<T> extends StatelessWidget {
         items: [
           for (final option in options)
             DropdownMenuItem<T>(
-              key: optionKeyPrefix == null
-                  ? null
-                  : Key('${optionKeyPrefix}_${option.languageCode}'),
               value: option.value,
               child: Row(
+                key: optionKeyPrefix == null
+                    ? null
+                    : Key('${optionKeyPrefix}_${option.languageCode}'),
                 children: [
                   Expanded(
                     child: Align(
