@@ -2652,4 +2652,8 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get initialCloudBackupContinueHome => 'المتابعة إلى الرئيسية';
+
+  @override
+  String get initialCloudBackupStageDownloading =>
+      'جارٍ تنزيل النسخة الاحتياطية…';
 }

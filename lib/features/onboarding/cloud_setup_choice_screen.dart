@@ -368,13 +368,10 @@ class _CloudSetupChoiceScreenState
         restoreProgress?.stage == CloudBackupProgressStage.downloading &&
         restoreReceivedBytes > 0;
     final restoreRatio = hasRestoreByteProgress && restoreTotalBytes > 0
-        ? (restoreReceivedBytes / restoreTotalBytes)
-            .clamp(0.0, 1.0)
-            .toDouble()
+        ? (restoreReceivedBytes / restoreTotalBytes).clamp(0.0, 1.0).toDouble()
         : null;
-    final visibleRestoreRatio = restoreRatio == null
-        ? null
-        : (restoreRatio >= 1 ? 0.99 : restoreRatio);
+    final visibleRestoreRatio =
+        restoreRatio == null ? null : (restoreRatio >= 1 ? 0.99 : restoreRatio);
     final visibleRestorePercent = visibleRestoreRatio == null
         ? null
         : (visibleRestoreRatio * 100).round();
@@ -516,8 +513,8 @@ class _CloudSetupChoiceScreenState
                             Text(
                               restoreTotalBytes > 0
                                   ? '${(restoreReceivedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / '
-                                        '${(restoreTotalBytes / (1024 * 1024)).toStringAsFixed(2)} MB'
-                                        ' · ${visibleRestorePercent ?? 0}%'
+                                      '${(restoreTotalBytes / (1024 * 1024)).toStringAsFixed(2)} MB'
+                                      ' · ${visibleRestorePercent ?? 0}%'
                                   : '${(restoreReceivedBytes / (1024 * 1024)).toStringAsFixed(2)} MB',
                               style: theme.textTheme.bodySmall,
                             ),

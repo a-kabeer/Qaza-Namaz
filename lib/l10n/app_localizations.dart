@@ -4613,6 +4613,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Continue to Home'**
   String get initialCloudBackupContinueHome;
+
+  /// No description provided for @initialCloudBackupStageDownloading.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloading your backup…'**
+  String get initialCloudBackupStageDownloading;
 }
 
 class _AppLocalizationsDelegate

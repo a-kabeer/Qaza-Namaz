@@ -2667,6 +2667,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get initialCloudBackupContinueHome => 'ہوم پر جائیں';
+
+  @override
+  String get initialCloudBackupStageDownloading => 'بیک اپ ڈاؤن لوڈ ہو رہا ہے…';
 }
 
 /// The translations for Urdu, using the Latin script (`ur_Latn`).
@@ -5356,4 +5359,8 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get initialCloudBackupContinueHome => 'Home par jayein';
+
+  @override
+  String get initialCloudBackupStageDownloading =>
+      'Backup download ho raha hai…';
 }

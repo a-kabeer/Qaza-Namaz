@@ -111,7 +111,7 @@ class _InitialCloudBackupScreenState
     final sent = progress?.sentBytes ?? 0;
     final isByteTransfer =
         progress?.stage == CloudBackupProgressStage.uploading ||
-        progress?.stage == CloudBackupProgressStage.downloading;
+            progress?.stage == CloudBackupProgressStage.downloading;
     final hasByteProgress = isByteTransfer && (total > 0 || sent > 0);
     final ratio = hasByteProgress && total > 0
         ? (sent / total).clamp(0.0, 1.0).toDouble()
@@ -174,8 +174,8 @@ class _InitialCloudBackupScreenState
                       Text(
                         total > 0
                             ? '${(sent / (1024 * 1024)).toStringAsFixed(2)} MB / '
-                                  '${(total / (1024 * 1024)).toStringAsFixed(2)} MB'
-                                  ' · ${visiblePercent ?? 0}%'
+                                '${(total / (1024 * 1024)).toStringAsFixed(2)} MB'
+                                ' · ${visiblePercent ?? 0}%'
                             : '${(sent / (1024 * 1024)).toStringAsFixed(2)} MB',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall,

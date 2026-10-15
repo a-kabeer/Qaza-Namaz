@@ -2693,6 +2693,6 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get initialCloudBackupContinueHome => 'Home par jayein';
 
   @override
-  String get initialCloudBackupStageDownloading => 'Backup download ho raha hai…';
-
+  String get initialCloudBackupStageDownloading =>
+      'Backup download ho raha hai…';
 }

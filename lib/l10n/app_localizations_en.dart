@@ -2662,4 +2662,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get initialCloudBackupContinueHome => 'Continue to Home';
+
+  @override
+  String get initialCloudBackupStageDownloading => 'Downloading your backup…';
 }
