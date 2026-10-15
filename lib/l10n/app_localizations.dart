@@ -8,7 +8,6 @@ import 'package:intl/intl.dart' as intl;
 import 'app_localizations_ar.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_ur.dart';
-import 'app_localizations_ur_Latn.dart';
 
 // ignore_for_file: type=lint
 
@@ -99,7 +98,7 @@ abstract class AppLocalizations {
     Locale('ar'),
     Locale('en'),
     Locale('ur'),
-    Locale.fromSubtags(languageCode: 'ur', scriptCode: 'Latn'),
+    Locale.fromSubtags(languageCode: 'ur', scriptCode: 'Latn')
   ];
 
   /// Application name shown in the OS task switcher
@@ -4513,20 +4512,23 @@ class _AppLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      <String>['ar', 'en'].contains(locale.languageCode) ||
-      (locale.languageCode == 'ur' &&
-          (locale.scriptCode == null ||
-              locale.scriptCode == 'Arab' ||
-              locale.scriptCode == 'Latn'));
+      <String>['ar', 'en', 'ur'].contains(locale.languageCode);
 
   @override
   bool shouldReload(_AppLocalizationsDelegate old) => false;
 }
 
 AppLocalizations lookupAppLocalizations(Locale locale) {
-  if (locale.languageCode == 'ur' &&
-      locale.scriptCode?.toLowerCase() == 'latn') {
-    return AppLocalizationsUrLatn();
+  // Lookup logic when language+script codes are specified.
+  switch (locale.languageCode) {
+    case 'ur':
+      {
+        switch (locale.scriptCode) {
+          case 'Latn':
+            return AppLocalizationsUrLatn();
+        }
+        break;
+      }
   }
 
   // Lookup logic when only language code is specified.

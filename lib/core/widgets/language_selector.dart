@@ -42,7 +42,8 @@ class LanguageOption<T> {
       scriptCode == null ? languageCode : '${languageCode}_$scriptCode';
 
   String get displayName =>
-      nativeName ?? NativeLanguageNames.forCode(languageCode, scriptCode: scriptCode);
+      nativeName ??
+      NativeLanguageNames.forCode(languageCode, scriptCode: scriptCode);
 }
 
 /// Native-script display names shared by all language-selector instances.

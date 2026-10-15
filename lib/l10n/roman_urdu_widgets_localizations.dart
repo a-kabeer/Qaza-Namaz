@@ -17,8 +17,7 @@ class RomanUrduWidgetsLocalizationsDelegate
 
   @override
   bool isSupported(Locale locale) =>
-      locale.languageCode == 'ur' &&
-      locale.scriptCode?.toLowerCase() == 'latn';
+      locale.languageCode == 'ur' && locale.scriptCode?.toLowerCase() == 'latn';
 
   @override
   Future<WidgetsLocalizations> load(Locale locale) =>

@@ -56,10 +56,12 @@ class DateFormatters {
   static String? get _dateSymbolsLocale => _isRomanUrdu ? 'en' : null;
 
   static String gregorianMonthName(int month) =>
-      intl.DateFormat('MMM', _dateSymbolsLocale).format(DateTime(2000, month, 1));
+      intl.DateFormat('MMM', _dateSymbolsLocale)
+          .format(DateTime(2000, month, 1));
 
   static String gregorianMonthFullName(int month) =>
-      intl.DateFormat('MMMM', _dateSymbolsLocale).format(DateTime(2000, month, 1));
+      intl.DateFormat('MMMM', _dateSymbolsLocale)
+          .format(DateTime(2000, month, 1));
 
   /// The complete Gregorian date — day, localized month, and year.
   ///
@@ -100,8 +102,7 @@ class DateFormatters {
   }
 
   static String formatClockTime(DateTime value) {
-    final currentLocale =
-        intl.Intl.getCurrentLocale().replaceAll('-', '_');
+    final currentLocale = intl.Intl.getCurrentLocale().replaceAll('-', '_');
     final locale = currentLocale.split('_').first;
     if (locale == 'ur') {
       final period = switch (value.hour) {
