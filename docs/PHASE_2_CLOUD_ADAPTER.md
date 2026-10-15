@@ -151,11 +151,13 @@ When Google Drive discovery returns no backup during first-run cloud setup, the
 app records a durable local `initial_cloud_backup_pending` marker before
 routing to profile setup. After the profile and Qaza plan have been committed,
 StartupGate routes to the initial-backup screen and invokes the existing sync
-engine with its initial-backup path. Transfer progress is based on request-body
-bytes; the UI caps this display at 99% until Drive confirms the write and the
-sync cursor is persisted. If the upload fails, the local data and pending marker
-remain, allowing a retry without repeating onboarding and another attempt on a
-later app launch.
+engine with its initial-backup path. Upload progress is based on
+request-body bytes and remains below 100% until Drive confirms the write and the
+sync cursor is persisted. Restore progress reports bytes received from Drive
+when the file size is available and remains below 100% while the backup is
+being validated and applied. If the upload fails, the local data and pending
+marker remain, allowing a retry without repeating onboarding and another
+attempt on a later app launch.
 
 Automatic restore is limited to a verified fresh database: onboarding must be
 incomplete, the logical database revision must still be at its initial value,
