@@ -48,6 +48,8 @@ void main() {
     expect(KnowledgeLanguage.fromCode('ur_Latn'), KnowledgeLanguage.romanUrdu);
     expect(KnowledgeLanguage.fromCode('ur-Latn'), KnowledgeLanguage.romanUrdu);
     expect(language!.code, 'ur_Latn');
+    expect(language.locale.languageCode, 'ur');
+    expect(language.locale.scriptCode, 'Latn');
     expect(language.selectorLanguageCode, 'ur');
     expect(language.scriptCode, 'Latn');
     expect(language.isUrdu, isFalse);
