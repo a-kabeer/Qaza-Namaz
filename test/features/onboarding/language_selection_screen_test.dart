@@ -56,6 +56,7 @@ Future<void> _chooseLanguage(
 
   final label = switch (languageCode) {
     'ur' => 'اردو',
+    'ur_Latn' => 'Urdu',
     'ar' => 'العربية',
     _ => languageCode,
   };
@@ -177,6 +178,24 @@ void main() {
     final prefs = await SharedPreferences.getInstance();
     expect(repository.savedProfile?.languageCode, 'ar');
     expect(prefs.getString(LocaleNotifier.storageKey), 'ar');
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+  });
+
+  testWidgets('Roman Urdu is labelled Urdu and persists its script identifier',
+      (tester) async {
+    final repository = _FakeUserProfileRepository();
+    await tester.pumpWidget(_app(repository: repository));
+
+    await _chooseLanguage(tester, 'ur_Latn');
+    expect(find.text('Urdu'), findsOneWidget);
+
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(repository.saveCount, 1);
+    expect(repository.savedProfile?.languageCode, 'ur');
+    expect(prefs.getString(LocaleNotifier.storageKey), 'ur_Latn');
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
   });
 

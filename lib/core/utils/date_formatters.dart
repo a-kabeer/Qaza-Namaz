@@ -45,27 +45,39 @@ class DateFormatters {
     'December',
   ];
 
+  static bool get _isRomanUrdu {
+    final locale = intl.Intl.getCurrentLocale().replaceAll('-', '_');
+    return locale.toLowerCase().startsWith('ur_latn');
+  }
+
+  // Intl has Urdu-script date symbols but no dedicated Roman Urdu symbols.
+  // English month/weekday names are conventional in Roman Urdu and avoid
+  // leaking Nastaleeq characters into an LTR interface.
+  static String? get _dateSymbolsLocale => _isRomanUrdu ? 'en' : null;
+
   static String gregorianMonthName(int month) =>
-      intl.DateFormat('MMM').format(DateTime(2000, month, 1));
+      intl.DateFormat('MMM', _dateSymbolsLocale)
+          .format(DateTime(2000, month, 1));
 
   static String gregorianMonthFullName(int month) =>
-      intl.DateFormat('MMMM').format(DateTime(2000, month, 1));
+      intl.DateFormat('MMMM', _dateSymbolsLocale)
+          .format(DateTime(2000, month, 1));
 
   /// The complete Gregorian date — day, localized month, and year.
   ///
   /// Gregorian remains the canonical date even when Urdu is selected.
   static String formatGregorianFull(DateTime date) =>
-      intl.DateFormat('d MMMM yyyy').format(date);
+      intl.DateFormat('d MMMM yyyy', _dateSymbolsLocale).format(date);
 
   static String formatGregorianDatePadded(DateTime date) =>
-      intl.DateFormat('dd MMM yyyy').format(date);
+      intl.DateFormat('dd MMM yyyy', _dateSymbolsLocale).format(date);
 
   /// Compact Gregorian date with a localized short weekday.
   static String formatGregorianWeekdayShortFull(DateTime date) =>
-      intl.DateFormat('EEE, MMM d, yyyy').format(date);
+      intl.DateFormat('EEE, MMM d, yyyy', _dateSymbolsLocale).format(date);
 
   static String formatWeekdayShort(DateTime date) =>
-      intl.DateFormat('EEE').format(date);
+      intl.DateFormat('EEE', _dateSymbolsLocale).format(date);
 
   /// Groups a count with thousands separators, e.g. `4380` becomes `4,380`.
   static String formatCount(int value) {
@@ -90,18 +102,20 @@ class DateFormatters {
   }
 
   static String formatClockTime(DateTime value) {
-    final locale = intl.Intl.getCurrentLocale().split('_').first;
+    final currentLocale = intl.Intl.getCurrentLocale().replaceAll('-', '_');
+    final locale = currentLocale.split('_').first;
     if (locale == 'ur') {
       final period = switch (value.hour) {
-        < 5 => 'رات',
-        < 12 => 'صبح',
-        < 16 => 'دوپہر',
-        < 19 => 'شام',
-        _ => 'رات',
+        < 5 => _isRomanUrdu ? 'raat' : 'رات',
+        < 12 => _isRomanUrdu ? 'subah' : 'صبح',
+        < 16 => _isRomanUrdu ? 'dopahar' : 'دوپہر',
+        < 17 => _isRomanUrdu ? 'dopahar' : 'شام',
+        < 19 => _isRomanUrdu ? 'shaam' : 'شام',
+        _ => _isRomanUrdu ? 'raat' : 'رات',
       };
-      final clock = intl.DateFormat('hh:mm').format(value);
+      final clock = intl.DateFormat('hh:mm', _dateSymbolsLocale).format(value);
       return '$clock $period';
     }
-    return intl.DateFormat('hh:mm a').format(value);
+    return intl.DateFormat('hh:mm a', _dateSymbolsLocale).format(value);
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/widgets/app_snackbar.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../l10n/app_localizations.dart';
@@ -114,6 +115,7 @@ class _LanguageSelectionScreenState
                                 (locale) => LanguageOption<Locale>(
                                   value: locale,
                                   languageCode: locale.languageCode,
+                                  scriptCode: locale.scriptCode,
                                 ),
                               )
                               .toList(growable: false),

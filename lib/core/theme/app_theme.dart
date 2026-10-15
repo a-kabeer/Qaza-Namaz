@@ -29,7 +29,9 @@ class AppTheme {
   static const String arabicFamily = 'Noto Sans Arabic';
 
   static bool isArabic(Locale? locale) => locale?.languageCode == 'ar';
-  static bool isUrdu(Locale? locale) => locale?.languageCode == 'ur';
+  static bool isUrdu(Locale? locale) =>
+      locale?.languageCode == 'ur' &&
+      locale?.scriptCode?.toLowerCase() != 'latn';
 
   /// Large tally counter; tabular so an incrementing count never shifts layout.
   static const TextStyle numericLarge = TextStyle(

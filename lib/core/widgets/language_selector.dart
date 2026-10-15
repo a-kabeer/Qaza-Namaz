@@ -23,6 +23,7 @@ class LanguageOption<T> {
     required this.value,
     required this.languageCode,
     this.nativeName,
+    this.scriptCode,
   }) : assert(languageCode != '');
 
   final T value;
@@ -30,11 +31,19 @@ class LanguageOption<T> {
   /// BCP 47 language code used to resolve the native display name and script.
   final String languageCode;
 
+  /// Optional script subtag (for example, `Latn` for Roman Urdu).
+  final String? scriptCode;
+
   /// Optional domain-specific override for the native display name.
   final String? nativeName;
 
+  /// Identifier used for stable option keys where scripts share a language.
+  String get localeKey =>
+      scriptCode == null ? languageCode : '${languageCode}_$scriptCode';
+
   String get displayName =>
-      nativeName ?? NativeLanguageNames.forCode(languageCode);
+      nativeName ??
+      NativeLanguageNames.forCode(languageCode, scriptCode: scriptCode);
 }
 
 /// Native-script display names shared by all language-selector instances.
@@ -59,8 +68,12 @@ abstract final class NativeLanguageNames {
   };
 
   /// Returns a native display name, falling back safely for an unknown code.
-  static String forCode(String languageCode) =>
-      _names[languageCode] ?? languageCode;
+  static String forCode(String languageCode, {String? scriptCode}) {
+    if (languageCode == 'ur' && scriptCode?.toLowerCase() == 'latn') {
+      return 'Urdu';
+    }
+    return _names[languageCode] ?? languageCode;
+  }
 }
 
 /// Theme-aware language selector shared by independent language domains.
@@ -89,7 +102,7 @@ class LanguageSelector<T> extends StatelessWidget {
   final bool enabled;
 
   /// When supplied, menu options receive keys like
-  /// `<prefix>_<language-code>` for stable integration tests.
+  /// `<prefix>_<locale-key>` for stable integration tests.
   final String? optionKeyPrefix;
 
   /// Maximum width used by the compact app-bar presentation.
@@ -106,21 +119,20 @@ class LanguageSelector<T> extends StatelessWidget {
     final currentValue = selected?.value;
 
     TextStyle? styleFor(LanguageOption<T> option) {
-      switch (option.languageCode) {
-        case 'ur':
-          return typography.urdu.labelLarge;
-        case 'ar':
-          return typography.arabic.labelLarge;
-        default:
-          return theme.textTheme.labelLarge;
+      if (option.languageCode == 'ur' &&
+          option.scriptCode?.toLowerCase() != 'latn') {
+        return typography.urdu.labelLarge;
       }
+      if (option.languageCode == 'ar') return typography.arabic.labelLarge;
+      return theme.textTheme.labelLarge;
     }
 
     Widget label(LanguageOption<T> option) {
-      final direction =
-          option.languageCode == 'ur' || option.languageCode == 'ar'
-              ? TextDirection.rtl
-              : TextDirection.ltr;
+      final isNastaleeqUrdu = option.languageCode == 'ur' &&
+          option.scriptCode?.toLowerCase() != 'latn';
+      final direction = isNastaleeqUrdu || option.languageCode == 'ar'
+          ? TextDirection.rtl
+          : TextDirection.ltr;
       return Directionality(
         textDirection: direction,
         child: Text(
@@ -166,7 +178,7 @@ class LanguageSelector<T> extends StatelessWidget {
               child: Row(
                 key: optionKeyPrefix == null
                     ? null
-                    : Key('${optionKeyPrefix}_${option.languageCode}'),
+                    : Key('${optionKeyPrefix}_${option.localeKey}'),
                 children: [
                   Expanded(
                     child: Align(

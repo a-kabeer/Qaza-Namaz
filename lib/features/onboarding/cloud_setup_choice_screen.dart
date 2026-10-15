@@ -290,6 +290,7 @@ class _CloudSetupChoiceScreenState
                     (locale) => LanguageOption<Locale>(
                       value: locale,
                       languageCode: locale.languageCode,
+                      scriptCode: locale.scriptCode,
                     ),
                   )
                   .toList(growable: false),

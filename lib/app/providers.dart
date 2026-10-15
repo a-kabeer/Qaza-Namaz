@@ -360,17 +360,35 @@ class LocaleNotifier extends Notifier<Locale> {
   @override
   Locale build() {
     final systemLocale = WidgetsBinding.instance.platformDispatcher.locale;
-    final resolved = resolve(systemLocale.languageCode) ?? fallback;
-    intl.Intl.defaultLocale = resolved.languageCode;
+    final resolved = resolve(localeKey(systemLocale)) ??
+        resolve(systemLocale.languageCode) ??
+        fallback;
+    intl.Intl.defaultLocale = localeKey(resolved);
     return resolved;
   }
 
   static List<Locale> get supported => AppLocalizations.supportedLocales;
 
-  static Locale? resolve(String? languageCode) {
-    if (languageCode == null || languageCode.isEmpty) return null;
+  /// Stable persisted identifier; script-sensitive locales use `ur_Latn`.
+  static String localeKey(Locale locale) {
+    final scriptCode = locale.scriptCode;
+    if (scriptCode == null || scriptCode.isEmpty) return locale.languageCode;
+    return '${locale.languageCode}_$scriptCode';
+  }
+
+  /// Resolves script-specific identifiers and preserves legacy language codes.
+  static Locale? resolve(String? localeCode) {
+    if (localeCode == null || localeCode.trim().isEmpty) return null;
+    final normalized = localeCode.trim().replaceAll('-', '_').toLowerCase();
     for (final locale in supported) {
-      if (locale.languageCode == languageCode) return locale;
+      if (localeKey(locale).toLowerCase() == normalized) return locale;
+    }
+    // A legacy 'ur' preference means Urdu Nastaleeq, not Roman Urdu.
+    for (final locale in supported) {
+      if (locale.languageCode.toLowerCase() == normalized &&
+          locale.scriptCode == null) {
+        return locale;
+      }
     }
     return null;
   }
@@ -381,16 +399,16 @@ class LocaleNotifier extends Notifier<Locale> {
       final resolved = resolve(prefs.getString(storageKey));
       if (resolved != null) {
         state = resolved;
-        intl.Intl.defaultLocale = resolved.languageCode;
+        intl.Intl.defaultLocale = localeKey(resolved);
       }
     } catch (_) {}
   }
 
   void preview(Locale locale) {
-    final resolved = resolve(locale.languageCode);
+    final resolved = resolve(localeKey(locale));
     if (resolved == null) return;
     state = resolved;
-    intl.Intl.defaultLocale = resolved.languageCode;
+    intl.Intl.defaultLocale = localeKey(resolved);
   }
 
   /// Persists a selected locale without changing the currently previewed UI.
@@ -398,22 +416,22 @@ class LocaleNotifier extends Notifier<Locale> {
   /// This lets the initial screen serialize preference writes without an
   /// older queued write briefly reverting a newer language selection.
   Future<void> persist(Locale locale) async {
-    final resolved = resolve(locale.languageCode);
+    final resolved = resolve(localeKey(locale));
     if (resolved == null) return;
     await _persist(resolved);
   }
 
   Future<void> set(Locale locale) async {
-    final resolved = resolve(locale.languageCode);
+    final resolved = resolve(localeKey(locale));
     if (resolved == null) return;
     state = resolved;
-    intl.Intl.defaultLocale = resolved.languageCode;
+    intl.Intl.defaultLocale = localeKey(resolved);
     await _persist(resolved);
   }
 
   Future<void> _persist(Locale locale) async {
     final prefs = await SharedPreferences.getInstance();
-    final saved = await prefs.setString(storageKey, locale.languageCode);
+    final saved = await prefs.setString(storageKey, localeKey(locale));
     if (!saved) {
       throw StateError('The selected language could not be saved.');
     }

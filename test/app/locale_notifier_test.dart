@@ -59,6 +59,34 @@ void main() {
     expect(intl.Intl.defaultLocale, 'ar');
   });
 
+  test('Roman Urdu script preference is persisted and restored distinctly',
+      () async {
+    const romanUrdu =
+        Locale.fromSubtags(languageCode: 'ur', scriptCode: 'Latn');
+    final first = ProviderContainer();
+    await first.read(localeRestorationProvider.future);
+    await first.read(localeProvider.notifier).set(romanUrdu);
+
+    final preferences = await SharedPreferences.getInstance();
+    expect(preferences.getString(LocaleNotifier.storageKey), 'ur_Latn');
+    expect(first.read(localeProvider).scriptCode, 'Latn');
+    expect(intl.Intl.defaultLocale, 'ur_Latn');
+    first.dispose();
+
+    final restarted = ProviderContainer();
+    addTearDown(restarted.dispose);
+    await restarted.read(localeRestorationProvider.future);
+    expect(restarted.read(localeProvider).languageCode, 'ur');
+    expect(restarted.read(localeProvider).scriptCode, 'Latn');
+    expect(intl.Intl.defaultLocale, 'ur_Latn');
+
+    SharedPreferences.setMockInitialValues({'language_code': 'ur'});
+    final legacy = ProviderContainer();
+    addTearDown(legacy.dispose);
+    await legacy.read(localeRestorationProvider.future);
+    expect(legacy.read(localeProvider).scriptCode, isNull);
+  });
+
   test('unsupported saved language preserves a supported fallback', () async {
     SharedPreferences.setMockInitialValues({'language_code': 'fr'});
     final container = ProviderContainer();

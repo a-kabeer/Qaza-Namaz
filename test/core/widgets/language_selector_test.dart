@@ -7,12 +7,18 @@ void main() {
   const options = <LanguageOption<String>>[
     LanguageOption<String>(value: 'en', languageCode: 'en'),
     LanguageOption<String>(value: 'ur', languageCode: 'ur'),
+    LanguageOption<String>(
+      value: 'ur_Latn',
+      languageCode: 'ur',
+      scriptCode: 'Latn',
+    ),
     LanguageOption<String>(value: 'ar', languageCode: 'ar'),
   ];
 
   test('native language catalogue has a safe fallback', () {
     expect(NativeLanguageNames.forCode('en'), 'English');
     expect(NativeLanguageNames.forCode('ur'), 'اردو');
+    expect(NativeLanguageNames.forCode('ur', scriptCode: 'Latn'), 'Urdu');
     expect(NativeLanguageNames.forCode('ar'), 'العربية');
     expect(NativeLanguageNames.forCode('xx'), 'xx');
   });
@@ -23,14 +29,19 @@ void main() {
           (locale) => LanguageOption<Locale>(
             value: locale,
             languageCode: locale.languageCode,
+            scriptCode: locale.scriptCode,
           ),
         )
         .toList(growable: false);
 
-    expect(options.map((option) => option.languageCode), ['ar', 'en', 'ur']);
+    expect(
+      options.map((option) => option.localeKey),
+      containsAll(['ar', 'en', 'ur', 'ur_Latn']),
+    );
+    expect(options, hasLength(4));
     expect(
       options.map((option) => option.displayName),
-      ['العربية', 'English', 'اردو'],
+      containsAll(['العربية', 'English', 'اردو', 'Urdu']),
     );
   });
 
@@ -63,6 +74,8 @@ void main() {
 
     expect(find.byKey(const Key('language_option_ur')), findsOneWidget);
     expect(find.byKey(const Key('language_option_ar')), findsOneWidget);
+    expect(find.byKey(const Key('language_option_ur_Latn')), findsOneWidget);
+    expect(find.text('Urdu'), findsOneWidget);
     await tester.tap(find.byKey(const Key('language_option_ar')));
     await tester.pumpAndSettle();
 
