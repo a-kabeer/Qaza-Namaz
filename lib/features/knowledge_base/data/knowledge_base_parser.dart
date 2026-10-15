@@ -15,7 +15,7 @@ class KnowledgeBaseParseException implements Exception {
 }
 
 /// Turns the English and Urdu datasets into a base article set. The strict
-/// [parseTriple] entry point adds and validates the Arabic translation.
+/// [parseTriple] and [parseQuadruple] entry points add further languages.
 ///
 /// The Urdu and English content are authored and shipped as separate files, so
 /// the parser reads both and joins them on `id`. Everything the files agree on
@@ -58,9 +58,9 @@ class KnowledgeBaseParser {
 
   /// Parses and validates all three language datasets.
   ///
-  /// The existing two-language parser remains available for its focused
-  /// legacy tests; production loading must use this strict triple parser so
-  /// missing Arabic articles never silently fall back to another language.
+  /// The pair and triple parsers remain available for focused tests;
+  /// production loading uses the strict quadruple parser so missing language
+  /// content never silently falls back to another dataset.
   List<KnowledgeArticle> parseTriple({
     required String english,
     required String urdu,
