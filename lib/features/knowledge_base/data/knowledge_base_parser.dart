@@ -426,11 +426,16 @@ class KnowledgeBaseParser {
   }
 
   void _requireSame(
-      String prefix, String field, Object expected, Object? actual) {
+    String prefix,
+    String field,
+    Object expected,
+    Object? actual,
+  ) {
     if (actual != expected) {
       throw KnowledgeBaseParseException(
-          '$prefix: "$field" is "$actual" in a translated dataset; expected "$expected" '
-          'in the English one.');
+        '$prefix: "$field" is "$actual" in a translated dataset; '
+        'expected "$expected" from the English dataset.',
+      );
     }
   }
 
