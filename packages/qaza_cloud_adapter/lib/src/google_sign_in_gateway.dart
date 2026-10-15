@@ -295,12 +295,27 @@ class GoogleSignInGateway {
 
     final authorizedAccountId = response?['accountId'];
     final authorizedEmail = response?['accountEmail'];
-    if (authorizedAccountId is! String ||
-        authorizedAccountId.trim().isEmpty ||
-        authorizedAccountId != expectedAccountId ||
-        authorizedEmail is! String ||
-        authorizedEmail.trim().isEmpty ||
-        authorizedEmail.trim().toLowerCase() != expectedEmail.toLowerCase()) {
+    final identitySource = response?['identitySource'];
+    final idMatches =
+        authorizedAccountId is String &&
+        authorizedAccountId.trim().isNotEmpty &&
+        authorizedAccountId == expectedAccountId;
+    final emailMatches =
+        authorizedEmail is String &&
+        authorizedEmail.trim().isNotEmpty &&
+        authorizedEmail.trim().toLowerCase() == expectedEmail.toLowerCase();
+
+    // AuthorizationClient is pinned to the previously verified Android
+    // Account(email). Its legacy account projection can omit the stable ID.
+    // Accept that case only when native code explicitly confirms a matching
+    // target email; if a native ID is present, it must also match.
+    final identityVerified = switch (identitySource) {
+      'googleId' => idMatches && emailMatches,
+      'targetAccountEmail' =>
+        !idMatches /* native account ID was not available */ && emailMatches,
+      _ => false,
+    };
+    if (!identityVerified) {
       throw const CloudAccountIdentityMismatch(
         'Google Drive authorization did not confirm the previously connected Google account.',
       );
