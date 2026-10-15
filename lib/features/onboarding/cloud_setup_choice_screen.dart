@@ -361,6 +361,23 @@ class _CloudSetupChoiceScreenState
     final scheme = theme.colorScheme;
     final backupFound =
         _discovery?.status == CloudBackupDiscoveryStatus.backupFound;
+    final restoreProgress = _restoreProgress;
+    final restoreTotalBytes = restoreProgress?.totalBytes ?? 0;
+    final restoreReceivedBytes = restoreProgress?.sentBytes ?? 0;
+    final hasRestoreByteProgress = _restoring &&
+        restoreProgress?.stage == CloudBackupProgressStage.downloading &&
+        restoreTotalBytes > 0;
+    final restoreRatio = hasRestoreByteProgress
+        ? (restoreReceivedBytes / restoreTotalBytes)
+            .clamp(0.0, 1.0)
+            .toDouble()
+        : null;
+    final visibleRestoreRatio = restoreRatio == null
+        ? null
+        : (restoreRatio >= 1 ? 0.99 : restoreRatio);
+    final visibleRestorePercent = visibleRestoreRatio == null
+        ? null
+        : (visibleRestoreRatio * 100).round();
 
     return Scaffold(
       appBar: AppBar(
@@ -471,6 +488,8 @@ class _CloudSetupChoiceScreenState
                           Text(
                             _restoring
                                 ? switch (_restoreProgress?.stage) {
+                                    CloudBackupProgressStage.downloading =>
+                                      l10n.cloudRestoreStageTransferring,
                                     CloudBackupProgressStage.preparing =>
                                       l10n.cloudRestoreStageRestoring,
                                     CloudBackupProgressStage.uploading =>
@@ -489,7 +508,18 @@ class _CloudSetupChoiceScreenState
                                 : l10n.cloudRestoreConnectingBody,
                           ),
                           const SizedBox(height: 12),
-                          const LinearProgressIndicator(),
+                          LinearProgressIndicator(
+                            value: visibleRestoreRatio,
+                          ),
+                          if (hasRestoreByteProgress) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              '${(restoreReceivedBytes / (1024 * 1024)).toStringAsFixed(2)} MB / '
+                              '${(restoreTotalBytes / (1024 * 1024)).toStringAsFixed(2)} MB'
+                              ' · ${visibleRestorePercent ?? 0}%',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
                         ],
                       ),
                     ),
