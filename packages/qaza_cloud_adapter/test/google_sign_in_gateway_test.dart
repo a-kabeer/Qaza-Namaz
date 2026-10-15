@@ -82,6 +82,7 @@ void main() {
               'status': 'authorized',
               'accountId': 'google-id-B',
               'accountEmail': 'b@example.com',
+              'identitySource': 'googleId',
               'accessToken': 'wrong-account-token',
               'grantedScopes': <String>[_driveScope],
             };
