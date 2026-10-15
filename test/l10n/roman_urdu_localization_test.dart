@@ -15,6 +15,7 @@ void main() {
     expect(AppLocalizations.supportedLocales, contains(romanUrduLocale));
 
     final l10n = lookupAppLocalizations(romanUrduLocale);
+    expect(l10n.localeName, 'ur_Latn');
     expect(l10n.appTitle, 'Qaza Namaz');
     expect(l10n.navHome, 'Home');
     expect(l10n.navQaza, 'Qaza');
