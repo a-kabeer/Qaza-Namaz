@@ -223,17 +223,14 @@ void main() {
     expect(googleSignIn.authenticateCalls, 0);
   });
 
-  test(
-    'passive restore does not attempt lightweight sign-in UI',
-    () async {
-      final googleSignIn = _FakeGoogleSignIn();
-      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+  test('passive restore does not attempt lightweight sign-in UI', () async {
+    final googleSignIn = _FakeGoogleSignIn();
+    final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
 
-      expect(await gateway.restoreLightweightAuthentication(), isNull);
-      expect(googleSignIn.lightweightAuthenticationCalls, 0);
-      expect(googleSignIn.authenticateCalls, 0);
-    },
-  );
+    expect(await gateway.restoreLightweightAuthentication(), isNull);
+    expect(googleSignIn.lightweightAuthenticationCalls, 0);
+    expect(googleSignIn.authenticateCalls, 0);
+  });
 
   test(
     'verified in-memory account bypasses brittle native identity conversion',
@@ -335,4 +332,3 @@ class _FakeGoogleSignInAuthorizationClient
     return super.noSuchMethod(invocation);
   }
 }
-

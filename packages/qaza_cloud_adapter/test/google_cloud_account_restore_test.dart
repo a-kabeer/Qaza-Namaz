@@ -254,7 +254,7 @@ class _CountingGateway extends GoogleSignInGateway {
 
   @override
   Future<String?> accountIdForAuthorization() async {
-// Keep the process-recreation fallback deterministic without initializing
+    // Keep the process-recreation fallback deterministic without initializing
     // the real Google Sign-In plugin from this provider-level unit test.
     final preferences = await SharedPreferences.getInstance();
     return preferences.getString('qaza_cloud_adapter.cached_account_id_v1');
