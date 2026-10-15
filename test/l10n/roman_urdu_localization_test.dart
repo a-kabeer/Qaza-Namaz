@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/theme/app_theme.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -133,7 +134,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Auqat'), findsOneWidget);
-    expect(tester.widget<Text>(find.text('Auqat')).maxLines, 1);
+    final labelParagraph =
+        tester.renderObject<RenderParagraph>(find.text('Auqat'));
+    expect(
+      labelParagraph.computeLineMetrics(),
+      hasLength(1),
+      reason: 'The compact Prayer Time navigation label must render on one line.',
+    );
     expect(tester.takeException(), isNull);
   });
 
