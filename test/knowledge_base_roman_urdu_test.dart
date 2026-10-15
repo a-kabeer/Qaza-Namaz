@@ -131,7 +131,8 @@ void main() {
           expect(
             firstLetter.group(0),
             firstLetter.group(0)!.toUpperCase(),
-            reason: '${entry['id']} / $field must capitalize sentence beginnings',
+            reason:
+                '${entry['id']} / $field must capitalize sentence beginnings',
           );
         }
       }
