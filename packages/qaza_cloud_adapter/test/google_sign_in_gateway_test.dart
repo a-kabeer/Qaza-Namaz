@@ -169,6 +169,31 @@ void main() {
   );
 
   test(
+    'rejects a native authorization response without identity provenance',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-A',
+              'accountEmail': 'a@example.com',
+              'accessToken': 'unverified-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: true),
+        throwsA(isA<CloudAccountIdentityMismatch>()),
+      );
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
     'rejects email-only native authorization for a different account',
     () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
