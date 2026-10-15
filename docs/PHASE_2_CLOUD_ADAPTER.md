@@ -167,6 +167,11 @@ latest remote backup and persists a verified local recovery snapshot before
 import. A non-fresh local database continues through the explicit conflict
 resolution flow. The offline-only app remains independent of the cloud adapter.
 
+The backup UI strings are maintained in all four ARB files, including Roman
+Urdu (`ur_Latn`). After changing these strings, run `flutter gen-l10n` and keep
+the manually curated `AppLocalizationsUrLatn` subclass aligned with the
+generated `AppLocalizations` getters before building the cloud host.
+
 ## Owner setup checklist for Android OAuth and release
 
 1. In Google Cloud Console, select the project for this app and enable the
