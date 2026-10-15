@@ -2618,17 +2618,17 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get navKnowledge => 'Rehnumai';
 
   @override
-  String get settingsRemindersSection => 'yaad dehaniyan';
+  String get settingsRemindersSection => 'Yaad dehaniyan';
 
   @override
   String get settingsRemindersSubtitle =>
       'Qaza mukammal karne ki rozanh yaad dhani';
 
   @override
-  String get settingsBackupSection => 'Data aur astorij';
+  String get settingsBackupSection => 'Data aur storage';
 
   @override
-  String get settingsBackupSubtitle => 'Cloud snk braamd aur draamd';
+  String get settingsBackupSubtitle => 'Cloud sync, export aur import';
 
   @override
   String get navSettings => 'Settings';
@@ -2652,17 +2652,17 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get prayerWitr => 'Witr';
 
   @override
-  String get statusPending => 'baqi';
+  String get statusPending => 'Baqi';
 
   @override
-  String get statusCompleted => 'mukammal';
+  String get statusCompleted => 'Mukammal';
 
   @override
-  String get qazaSelectAllMatching => 'sab mutabiq muntakhab karein';
+  String get qazaSelectAllMatching => 'Sab mutabiq muntakhab karein';
 
   @override
   String qazaSelectAllMatchingCapped(String count) {
-    return 'pehle $count mutabiq record muntakhab kar liye gie';
+    return 'Pehle $count mutabiq record muntakhab kar liye gie';
   }
 
   @override
@@ -2672,67 +2672,67 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String qazaConfirmBulkMessage(String count) {
-    return 'is se $count zair iltawa Namazein mukammal shumar hon gi aap fora baad wapas kar sakte hin baad mein nhin';
+    return 'Is se $count zair iltawa Namazein mukammal shumar hon gi aap fora baad wapas kar sakte hin baad mein nhin';
   }
 
   @override
-  String get qazaConfirmBulkAction => 'mukammal karein';
+  String get qazaConfirmBulkAction => 'Mukammal karein';
 
   @override
   String get errorNetwork =>
-      'koi rabta nhin aap ki Qaza is device par mehfooz hin aur on line hote hi sync ho jayein gi';
+      'Koi rabta nhin aap ki Qaza is device par mehfooz hin aur on line hote hi sync ho jayein gi';
 
   @override
   String get errorTimeout =>
-      'bohat waqt lag gia thori der baad dobara koshish krin';
+      'Bohat waqt lag gia thori der baad dobara koshish krin';
 
   @override
   String get errorPermission =>
-      'is ke liye ajazt darkar he Settings mein ja kar ajazt din';
+      'Is ke liye ajazt darkar he Settings mein ja kar ajazt din';
 
   @override
-  String get errorAuthentication => 'is ke liye sign in hona zaroori he';
+  String get errorAuthentication => 'Is ke liye sign in hona zaroori he';
 
   @override
   String get errorValidation =>
-      'yeh input qabool nahi hoii jaanch kar dobara koshish krin';
+      'Yeh input qabool nahi hoii jaanch kar dobara koshish krin';
 
   @override
-  String get errorMalformedData => 'yeh file Qaza backup app nhin ya kharab he';
+  String get errorMalformedData => 'Yeh file Qaza backup app nhin ya kharab he';
 
   @override
   String get errorStorage =>
-      'device tabdeeli mehfooz nahi kar ska kuch jgh khaali kar ke dobara koshish krin';
+      'Device tabdeeli mehfooz nahi kar ska kuch jgh khaali kar ke dobara koshish krin';
 
   @override
-  String get errorUnknown => 'kuch ghalat ho gia';
+  String get errorUnknown => 'Kuch ghalat ho gia';
 
   @override
   String get commonOpenSettings => 'Settings kholen';
 
   @override
-  String get qazaSortLabel => 'tarteeb';
+  String get qazaSortLabel => 'Tarteeb';
 
   @override
-  String get qazaSortOldestFirst => 'pehle prani';
+  String get qazaSortOldestFirst => 'Pehle purani';
 
   @override
-  String get qazaSortNewestFirst => 'pehle nayi';
+  String get qazaSortNewestFirst => 'Pehle nayi';
 
   @override
-  String get filterAll => 'sab';
+  String get filterAll => 'Sab';
 
   @override
-  String get commonRetry => 'dobara koshish karein';
+  String get commonRetry => 'Dobara koshish karein';
 
   @override
-  String get commonTotal => 'kal';
+  String get commonTotal => 'Kul';
 
   @override
-  String get commonVersion => 'orzhn';
+  String get commonVersion => 'Version';
 
   @override
-  String get stateErrorTitle => 'kuch ghalat ho gaya';
+  String get stateErrorTitle => 'Kuch ghalat ho gaya';
 
   @override
   String get prayerRakatFajr => 'Fajr • 2 rakat farz';
@@ -2753,73 +2753,73 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get prayerRakatWitr => 'Witr • 3 rakat wajib • mustaqil';
 
   @override
-  String get syncSettingUp => 'tarteeb di ja rahi hai';
+  String get syncSettingUp => 'Tarteeb di ja rahi hai';
 
   @override
   String get syncSettingUpDetail =>
-      'is device par aap ke Qaza record tiar kiye ja rahe hin';
+      'Is device par aap ke Qaza record tiar kiye ja rahe hin';
 
   @override
-  String get syncRestoring => 'bahal kya ja raha hai';
+  String get syncRestoring => 'Bahal kya ja raha hai';
 
   @override
   String get syncRestoringDetail =>
-      'aap ke mehfooz Qaza record is device par laye ja rahe hin';
+      'Aap ke mehfooz Qaza record is device par laye ja rahe hin';
 
   @override
-  String get syncSynced => 'sync shdh';
+  String get syncSynced => 'Sync shdh';
 
   @override
   String syncSyncedAt(String timestamp) {
-    return 'sync shdh • $timestamp';
+    return 'Sync shdh • $timestamp';
   }
 
   @override
-  String get syncSyncing => 'sync ho raha hai';
+  String get syncSyncing => 'Sync ho raha hai';
 
   @override
-  String get syncSaved => 'mehfooz';
+  String get syncSaved => 'Mehfooz';
 
   @override
   String get syncSavedDetail =>
-      'aap ki tabdeeliyan is device par mehfooz hin aur khud-ba-khud sync ho jayein gi';
+      'Aap ki tabdeeliyan is device par mehfooz hin aur khud-ba-khud sync ho jayein gi';
 
   @override
-  String get syncErrorLabel => 'sync mein masla';
+  String get syncErrorLabel => 'Sync mein masla';
 
   @override
   String get syncErrorDetail =>
-      'aap ki tabdeeliyan is device par mehfooz hin hm khud-ba-khud dobara koshish karein ge';
+      'Aap ki tabdeeliyan is device par mehfooz hin hm khud-ba-khud dobara koshish karein ge';
 
   @override
-  String get commonClose => 'band karein';
+  String get commonClose => 'Band karein';
 
   @override
-  String get commonCancel => 'mansookh karein';
+  String get commonCancel => 'Mansookh karein';
 
   @override
-  String get commonDone => 'mukammal';
+  String get commonDone => 'Mukammal';
 
   @override
-  String get commonReset => 're set';
+  String get commonReset => 'Re set';
 
   @override
-  String get commonClear => 'saaf karein';
+  String get commonClear => 'Saaf karein';
 
   @override
-  String get commonBack => 'wapas';
+  String get commonBack => 'Wapas';
 
   @override
-  String get commonContinue => 'jari rakhein';
+  String get commonContinue => 'Jari rakhein';
 
   @override
-  String get commonLoading => 'load ho raha hai...';
+  String get commonLoading => 'Load ho raha hai...';
 
   @override
-  String get commonToday => 'aaj';
+  String get commonToday => 'Aaj';
 
   @override
-  String get commonYesterday => 'kal';
+  String get commonYesterday => 'Kal';
 
   @override
   String hijriDate(Object day, Object month, Object year) {
@@ -2835,7 +2835,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get hijriMonthMuharram => 'Muharram';
 
   @override
-  String get hijriMonthSafar => 'sfr';
+  String get hijriMonthSafar => 'Safar';
 
   @override
   String get hijriMonthRabiAlAwwal => 'Rabi al-awwal';
@@ -2874,28 +2874,28 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get homeProfileTooltip => 'Profile';
 
   @override
-  String get homeHeadingSetup => 'apna Qaza Safar shuru karein';
+  String get homeHeadingSetup => 'Apna Qaza Safar shuru karein';
 
   @override
-  String get homeHeadingPending => 'jari rakhein';
+  String get homeHeadingPending => 'Jari rakhein';
 
   @override
-  String get homeHeadingCompleted => 'aap ki tamam Qaza mukammal hai';
+  String get homeHeadingCompleted => 'Aap ki tamam Qaza mukammal hai';
 
   @override
-  String get homeSetupMessage => 'aap ne ab tak koi Qaza Namaz shamil nahi ki';
+  String get homeSetupMessage => 'Aap ne ab tak koi Qaza Namaz shamil nahi ki';
 
   @override
   String get homeCompleteQaza => 'Qaza ada karein';
 
   @override
-  String get homeAddNewQaza => 'nayi Qaza shamil karein';
+  String get homeAddNewQaza => 'Nayi Qaza shamil karein';
 
   @override
-  String get homeAddManually => 'dasti tor par Qaza shamil karein';
+  String get homeAddManually => 'Dasti tor par Qaza shamil karein';
 
   @override
-  String get homeStatTotal => 'kal';
+  String get homeStatTotal => 'Kul';
 
   @override
   String get homeAddQaza => 'Qaza shamil karein';
@@ -2906,14 +2906,14 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get homeProgressTitle => 'aap ki progress';
+  String get homeProgressTitle => 'Aap ki progress';
 
   @override
   String get homeProgressError =>
-      'aap ki Qaza ki progress load nahi ho ski dobara koshish ke liye neeche khinchin';
+      'Aap ki Qaza ki progress load nahi ho ski dobara koshish ke liye neeche khinchin';
 
   @override
-  String get homeTodayProgress => 'aaj ki progress';
+  String get homeTodayProgress => 'Aaj ki progress';
 
   @override
   String homeDailyProgress(int completed, int target) {
@@ -2929,13 +2929,13 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get homeQazaPlan => 'Qaza ka mansooba';
 
   @override
-  String get homeCompleteOldestQaza => 'sab se prani Qaza mukammal karein';
+  String get homeCompleteOldestQaza => 'Sab se prani Qaza mukammal karein';
 
   @override
-  String get homeAuto => 'khudkar';
+  String get homeAuto => 'Khudkar';
 
   @override
-  String get homeAutoSequence => 'khudkar tarteeb';
+  String get homeAutoSequence => 'Khudkar tarteeb';
 
   @override
   String get homeQazaTarget => 'Qaza ka hadaf';
@@ -2952,32 +2952,32 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get homeQazaTargetReachedMessage =>
-      'aap ne aaj ka apna Qaza mansooba mukammal kar liya he\nAllah Taala aap ki koshishein qabool frmaie';
+      'Aap ne aaj ka apna Qaza mansooba mukammal kar liya he\nAllah Taala aap ki koshishein qabool frmaie';
 
   @override
-  String get homeDailyTarget => 'rozanh hadaf';
+  String get homeDailyTarget => 'Rozanh hadaf';
 
   @override
   String homePerDay(int count) {
-    return 'rozanh $count';
+    return 'Rozanh $count';
   }
 
   @override
   String homeEstimatedCompletion(String date) {
-    return 'mutawaqqa tkmil: $date';
+    return 'Mutawaqqa tkmil: $date';
   }
 
   @override
-  String get homeNextQaza => 'agli Qaza';
+  String get homeNextQaza => 'Agli Qaza';
 
   @override
-  String get homeCompleteNextQaza => 'agli Qaza mukammal karein';
+  String get homeCompleteNextQaza => 'Agli Qaza mukammal karein';
 
   @override
-  String get homeViewAllQaza => 'tamam Qaza dekhein';
+  String get homeViewAllQaza => 'Tamam Qaza dekhein';
 
   @override
-  String get homeDailyProgressError => 'aaj ki progress load nahi ho ski';
+  String get homeDailyProgressError => 'Aaj ki progress load nahi ho ski';
 
   @override
   String progressPendingCompleted(String pending, String completed) {
@@ -2993,16 +2993,16 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get qazaTitle => 'Qaza';
 
   @override
-  String get qazaProgressLabel => 'progress';
+  String get qazaProgressLabel => 'Progress';
 
   @override
   String get qazaAddTooltip => 'Qaza shamil karein';
 
   @override
-  String get qazaDateFilterAny => 'asal tareekh: koi bhi';
+  String get qazaDateFilterAny => 'Asal tareekh: koi bhi';
 
   @override
-  String get qazaDateFilterHelp => 'asal Qaza tareekh ke mutabiq filter karein';
+  String get qazaDateFilterHelp => 'Asal Qaza tareekh ke mutabiq filter karein';
 
   @override
   String qazaDateFilterRange(String from, String to) {
@@ -3010,38 +3010,38 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get qazaLoading => 'aap ke Qaza record load ho rahe hin...';
+  String get qazaLoading => 'Aap ke Qaza record load ho rahe hin...';
 
   @override
-  String get qazaEmptyTitle => 'abhi koi Qaza record nahi';
+  String get qazaEmptyTitle => 'Abhi koi Qaza record nahi';
 
   @override
   String get qazaEmptyMessage =>
-      'shuru karne ke liye chhoti hui Namazein shamil karein ya andaza lgaiin';
+      'Shuru karne ke liye chhoti hui Namazein shamil karein ya andaza lgaiin';
 
   @override
-  String get qazaFilteredEmptyTitle => 'in filters se koi record nahi mila';
+  String get qazaFilteredEmptyTitle => 'In filters se koi record nahi mila';
 
   @override
   String get qazaFilteredEmptyMessage =>
-      'mukhtalif halt Namaz ya tareekh ki had aazmaiin';
+      'Mukhtalif halt Namaz ya tareekh ki had aazmaiin';
 
   @override
-  String get qazaResetFilters => 'filters re set karein';
+  String get qazaResetFilters => 'Filters re set karein';
 
   @override
   String qazaLoadError(String error) {
-    return 'aap ke Qaza record load nahi ho ske: $error';
+    return 'Aap ke Qaza record load nahi ho ske: $error';
   }
 
   @override
   String qazaLoadMoreError(String error) {
-    return 'mzid record load nahi ho ske: $error';
+    return 'Mzid record load nahi ho ske: $error';
   }
 
   @override
   String qazaCompleteError(String error) {
-    return 'muntakhab Qaza mukammal nahi ho saki: $error';
+    return 'Muntakhab Qaza mukammal nahi ho saki: $error';
   }
 
   @override
@@ -3061,13 +3061,13 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get qazaRecordActions => 'record ke aamaal';
+  String get qazaRecordActions => 'Record ke aamaal';
 
   @override
-  String get qazaEditRecord => 'tarmeem';
+  String get qazaEditRecord => 'Tarmeem';
 
   @override
-  String get qazaDeleteRecord => 'delete karein';
+  String get qazaDeleteRecord => 'Delete karein';
 
   @override
   String get qazaEditRecordTitle => 'Qaza mein tarmeem';
@@ -3076,13 +3076,13 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get qazaEditPrayer => 'Namaz';
 
   @override
-  String get qazaEditDate => 'asal tareekh';
+  String get qazaEditDate => 'Asal tareekh';
 
   @override
   String get qazaEditDateHelp => 'Qaza ki asal tareekh muntakhab karein';
 
   @override
-  String get qazaSaveChanges => 'tabdeeliyan mehfooz karein';
+  String get qazaSaveChanges => 'Tabdeeliyan mehfooz karein';
 
   @override
   String get qazaDeleteRecordTitle => 'Qaza record delete krin';
@@ -3112,15 +3112,15 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       'Qaza record delete nahi ho ska dobara koshish krin';
 
   @override
-  String get qazaUndoAction => 'wapas karein';
+  String get qazaUndoAction => 'Wapas karein';
 
   @override
   String qazaUndoAvailable(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'haalya takmeelaat wapas ki ja sakti hin',
-      one: 'haalya tkmil wapas ki ja sakti he',
+      other: 'Haalya takmeelaat wapas ki ja sakti hin',
+      one: 'Haalya tkmil wapas ki ja sakti he',
     );
     return '$_temp0';
   }
@@ -3143,17 +3143,17 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       locale: localeName,
       other: '$count Qaza mukammal ho giin',
       one: '1 Qaza mukammal ho gii',
-      zero: 'kuch mukammal nahi hoa',
+      zero: 'Kuch mukammal nahi hoa',
     );
     return '$_temp0';
   }
 
   @override
-  String get calendarSelectYear => 'saal muntakhab karein';
+  String get calendarSelectYear => 'Saal muntakhab karein';
 
   @override
   String get calendarSelectHint =>
-      'muntakhab karne ke liye dstiab tareekh par tap krin';
+      'Muntakhab karne ke liye dstiab tareekh par tap krin';
 
   @override
   String calendarSelectedCount(int count) {
@@ -3167,63 +3167,63 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get authTitle => 'sign in';
+  String get authTitle => 'Sign in';
 
   @override
-  String get authWelcomeBack => 'khush aamdeed';
+  String get authWelcomeBack => 'Khush aamdeed';
 
   @override
   String get authSubtitle =>
-      'apne Qaza Namaz tracker tak rasai ke liye sign in krin';
+      'Apne Qaza Namaz tracker tak rasai ke liye sign in krin';
 
   @override
   String get authContinueWithGoogle => 'Google se jari rakhein';
 
   @override
-  String get authSigningIn => 'sign in ho raha hai...';
+  String get authSigningIn => 'Sign in ho raha hai...';
 
   @override
   String get authProviderNote =>
-      'is waqt Google hi munsalik tasdeeqi faraham kuninda he sign in ki halat fairbis se khud-ba-khud bahal ho jati he';
+      'Is waqt Google hi munsalik tasdeeqi faraham kuninda he sign in ki halat fairbis se khud-ba-khud bahal ho jati he';
 
   @override
-  String get authHelpTooltip => 'tasdeeq mein madad';
+  String get authHelpTooltip => 'Tasdeeq mein madad';
 
   @override
-  String get authHelpTitle => 'tasdeeq';
+  String get authHelpTitle => 'Tasdeeq';
 
   @override
   String get authHelpBody =>
-      'is release mein Google sign in hi munsalik tasdeeqi tareeqa he aap ka Qaza Data isi fairbis account se munsalik rehta hai jis se aap sign in karte hin';
+      'Is release mein Google sign in hi munsalik tasdeeqi tareeqa he aap ka Qaza Data isi fairbis account se munsalik rehta hai jis se aap sign in karte hin';
 
   @override
-  String get authDismiss => 'band karein';
+  String get authDismiss => 'Band karein';
 
   @override
-  String get authFailed => 'sign in nahi ho ska dobara koshish krin';
+  String get authFailed => 'Sign in nahi ho ska dobara koshish krin';
 
   @override
-  String get welcomeTagline => 'roohani ibadat aur Namaz ki pabandi';
+  String get welcomeTagline => 'Roohani ibadat aur Namaz ki pabandi';
 
   @override
   String get welcomeHeadline =>
-      'apni chhoti hui Namazon ka wazahat aur tasalsul ke saath hisaab rkhin';
+      'Apni chhoti hui Namazon ka wazahat aur tasalsul ke saath hisaab rkhin';
 
   @override
   String get welcomeBody =>
-      'apni Qaza Namazein darj krin ada karein aur in ka hisaab rakhein — aik aik Namaz kar ke';
+      'Apni Qaza Namazein darj krin ada karein aur in ka hisaab rakhein — aik aik Namaz kar ke';
 
   @override
-  String get welcomeGetStarted => 'shuru karein';
+  String get welcomeGetStarted => 'Shuru karein';
 
   @override
-  String get welcomeSignIn => 'pehle se account he sign in karein';
+  String get welcomeSignIn => 'Pehle se account he sign in karein';
 
   @override
   String get splashTagline => 'Namaz ki pabandi ke liye aik prskon jgh';
 
   @override
-  String get accountChoiceHeadline => 'apni Qaza ki progress mehfooz rakhein';
+  String get accountChoiceHeadline => 'Apni Qaza ki progress mehfooz rakhein';
 
   @override
   String get accountChoiceDescription =>
@@ -3233,18 +3233,18 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get accountChoiceContinueGoogle => 'Google ke saath jari rakhein';
 
   @override
-  String get accountChoiceContinueGuest => 'mehmaan ke tor par jari rakhein';
+  String get accountChoiceContinueGuest => 'Mehmaan ke tor par jari rakhein';
 
   @override
   String get accountChoiceGuestDescription =>
-      'mehmaan ka Data isi device par mehfooz rehta he aap baad mein Google munsalik kar sakte hin';
+      'Mehmaan ka Data isi device par mehfooz rehta he aap baad mein Google munsalik kar sakte hin';
 
   @override
   String get accountChoiceGoogleFailed =>
       'Google sign in mukammal nahi ho ska dobara koshish krin';
 
   @override
-  String get accountTitle => 'account';
+  String get accountTitle => 'Account';
 
   @override
   String get accountProfileChecking =>
@@ -3255,16 +3255,16 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get accountProfileUnavailableDetail =>
-      'aap ke Qaza record is device par dstiab rahein ge';
+      'Aap ke Qaza record is device par dstiab rahein ge';
 
   @override
-  String get accountGuest => 'mehmaan';
+  String get accountGuest => 'Mehmaan';
 
   @override
   String get accountConnectGoogle => 'Google se munsalik karein';
 
   @override
-  String get accountSignInMethod => 'sign in ka tareeqa';
+  String get accountSignInMethod => 'Sign in ka tareeqa';
 
   @override
   String get accountGoogleAuth => 'Google';
@@ -3273,64 +3273,64 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get accountSignedInWithGoogle => 'Google se sign in hin';
 
   @override
-  String get accountStatus => 'account ki halat';
+  String get accountStatus => 'Account ki halat';
 
   @override
-  String get accountSignedIn => 'mqami';
+  String get accountSignedIn => 'Mqami';
 
   @override
   String get accountRecordsRetained =>
-      'aap ke mehfooz Qaza record maujood rahein ge aur agli baar sign in par bahal ho jayein ge';
+      'Aap ke mehfooz Qaza record maujood rahein ge aur agli baar sign in par bahal ho jayein ge';
 
   @override
-  String get accountDeveloperContext => 'developer tafseelaat';
+  String get accountDeveloperContext => 'Developer tafseelaat';
 
   @override
-  String get accountFirebaseUid => 'fairbis UID';
+  String get accountFirebaseUid => 'Fairbis UID';
 
   @override
-  String get accountNotAvailable => 'dstiab nahi';
+  String get accountNotAvailable => 'Dstiab nahi';
 
   @override
-  String get accountSignOut => 'sign out';
+  String get accountSignOut => 'Sign out';
 
   @override
-  String get accountSignOutPrompt => 'sign out krin';
+  String get accountSignOutPrompt => 'Sign out krin';
 
   @override
   String get accountSignOutExplanation =>
-      'sign out karne se aap ka Google account munqati ho jaye ga aap ki Qaza progress is device par barqarar rahe gi';
+      'Sign out karne se aap ka Google account munqati ho jaye ga aap ki Qaza progress is device par barqarar rahe gi';
 
   @override
-  String get dataTitle => 'braamd o daraamad';
+  String get dataTitle => 'Braamd o daraamad';
 
   @override
   String get dataExportTitle => 'Data braamd karein';
 
   @override
   String get dataExportBody =>
-      'apne Qaza khate ki aik JSON naqal mehfooz krin braamd karne se kuch app load nahi hota';
+      'Apne Qaza khate ki aik JSON naqal mehfooz krin braamd karne se kuch app load nahi hota';
 
   @override
-  String get dataExportAction => 'braamd';
+  String get dataExportAction => 'Braamd';
 
   @override
   String get dataExportDialogTitle => 'Qaza Data braamd mehfooz karein';
 
   @override
-  String get dataExportSaved => 'braamd kamyabi se mehfooz ho gii';
+  String get dataExportSaved => 'Braamd kamyabi se mehfooz ho gii';
 
   @override
   String get dataExportCanceled =>
-      'braamd mansookh hoii aap ka Data tabdeel nahi hoa';
+      'Braamd mansookh hoii aap ka Data tabdeel nahi hoa';
 
   @override
   String get dataExportSignInRequired =>
-      'apna Qaza Data braamd karne se pehle sign in krin';
+      'Apna Qaza Data braamd karne se pehle sign in krin';
 
   @override
   String dataExportFailed(String error) {
-    return 'braamd nakam: $error';
+    return 'Braamd nakam: $error';
   }
 
   @override
@@ -3338,17 +3338,17 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get dataImportBody =>
-      'koi JSON braamd kholin is ki mukammal jaanch krin inzimaam ka jaiza lin phir usay is account par laagu krin';
+      'Koi JSON braamd kholin is ki mukammal jaanch krin inzimaam ka jaiza lin phir usay is account par laagu krin';
 
   @override
-  String get dataImportAction => 'daraamad';
+  String get dataImportAction => 'Daraamad';
 
   @override
   String get dataImportReviewTitle => 'Data daraamad ka jaiza';
 
   @override
   String get dataImportCanceled =>
-      'daraamad mansookh hoii aap ka Data tabdeel nahi hoa';
+      'Daraamad mansookh hoii aap ka Data tabdeel nahi hoa';
 
   @override
   String get dataImportSignInRequired =>
@@ -3356,16 +3356,16 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get dataImportEmptyFile =>
-      'muntakhab file khaali ya na-qabil mutala he';
+      'Muntakhab file khaali ya na-qabil mutala he';
 
   @override
   String dataImportRejected(String error) {
-    return 'daraamad mustarad: $error\nkoi juzvi daraamad laagu nahi hoii';
+    return 'Daraamad mustarad: $error\nKoi juzvi daraamad laagu nahi hoii';
   }
 
   @override
   String dataImportComplete(int added, int completed, int unchanged) {
-    return 'daraamad mukammal: $added shaml $completed mkml $unchanged baghair tbdili';
+    return 'Daraamad mukammal: $added shaml $completed mkml $unchanged baghair tbdili';
   }
 
   @override
@@ -3376,68 +3376,68 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get dataSafetyBody =>
-      'braamd karne se Cloud Data delete nahi hota daraamad se mojodh record khtm nahi hote sign out Data delete krna nhin aur app in install karne se Cloud record delete nahi hote';
+      'Braamd karne se Cloud Data delete nahi hota daraamad se mojodh record khtm nahi hote sign out Data delete krna nhin aur app in install karne se Cloud record delete nahi hote';
 
   @override
   String get dataRemapNote =>
-      'daraamad shdh record mojodh sign in account se munsalik kar diye jate hin is ke baad mojodh local-first sync parat pas manzar mein Firestore se tsdiq karti he';
+      'Daraamad shdh record mojodh sign in account se munsalik kar diye jate hin is ke baad mojodh local-first sync parat pas manzar mein Firestore se tsdiq karti he';
 
   @override
   String get addQazaTitle => 'Qaza shamil karein';
 
   @override
-  String get addQazaStep1 => 'marhala 1 az 3 • tareekhein muntakhab karein';
+  String get addQazaStep1 => 'Marhala 1 az 3 • tareekhein muntakhab karein';
 
   @override
   String get addQazaStep2 =>
-      'marhala 2 az 3 • chhoti hui Namazein muntakhab karein';
+      'Marhala 2 az 3 • chhoti hui Namazein muntakhab karein';
 
   @override
-  String get addQazaStep3 => 'marhala 3 az 3 • jaiza aur izafa';
+  String get addQazaStep3 => 'Marhala 3 az 3 • jaiza aur izafa';
 
   @override
-  String get addQazaModeSingle => 'aik';
+  String get addQazaModeSingle => 'Aik';
 
   @override
-  String get addQazaModeRange => 'doraniya';
+  String get addQazaModeRange => 'Doraniya';
 
   @override
-  String get addQazaModeMultiple => 'mtdd';
+  String get addQazaModeMultiple => 'Mtdd';
 
   @override
-  String get addQazaModeSingleTitle => 'aik tareekh';
+  String get addQazaModeSingleTitle => 'Aik tareekh';
 
   @override
-  String get addQazaModeRangeTitle => 'tareekhon ka doraniya';
+  String get addQazaModeRangeTitle => 'Tareekhon ka doraniya';
 
   @override
-  String get addQazaModeMultipleTitle => 'mtdd tareekhein';
+  String get addQazaModeMultipleTitle => 'Mtdd tareekhein';
 
   @override
-  String get addQazaChooseSingle => 'aik tareekh muntakhab karein';
+  String get addQazaChooseSingle => 'Aik tareekh muntakhab karein';
 
   @override
-  String get addQazaChooseRange => 'tareekhon ka doraniya muntakhab karein';
+  String get addQazaChooseRange => 'Tareekhon ka doraniya muntakhab karein';
 
   @override
-  String get addQazaChooseMultiple => 'mtdd tareekhein muntakhab karein';
+  String get addQazaChooseMultiple => 'Mtdd tareekhein muntakhab karein';
 
   @override
   String get addQazaAvailabilityNote =>
-      'range mode mein durust tareekhein muntakhab ki ja sakti hin chahe in par koi Qaza baqi na ho jaiza sirf ahl Namazein shamil karta he';
+      'Range mode mein durust tareekhein muntakhab ki ja sakti hin chahe in par koi Qaza baqi na ho jaiza sirf ahl Namazein shamil karta he';
 
   @override
-  String get addQazaStepNameDates => 'tareekhein muntakhab karein';
+  String get addQazaStepNameDates => 'Tareekhein muntakhab karein';
 
   @override
   String get addQazaStepNamePrayers => 'Qaza Namazein';
 
   @override
-  String get addQazaStepNameReview => 'jaiza';
+  String get addQazaStepNameReview => 'Jaiza';
 
   @override
   String addQazaStepSemantics(int step, String name) {
-    return 'marhala $step: $name';
+    return 'Marhala $step: $name';
   }
 
   @override
@@ -3446,11 +3446,11 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get addQazaAvailableEveryDate => 'hr muntakhab tareekh par dstiab';
+  String get addQazaAvailableEveryDate => 'Hr muntakhab tareekh par dstiab';
 
   @override
   String get addQazaEligibleOnlyNote =>
-      'sirf ahl tareekh aur Namaz ke mjmoe shamil kiye jayein ge pehle se record shdh chhor diye jayein ge';
+      'Sirf ahl tareekh aur Namaz ke mjmoe shamil kiye jayein ge pehle se record shdh chhor diye jayein ge';
 
   @override
   String addQazaAddCount(String count) {
@@ -3459,69 +3459,69 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get addQazaNothingNew =>
-      'shamil karne ko kuch naya nahi — yeh mjmoe pehle se record hin';
+      'Shamil karne ko kuch naya nahi — yeh mjmoe pehle se record hin';
 
   @override
-  String get addQazaChecking => 'aap ka ledger jaanchaa ja raha hai...';
+  String get addQazaChecking => 'Aap ka ledger jaanchaa ja raha hai...';
 
   @override
-  String get addQazaNextPrayers => 'agla: jaiza aur izafa';
+  String get addQazaNextPrayers => 'Agla: jaiza aur izafa';
 
   @override
-  String get addQazaPrayersHeading => 'chhoti hui Namazein';
+  String get addQazaPrayersHeading => 'Chhoti hui Namazein';
 
   @override
-  String get addQazaSelectAll => 'sab muntakhab karein';
+  String get addQazaSelectAll => 'Sab muntakhab karein';
 
   @override
-  String get addQazaAllSelected => 'sab muntakhab hin';
+  String get addQazaAllSelected => 'Sab muntakhab hin';
 
   @override
-  String get addQazaReviewHeading => 'jaiza aur izafa';
+  String get addQazaReviewHeading => 'Jaiza aur izafa';
 
   @override
   String get addQazaReviewNote =>
-      'khulase ki tsdiq krin phir yeh Qaza record apne khate mein shamil krin';
+      'Khulase ki tsdiq krin phir yeh Qaza record apne khate mein shamil krin';
 
   @override
   String get addQazaCombinationNote =>
-      'hr tareekh aur Namaz ka jor aik alg baqi record banta he pehle se maujood jor khud-ba-khud chhor diye jate hin';
+      'Hr tareekh aur Namaz ka jor aik alg baqi record banta he pehle se maujood jor khud-ba-khud chhor diye jate hin';
 
   @override
-  String get addQazaSelectionLabel => 'antkhab';
+  String get addQazaSelectionLabel => 'Antkhab';
 
   @override
-  String get addQazaDatesLabel => 'tareekhein';
+  String get addQazaDatesLabel => 'Tareekhein';
 
   @override
-  String get addQazaDateCountLabel => 'tareekhon ki tadaad';
+  String get addQazaDateCountLabel => 'Tareekhon ki tadaad';
 
   @override
-  String get addQazaDateRangeLabel => 'tareekhon ka doraniya';
+  String get addQazaDateRangeLabel => 'Tareekhon ka doraniya';
 
   @override
-  String get addQazaCombinationCountLabel => 'mjmoe';
+  String get addQazaCombinationCountLabel => 'Mjmoe';
 
   @override
   String get addQazaPrayersLabel => 'Namazein';
 
   @override
-  String get addQazaPrayersPerDateLabel => 'fi tareekh Namazein';
+  String get addQazaPrayersPerDateLabel => 'Fi tareekh Namazein';
 
   @override
-  String get addQazaExistingLabel => 'pehle se maujood jor';
+  String get addQazaExistingLabel => 'Pehle se maujood jor';
 
   @override
-  String get addQazaNewRecordsLabel => 'nie record';
+  String get addQazaNewRecordsLabel => 'Nie record';
 
   @override
-  String get addQazaNewLabel => 'naya';
+  String get addQazaNewLabel => 'Naya';
 
   @override
-  String get addQazaAlreadyAddedLabel => 'pehle se shamil';
+  String get addQazaAlreadyAddedLabel => 'Pehle se shamil';
 
   @override
-  String get addQazaUnavailableLabel => 'dstiab nahi';
+  String get addQazaUnavailableLabel => 'Dstiab nahi';
 
   @override
   String get addQazaTimeBlocked =>
@@ -3532,19 +3532,19 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get addQazaCancelledMessage =>
-      'izafa mansookh kar dia gia jo record pehle hi mehfooz ho chuke hin woh barqarar hin';
+      'Izafa mansookh kar dia gia jo record pehle hi mehfooz ho chuke hin woh barqarar hin';
 
   @override
-  String get addQazaNewQazaLabel => 'nie Qaza record';
+  String get addQazaNewQazaLabel => 'Nie Qaza record';
 
   @override
   String get addQazaInProgress => 'Qaza shamil ho rahi hai...';
 
   @override
-  String get qazaImportAdded => 'shamil';
+  String get qazaImportAdded => 'Shamil';
 
   @override
-  String get qazaImportSkipped => 'chhore gaye';
+  String get qazaImportSkipped => 'Chhore gaye';
 
   @override
   String get addQazaCreatedTitle => 'Qaza record ban gaye';
@@ -3592,16 +3592,16 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get qazaHistoryShowAllDates => 'tamam tareekhein dikhayein';
+  String get qazaHistoryShowAllDates => 'Tamam tareekhein dikhayein';
 
   @override
-  String get qazaHistoryHideDates => 'tareekhein chhupayein';
+  String get qazaHistoryHideDates => 'Tareekhein chhupayein';
 
   @override
-  String get qazaHistoryDeletedStatus => 'delete shdh';
+  String get qazaHistoryDeletedStatus => 'Delete shdh';
 
   @override
-  String get qazaHistoryNoDates => 'koi tareekh nahi';
+  String get qazaHistoryNoDates => 'Koi tareekh nahi';
 
   @override
   String addQazaDateCount(int count) {
@@ -3631,45 +3631,45 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get commonNone => 'koi nahi';
+  String get commonNone => 'Koi nahi';
 
   @override
   String get completeTitle => 'Qaza ada karein';
 
   @override
-  String get completeHeading => 'sab se purana baqi record mukammal karein';
+  String get completeHeading => 'Sab se purana baqi record mukammal karein';
 
   @override
   String get completeIntro =>
-      'aik waqt mein aik record mukammal krin kamyabi ke baad agla purana record fora dikhaya jata he';
+      'Aik waqt mein aik record mukammal krin kamyabi ke baad agla purana record fora dikhaya jata he';
 
   @override
-  String get completeLoading => 'sab se purana baqi record load ho raha hai…';
+  String get completeLoading => 'Sab se purana baqi record load ho raha hai…';
 
   @override
-  String get completeLoadError => 'aap ka Qaza record load nahi ho ska';
+  String get completeLoadError => 'Aap ka Qaza record load nahi ho ska';
 
   @override
-  String get completeNoPendingTitle => 'is Namaz ki koi Qaza baqi nhin';
+  String get completeNoPendingTitle => 'Is Namaz ki koi Qaza baqi nhin';
 
   @override
   String get completeNoPendingMessage =>
-      'koi aur Namaz muntakhab karein ya pehle Qaza record shamil krin';
+      'Koi aur Namaz muntakhab karein ya pehle Qaza record shamil krin';
 
   @override
-  String get completeOldestSubtitle => 'taaza trin baqi record';
+  String get completeOldestSubtitle => 'Taaza trin baqi record';
 
   @override
-  String get completeOriginalDate => 'asal chhootne ki tareekh';
+  String get completeOriginalDate => 'Asal chhootne ki tareekh';
 
   @override
-  String get completeTimestampNote => 'adaigi ka waqt alg mehfooz kya jata he';
+  String get completeTimestampNote => 'Adaigi ka waqt alg mehfooz kya jata he';
 
   @override
-  String get completeAction => 'taaza trin Qaza ada karein';
+  String get completeAction => 'Taaza trin Qaza ada karein';
 
   @override
-  String get completeInProgress => 'mukammal ho raha hai...';
+  String get completeInProgress => 'Mukammal ho raha hai...';
 
   @override
   String get completeFailed => 'Qaza mukammal nahi ho ski dobara koshish krin';
@@ -3697,50 +3697,50 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       'Namaz ke masail aur ghalat fahmiyan talash karein';
 
   @override
-  String get knowledgeBaseClearSearch => 'talash saaf karein';
+  String get knowledgeBaseClearSearch => 'Talash saaf karein';
 
   @override
-  String get knowledgeCategoryMasail => 'masail';
+  String get knowledgeCategoryMasail => 'Masail';
 
   @override
-  String get knowledgeCategoryMugalat => 'mughalte';
+  String get knowledgeCategoryMugalat => 'Mughalte';
 
   @override
-  String get knowledgeBaseTopicAll => 'tamam mozuaat';
+  String get knowledgeBaseTopicAll => 'Tamam mozuaat';
 
   @override
-  String get knowledgeTopicBasic => 'bunyadi batein';
+  String get knowledgeTopicBasic => 'Bunyadi batein';
 
   @override
-  String get knowledgeTopicPrayerUnits => 'rakaat';
+  String get knowledgeTopicPrayerUnits => 'Rakaat';
 
   @override
-  String get knowledgeTopicSleepForgetfulness => 'neend aur bhool';
+  String get knowledgeTopicSleepForgetfulness => 'Neend aur bhool';
 
   @override
-  String get knowledgeTopicIntentionalOmission => 'jaan bojh kar tark';
+  String get knowledgeTopicIntentionalOmission => 'Jaan bojh kar tark';
 
   @override
   String get knowledgeTopicFriday => 'Jumma';
 
   @override
-  String get knowledgeTopicMenstruation => 'haiz';
+  String get knowledgeTopicMenstruation => 'Haiz';
 
   @override
-  String get knowledgeTopicNifas => 'nifas';
+  String get knowledgeTopicNifas => 'Nifas';
 
   @override
-  String get knowledgeTopicMenstruationNifas => 'haiz o nifas';
+  String get knowledgeTopicMenstruationNifas => 'Haiz o nifas';
 
   @override
-  String get knowledgeTopicMisconceptions => 'mughalte';
+  String get knowledgeTopicMisconceptions => 'Mughalte';
 
   @override
   String get knowledgeBaseEmptyTitle => 'Rehnumai ka koi mazmoon nahi mila';
 
   @override
   String get knowledgeBaseEmptyMessage =>
-      'koi aur lafz talash karein ya doosra mozoo muntakhab krin';
+      'Koi aur lafz talash karein ya doosra mozoo muntakhab krin';
 
   @override
   String get knowledgeBaseLoadError => 'Namaz ki Rehnumai load nahi ho ski';
@@ -3749,23 +3749,23 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get knowledgeBaseLanguage => 'Rehnumai ke mazameen ki Zaban';
 
   @override
-  String get knowledgeArticleTitle => 'mazmoon';
+  String get knowledgeArticleTitle => 'Mazmoon';
 
   @override
-  String get knowledgeArticleReferences => 'hawala jaat';
+  String get knowledgeArticleReferences => 'Hawala jaat';
 
   @override
-  String get knowledgeArticleRelated => 'mutaliqa mazameen';
+  String get knowledgeArticleRelated => 'Mutaliqa mazameen';
 
   @override
-  String get knowledgeArticleNotFound => 'mazmoon nahi mla';
+  String get knowledgeArticleNotFound => 'Mazmoon nahi mla';
 
   @override
-  String get settingsAccountSection => 'account';
+  String get settingsAccountSection => 'Account';
 
   @override
   String get settingsAccountSubtitle =>
-      'apne sign in aur account ki tafseelaat snbhalin';
+      'Apne sign in aur account ki tafseelaat snbhalin';
 
   @override
   String get settingsGoogleSignIn => 'Google sign in';
@@ -3779,31 +3779,31 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get settingsDataSubtitle =>
-      'apne Qaza Data ko snk backup ap braamd aur daraamad krin';
+      'Apne Qaza Data ko snk backup ap braamd aur daraamad krin';
 
   @override
   String get settingsDataCloud => 'Data o Cloud';
 
   @override
-  String get settingsDataCloudSubtitle => 'snk braamd aur daraamad ki halat';
+  String get settingsDataCloudSubtitle => 'Snk braamd aur daraamad ki halat';
 
   @override
   String get settingsResetCounterTitle => 'Qaza counter re set karein';
 
   @override
   String get settingsResetCounterSubtitle =>
-      'darj shdh tamam Qaza Namazein delete karke ginti dobara sfr se shuru krin';
+      'Darj shdh tamam Qaza Namazein delete karke ginti dobara sfr se shuru krin';
 
   @override
   String get settingsResetCounterEmpty =>
-      're set karne ke liye koi Qaza record maujood nhin';
+      'Re set karne ke liye koi Qaza record maujood nhin';
 
   @override
-  String get settingsResetCounterDialogTitle => 'kya Qaza counter re set krin';
+  String get settingsResetCounterDialogTitle => 'Kya Qaza counter re set krin';
 
   @override
   String get settingsResetCounterDialogMessage =>
-      'is account ke tamam Qaza records — baqi aur mukammal dono — is device aur aap ke Cloud backup app se hamesha ke liye delete ho jayein ge\n\naap ka counter sfr par aa jaye ga aur ab tak ki gayi progress zaya ho jaye gi yeh amal wapas nahi ho skta agar dobara zaroorat parh sakti hai to pehle apna Data braamd kar lin';
+      'Is account ke tamam Qaza records — baqi aur mukammal dono — is device aur aap ke Cloud backup app se hamesha ke liye delete ho jayein ge\n\nAap ka counter sfr par aa jaye ga aur ab tak ki gayi progress zaya ho jaye gi yeh amal wapas nahi ho skta agar dobara zaroorat parh sakti hai to pehle apna Data braamd kar lin';
 
   @override
   String settingsResetCounterAcknowledge(int count) {
@@ -3811,15 +3811,15 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       count,
       locale: localeName,
       other:
-          'mein samajhta/samajhti hon keh $count Qaza records hamesha ke liye delete ho jayein ge',
+          'Mein samajhta/samajhti hon keh $count Qaza records hamesha ke liye delete ho jayein ge',
       one:
-          'mein samajhta/samajhti hon keh 1 Qaza record hamesha ke liye delete ho jaye ga',
+          'Mein samajhta/samajhti hon keh 1 Qaza record hamesha ke liye delete ho jaye ga',
     );
     return '$_temp0';
   }
 
   @override
-  String get settingsResetCounterConfirm => 'counter re set karein';
+  String get settingsResetCounterConfirm => 'Counter re set karein';
 
   @override
   String get settingsResetCounterDone => 'Qaza counter re set ho gia';
@@ -3830,43 +3830,43 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get authContinueAsGuest => 'mehmaan ke tor par jari rakhein';
+  String get authContinueAsGuest => 'Mehmaan ke tor par jari rakhein';
 
   @override
   String get authGuestNote =>
-      'apni Qaza progress ko apne account ke saath mehfooz rakhne ke liye baad mein Google se sign in kar sakte hin';
+      'Apni Qaza progress ko apne account ke saath mehfooz rakhne ke liye baad mein Google se sign in kar sakte hin';
 
   @override
-  String get backupPromptTitle => 'apni progress mehfooz rakhein';
+  String get backupPromptTitle => 'Apni progress mehfooz rakhein';
 
   @override
   String get backupPromptBody =>
-      'apni Qaza progress ko apne account ke saath mehfooz rakhne ke liye Google se sign in krin';
+      'Apni Qaza progress ko apne account ke saath mehfooz rakhne ke liye Google se sign in krin';
 
   @override
   String get backupPromptConfirm => 'Google se jari rakhein';
 
   @override
-  String get backupPromptDismiss => 'abhi nahi';
+  String get backupPromptDismiss => 'Abhi nahi';
 
   @override
-  String get settingsBackupSignIn => 'backup app / sign in';
+  String get settingsBackupSignIn => 'Backup app / sign in';
 
   @override
   String get settingsBackupSignInSubtitle =>
-      'aap mehmaan ke tor par app istemal kar rahe hin Qaza ka backup app lene ke liye sign in krin';
+      'Aap mehmaan ke tor par app istemal kar rahe hin Qaza ka backup app lene ke liye sign in krin';
 
   @override
   String get backupSignInFailed =>
-      'sign in nakam rha aap ki progress ab bhi is device par mehfooz he';
+      'Sign in nakam rha aap ki progress ab bhi is device par mehfooz he';
 
   @override
   String get backupSignInCancelled =>
-      'sign in mansookh ho gia aap ki progress ab bhi is device par mehfooz he';
+      'Sign in mansookh ho gia aap ki progress ab bhi is device par mehfooz he';
 
   @override
   String backupSignInFailedReason(String reason) {
-    return 'sign in nakam raha: $reason aap ki progress ab bhi is device par mehfooz he';
+    return 'Sign in nakam raha: $reason aap ki progress ab bhi is device par mehfooz he';
   }
 
   @override
@@ -3875,20 +3875,20 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       count,
       locale: localeName,
       other:
-          'sign in ho gia aap ki Qaza progress ab aap ke account se munsalik he',
+          'Sign in ho gia aap ki Qaza progress ab aap ke account se munsalik he',
       one:
-          'sign in ho gia aap ki Qaza progress ab aap ke account se munsalik he',
+          'Sign in ho gia aap ki Qaza progress ab aap ke account se munsalik he',
       zero:
-          'sign in ho gia aap ki Qaza progress ab aap ke account se munsalik he',
+          'Sign in ho gia aap ki Qaza progress ab aap ke account se munsalik he',
     );
     return '$_temp0';
   }
 
   @override
-  String get settingsAboutSection => 'taaruf';
+  String get settingsAboutSection => 'Taaruf';
 
   @override
-  String get settingsAboutSubtitle => 'app ki maloomat aur orzhn ki tfsil';
+  String get settingsAboutSubtitle => 'App ki maloomat aur orzhn ki tfsil';
 
   @override
   String settingsAboutRowSubtitle(String version) {
@@ -3902,38 +3902,38 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get cloudSyncTitle => 'Cloud sync';
 
   @override
-  String get cloudSyncNow => 'abhi sync karein';
+  String get cloudSyncNow => 'Abhi sync karein';
 
   @override
-  String get cloudPendingChanges => 'zair iltawa tabdeeliyan';
+  String get cloudPendingChanges => 'Zair iltawa tabdeeliyan';
 
   @override
-  String get cloudLastSynced => 'aakhri sync';
+  String get cloudLastSynced => 'Aakhri sync';
 
   @override
   String get cloudExportImportSubtitle =>
-      'user ke ikhtiyar mein JSON backup app aur mehfooz bhali in iqdamat se Cloud Data delete nahi hota';
+      'User ke ikhtiyar mein JSON backup app aur mehfooz bhali in iqdamat se Cloud Data delete nahi hota';
 
   @override
-  String get cloudInactive => 'is build mein off line astorij faal nahi he';
+  String get cloudInactive => 'Is build mein off line astorij faal nahi he';
 
   @override
   String get cloudBootstrapping =>
-      'is device par aap ke Qaza record tarteeb diye ja rahe hin…';
+      'Is device par aap ke Qaza record tarteeb diye ja rahe hin…';
 
   @override
   String get cloudHydrating =>
-      'aap ke mehfooz Qaza record is device par bahal kiye ja rahe hin…';
+      'Aap ke mehfooz Qaza record is device par bahal kiye ja rahe hin…';
 
   @override
-  String get cloudSynced => 'aap ke tamam Qaza record Cloud mein mehfooz hin';
+  String get cloudSynced => 'Aap ke tamam Qaza record Cloud mein mehfooz hin';
 
   @override
-  String get cloudSyncing => 'aap ka khata sync ho raha hai…';
+  String get cloudSyncing => 'Aap ka khata sync ho raha hai…';
 
   @override
   String get cloudOffline =>
-      'off line — record is device par mehfooz hin aur khud-ba-khud sync ho jayein ge';
+      'Off line — record is device par mehfooz hin aur khud-ba-khud sync ho jayein ge';
 
   @override
   String cloudPendingCount(int count) {
@@ -3948,7 +3948,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get cloudSyncProblem =>
-      'sync mein masla — aap ka Data is device par mehfooz he';
+      'Sync mein masla — aap ka Data is device par mehfooz he';
 
   @override
   String get cloudQazaCount => 'Qaza records ki tadaad';
@@ -3960,7 +3960,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       locale: localeName,
       other: '$count Qaza records',
       one: '1 Qaza record',
-      zero: 'koi Qaza record nahi',
+      zero: 'Koi Qaza record nahi',
     );
     return '$_temp0';
   }
@@ -3973,22 +3973,22 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       'Cloud naqal delete ho gii local records barqarar hin';
 
   @override
-  String get cloudLocalVsCloudTitle => 'local aur Cloud Data';
+  String get cloudLocalVsCloudTitle => 'Local aur Cloud Data';
 
   @override
   String get cloudLocalVsCloudBody =>
-      'aap ke Qaza record off line istemal ke liye is device par mehfooz rehte hin sign in hone par tabdeeliyan aap ke niji Cloud account se sync ho sakti hin braamd aik local backup app he Cloud Data delete karne se local records delete nahi hote';
+      'Aap ke Qaza record off line istemal ke liye is device par mehfooz rehte hin sign in hone par tabdeeliyan aap ke niji Cloud account se sync ho sakti hin braamd aik local backup app he Cloud Data delete karne se local records delete nahi hote';
 
   @override
   String get cloudDeleteTitle => 'Cloud Data delete karein';
 
   @override
   String get cloudDeleteBody =>
-      'yeh aap ke Cloud account se Qaza records mustaqil tor par delete kar de ga is device ke local records barqarar rahein ge yeh amal wapas nahi ho skta agar backup app darkar ho sakta hai to pehle Data braamd kar lin';
+      'Yeh aap ke Cloud account se Qaza records mustaqil tor par delete kar de ga is device ke local records barqarar rahein ge yeh amal wapas nahi ho skta agar backup app darkar ho sakta hai to pehle Data braamd kar lin';
 
   @override
   String get cloudDeleteAcknowledge =>
-      'mein samajhta/samajhti hon keh Cloud naqal mustaqil tor par delete ho jaye gi';
+      'Mein samajhta/samajhti hon keh Cloud naqal mustaqil tor par delete ho jaye gi';
 
   @override
   String get cloudDeleteAction => 'Cloud Data delete karein';
@@ -4012,13 +4012,13 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get accountCloudBackup => 'Cloud backup app';
 
   @override
-  String get accountAutomatic => 'khudkar';
+  String get accountAutomatic => 'Khudkar';
 
   @override
-  String get accountBackupPaused => 'backup app rok dia gaya hai';
+  String get accountBackupPaused => 'Backup app rok dia gaya hai';
 
   @override
-  String get accountEnableBackup => 'backup app faal karein';
+  String get accountEnableBackup => 'Backup app faal karein';
 
   @override
   String get accountDisconnect => 'Google munqati karein';
@@ -4028,62 +4028,62 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get accountDeleteCloudDataMessage =>
-      'aap ki Cloud naqal mustaqil tor par delete ho jaye gi is device par aap ka Qaza Data barqarar rahe ga';
+      'Aap ki Cloud naqal mustaqil tor par delete ho jaye gi is device par aap ka Qaza Data barqarar rahe ga';
 
   @override
   String get accountDeleteCloudDataAcknowledge =>
-      'mein samajhta/samajhti hon keh Cloud naqal mustaqil tor par delete ho jaye gi';
+      'Mein samajhta/samajhti hon keh Cloud naqal mustaqil tor par delete ho jaye gi';
 
   @override
-  String get accountCancel => 'mansookh';
+  String get accountCancel => 'Mansookh';
 
   @override
-  String get accountContinue => 'jari rakhein';
+  String get accountContinue => 'Jari rakhein';
 
   @override
-  String get accountGuestTitle => 'yeh device';
+  String get accountGuestTitle => 'Yeh device';
 
   @override
   String get accountGuestLocalDataSubtitle =>
-      'aap ka Data is device par mehfooz hai';
+      'Aap ka Data is device par mehfooz hai';
 
   @override
   String get accountNotConnectedGoogle => 'Google se munsalik nahi';
 
   @override
-  String get accountKeepProgressSafe => 'apni progress mehfooz rakhein';
+  String get accountKeepProgressSafe => 'Apni progress mehfooz rakhein';
 
   @override
   String get accountKeepProgressSafeDescription =>
-      'apni Qaza progress ko mukhtalif dioaisz par backup app aur bahal karne ke liye Google account munsalik krin';
+      'Apni Qaza progress ko mukhtalif dioaisz par backup app aur bahal karne ke liye Google account munsalik krin';
 
   @override
   String get accountGuestContinueMessage =>
-      'aap ki mqami progress isi device par mehfooz rehti he';
+      'Aap ki mqami progress isi device par mehfooz rehti he';
 
   @override
-  String get accountBackupSection => 'backup app';
+  String get accountBackupSection => 'Backup app';
 
   @override
   String get accountBackupAutomaticDescription =>
-      'apni Qaza progress ka khudkar backup app lein';
+      'Apni Qaza progress ka khudkar backup app lein';
 
   @override
-  String get accountAccountActions => 'account ke iqdamat';
+  String get accountAccountActions => 'Account ke iqdamat';
 
   @override
   String get accountSignOutDescription =>
-      'apne Google account se sign out krin aap baad mein dobara sign in kar sakte hin';
+      'Apne Google account se sign out krin aap baad mein dobara sign in kar sakte hin';
 
   @override
   String get accountDisconnectDescription =>
       'Qaza Namaz se Google ka connection hatayein aur mehmaan mode par wapas jaiin';
 
   @override
-  String get accountDangerZone => 'khatarnak iqdamat';
+  String get accountDangerZone => 'Khatarnak iqdamat';
 
   @override
-  String get settingsAccountGuestSubtitle => 'mqami • sirf yeh device';
+  String get settingsAccountGuestSubtitle => 'Mqami • sirf yeh device';
 
   @override
   String get settingsAccountGoogleSubtitle => 'Google ke saath sign in';
@@ -4100,34 +4100,34 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get settingsTitle => 'Settings';
 
   @override
-  String get settingsPreferences => 'tarjeehat';
+  String get settingsPreferences => 'Tarjeehat';
 
   @override
   String get settingsPreferencesSubtitle =>
       'Zaban aur zahiri shakal ki trtibat';
 
   @override
-  String get settingsAppearance => 'zahiri shakal';
+  String get settingsAppearance => 'Zahiri shakal';
 
   @override
   String get settingsAppearanceSubtitle =>
-      'muntakhab karein keh app is device par kaisi nazar aaie';
+      'Muntakhab karein keh app is device par kaisi nazar aaie';
 
   @override
-  String get settingsThemeSystem => 'system';
+  String get settingsThemeSystem => 'System';
 
   @override
-  String get settingsThemeLight => 'roshan';
+  String get settingsThemeLight => 'Roshan';
 
   @override
-  String get settingsThemeDark => 'tareek';
+  String get settingsThemeDark => 'Tareek';
 
   @override
   String get settingsLanguage => 'Zaban';
 
   @override
   String get settingsLanguageSubtitle =>
-      'app mein istemal hone wali Zaban muntakhab krin';
+      'App mein istemal hone wali Zaban muntakhab krin';
 
   @override
   String get settingsLanguageNote =>
@@ -4140,16 +4140,16 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get languageUrdu => 'Urdu';
 
   @override
-  String get homeTodayProgressHeader => 'aaj ki progress';
+  String get homeTodayProgressHeader => 'Aaj ki progress';
 
   @override
-  String get homeNextQazaCurrentPrayer => 'agli Qaza (mojodh Namaz)';
+  String get homeNextQazaCurrentPrayer => 'Agli Qaza (mojodh Namaz)';
 
   @override
-  String get homeOldestPending => 'sab se prani baqi';
+  String get homeOldestPending => 'Sab se prani baqi';
 
   @override
-  String get homeOverallQaza => 'majmooi Qaza';
+  String get homeOverallQaza => 'Majmooi Qaza';
 
   @override
   String get homePendingByPrayer => 'Namaz ke lihaaz se baqi';
@@ -4158,101 +4158,101 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get homePrayerBreakdown => 'Namaz waar jaiza';
 
   @override
-  String get homeViewDetails => 'tafseelaat dekhein';
+  String get homeViewDetails => 'Tafseelaat dekhein';
 
   @override
-  String get homeViewAll => 'sab dekhein';
+  String get homeViewAll => 'Sab dekhein';
 
   @override
-  String get homeCompleted => 'mukammal';
+  String get homeCompleted => 'Mukammal';
 
   @override
-  String get homePending => 'baqi';
+  String get homePending => 'Baqi';
 
   @override
-  String get homeDetailedStatistics => 'tafseeli aadaad o shumar';
+  String get homeDetailedStatistics => 'Tafseeli aadaad o shumar';
 
   @override
-  String get homeDetailedStatisticsSubtitle => 'majmooi aur Namaz waar tkmil';
+  String get homeDetailedStatisticsSubtitle => 'Majmooi aur Namaz waar tkmil';
 
   @override
   String get homeQazaActivity => 'Qaza sargarmi';
 
   @override
-  String get homeProgressHistory => 'progress ki tareekh';
+  String get homeProgressHistory => 'Progress ki tareekh';
 
   @override
-  String get homeRangeWeekly => 'hafta waar';
+  String get homeRangeWeekly => 'Hafta waar';
 
   @override
-  String get homeRangeMonthly => 'mahana';
+  String get homeRangeMonthly => 'Mahana';
 
   @override
-  String get homeRangeYearly => 'saalana';
+  String get homeRangeYearly => 'Saalana';
 
   @override
-  String get homeWeeklyTargetLabel => 'hafta waar hadaf';
+  String get homeWeeklyTargetLabel => 'Hafta waar hadaf';
 
   @override
-  String get homeMonthlyTarget => 'mahana hadaf';
+  String get homeMonthlyTarget => 'Mahana hadaf';
 
   @override
-  String get homeProgressLabel => 'progress';
+  String get homeProgressLabel => 'Progress';
 
   @override
-  String get homeActiveDays => 'faal din';
+  String get homeActiveDays => 'Faal din';
 
   @override
-  String get homeActiveMonths => 'faal maheene';
+  String get homeActiveMonths => 'Faal maheene';
 
   @override
-  String get homeGoalReached => 'hadaf mukammal';
+  String get homeGoalReached => 'Hadaf mukammal';
 
   @override
-  String get homeRemaining => 'baqi';
+  String get homeRemaining => 'Baqi';
 
   @override
-  String get homeActual => 'mukammal shdh';
+  String get homeActual => 'Mukammal shdh';
 
   @override
-  String get homeNoActivity => 'is muddat mein koi Qaza mukammal nahi hoii';
+  String get homeNoActivity => 'Is muddat mein koi Qaza mukammal nahi hoii';
 
   @override
   String get homeSelectDay =>
-      'tafseelaat dekhne ke liye kisi din ko muntakhab krin';
+      'Tafseelaat dekhne ke liye kisi din ko muntakhab krin';
 
   @override
-  String get homePreviousWeek => 'pichla hafta';
+  String get homePreviousWeek => 'Pichla hafta';
 
   @override
-  String get homeNextWeek => 'agla hafta';
+  String get homeNextWeek => 'Agla hafta';
 
   @override
-  String get homePreviousMonth => 'pichla maheena';
+  String get homePreviousMonth => 'Pichla maheena';
 
   @override
-  String get homeNextMonth => 'agla maheena';
+  String get homeNextMonth => 'Agla maheena';
 
   @override
-  String get homePreviousYear => 'pichla saal';
+  String get homePreviousYear => 'Pichla saal';
 
   @override
-  String get homeNextYear => 'agla saal';
+  String get homeNextYear => 'Agla saal';
 
   @override
-  String get homeFutureDay => 'aane wala din';
+  String get homeFutureDay => 'Aane wala din';
 
   @override
-  String get homeDailyGoalsTitle => 'aap ke rozanh ke ahdaaf';
+  String get homeDailyGoalsTitle => 'Aap ke rozanh ke ahdaaf';
 
   @override
-  String get homeLastSevenDays => 'guzishta 7 din';
+  String get homeLastSevenDays => 'Guzishta 7 din';
 
   @override
-  String get homeGoalsAchieved => 'hadaf hasil kya';
+  String get homeGoalsAchieved => 'Hadaf hasil kya';
 
   @override
-  String get homeWeeklyTarget => 'aap ka hafta waar hadaf';
+  String get homeWeeklyTarget => 'Aap ka hafta waar hadaf';
 
   @override
   String homeWeeklyTargetProgress(int completed, int target) {
@@ -4260,48 +4260,48 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get homeDayActivityDetails => 'din ki tafseelaat';
+  String get homeDayActivityDetails => 'Din ki tafseelaat';
 
   @override
-  String get homeTodayDate => 'aaj';
+  String get homeTodayDate => 'Aaj';
 
   @override
   String homeCurrentPrayerLabel(String prayer) {
-    return 'mojodh Namaz: $prayer';
+    return 'Mojodh Namaz: $prayer';
   }
 
   @override
-  String get profileLanguageTitle => 'apni Zaban muntakhab karein';
+  String get profileLanguageTitle => 'Apni Zaban muntakhab karein';
 
   @override
   String get profileLanguageIntro =>
-      'app mein istemal hone wali Zaban muntakhab krin';
+      'App mein istemal hone wali Zaban muntakhab krin';
 
   @override
-  String get profileSetupTitle => 'apna Profile mukammal karein';
+  String get profileSetupTitle => 'Apna Profile mukammal karein';
 
   @override
   String get profileTitle => 'Profile';
 
   @override
   String get profileIntro =>
-      'yeh maloomat aap ke Qaza plan aur Namaz se mutaliq qawaid ke liye istemal hon gi';
+      'Yeh maloomat aap ke Qaza plan aur Namaz se mutaliq qawaid ke liye istemal hon gi';
 
   @override
   String get profileSettingsSubtitle =>
-      'aap ki Namaz Profile aur Qaza plan ki trtibat';
+      'Aap ki Namaz Profile aur Qaza plan ki trtibat';
 
   @override
-  String get profileGender => 'jins';
+  String get profileGender => 'Jins';
 
   @override
-  String get profileMale => 'mard';
+  String get profileMale => 'Mard';
 
   @override
-  String get profileFemale => 'khatoon';
+  String get profileFemale => 'Khatoon';
 
   @override
-  String get profileMadhab => 'mazhab / fiqhi maktab';
+  String get profileMadhab => 'Mazhab / fiqhi maktab';
 
   @override
   String get profileHanafi => 'Hanafi';
@@ -4316,64 +4316,64 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get profileHanbali => 'Hanbali';
 
   @override
-  String get profileOther => 'deegar';
+  String get profileOther => 'Deegar';
 
   @override
-  String get profileDateOfBirth => 'tareekh paidaish';
+  String get profileDateOfBirth => 'Tareekh paidaish';
 
   @override
-  String get profileDobDay => 'din';
+  String get profileDobDay => 'Din';
 
   @override
-  String get profileDobMonth => 'maheena';
+  String get profileDobMonth => 'Maheena';
 
   @override
-  String get profileDobYear => 'saal';
+  String get profileDobYear => 'Saal';
 
   @override
-  String get profileSelectDate => 'tareekh muntakhab karein';
+  String get profileSelectDate => 'Tareekh muntakhab karein';
 
   @override
-  String get profileSelectDobHelp => 'apni tareekh paidaish muntakhab karein';
+  String get profileSelectDobHelp => 'Apni tareekh paidaish muntakhab karein';
 
   @override
   String get profileHijriHint =>
       'Gregorian tareekh muntakhab karne ke baad Hijri tareekh bhi dikhayi jaye gi';
 
   @override
-  String get profilePubertyAge => 'balughat ki umar';
+  String get profilePubertyAge => 'Balughat ki umar';
 
   @override
   String get profileStartPrayingAge => 'Namaz shuru karne ki umar';
 
   @override
-  String get profileSelectGenderFirst => 'pehle jins muntakhab karein';
+  String get profileSelectGenderFirst => 'Pehle jins muntakhab karein';
 
   @override
   String get profileSelectPubertyFirst =>
-      'pehle balughat ki umar muntakhab karein';
+      'Pehle balughat ki umar muntakhab karein';
 
   @override
-  String get profileSelectDobFirst => 'pehle tareekh paidaish muntakhab karein';
+  String get profileSelectDobFirst => 'Pehle tareekh paidaish muntakhab karein';
 
   @override
   String get profileWitr => 'Witr';
 
   @override
   String get profileWitrOptional =>
-      'deegar ke liye aap muntakhab kar sakte hin keh Witr shamil hon ya nhin';
+      'Deegar ke liye aap muntakhab kar sakte hin keh Witr shamil hon ya nhin';
 
   @override
-  String get profileWitrIncluded => 'shamil';
+  String get profileWitrIncluded => 'Shamil';
 
   @override
-  String get profileWitrExcluded => 'shamil nahi';
+  String get profileWitrExcluded => 'Shamil nahi';
 
   @override
-  String get profileSubmit => 'jari rakhein';
+  String get profileSubmit => 'Jari rakhein';
 
   @override
-  String get profileSave => 'tabdeeliyan mehfooz karein';
+  String get profileSave => 'Tabdeeliyan mehfooz karein';
 
   @override
   String get profileEdit => 'Profile mein tarmeem karein';
@@ -4385,14 +4385,14 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get profileDiscardChangesTitle =>
-      'ghair mehfooz tabdeeliyan mustarad krin';
+      'Ghair mehfooz tabdeeliyan mustarad krin';
 
   @override
   String get profileDiscardChangesMessage =>
-      'aap ki tabdeeliyan mehfooz nahi hoiin kya aap unhein mustarad karke tarmeem se bahar nikalna chahte hin';
+      'Aap ki tabdeeliyan mehfooz nahi hoiin kya aap unhein mustarad karke tarmeem se bahar nikalna chahte hin';
 
   @override
-  String get profileDiscardChangesAction => 'tabdeeliyan mustarad karein';
+  String get profileDiscardChangesAction => 'Tabdeeliyan mustarad karein';
 
   @override
   String get profileQazaAssumptionsChanged =>
@@ -4407,7 +4407,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get profileQazaPlanSummary =>
-      'aap ki Profile mein tabdeeli se hisaab shdh Qaza plan badalta he';
+      'Aap ki Profile mein tabdeeli se hisaab shdh Qaza plan badalta he';
 
   @override
   String get profileQazaReviewError =>
@@ -4417,7 +4417,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get profileQazaApplying => 'Qaza plan laagu ho raha hai…';
 
   @override
-  String get profileQazaImpact => 'asar';
+  String get profileQazaImpact => 'Asar';
 
   @override
   String profileQazaCount(String count) {
@@ -4425,19 +4425,19 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get profileQazaPreviousTotal => 'pichla plan';
+  String get profileQazaPreviousTotal => 'Pichla plan';
 
   @override
-  String get profileQazaNewTotal => 'naya plan';
+  String get profileQazaNewTotal => 'Naya plan';
 
   @override
-  String get profileQazaCompletedInPlan => 'nie plan mein mukammal shdh';
+  String get profileQazaCompletedInPlan => 'Nie plan mein mukammal shdh';
 
   @override
-  String get profileQazaToAdd => 'nayi Qaza jori jaye gi';
+  String get profileQazaToAdd => 'Nayi Qaza jori jaye gi';
 
   @override
-  String get profileQazaRestored => 'pehle hatayi gayi Qaza bahal ki jaye gi';
+  String get profileQazaRestored => 'Pehle hatayi gayi Qaza bahal ki jaye gi';
 
   @override
   String get profileQazaUpdatedKeptExisting =>
@@ -4445,17 +4445,17 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get profileQazaNoLongerRequired =>
-      'woh zair iltawa Qaza jo ab darkar nahi';
+      'Woh zair iltawa Qaza jo ab darkar nahi';
 
   @override
-  String get profileQazaKeepExisting => 'mojodh Qaza record barqarar rakhein';
+  String get profileQazaKeepExisting => 'Mojodh Qaza record barqarar rakhein';
 
   @override
   String get profileQazaApply => 'Qaza plan laagu karein';
 
   @override
   String get profileQazaCompletedProtected =>
-      'mukammal shdh aur dasti tor par shamil ki gayi Qaza delete nahi hogi';
+      'Mukammal shdh aur dasti tor par shamil ki gayi Qaza delete nahi hogi';
 
   @override
   String get profileQazaUpdated => 'Profile aur Qaza plan app date hogie';
@@ -4470,14 +4470,14 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       'Profile app date hogii Qaza plan mein koi tabdeeli nahi hoii';
 
   @override
-  String get qazaReviewTitle => 'apna Qaza plan dekhein';
+  String get qazaReviewTitle => 'Apna Qaza plan dekhein';
 
   @override
   String get qazaReviewSubtitle =>
       'Qaza tracker mein shamil karne se pehle apni tafseelaat ka jaiza lin';
 
   @override
-  String get qazaReviewTotal => 'kal andaza Qaza Namazein';
+  String get qazaReviewTotal => 'Kal andaza Qaza Namazein';
 
   @override
   String get qazaReviewPeriod => 'Qaza ki muddat';
@@ -4487,10 +4487,10 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get qazaReviewNote =>
-      'yeh aap ke Profile ki maloomat ki bunyad par Qaza Namazon ka andaza he';
+      'Yeh aap ke Profile ki maloomat ki bunyad par Qaza Namazon ka andaza he';
 
   @override
-  String get qazaReviewEdit => 'apni tafseelaat mein tarmeem karein';
+  String get qazaReviewEdit => 'Apni tafseelaat mein tarmeem karein';
 
   @override
   String get qazaReviewAdd => 'Qaza ko mere tracker mein shamil karein';
@@ -4502,94 +4502,94 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get qazaReviewError => 'Qaza shamil nahi ho ski dobara koshish krin';
 
   @override
-  String get profileErrorLanguage => 'barah karam Zaban muntakhab krin';
+  String get profileErrorLanguage => 'Barah karam Zaban muntakhab krin';
 
   @override
-  String get profileErrorGender => 'barah karam apni jins muntakhab krin';
+  String get profileErrorGender => 'Barah karam apni jins muntakhab krin';
 
   @override
   String get profileErrorMadhab =>
-      'barah karam apna fiqhi maktab muntakhab krin';
+      'Barah karam apna fiqhi maktab muntakhab krin';
 
   @override
-  String get profileErrorDob => 'barah karam durust tareekh paidaish darj krin';
+  String get profileErrorDob => 'Barah karam durust tareekh paidaish darj krin';
 
   @override
   String get profileErrorPuberty =>
-      'muntakhab jins ke liye durust balughat ki umar muntakhab krin';
+      'Muntakhab jins ke liye durust balughat ki umar muntakhab krin';
 
   @override
   String get profileErrorStartPraying =>
-      'barah karam Namaz shuru karne ki durust umar muntakhab krin';
+      'Barah karam Namaz shuru karne ki durust umar muntakhab krin';
 
   @override
   String get profileErrorWitr =>
-      'barah karam Witr ki durust tarteeb muntakhab krin';
+      'Barah karam Witr ki durust tarteeb muntakhab krin';
 
   @override
-  String get navPrayerTime => 'Namaz ke auqat';
+  String get navPrayerTime => 'Auqat';
 
   @override
   String get prayerTimeTitle => 'Namaz ke auqat';
 
   @override
-  String get prayerTimeLocation => 'maqam';
+  String get prayerTimeLocation => 'Maqam';
 
   @override
-  String get prayerTimeUseCurrentLocation => 'mojodh maqam istemal karein';
+  String get prayerTimeUseCurrentLocation => 'Mojodh maqam istemal karein';
 
   @override
-  String get prayerTimeSelectCity => 'shehar muntakhab karein';
+  String get prayerTimeSelectCity => 'Shehar muntakhab karein';
 
   @override
-  String get prayerTimeSelectCountry => 'mulk muntakhab karein';
+  String get prayerTimeSelectCountry => 'Mulk muntakhab karein';
 
   @override
-  String get prayerTimeSearchCity => 'shehar talash karein';
+  String get prayerTimeSearchCity => 'Shehar talash karein';
 
   @override
-  String get prayerTimeCurrentLocation => 'mojodh maqam';
+  String get prayerTimeCurrentLocation => 'Mojodh maqam';
 
   @override
-  String get prayerTimeSavedLocation => 'mehfooz maqam';
+  String get prayerTimeSavedLocation => 'Mehfooz maqam';
 
   @override
-  String get prayerTimeToday => 'aaj';
+  String get prayerTimeToday => 'Aaj';
 
   @override
-  String get prayerTimeRestrictedTimes => 'mehdood auqat';
+  String get prayerTimeRestrictedTimes => 'Mehdood auqat';
 
   @override
-  String get prayerTimeActive => 'faal';
+  String get prayerTimeActive => 'Faal';
 
   @override
-  String get prayerTimeLocationUnavailable => 'maqam dstiab nahi';
+  String get prayerTimeLocationUnavailable => 'Maqam dstiab nahi';
 
   @override
   String get prayerTimeLocationPermission =>
-      'mojodh maqam istemal karne ke liye maqam ki ajazt darkar he';
+      'Mojodh maqam istemal karne ke liye maqam ki ajazt darkar he';
 
   @override
   String get prayerTimeLocationServiceRequired =>
-      'mojodh maqam istemal karne ke liye location services ko on krna zaroori he';
+      'Mojodh maqam istemal karne ke liye location services ko on krna zaroori he';
 
   @override
-  String get prayerTimeEnableLocation => 'maqam on karein';
+  String get prayerTimeEnableLocation => 'Maqam on karein';
 
   @override
-  String get prayerTimeSelectLocation => 'apna maqam muntakhab karein';
+  String get prayerTimeSelectLocation => 'Apna maqam muntakhab karein';
 
   @override
-  String get prayerTimeCalculationMethod => 'hisaab ka tareeqa';
+  String get prayerTimeCalculationMethod => 'Hisaab ka tareeqa';
 
   @override
   String get prayerTimeAsrMethod => 'Asr ka tareeqa';
 
   @override
-  String get prayerTimeHighLatitudeRule => 'buland arz balad ka usool';
+  String get prayerTimeHighLatitudeRule => 'Buland arz balad ka usool';
 
   @override
-  String get prayerTimeAdjustments => 'tadeelaat';
+  String get prayerTimeAdjustments => 'Tadeelaat';
 
   @override
   String get prayerTime12Hour => '12 ghante';
@@ -4598,25 +4598,25 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get prayerTime24Hour => '24 ghante';
 
   @override
-  String get prayerTimeStandard => 'mayari';
+  String get prayerTimeStandard => 'Mayari';
 
   @override
   String get prayerTimeHanafi => 'Hanafi';
 
   @override
-  String get prayerTimeAutomatic => 'khudkar';
+  String get prayerTimeAutomatic => 'Khudkar';
 
   @override
-  String get prayerTimeMiddleOfTheNight => 'nisf shab';
+  String get prayerTimeMiddleOfTheNight => 'Nisf shab';
 
   @override
-  String get prayerTimeSeventhOfTheNight => 'raat ka satwan hissa';
+  String get prayerTimeSeventhOfTheNight => 'Raat ka satwan hissa';
 
   @override
-  String get prayerTimeTwilightAngle => 'shafaq ka zaviya';
+  String get prayerTimeTwilightAngle => 'Shafaq ka zaviya';
 
   @override
-  String get prayerTimeCustom => 'hasb zaroorat';
+  String get prayerTimeCustom => 'Hasb zaroorat';
 
   @override
   String get prayerTimeFajrAngle => 'Fajr ka zaviya';
@@ -4625,26 +4625,26 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get prayerTimeIshaAngle => 'Isha ka zaviya';
 
   @override
-  String get prayerTimeSave => 'mehfooz karein';
+  String get prayerTimeSave => 'Mehfooz karein';
 
   @override
-  String get prayerTimeCountry => 'mulk';
+  String get prayerTimeCountry => 'Mulk';
 
   @override
-  String get prayerTimeCity => 'shehar';
+  String get prayerTimeCity => 'Shehar';
 
   @override
-  String get prayerTimeNoCities => 'koi mutabiqat rakhne wala shehar nahi';
+  String get prayerTimeNoCities => 'Koi mutabiqat rakhne wala shehar nahi';
 
   @override
   String get prayerTimeSettings => 'Namaz ke auqat ki Settings';
 
   @override
-  String get prayerTimeLocationData => 'maqam ka Data';
+  String get prayerTimeLocationData => 'Maqam ka Data';
 
   @override
   String get settingsLicensesSoftwareTitle =>
-      'open source soft ware ke license';
+      'Open source soft ware ke license';
 
   @override
   String get settingsLicensesSoftwareSubtitle =>
@@ -4655,14 +4655,14 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get settingsLicensesGeoNamesSubtitle =>
-      'off line shehron aur maqamat ke Data ki nsbt';
+      'Off line shehron aur maqamat ke Data ki nsbt';
 
   @override
   String get prayerTimeLocationDataAttribution =>
-      'shehri Data © GeoNames CC BY 4.0 ke tehat license yafta he';
+      'Shehri Data © GeoNames CC BY 4.0 ke tehat license yafta he';
 
   @override
-  String get prayerTimeUpdated => 'app date';
+  String get prayerTimeUpdated => 'App date';
 
   @override
   String get prayerTimeNoSchedule =>
@@ -4673,50 +4673,50 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get prayerTimeSetupBody =>
-      'apna mojodh maqam istemal karein ya mulk aur shehar muntakhab krin maqam mehfooz hone ke baad yeh off line kam kare ga';
+      'Apna mojodh maqam istemal karein ya mulk aur shehar muntakhab krin maqam mehfooz hone ke baad yeh off line kam kare ga';
 
   @override
-  String get prayerTimeRefresh => 'maqam taaza karein';
+  String get prayerTimeRefresh => 'Maqam taaza karein';
 
   @override
   String prayerTimeEndsIn(String duration) {
-    return 'ikhtitam mein $duration';
+    return 'Ikhtitam mein $duration';
   }
 
   @override
   String prayerTimeRemaining(String duration) {
-    return 'baqi waqt $duration';
+    return 'Baqi waqt $duration';
   }
 
   @override
   String prayerTimeStartsIn(String duration) {
-    return 'shuru hone mein $duration';
+    return 'Shuru hone mein $duration';
   }
 
   @override
   String prayerTimeNextRestricted(String name) {
-    return 'agla: $name';
+    return 'Agla: $name';
   }
 
   @override
   String prayerTimeUsingSavedLocation(String location) {
-    return 'aap ka mehfooz maqam istemal ho raha hai: $location';
+    return 'Aap ka mehfooz maqam istemal ho raha hai: $location';
   }
 
   @override
-  String get prayerTimeAngleHint => 'darjaat mein darj krin';
+  String get prayerTimeAngleHint => 'Darjaat mein darj krin';
 
   @override
-  String get prayerTimeAdjustmentMinutes => 'minute';
+  String get prayerTimeAdjustmentMinutes => 'Minute';
 
   @override
-  String get prayerTimeSunrise => 'tlo aftab';
+  String get prayerTimeSunrise => 'Tlo aftab';
 
   @override
-  String get prayerTimeZawal => 'zawal';
+  String get prayerTimeZawal => 'Zawal';
 
   @override
-  String get prayerTimeSunset => 'ghrob aftab';
+  String get prayerTimeSunset => 'Ghrob aftab';
 
   @override
   String get prayerTimeFajr => 'Fajr';
@@ -4734,57 +4734,57 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get prayerTimeIsha => 'Isha';
 
   @override
-  String get qiblaTitle => 'qibla';
+  String get qiblaTitle => 'Qibla';
 
   @override
-  String get qiblaDirection => 'qibla ki simt';
+  String get qiblaDirection => 'Qibla ki simt';
 
   @override
-  String get qiblaBearing => 'qibla ka zaviya';
+  String get qiblaBearing => 'Qibla ka zaviya';
 
   @override
-  String get qiblaFromTrueNorth => 'haqeeqi shumal se';
+  String get qiblaFromTrueNorth => 'Haqeeqi shumal se';
 
   @override
-  String get qiblaUnavailable => 'qibla dstiab nahi';
+  String get qiblaUnavailable => 'Qibla dstiab nahi';
 
   @override
   String get qiblaLocationRequired =>
-      'qibla maloom karne ke liye maqam muntakhab ya mehfooz krin';
+      'Qibla maloom karne ke liye maqam muntakhab ya mehfooz krin';
 
   @override
   String get qiblaCompassBody =>
-      'phone ghmaiin teer qibla ki taraf Rehnumai kare ga';
+      'Phone ghmaiin teer qibla ki taraf Rehnumai kare ga';
 
   @override
   String get qiblaSensorUnavailableBody =>
-      'is aale mein compass sensor dstiab nhin is liye jamid qibla simt dikhayi ja rahi he';
+      'Is aale mein compass sensor dstiab nhin is liye jamid qibla simt dikhayi ja rahi he';
 
   @override
   String get qiblaHeadingUnavailable =>
-      'compass ki simt aarzi tor par dstiab nhin';
+      'Compass ki simt aarzi tor par dstiab nhin';
 
   @override
-  String get qiblaTurnToDirection => 'phone ko is simt ghmaiin';
+  String get qiblaTurnToDirection => 'Phone ko is simt ghmaiin';
 
   @override
   String qiblaCompassAccuracy(String degrees) {
-    return 'compass ki durustagi ±$degrees°';
+    return 'Compass ki durustagi ±$degrees°';
   }
 
   @override
   String get qiblaCalibrationHint =>
-      'compass ki durustagi kam he phone ko 8 ki shakal mein harkat de kar dobara calibrate krin';
+      'Compass ki durustagi kam he phone ko 8 ki shakal mein harkat de kar dobara calibrate krin';
 
   @override
-  String get accountAutomaticBackup => 'khudkar backup app';
+  String get accountAutomaticBackup => 'Khudkar backup app';
 
   @override
   String get accountBackupStatusChecking =>
-      'backup app ki halat dekhi ja rahi hai…';
+      'Backup app ki halat dekhi ja rahi hai…';
 
   @override
-  String get accountBackupStatusDisabled => 'khudkar backup app band hai';
+  String get accountBackupStatusDisabled => 'Khudkar backup app band hai';
 
   @override
   String accountBackupStatusBackedUp(Object timestamp) {
@@ -4793,17 +4793,17 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get accountBackupStatusBackingUp =>
-      'aap ki progress ka backup app liya ja raha hai…';
+      'Aap ki progress ka backup app liya ja raha hai…';
 
   @override
-  String get accountBackupStatusPending => 'backup app zair iltawa hai';
+  String get accountBackupStatusPending => 'Backup app zair iltawa hai';
 
   @override
   String get accountBackupStatusWaitingConnection =>
-      'connection ka intezar hai';
+      'Connection ka intezar hai';
 
   @override
-  String get accountBackupStatusComplete => 'backup app mukammal ho gaya';
+  String get accountBackupStatusComplete => 'Backup app mukammal ho gaya';
 
   @override
   String accountBackupStatusCompletedAt(Object timestamp) {
@@ -4812,15 +4812,15 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get accountBackupStatusWaitingConnectionMessage =>
-      'aap ka Qaza Data is device par mehfooz he';
+      'Aap ka Qaza Data is device par mehfooz he';
 
   @override
   String get accountBackupStatusFailedTitle =>
-      'backup app mukammal nahi ho saka';
+      'Backup app mukammal nahi ho saka';
 
   @override
   String get accountBackupStatusFailedMessage =>
-      'aap ka Qaza Data is device par mehfooz he';
+      'Aap ka Qaza Data is device par mehfooz he';
 
   @override
   String get accountBackupStatusAuthRequired =>
@@ -4828,11 +4828,11 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get accountBackupStatusSecurityRejected =>
-      'security tsdiq ne Cloud rasai mustarad kar di';
+      'Security tsdiq ne Cloud rasai mustarad kar di';
 
   @override
   String get accountBackupStatusNetwork =>
-      'internet connection maujood nhin connection bahal hone par backup app dobara jari hoga';
+      'Internet connection maujood nhin connection bahal hone par backup app dobara jari hoga';
 
   @override
   String get accountBackupStatusCloudStateInvalid =>
@@ -4840,46 +4840,46 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get accountBackupStatusFailedAutomaticRetry =>
-      'hm khudkar tor par dobara koshish karein ge';
+      'Hm khudkar tor par dobara koshish karein ge';
 
   @override
-  String get accountBackupStatusRetry => 'dobara koshish karein';
+  String get accountBackupStatusRetry => 'Dobara koshish karein';
 
   @override
   String get accountBackupStatusFailed =>
-      'backup app mukammal nahi ho ska hm khudkar tor par dobara koshish karein ge';
+      'Backup app mukammal nahi ho ska hm khudkar tor par dobara koshish karein ge';
 
   @override
-  String get startupProfileLoadErrorTitle => 'mqami Profile load nahi ho saka';
+  String get startupProfileLoadErrorTitle => 'Mqami Profile load nahi ho saka';
 
   @override
   String get startupProfileLoadErrorMessage =>
-      'aap ki mqami astorij ko mehfooz tareeqe se parha nahi ja ska aap ka mojodh Qaza Data tabdeel nahi kya gia dobara koshish krin';
+      'Aap ki mqami astorij ko mehfooz tareeqe se parha nahi ja ska aap ka mojodh Qaza Data tabdeel nahi kya gia dobara koshish krin';
 
   @override
   String get qazaHistoryTitle => 'Qaza ki tareekh';
 
   @override
-  String get qazaHistoryRecentAdditions => 'haalya izafay';
+  String get qazaHistoryRecentAdditions => 'Haalya izafay';
 
   @override
-  String get qazaHistoryRecentlyDeleted => 'haal hi mein delete shdh';
+  String get qazaHistoryRecentlyDeleted => 'Haal hi mein delete shdh';
 
   @override
-  String get qazaHistoryNoAdditions => 'abhi koi Qaza izafa maujood nhin';
+  String get qazaHistoryNoAdditions => 'Abhi koi Qaza izafa maujood nhin';
 
   @override
   String get qazaHistoryNoRecentlyDeleted =>
-      'haal hi mein delete shdh koi Qaza nhin';
+      'Haal hi mein delete shdh koi Qaza nhin';
 
   @override
-  String get qazaHistoryLoadMore => 'mzid load karein';
+  String get qazaHistoryLoadMore => 'Mzid load karein';
 
   @override
-  String get qazaHistoryOriginalDateUnavailable => 'asal tareekh dstiab nahi';
+  String get qazaHistoryOriginalDateUnavailable => 'Asal tareekh dstiab nahi';
 
   @override
-  String get qazaHistoryDeletedQaza => 'delete shdh Qaza';
+  String get qazaHistoryDeletedQaza => 'Delete shdh Qaza';
 
   @override
   String qazaHistoryDeletedQazaCount(int count) {
@@ -4887,7 +4887,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get qazaHistoryRestore => 'bahal karein';
+  String get qazaHistoryRestore => 'Bahal karein';
 
   @override
   String qazaHistoryRestoreSuccess(int count) {
@@ -4903,7 +4903,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get qazaAdditionTitle => 'Qaza izafa';
 
   @override
-  String get qazaAdditionNotFound => 'yeh Qaza izafa nahi mil ska';
+  String get qazaAdditionNotFound => 'Yeh Qaza izafa nahi mil ska';
 
   @override
   String qazaAdditionRecordsCount(int count) {
@@ -4911,30 +4911,30 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get qazaAdditionNoPrayers => 'koi Namaz nahi';
+  String get qazaAdditionNoPrayers => 'Koi Namaz nahi';
 
   @override
-  String get qazaAdditionViewRecords => 'records dekhein';
+  String get qazaAdditionViewRecords => 'Records dekhein';
 
   @override
-  String get qazaAdditionMoreActions => 'mzid iqdamat';
+  String get qazaAdditionMoreActions => 'Mzid iqdamat';
 
   @override
-  String get qazaAdditionEdit => 'izafay mein tarmeem';
+  String get qazaAdditionEdit => 'Izafay mein tarmeem';
 
   @override
-  String get qazaAdditionDelete => 'izafa delete karein';
+  String get qazaAdditionDelete => 'Izafa delete karein';
 
   @override
-  String get qazaAdditionDeleteConfirmTitle => 'yeh Qaza izafa delete krin';
+  String get qazaAdditionDeleteConfirmTitle => 'Yeh Qaza izafa delete krin';
 
   @override
   String get qazaAdditionDeleteConfirmMessage =>
-      'sirf ghair tabdeel shdh zair iltawa records delete hon ge mukammal ya tabdeel shdh records mehfooz rahein ge';
+      'Sirf ghair tabdeel shdh zair iltawa records delete hon ge mukammal ya tabdeel shdh records mehfooz rahein ge';
 
   @override
   String get qazaAdditionDeletedNothing =>
-      'delete karne ke liye koi ahl record nahi mla mehfooz records barqarar hin';
+      'Delete karne ke liye koi ahl record nahi mla mehfooz records barqarar hin';
 
   @override
   String qazaAdditionDeletedCount(int count) {
@@ -4954,15 +4954,15 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get qazaTrackerSelectionHint =>
-      'muntakhab ya ghair muntakhab karne ke liye touch krin';
+      'Muntakhab ya ghair muntakhab karne ke liye touch krin';
 
   @override
   String get qazaTrackerSwipeHint =>
-      'tafseel dekhne ke liye tap krin mukammal karne ke liye dayein ya bayein swipe krin muntakhab karne ke liye der tak dbaiin';
+      'Tafseel dekhne ke liye tap krin mukammal karne ke liye dayein ya bayein swipe krin muntakhab karne ke liye der tak dbaiin';
 
   @override
   String get qazaMarkSelectedPendingTitle =>
-      'muntakhab Qaza ko zair iltawa krin';
+      'Muntakhab Qaza ko zair iltawa krin';
 
   @override
   String qazaMarkSelectedPendingMessage(int count) {
@@ -4970,54 +4970,54 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get qazaMarkAsPending => 'zair iltawa karein';
+  String get qazaMarkAsPending => 'Zair iltawa karein';
 
   @override
   String qazaMarkAsPendingCount(int count) {
-    return 'zair iltawa karein ($count)';
+    return 'Zair iltawa karein ($count)';
   }
 
   @override
-  String get qazaNoCompletedTitle => 'koi mukammal Qaza nahi';
+  String get qazaNoCompletedTitle => 'Koi mukammal Qaza nahi';
 
   @override
-  String get qazaNoCompletedMessage => 'mukammal Qaza yahan dikhayi din gi';
+  String get qazaNoCompletedMessage => 'Mukammal Qaza yahan dikhayi din gi';
 
   @override
   String get qazaReturnedToPending => 'Qaza dobara zair iltawa ho gii';
 
   @override
   String get qazaSelectedPendingNothingChanged =>
-      'muntakhab Qaza mein koi tabdeeli nahi hoii';
+      'Muntakhab Qaza mein koi tabdeeli nahi hoii';
 
   @override
   String get qazaCorrectionChanged =>
-      'yeh Qaza durust nahi ki ja saki kyunke yeh tabdeel ho gayi he';
+      'Yeh Qaza durust nahi ki ja saki kyunke yeh tabdeel ho gayi he';
 
   @override
-  String get qazaFilter => 'filter';
+  String get qazaFilter => 'Filter';
 
   @override
-  String get qazaFiltersActive => 'filter faal hin';
+  String get qazaFiltersActive => 'Filter faal hin';
 
   @override
   String get qazaOriginalDateLabel => 'Qaza ki tareekh';
 
   @override
-  String get qazaCompletedDateLabel => 'mukammal hone ki tareekh';
+  String get qazaCompletedDateLabel => 'Mukammal hone ki tareekh';
 
   @override
   String get qazaFilterCompletedDateHelp =>
-      'mukammal hone ki tareekh ke mutabiq filter karein';
+      'Mukammal hone ki tareekh ke mutabiq filter karein';
 
   @override
-  String get qazaUndoCompletions => 'mukammal Qaza wapas karein';
+  String get qazaUndoCompletions => 'Mukammal Qaza wapas karein';
 
   @override
-  String get qazaUndoSelected => 'muntakhab wapas karein';
+  String get qazaUndoSelected => 'Muntakhab wapas karein';
 
   @override
-  String get qazaUndoAll => 'sab wapas karein';
+  String get qazaUndoAll => 'Sab wapas karein';
 
   @override
   String qazaUndoQazaCount(int count) {
@@ -5025,7 +5025,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get addQazaManageAddition => 'is izafay ko munazzam karein';
+  String get addQazaManageAddition => 'Is izafay ko munazzam karein';
 
   @override
   String qazaCompletionSingle(String prayer, String date) {
@@ -5048,15 +5048,15 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   }
 
   @override
-  String get qazaUndoExpired => 'wapas karne ka 5 second ka waqt khtm ho gia';
+  String get qazaUndoExpired => 'Wapas karne ka 5 second ka waqt khtm ho gia';
 
   @override
   String get qazaUndoStaleBatch =>
-      'wapas karne ka yeh ikhtiyar ab dstiab nahi kyunke is ke baad aik naya Undo amal hua he';
+      'Wapas karne ka yeh ikhtiyar ab dstiab nahi kyunke is ke baad aik naya Undo amal hua he';
 
   @override
   String get qazaUndoTargetChanged =>
-      'wapas karne ka ikhtiyar dstiab nahi kyunke Qaza record badal chuka ya delete ho chuka he';
+      'Wapas karne ka ikhtiyar dstiab nahi kyunke Qaza record badal chuka ya delete ho chuka he';
 
   @override
   String get qazaUndoFailed =>
@@ -5064,10 +5064,10 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get qazaMarkAsPendingMessage =>
-      'yeh Qaza dobara zair iltawa ho jaye gi aur mukammal shdh shumar nahi hogi';
+      'Yeh Qaza dobara zair iltawa ho jaye gi aur mukammal shdh shumar nahi hogi';
 
   @override
-  String get commonDelete => 'delete karein';
+  String get commonDelete => 'Delete karein';
 
   @override
   String qazaRequestedSlots(int count) {
@@ -5090,130 +5090,130 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String dataImportRestored(int count) {
-    return 'backup app kamyabi se bahal ho gia $count Qaza record bahal kiye gie';
+    return 'Backup app kamyabi se bahal ho gia $count Qaza record bahal kiye gie';
   }
 
   @override
   String dataImportRestoreSummary(
       int records, int accounts, int revision, String onboarding) {
-    return 'is backup app mein $records Qaza record aur $accounts mqami account hin\n\nbahal karne se is device ka mojodh mqami Data muntakhab backup app se badal jaye ga aap ki device shanakht isi device par barqarar rahe gi\n\nbackup app revision: $revision\non boarding: $onboarding';
+    return 'Is backup app mein $records Qaza record aur $accounts mqami account hin\n\nBahal karne se is device ka mojodh mqami Data muntakhab backup app se badal jaye ga aap ki device shanakht isi device par barqarar rahe gi\n\nBackup app revision: $revision\nOn boarding: $onboarding';
   }
 
   @override
-  String get dataImportOnboardingComplete => 'mukammal';
+  String get dataImportOnboardingComplete => 'Mukammal';
 
   @override
-  String get dataImportOnboardingIncomplete => 'mukammal nahi';
+  String get dataImportOnboardingIncomplete => 'Mukammal nahi';
 
   @override
   String get dataLocalOnlyNote =>
-      'sirf mqami backup ap aap ka Qaza Data isi device par rehta he jab tak aap usay wazeh tor par braamd na krin';
+      'Sirf mqami backup ap aap ka Qaza Data isi device par rehta he jab tak aap usay wazeh tor par braamd na krin';
 
   @override
   String get cloudBackupTitle => 'Cloud backup app';
 
   @override
   String get cloudBackupDescription =>
-      'apni Qaza ki progress ka Google Drive app Data mein alg backup app mehfooz rkhin';
+      'Apni Qaza ki progress ka Google Drive app Data mein alg backup app mehfooz rkhin';
 
   @override
   String get cloudConnect => 'Google se munsalik karein';
 
   @override
-  String get cloudDisconnect => 'account munqati karein';
+  String get cloudDisconnect => 'Account munqati karein';
 
   @override
-  String get cloudConnected => 'munsalik';
+  String get cloudConnected => 'Munsalik';
 
   @override
   String get cloudNotConnected =>
-      'apni progress ka backup app rakhne ke liye Google account munsalik krin';
+      'Apni progress ka backup app rakhne ke liye Google account munsalik krin';
 
   @override
-  String get cloudBackupNow => 'abhi backup app karein';
+  String get cloudBackupNow => 'Abhi backup app karein';
 
   @override
-  String get cloudAutomaticBackup => 'khudkar backup app';
+  String get cloudAutomaticBackup => 'Khudkar backup app';
 
   @override
-  String get cloudLastBackup => 'aakhri kamyab backup app';
+  String get cloudLastBackup => 'Aakhri kamyab backup app';
 
   @override
-  String get cloudNeverBackedUp => 'abhi tak backup app nahi hua';
+  String get cloudNeverBackedUp => 'Abhi tak backup app nahi hua';
 
   @override
   String get cloudBackupSucceeded => 'Cloud backup app/sync mukammal ho gia';
 
   @override
-  String get cloudBackupUpToDate => 'backup app pehle hi taaza trin he';
+  String get cloudBackupUpToDate => 'Backup app pehle hi taaza trin he';
 
   @override
-  String get cloudBackupConflictTitle => 'tabdeeliyon mein farq mila';
+  String get cloudBackupConflictTitle => 'Tabdeeliyon mein farq mila';
 
   @override
   String get cloudBackupConflictMessage =>
-      'is device aur Google Drive par mukhtalif progress maujood he muntakhab karein keh kon sa Data rakhna he';
+      'Is device aur Google Drive par mukhtalif progress maujood he muntakhab karein keh kon sa Data rakhna he';
 
   @override
-  String get cloudKeepLocal => 'is device ki progress rakhein';
+  String get cloudKeepLocal => 'Is device ki progress rakhein';
 
   @override
   String get cloudUseRemote => 'Google Drive se bahal karein';
 
   @override
-  String get cloudKeepLocalConfirmTitle => 'is device ki progress rkhin';
+  String get cloudKeepLocalConfirmTitle => 'Is device ki progress rkhin';
 
   @override
   String get cloudKeepLocalConfirmMessage =>
-      'is device ke Data se naya Cloud backup app banaya jaye ga mojodh remote backup app apni tareekh mein barqarar rahe ga';
+      'Is device ke Data se naya Cloud backup app banaya jaye ga mojodh remote backup app apni tareekh mein barqarar rahe ga';
 
   @override
-  String get cloudUseRemoteConfirmTitle => 'mqami progress tabdeel krin';
+  String get cloudUseRemoteConfirmTitle => 'Mqami progress tabdeel krin';
 
   @override
   String get cloudUseRemoteConfirmMessage =>
-      'mojodh mqami app Data Google Drive ke backup app se badal jaye ga pehle aik khufiya karda mqami recovery snap shot mehfooz kya jaye ga';
+      'Mojodh mqami app Data Google Drive ke backup app se badal jaye ga pehle aik khufiya karda mqami recovery snap shot mehfooz kya jaye ga';
 
   @override
   String get cloudDisconnectConfirmTitle => 'Google munqati krin';
 
   @override
   String get cloudDisconnectConfirmMessage =>
-      'khudkar Cloud kam band kar dia jaye ga aap ka Qaza Data isi device par mehfooz rahe ga';
+      'Khudkar Cloud kam band kar dia jaye ga aap ka Qaza Data isi device par mehfooz rahe ga';
 
   @override
   String get cloudRecoveryAvailable =>
-      'pichle mqami Data ka mehfooz recovery snap shot dstiab he';
+      'Pichle mqami Data ka mehfooz recovery snap shot dstiab he';
 
   @override
-  String get cloudRecoverLocal => 'pichla mqami Data bahal karein';
+  String get cloudRecoverLocal => 'Pichla mqami Data bahal karein';
 
   @override
-  String get cloudRecoveryConfirmTitle => 'pichla mqami Data bahal krin';
+  String get cloudRecoveryConfirmTitle => 'Pichla mqami Data bahal krin';
 
   @override
   String get cloudRecoveryConfirmMessage =>
-      'mehfooz mqami snap shot is device ke mojodh app Data ki jgh le ga';
+      'Mehfooz mqami snap shot is device ke mojodh app Data ki jgh le ga';
 
   @override
   String get cloudAutomaticBackupRequiresConnection =>
-      'khudkar backup app faal karne se pehle Google munsalik krin';
+      'Khudkar backup app faal karne se pehle Google munsalik krin';
 
   @override
-  String get cloudBackupWorking => 'backup app ho raha hai…';
+  String get cloudBackupWorking => 'Backup app ho raha hai…';
 
   @override
   String get cloudSetupChoiceTitle => 'Qaza Namaz mein khush aamdeed';
 
   @override
   String get cloudSetupChoiceDescription =>
-      'apni chhoti hui Namazon ka hisaab rakhein aur Qaza ki progress ko apni sahulat ke mutabiq munazzam krin aap ka record isi device par mehfooz rehta he mukhtalif dioaisz par backup app aur bahali ke liye aap ikhtiyari tor par Google istemal kar sakte hin';
+      'Apni chhoti hui Namazon ka hisaab rakhein aur Qaza ki progress ko apni sahulat ke mutabiq munazzam krin aap ka record isi device par mehfooz rehta he mukhtalif dioaisz par backup app aur bahali ke liye aap ikhtiyari tor par Google istemal kar sakte hin';
 
   @override
   String get cloudSetupUseGoogle => 'Google ke saath jari rakhein';
 
   @override
-  String get cloudSetupContinueLocal => 'isi device par jari rakhein';
+  String get cloudSetupContinueLocal => 'Isi device par jari rakhein';
 
   @override
   String get cloudConnectionFailed =>
