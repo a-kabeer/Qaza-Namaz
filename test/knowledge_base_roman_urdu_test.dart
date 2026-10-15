@@ -112,6 +112,32 @@ void main() {
     );
   });
 
+  test('Roman Urdu visible text follows sentence case', () {
+    const textFields = <String>[
+      'titleUrLatn',
+      'questionUrLatn',
+      'summaryUrLatn',
+      'contentUrLatn',
+    ];
+
+    for (final entry in romanEntries.cast<Map<String, dynamic>>()) {
+      for (final field in textFields) {
+        final value = entry[field] as String;
+        final segments = value.split(RegExp(r'[.!?]+|\\r?\\n+'));
+        for (final segment in segments) {
+          final firstLetter = RegExp(r'[A-Za-z]').firstMatch(segment);
+          if (firstLetter == null) continue;
+
+          expect(
+            firstLetter.group(0),
+            firstLetter.group(0)!.toUpperCase(),
+            reason: '${entry['id']} / $field must capitalize sentence beginnings',
+          );
+        }
+      }
+    }
+  });
+
   test('quadruple parser rejects an incomplete Roman Urdu dataset', () {
     final incomplete = jsonEncode(romanEntries.take(74).toList());
 
