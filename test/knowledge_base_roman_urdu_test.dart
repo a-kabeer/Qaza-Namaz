@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/features/knowledge_base/data/knowledge_base_parser.dart';
+import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_article.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_language.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_query.dart';
 
@@ -32,7 +33,8 @@ void main() {
     romanEntries = jsonDecode(romanUrdu) as List<dynamic>;
   });
 
-  List articles() => const KnowledgeBaseParser().parseQuadruple(
+  List<KnowledgeArticle> articles() =>
+      const KnowledgeBaseParser().parseQuadruple(
         english: english,
         urdu: urdu,
         arabic: arabic,
