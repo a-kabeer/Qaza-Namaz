@@ -168,6 +168,32 @@ void main() {
     },
   );
 
+  test(
+    'rejects email-only native authorization for a different account',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-A',
+              'accountEmail': 'b@example.com',
+              'identitySource': 'targetAccountEmail',
+              'accessToken': 'wrong-account-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: true),
+        throwsA(isA<CloudAccountIdentityMismatch>()),
+      );
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
   test('missing saved identity cannot authorize background work', () async {
     final preferences = await SharedPreferences.getInstance();
     await preferences.remove('qaza_cloud_adapter.cached_account_id_v1');
