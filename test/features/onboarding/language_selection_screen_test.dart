@@ -45,9 +45,21 @@ Future<void> _chooseLanguage(
   WidgetTester tester,
   String languageCode,
 ) async {
-  await tester.tap(find.byKey(const Key('onboarding_language_selector')));
+  final selector = find.byKey(const Key('onboarding_language_selector'));
+  await tester.tap(
+    find.descendant(
+      of: selector,
+      matching: find.byType(DropdownButton<Locale>),
+    ),
+  );
   await tester.pumpAndSettle();
-  await tester.tap(find.byKey(Key('onboarding_language_$languageCode')));
+
+  final label = switch (languageCode) {
+    'ur' => 'اردو',
+    'ar' => 'العربية',
+    _ => languageCode,
+  };
+  await tester.tap(find.text(label));
   await tester.pumpAndSettle();
 }
 

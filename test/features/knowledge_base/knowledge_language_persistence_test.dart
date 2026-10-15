@@ -77,11 +77,14 @@ void main() {
     expect(
         container.read(knowledgeLanguageProvider), KnowledgeLanguage.english);
 
-    await tester.tap(find.byKey(const Key('knowledge_language_switcher')));
-    await tester.pumpAndSettle();
     await tester.tap(
-      find.byKey(const Key('knowledge_language_option_ar')),
+      find.descendant(
+        of: find.byKey(const Key('knowledge_language_switcher')),
+        matching: find.byType(DropdownButton<KnowledgeLanguage>),
+      ),
     );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('العربية'));
     await tester.pumpAndSettle();
     await Future<void>.delayed(Duration.zero);
 
