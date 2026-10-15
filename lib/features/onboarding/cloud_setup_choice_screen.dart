@@ -472,21 +472,21 @@ class _CloudSetupChoiceScreenState
                             _restoring
                                 ? switch (_restoreProgress?.stage) {
                                     CloudBackupProgressStage.preparing =>
-                                      'Restoring your verified backup',
+                                      l10n.cloudRestoreStageRestoring,
                                     CloudBackupProgressStage.uploading =>
-                                      'Transferring backup data',
+                                      l10n.cloudRestoreStageTransferring,
                                     CloudBackupProgressStage.completed =>
-                                      'Finishing restore',
-                                    _ => 'Checking and validating your backup',
+                                      l10n.cloudRestoreStageFinishing,
+                                    _ => l10n.cloudRestoreStageChecking,
                                   }
-                                : 'Connecting to Google Drive and searching for a backup',
+                                : l10n.cloudRestoreConnectingTitle,
                             style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
                           Text(
                             _restoring
-                                ? 'Your backup is being validated and restored safely. Keep the app open.'
-                                : 'Checking your Google account and looking for an existing backup.',
+                                ? l10n.cloudRestoreProgressBody
+                                : l10n.cloudRestoreConnectingBody,
                           ),
                           const SizedBox(height: 12),
                           const LinearProgressIndicator(),
