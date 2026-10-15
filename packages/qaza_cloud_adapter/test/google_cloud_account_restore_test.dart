@@ -204,6 +204,9 @@ class _CountingGateway extends GoogleSignInGateway {
   }
 
   @override
+  Future<GoogleSignInAccount?> restoreLightweightAuthentication() async => null;
+
+  @override
   Future<String?> accountIdForAuthorization() async {
     // A restored process has no in-memory GoogleSignInAccount. Keep this unit
     // test deterministic by supplying the stable ID persisted by the fake
