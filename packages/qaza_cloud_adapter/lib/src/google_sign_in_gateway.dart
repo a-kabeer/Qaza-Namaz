@@ -31,7 +31,6 @@ class GoogleSignInGateway {
 
   bool _initialized = false;
   GoogleSignInAccount? _resolvedAccount;
-  bool _lightweightRestoreAttempted = false;
   String? _pinnedAccountId;
   Future<void> _tail = Future<void>.value();
 
@@ -48,9 +47,6 @@ class GoogleSignInGateway {
     await _initializeUnlocked();
     await _signIn.signOut();
     _resolvedAccount = null;
-    // Do not race a post-disconnect restore against the account provider's
-    // profile cleanup. A later explicit sign-in establishes a fresh session.
-    _lightweightRestoreAttempted = true;
   });
 
   /// Stable Google account identifier associated with the current runtime or
@@ -105,57 +101,11 @@ class GoogleSignInGateway {
     return _resolvedAccount;
   });
 
-  /// Restores a previously connected account without manufacturing identity
-  /// from cached profile data. This is used only by foreground account restore;
-  /// background workers continue to use the non-interactive native grant path.
-  ///
-  /// The restored stable Google ID must match the saved binding before the
-  /// account can be used. A mismatch is never silently replaced with cached ID.
-  Future<GoogleSignInAccount?>
-  restoreLightweightAuthentication() => _serialized(() async {
-    await _initializeUnlocked();
-    final current = _resolvedAccount;
-    if (current != null) return current;
-    if (_lightweightRestoreAttempted) return null;
-    _lightweightRestoreAttempted = true;
-
-    final expectedAccountId = await _storedAccountId();
-    if (expectedAccountId == null) return null;
-
-    GoogleSignInAccount? restored;
-    try {
-      // Google Sign-In 7.x may return null when lightweight restoration is
-      // not available. In that case the native Drive path remains the
-      // fallback and must independently verify its authorization result.
-      final attempt = _signIn.attemptLightweightAuthentication();
-      if (attempt == null) return null;
-      restored = await attempt;
-    } catch (_) {
-      // Lightweight authentication is best-effort. Do not convert a
-      // transient/unsupported restore into authorization; let the caller
-      // try the strictly verified native authorization path instead.
-      return null;
-    }
-
-    if (restored == null) return null;
-    final restoredId = restored.id.trim();
-    if (restoredId.isEmpty || restoredId != expectedAccountId) {
-      throw const CloudAccountIdentityMismatch(
-        'Google Sign-In restored an account different from the account connected for backup.',
-      );
-    }
-
-    // The stable ID matched, so a changed primary email belongs to the
-    // same Google account. Refresh only the email used to target the native
-    // Android Account; never update the stable account ID from this path.
-    final restoredEmail = restored.email.trim();
-    if (restoredEmail.isNotEmpty) {
-      final preferences = await SharedPreferences.getInstance();
-      await preferences.setString(_cachedAccountEmailKey, restoredEmail);
-    }
-    _resolvedAccount = restored;
-    return restored;
-  });
+  /// Compatibility alias retained for existing call sites. Passive restore
+  /// must not call attemptLightweightAuthentication(), which can surface UI on
+  /// Android. A fresh runtime uses the native silent Drive path instead.
+  Future<GoogleSignInAccount?> restoreLightweightAuthentication() =>
+      currentAccount();
 
   Future<http.Client?> authorizeDrive({required bool allowInteractive}) =>
       _serialized(() async {
