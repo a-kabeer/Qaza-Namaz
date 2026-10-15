@@ -1455,5 +1455,6 @@
   "initialCloudBackupStageUploading": "Uploading your backup…",
   "initialCloudBackupStageCompleted": "Backup saved successfully",
   "initialCloudBackupRetry": "Retry backup",
-  "initialCloudBackupContinueHome": "Continue to Home"
+  "initialCloudBackupContinueHome": "Continue to Home",
+  "initialCloudBackupStageDownloading": "Downloading your backup…"
 }
