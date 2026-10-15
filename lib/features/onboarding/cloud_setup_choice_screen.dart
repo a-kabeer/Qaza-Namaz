@@ -25,6 +25,8 @@ class _CloudSetupChoiceScreenState
   bool _cloudAttempted = false;
   String? _error;
   CloudBackupDiscoverySnapshot? _discovery;
+  bool _restoring = false;
+  CloudBackupProgress? _restoreProgress;
 
   @override
   void initState() {
@@ -109,6 +111,13 @@ class _CloudSetupChoiceScreenState
           _discovery = result;
           _error = null;
         });
+        // Persist the intent before onboarding starts. StartupGate can retry
+        // the initial upload after a process death without asking the user to
+        // repeat profile/Qaza setup.
+        if (_accountConnected) {
+          await ref.read(appDatabaseProvider).markInitialCloudBackupPending();
+          ref.invalidate(initialCloudBackupPendingProvider);
+        }
         await _completeChoice();
         return;
       case CloudBackupDiscoveryStatus.backupFound:
@@ -116,6 +125,17 @@ class _CloudSetupChoiceScreenState
           _discovery = result;
           _error = null;
         });
+        final conflict = result.conflict;
+        if (conflict != null &&
+            await ref
+                .read(appDatabaseProvider)
+                .isFreshInstallationForCloudRestore() &&
+            conflict.localRevision ==
+                await ref.read(appDatabaseProvider).readDbRevision()) {
+          // Automatic replacement is permitted only when the database itself
+          // proves this is a fresh install, not merely an incomplete profile.
+          await _restoreBackupAutomatically(conflict);
+        }
         return;
     }
   }
@@ -180,6 +200,59 @@ class _CloudSetupChoiceScreenState
     }
   }
 
+  Future<void> _restoreBackupAutomatically(
+    CloudConflictInfo conflict,
+  ) async {
+    if (!mounted) return;
+    setState(() {
+      _restoring = true;
+      _restoreProgress = const CloudBackupProgress.checking();
+      _error = null;
+    });
+    try {
+      final result = await ref.read(cloudSyncProvider).resolveConflict(
+            conflict: conflict,
+            choice: CloudConflictChoice.useRemote,
+            // This is safe only after the fresh-install database predicate and
+            // unchanged revision were verified immediately before this call.
+            confirmed: true,
+            onProgress: (progress) {
+              if (mounted) setState(() => _restoreProgress = progress);
+            },
+          );
+      if (!mounted) return;
+      if (result.status != CloudSyncStatus.synced ||
+          !result.restoredRemoteBackup) {
+        setState(() {
+          _error = result.message ??
+              AppLocalizations.of(context).cloudConnectionFailed;
+        });
+        return;
+      }
+
+      final database = ref.read(appDatabaseProvider);
+      await database.clearPendingInitialCloudBackup();
+      ref.invalidate(initialCloudBackupPendingProvider);
+      await ref.read(accountSessionManagerProvider).refresh();
+      ref.invalidate(appRouteProvider);
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(progressSummaryProvider);
+      ref.invalidate(qazaRepositoryProvider);
+      ref.invalidate(qazaAdditionRepositoryProvider);
+      ref.invalidate(qazaPlanRevisionRepositoryProvider);
+      await _completeChoice();
+    } catch (error) {
+      if (mounted) setState(() => _error = error.toString());
+    } finally {
+      if (mounted) {
+        setState(() {
+          _restoring = false;
+          _restoreProgress = null;
+        });
+      }
+    }
+  }
+
   Future<void> _restoreBackup() async {
     final conflict = _discovery?.conflict;
     if (_working || conflict == null) return;
@@ -230,8 +303,10 @@ class _CloudSetupChoiceScreenState
         return;
       }
 
-      // Backup import replaces local account/session/profile rows. Reload the
-      // active session and providers before StartupGate chooses a destination.
+      // Backup import replaces local account/session/profile rows. Clear
+      // any stale initial-backup marker, then reload before StartupGate routes.
+      await ref.read(appDatabaseProvider).clearPendingInitialCloudBackup();
+      ref.invalidate(initialCloudBackupPendingProvider);
       await ref.read(accountSessionManagerProvider).refresh();
       ref.invalidate(appRouteProvider);
       ref.invalidate(userProfileProvider);
@@ -369,6 +444,29 @@ class _CloudSetupChoiceScreenState
                               label: Text(l10n.cloudUseRemote),
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+                if (_restoring) ...[
+                  const SizedBox(height: 20),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Restoring your Google Drive backup',
+                            style: theme.textTheme.titleMedium,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'Downloading, validating, and safely restoring your data. Keep the app open.',
+                          ),
+                          const SizedBox(height: 12),
+                          const LinearProgressIndicator(),
                         ],
                       ),
                     ),
