@@ -58,14 +58,14 @@ void main() {
       expect(value, isNot(matches(RegExp(r'^[a-z]'))), reason: entry.key);
       expect(
         value,
-        isNot(matches(RegExp(r'[.!?]\\s+[a-z]'))),
+        isNot(matches(RegExp(r'[.!?]\s+[a-z]'))),
         reason: entry.key,
       );
-      expect(value, isNot(matches(RegExp(r'\\n[a-z]'))), reason: entry.key);
+      expect(value, isNot(matches(RegExp(r'\n[a-z]'))), reason: entry.key);
       expect(
         value,
         isNot(
-          matches(RegExp(r'(?:=\\d+|other|one|zero|few|many)\\{[a-z]')),
+          matches(RegExp(r'(?:=\d+|other|one|zero|few|many)\{[a-z]')),
         ),
         reason: entry.key,
       );
