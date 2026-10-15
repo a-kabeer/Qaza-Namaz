@@ -1,11 +1,8 @@
-import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/theme/app_theme.dart';
-import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/features/knowledge_base/data/knowledge_base_repository.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_article.dart';
 import 'package:qaza_namaz/features/knowledge_base/domain/knowledge_category.dart';
@@ -112,6 +109,16 @@ class _FakeKnowledgeBaseRepository implements KnowledgeBaseRepository {
       articles.map((article) => article.topicId).toSet().toList();
 }
 
+class _TestKnowledgeLanguageNotifier extends KnowledgeLanguageNotifier {
+  @override
+  KnowledgeLanguage build() => KnowledgeLanguage.urdu;
+
+  // Typography tests exercise rendering/direction, not persistence. Keep
+  // language changes synchronous so database I/O cannot block widget pumping.
+  @override
+  void set(KnowledgeLanguage language) => state = language;
+}
+
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
   // Article pages can contain repeating skeleton animations while an async
   // provider resolves, so pumpAndSettle may wait forever. Pump bounded frames
@@ -126,15 +133,14 @@ Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  late AppDatabase database;
   late ProviderContainer container;
 
   setUp(() {
-    database = AppDatabase(NativeDatabase.memory());
-    addTearDown(database.close);
     container = ProviderContainer(
       overrides: [
-        appDatabaseProvider.overrideWithValue(database),
+        knowledgeLanguageProvider.overrideWith(
+          _TestKnowledgeLanguageNotifier.new,
+        ),
         knowledgeBaseRepositoryProvider.overrideWithValue(
           _FakeKnowledgeBaseRepository([_primaryArticle, _relatedArticle]),
         ),

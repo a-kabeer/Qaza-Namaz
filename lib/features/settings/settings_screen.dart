@@ -5,7 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/app_metadata.dart';
-import '../../core/theme/app_theme.dart';
+import '../../core/widgets/language_selector.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
@@ -20,7 +20,6 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final locale = ref.watch(localeProvider);
-    final typography = AppTypography.of(context);
 
     void open(Widget screen) {
       Navigator.push(
@@ -79,31 +78,22 @@ class SettingsScreen extends ConsumerWidget {
             subtitle: l10n.settingsLanguageSubtitle,
             child: Padding(
               padding: const EdgeInsets.all(16),
-              child: SegmentedButton<String>(
+              child: LanguageSelector<Locale>(
                 key: const Key('settings_language'),
-                segments: [
-                  ButtonSegment<String>(
-                    value: 'en',
-                    icon: const Icon(Icons.language_outlined),
-                    label: Text(l10n.languageEnglish),
-                  ),
-                  ButtonSegment<String>(
-                    value: 'ur',
-                    label: Text(l10n.languageUrdu),
-                  ),
-                  ButtonSegment<String>(
-                    value: 'ar',
-                    label: Text(
-                      'العربية',
-                      textDirection: TextDirection.rtl,
-                      textAlign: TextAlign.center,
-                      style: typography.arabic.labelLarge,
-                    ),
-                  ),
-                ],
-                selected: {locale.languageCode},
-                onSelectionChanged: (value) {
-                  unawaited(changeLanguage(Locale(value.first)));
+                options: AppLocalizations.supportedLocales
+                    .map(
+                      (supportedLocale) => LanguageOption<Locale>(
+                        value: supportedLocale,
+                        languageCode: supportedLocale.languageCode,
+                      ),
+                    )
+                    .toList(growable: false),
+                value: locale,
+                layout: LanguageSelectorLayout.fullWidth,
+                semanticLabel: l10n.settingsLanguage,
+                optionKeyPrefix: 'settings_language_option',
+                onChanged: (selectedLocale) {
+                  unawaited(changeLanguage(selectedLocale));
                 },
               ),
             ),

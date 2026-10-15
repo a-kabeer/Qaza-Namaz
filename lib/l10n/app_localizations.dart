@@ -121,7 +121,7 @@ abstract class AppLocalizations {
   /// No description provided for @navKnowledge.
   ///
   /// In en, this message translates to:
-  /// **'Knowledge'**
+  /// **'Guidance'**
   String get navKnowledge;
 
   /// No description provided for @settingsRemindersSection.
@@ -1891,13 +1891,13 @@ abstract class AppLocalizations {
   /// No description provided for @knowledgeBaseTitle.
   ///
   /// In en, this message translates to:
-  /// **'Knowledge Base'**
+  /// **'Prayer Guidance'**
   String get knowledgeBaseTitle;
 
   /// No description provided for @knowledgeBaseSearchHint.
   ///
   /// In en, this message translates to:
-  /// **'Search Masail & Mugalat'**
+  /// **'Search prayer rulings & misconceptions'**
   String get knowledgeBaseSearchHint;
 
   /// No description provided for @knowledgeBaseClearSearch.
@@ -1981,25 +1981,25 @@ abstract class AppLocalizations {
   /// No description provided for @knowledgeBaseEmptyTitle.
   ///
   /// In en, this message translates to:
-  /// **'No articles found'**
+  /// **'No guidance articles found'**
   String get knowledgeBaseEmptyTitle;
 
   /// No description provided for @knowledgeBaseEmptyMessage.
   ///
   /// In en, this message translates to:
-  /// **'Try another search or category.'**
+  /// **'Try another search or choose a different topic.'**
   String get knowledgeBaseEmptyMessage;
 
   /// No description provided for @knowledgeBaseLoadError.
   ///
   /// In en, this message translates to:
-  /// **'Knowledge Base could not be loaded.'**
+  /// **'Prayer guidance could not be loaded.'**
   String get knowledgeBaseLoadError;
 
   /// No description provided for @knowledgeBaseLanguage.
   ///
   /// In en, this message translates to:
-  /// **'Knowledge Base language'**
+  /// **'Guidance language'**
   String get knowledgeBaseLanguage;
 
   /// No description provided for @knowledgeArticleTitle.
@@ -2047,7 +2047,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsKnowledgeBaseSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Browse Masail & Mugalat'**
+  /// **'Browse prayer rulings and common misconceptions.'**
   String get settingsKnowledgeBaseSubtitle;
 
   /// No description provided for @settingsDataSection.

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_theme.dart';
+import '../../../../core/widgets/language_selector.dart';
 import '../../../../l10n/app_localizations.dart';
 import '../../domain/knowledge_language.dart';
 import '../providers/knowledge_base_providers.dart';
@@ -21,86 +22,71 @@ class KnowledgeLanguageSwitcher extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final selected = ref.watch(knowledgeLanguageProvider);
-    final typography = AppTypography.of(context);
-
-    return Semantics(
-      label: l10n.knowledgeBaseLanguage,
-      child: SegmentedButton<KnowledgeLanguage>(
-        key: const Key('knowledge_language_switcher'),
-        showSelectedIcon: false,
-        segments: [
-          // Urdu leads, as the content's first language. In an Urdu interface
-          // the row mirrors, which is the correct reading order there.
-          ButtonSegment<KnowledgeLanguage>(
-            value: KnowledgeLanguage.urdu,
-            label: Text(
-              'اردو',
-              textDirection: TextDirection.rtl,
-              textAlign: TextAlign.center,
-              style: typography.urdu.labelLarge,
+    // This model lists only languages with a bundled, validated content file.
+    // Do not derive Knowledge options from application UI locales.
+    return LanguageSelector<KnowledgeLanguage>(
+      key: const Key('knowledge_language_switcher'),
+      options: KnowledgeLanguage.values
+          .map(
+            (language) => LanguageOption<KnowledgeLanguage>(
+              value: language,
+              languageCode: language.code,
             ),
-          ),
-          ButtonSegment<KnowledgeLanguage>(
-            value: KnowledgeLanguage.english,
-            label: Text(
-              'English',
-              textDirection: TextDirection.ltr,
-              textAlign: TextAlign.center,
-              style: typography.latin.labelLarge,
-            ),
-          ),
-        ],
-        selected: {selected},
-        onSelectionChanged: (selection) =>
-            ref.read(knowledgeLanguageProvider.notifier).set(selection.single),
-      ),
+          )
+          .toList(growable: false),
+      value: selected,
+      layout: LanguageSelectorLayout.compact,
+      semanticLabel: l10n.knowledgeBaseLanguage,
+      optionKeyPrefix: 'knowledge_language_option',
+      onChanged: (language) {
+        ref.read(knowledgeLanguageProvider.notifier).set(language);
+      },
     );
   }
 }
 
 /// The switcher pinned under an app bar, so it stays put while content scrolls.
 ///
-/// Used by both Knowledge Base screens so the control never moves between the
-/// list and an article.
+/// Its height can grow when system text scaling makes Nastaliq or Arabic labels
+/// taller than the compact default.
 class KnowledgeLanguageBar extends StatelessWidget
     implements PreferredSizeWidget {
   const KnowledgeLanguageBar({
     super.key,
-    required this.height,
-  }) : assert(height > 0);
+    this.height,
+  }) : assert(height == null || height > 0);
 
   static const double _minimumHeight = 56;
+  final double? height;
 
-  final double height;
-
-  /// Keeps the pinned control tall enough for the larger script's actual
-  /// scaled line metrics instead of clipping when system text is enlarged.
   static double heightFor(BuildContext context) {
     final typography = AppTypography.of(context);
     final scaler = MediaQuery.textScalerOf(context);
 
-    double scaledLineBox(TextStyle style) {
-      final size = style.fontSize ?? 14;
-      return scaler.scale(size) * (style.height ?? 1.2) + 20;
+    double scaledLineBox(TextStyle? style) {
+      final resolved = style ?? const TextStyle(fontSize: 14, height: 1.2);
+      final size = resolved.fontSize ?? 14;
+      return scaler.scale(size) * (resolved.height ?? 1.2) + 20;
     }
 
-    return math
-        .max(
-          _minimumHeight,
-          math.max(
-            scaledLineBox(typography.urdu.labelLarge!),
-            scaledLineBox(typography.latin.labelLarge!),
-          ),
-        )
-        .toDouble();
+    return math.max(
+      _minimumHeight,
+      math.max(
+        scaledLineBox(typography.urdu.labelLarge),
+        math.max(
+          scaledLineBox(typography.arabic.labelLarge),
+          scaledLineBox(typography.latin.labelLarge),
+        ),
+      ),
+    ).toDouble();
   }
 
   @override
-  Size get preferredSize => Size.fromHeight(height);
+  Size get preferredSize => Size.fromHeight(height ?? _minimumHeight);
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: height,
+        height: height ?? _minimumHeight,
         child: const Center(
           child: Padding(
             padding: EdgeInsets.symmetric(horizontal: 16),

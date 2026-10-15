@@ -18,7 +18,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navQaza => 'قضاء';
 
   @override
-  String get navKnowledge => 'المعرفة';
+  String get navKnowledge => 'الإرشاد';
 
   @override
   String get settingsRemindersSection => 'التذكيرات';
@@ -1084,10 +1084,11 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get knowledgeBaseTitle => 'المكتبة العلمية';
+  String get knowledgeBaseTitle => 'إرشادات الصلاة والقضاء';
 
   @override
-  String get knowledgeBaseSearchHint => 'ابحث في المسائل والمغالطات';
+  String get knowledgeBaseSearchHint =>
+      'ابحث في أحكام الصلاة والمفاهيم الخاطئة';
 
   @override
   String get knowledgeBaseClearSearch => 'مسح البحث';
@@ -1129,16 +1130,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get knowledgeTopicMisconceptions => 'المفاهيم الخاطئة';
 
   @override
-  String get knowledgeBaseEmptyTitle => 'لم يتم العثور على مقالات';
+  String get knowledgeBaseEmptyTitle => 'لم يتم العثور على مقالات إرشادية';
 
   @override
-  String get knowledgeBaseEmptyMessage => 'جرّب كلمة بحث أو تصنيفًا آخر.';
+  String get knowledgeBaseEmptyMessage =>
+      'جرّب البحث بكلمة أخرى أو اختر موضوعًا مختلفًا.';
 
   @override
-  String get knowledgeBaseLoadError => 'تعذر تحميل المكتبة العلمية.';
+  String get knowledgeBaseLoadError => 'تعذر تحميل إرشادات الصلاة.';
 
   @override
-  String get knowledgeBaseLanguage => 'لغة المكتبة العلمية';
+  String get knowledgeBaseLanguage => 'لغة الإرشادات';
 
   @override
   String get knowledgeArticleTitle => 'مقال';
@@ -1162,7 +1164,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsGoogleSignIn => 'تسجيل الدخول باستخدام Google';
 
   @override
-  String get settingsKnowledgeBaseSubtitle => 'تصفح المسائل والمغالطات';
+  String get settingsKnowledgeBaseSubtitle =>
+      'تصفّح أحكام الصلاة والمفاهيم الخاطئة الشائعة.';
 
   @override
   String get settingsDataSection => 'البيانات والتخزين';

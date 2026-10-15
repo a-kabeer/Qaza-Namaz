@@ -2,60 +2,68 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qaza-namaz.local/schemas/knowledge-base-content.schema.json",
   "title": "Qaza Namaz Knowledge Base Content",
-  "description": "One language file of the Masail/Mugalat content. The English and Urdu files share every non-language field and are joined on id at load time.",
+  "description": "One language file for Masail/Mugalat content. English, Urdu and Arabic files are joined by stable ID and must share all non-language fields.",
   "type": "array",
-  "items": {
-    "$ref": "#/$defs/entry"
-  },
+  "items": { "$ref": "#/$defs/entry" },
   "$defs": {
     "entry": {
       "type": "object",
+      "additionalProperties": false,
       "required": ["id", "type", "categoryId", "references", "sortOrder", "isPublished"],
       "properties": {
-        "id": {"type": "string", "minLength": 1},
-        "type": {"enum": ["masala", "mugalata"]},
-        "categoryId": {"type": "string", "minLength": 1},
-        "sortOrder": {"type": "integer", "minimum": 0},
-        "isPublished": {"type": "boolean"},
-        "titleEn": {"$ref": "#/$defs/text"},
-        "questionEn": {"$ref": "#/$defs/text"},
-        "summaryEn": {"$ref": "#/$defs/text"},
-        "contentEn": {"$ref": "#/$defs/text"},
-        "keywordsEn": {"$ref": "#/$defs/keywords"},
-        "titleUr": {"$ref": "#/$defs/text"},
-        "questionUr": {"$ref": "#/$defs/text"},
-        "summaryUr": {"$ref": "#/$defs/text"},
-        "contentUr": {"$ref": "#/$defs/text"},
-        "keywordsUr": {"$ref": "#/$defs/keywords"},
+        "id": { "type": "string", "minLength": 1 },
+        "type": { "enum": ["masala", "mugalata"] },
+        "categoryId": { "type": "string", "minLength": 1 },
+        "sortOrder": { "type": "integer", "minimum": 0 },
+        "isPublished": { "type": "boolean" },
+        "titleEn": { "$ref": "#/$defs/text" },
+        "questionEn": { "$ref": "#/$defs/text" },
+        "summaryEn": { "$ref": "#/$defs/text" },
+        "contentEn": { "$ref": "#/$defs/text" },
+        "keywordsEn": { "$ref": "#/$defs/keywords" },
+        "titleUr": { "$ref": "#/$defs/text" },
+        "questionUr": { "$ref": "#/$defs/text" },
+        "summaryUr": { "$ref": "#/$defs/text" },
+        "contentUr": { "$ref": "#/$defs/text" },
+        "keywordsUr": { "$ref": "#/$defs/keywords" },
+        "titleAr": { "$ref": "#/$defs/text" },
+        "questionAr": { "$ref": "#/$defs/text" },
+        "summaryAr": { "$ref": "#/$defs/text" },
+        "contentAr": { "$ref": "#/$defs/text" },
+        "keywordsAr": { "$ref": "#/$defs/keywords" },
         "references": {
           "type": "array",
-          "items": {"$ref": "#/$defs/reference"}
+          "items": { "$ref": "#/$defs/reference" }
         }
       },
       "oneOf": [
         {
           "required": ["titleEn", "questionEn", "summaryEn", "contentEn", "keywordsEn"],
-          "not": {"required": ["titleUr"]}
+          "not": { "anyOf": [{ "required": ["titleUr"] }, { "required": ["titleAr"] }] }
         },
         {
           "required": ["titleUr", "questionUr", "summaryUr", "contentUr", "keywordsUr"],
-          "not": {"required": ["titleEn"]}
+          "not": { "anyOf": [{ "required": ["titleEn"] }, { "required": ["titleAr"] }] }
+        },
+        {
+          "required": ["titleAr", "questionAr", "summaryAr", "contentAr", "keywordsAr"],
+          "not": { "anyOf": [{ "required": ["titleEn"] }, { "required": ["titleUr"] }] }
         }
       ]
     },
-    "text": {"type": "string", "minLength": 1},
+    "text": { "type": "string", "minLength": 1 },
     "keywords": {
       "type": "array",
-      "items": {"type": "string", "minLength": 1}
+      "items": { "type": "string", "minLength": 1 }
     },
     "reference": {
       "type": "object",
       "additionalProperties": false,
       "required": ["sourceName", "bookName", "author"],
       "properties": {
-        "sourceName": {"type": "string", "minLength": 1},
-        "bookName": {"type": "string", "minLength": 1},
-        "author": {"type": "string", "minLength": 1}
+        "sourceName": { "type": "string", "minLength": 1 },
+        "bookName": { "type": "string", "minLength": 1 },
+        "author": { "type": "string", "minLength": 1 }
       }
     }
   }
