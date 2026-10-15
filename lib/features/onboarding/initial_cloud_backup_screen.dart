@@ -91,6 +91,8 @@ class _InitialCloudBackupScreenState
     if (progress == null) return l10n.initialCloudBackupStagePreparing;
     return switch (progress.stage) {
       CloudBackupProgressStage.checking => l10n.initialCloudBackupStageChecking,
+      CloudBackupProgressStage.downloading =>
+        l10n.initialCloudBackupStageDownloading,
       CloudBackupProgressStage.preparing =>
         l10n.initialCloudBackupStagePreparing,
       CloudBackupProgressStage.uploading =>
@@ -108,7 +110,9 @@ class _InitialCloudBackupScreenState
     final total = progress?.totalBytes ?? 0;
     final sent = progress?.sentBytes ?? 0;
     final hasByteProgress =
-        progress?.stage == CloudBackupProgressStage.uploading && total > 0;
+        (progress?.stage == CloudBackupProgressStage.uploading ||
+            progress?.stage == CloudBackupProgressStage.downloading) &&
+        total > 0;
     final ratio =
         hasByteProgress ? (sent / total).clamp(0.0, 1.0).toDouble() : null;
     // Bytes consumed by the HTTP request are not server confirmation. Hold
