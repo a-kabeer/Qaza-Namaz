@@ -48,8 +48,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     final topicIds =
         ref.watch(knowledgeTopicIdsProvider).valueOrNull ?? const <String>[];
     final language = ref.watch(knowledgeLanguageProvider);
-    final contentType =
-        AppTypography.of(context).forScript(urduScript: language.isUrdu);
+    final typography = AppTypography.of(context);
+    final contentType = language.isArabic
+        ? typography.arabic
+        : typography.forScript(urduScript: language.isUrdu);
     final filterLabelStyle = contentType.labelLarge;
     final textScaler = MediaQuery.textScalerOf(context);
     final scaledFilterLineHeight = textScaler.scale(
