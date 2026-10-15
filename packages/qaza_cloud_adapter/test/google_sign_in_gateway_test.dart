@@ -57,6 +57,7 @@ void main() {
               'status': 'authorized',
               'accountId': 'google-id-A',
               'accountEmail': 'a@example.com',
+              'identitySource': 'googleId',
               'accessToken': 'test-access-token',
               'grantedScopes': <String>[_driveScope],
             };
@@ -138,6 +139,63 @@ void main() {
         throwsA(isA<CloudAuthorizationUnavailable>()),
       );
       expect(authorizationCalls, 1);
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
+    'native email match restores authorization when legacy result omits Google ID',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-A',
+              'accountEmail': 'a@example.com',
+              'identitySource': 'targetAccountEmail',
+              'accessToken': 'test-access-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      final client = await gateway.authorizeDrive(allowInteractive: true);
+      client?.close();
+
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
+    'missing saved identity cannot authorize background work',
+    () async {
+      final preferences = await SharedPreferences.getInstance();
+      await preferences.remove('qaza_cloud_adapter.cached_account_id_v1');
+      await preferences.remove('qaza_cloud_adapter.cached_account_email_v1');
+      var nativeAuthorizationCalls = 0;
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            nativeAuthorizationCalls++;
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-A',
+              'accountEmail': 'a@example.com',
+              'identitySource': 'googleId',
+              'accessToken': 'test-access-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: false),
+        throwsA(isA<CloudAuthorizationUnavailable>()),
+      );
+      expect(nativeAuthorizationCalls, 0);
       expect(googleSignIn.authenticateCalls, 0);
     },
   );
