@@ -86,7 +86,7 @@ class _InitialCloudBackupScreenState
     );
   }
 
-  String _stageLabel(BuildContext context) {
+  String _stageLabel() {
     final progress = _progress;
     if (progress == null) return 'Preparing your first backup…';
     return switch (progress.stage) {
@@ -160,7 +160,7 @@ class _InitialCloudBackupScreenState
                   ),
                   const SizedBox(height: 24),
                   if (_working) ...[
-                    Text(_stageLabel(context), textAlign: TextAlign.center),
+                    Text(_stageLabel(), textAlign: TextAlign.center),
                     const SizedBox(height: 12),
                     LinearProgressIndicator(value: visibleRatio),
                     if (hasByteProgress) ...[
