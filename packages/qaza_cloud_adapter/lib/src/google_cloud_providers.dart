@@ -64,15 +64,6 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       }
 
       if (scopedState != null) {
-        try {
-          // Re-establish the stable Google identity in a fresh foreground
-          // runtime before consulting native Drive authorization. This avoids
-          // treating incomplete deprecated native account metadata as a new
-          // account while preserving the native-only background path.
-          await _gateway.restoreLightweightAuthentication();
-        } on CloudAccountIdentityMismatch {
-          return await _cachedProfileSnapshot(reconnectRequired: true);
-        }
         final boundAccountId = await _gateway.accountIdForAuthorization();
         if (boundAccountId == null || boundAccountId != activeAccountId) {
           // The profile binding can belong to a partially completed account
