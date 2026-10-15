@@ -430,7 +430,7 @@ class KnowledgeBaseParser {
       String prefix, String field, Object expected, Object? actual) {
     if (actual != expected) {
       throw KnowledgeBaseParseException(
-          '$prefix: "$field" is "$actual" in the Urdu dataset but "$expected" '
+          '$prefix: "$field" is "$actual" in a translated dataset but "$expected" '
           'in the English one.');
     }
   }
