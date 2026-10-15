@@ -122,10 +122,22 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Roman Urdu'));
+    final romanUrduOption =
+        find.byKey(const Key('knowledge_language_option_ur_Latn'));
+    expect(romanUrduOption, findsOneWidget);
+    expect(
+      find.descendant(
+        of: romanUrduOption,
+        matching: find.text('Urdu'),
+      ),
+      findsOneWidget,
+      reason: 'The Latin-script option must display exactly Urdu.',
+    );
+    await tester.tap(romanUrduOption);
     await tester.pumpAndSettle();
     await tester.pump();
 
+    expect(find.text('Urdu'), findsOneWidget);
     expect(
       container.read(knowledgeLanguageProvider),
       KnowledgeLanguage.romanUrdu,
