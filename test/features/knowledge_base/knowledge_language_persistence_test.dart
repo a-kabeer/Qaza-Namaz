@@ -86,7 +86,7 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('العربية'));
     await tester.pumpAndSettle();
-    await Future<void>.delayed(Duration.zero);
+    await tester.pump();
 
     expect(container.read(knowledgeLanguageProvider), KnowledgeLanguage.arabic);
     expect(container.read(localeProvider).languageCode, 'en');
