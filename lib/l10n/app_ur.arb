@@ -1068,5 +1068,6 @@
   "initialCloudBackupStageUploading": "بیک اپ اپ لوڈ ہو رہا ہے…",
   "initialCloudBackupStageCompleted": "بیک اپ کامیابی سے محفوظ ہو گیا",
   "initialCloudBackupRetry": "بیک اپ دوبارہ آزمائیں",
-  "initialCloudBackupContinueHome": "ہوم پر جائیں"
+  "initialCloudBackupContinueHome": "ہوم پر جائیں",
+  "initialCloudBackupStageDownloading": "بیک اپ ڈاؤن لوڈ ہو رہا ہے…"
 }
