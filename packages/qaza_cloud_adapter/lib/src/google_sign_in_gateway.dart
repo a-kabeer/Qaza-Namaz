@@ -307,12 +307,11 @@ class GoogleSignInGateway {
 
     // AuthorizationClient is pinned to the previously verified Android
     // Account(email). Its legacy account projection can omit the stable ID.
-    // Accept that case only when native code explicitly confirms a matching
-    // target email; if a native ID is present, it must also match.
+    // In that case native code returns the previously bound ID only as a
+    // namespace binding and explicitly labels the matching target-email proof.
     final identityVerified = switch (identitySource) {
       'googleId' => idMatches && emailMatches,
-      'targetAccountEmail' =>
-        !idMatches /* native account ID was not available */ && emailMatches,
+      'targetAccountEmail' => idMatches && emailMatches,
       _ => false,
     };
     if (!identityVerified) {
