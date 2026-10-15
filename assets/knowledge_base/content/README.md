@@ -50,7 +50,7 @@ Arabic article text is bundled for offline use. Translation drafts must retain
 the meaning and qualifications of the source text and be reviewed by a
 qualified Arabic-speaking Islamic reviewer before being treated as an
 authoritatively reviewed religious translation. The app must not silently
-substitute English or Urdu text when Arabic content is missing.
+substitute another language when a translation is missing.
 
 Use `sortOrder` for presentation order rather than relying on array order.
 Adding an entry to only one file, changing shared metadata in only one file,
