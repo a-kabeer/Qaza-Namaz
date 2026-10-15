@@ -30,9 +30,13 @@ enum KnowledgeLanguage {
         KnowledgeLanguage.arabic => 'ar',
       };
 
+  /// Locale form used by Flutter's localization lookup.
+  Locale get locale => isRomanUrdu
+      ? const Locale.fromSubtags(languageCode: 'ur', scriptCode: 'Latn')
+      : Locale(code);
+
   /// BCP 47 base language passed to the shared selector.
-  String get selectorLanguageCode =>
-      isRomanUrdu ? 'ur' : code;
+  String get selectorLanguageCode => isRomanUrdu ? 'ur' : code;
 
   /// Script subtag used by the shared selector to choose LTR Latin typography.
   String? get scriptCode => isRomanUrdu ? 'Latn' : null;
