@@ -1,4 +1,3 @@
-import 'package:flutter/widgets.dart';
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -44,9 +43,8 @@ class KnowledgeLanguageNotifier extends Notifier<KnowledgeLanguage> {
 
   @override
   KnowledgeLanguage build() {
-    final fromApp =
-        KnowledgeLanguage.fromCode(ref.watch(localeProvider).languageCode) ??
-            KnowledgeLanguage.english;
+    final fromApp = KnowledgeLanguage.fromLocale(ref.watch(localeProvider)) ??
+        KnowledgeLanguage.english;
     if (_chosen == null) Future.microtask(restore);
     return _chosen ?? fromApp;
   }
@@ -129,7 +127,7 @@ final knowledgeQueryProvider = Provider<KnowledgeQuery>(
 /// switcher rather than Settings -> Language, which owns the interface.
 final knowledgeLocalizationsProvider = Provider<AppLocalizations>(
   (ref) => lookupAppLocalizations(
-    Locale(ref.watch(knowledgeLanguageProvider).code),
+    ref.watch(knowledgeLanguageProvider).locale,
   ),
 );
 

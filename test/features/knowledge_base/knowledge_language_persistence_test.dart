@@ -43,6 +43,23 @@ void main() {
     expect(second.read(knowledgeLanguageProvider), KnowledgeLanguage.urdu);
   });
 
+  test('Roman Urdu app locale becomes the default Guidance language', () {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        localeProvider.overrideWith(_RomanUrduLocaleNotifier.new),
+      ],
+    );
+    addTearDown(container.dispose);
+
+    expect(
+      container.read(knowledgeLanguageProvider),
+      KnowledgeLanguage.romanUrdu,
+    );
+  });
+
   testWidgets(
       'Knowledge selector changes reading language without changing app locale',
       (tester) async {
@@ -97,6 +114,29 @@ void main() {
         )
         .get();
     expect(rows.single.read<String>('value'), 'ar');
+
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const Key('knowledge_language_switcher')),
+        matching: find.byType(DropdownButton<KnowledgeLanguage>),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Roman Urdu'));
+    await tester.pumpAndSettle();
+    await tester.pump();
+
+    expect(
+      container.read(knowledgeLanguageProvider),
+      KnowledgeLanguage.romanUrdu,
+    );
+    expect(container.read(localeProvider).languageCode, 'en');
+    final romanRows = await database
+        .customSelect(
+          "SELECT value FROM meta_store WHERE key = 'qaza_knowledge_language'",
+        )
+        .get();
+    expect(romanRows.single.read<String>('value'), 'ur_Latn');
     expect(tester.takeException(), isNull);
   });
 }
@@ -104,4 +144,12 @@ void main() {
 class _EnglishLocaleNotifier extends LocaleNotifier {
   @override
   Locale build() => const Locale('en');
+}
+
+class _RomanUrduLocaleNotifier extends LocaleNotifier {
+  @override
+  Locale build() => const Locale.fromSubtags(
+        languageCode: 'ur',
+        scriptCode: 'Latn',
+      );
 }

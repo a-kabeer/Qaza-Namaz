@@ -30,7 +30,9 @@ class KnowledgeLanguageSwitcher extends ConsumerWidget {
           .map(
             (language) => LanguageOption<KnowledgeLanguage>(
               value: language,
-              languageCode: language.code,
+              languageCode: language.selectorLanguageCode,
+              scriptCode: language.scriptCode,
+              nativeName: language.isRomanUrdu ? 'Roman Urdu' : null,
             ),
           )
           .toList(growable: false),

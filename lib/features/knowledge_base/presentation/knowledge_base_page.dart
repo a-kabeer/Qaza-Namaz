@@ -48,8 +48,10 @@ class _KnowledgeBasePageState extends ConsumerState<KnowledgeBasePage> {
     final topicIds =
         ref.watch(knowledgeTopicIdsProvider).valueOrNull ?? const <String>[];
     final language = ref.watch(knowledgeLanguageProvider);
-    final contentType =
-        AppTypography.of(context).forScript(urduScript: language.isUrdu);
+    final typography = AppTypography.of(context);
+    final contentType = language.isArabic
+        ? typography.arabic
+        : typography.forScript(urduScript: language.isUrdu);
     final filterLabelStyle = contentType.labelLarge;
     final textScaler = MediaQuery.textScalerOf(context);
     final scaledFilterLineHeight = textScaler.scale(
@@ -285,9 +287,12 @@ class _ArticleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final urdu = language.isUrdu;
-    final title = urdu ? article.title.ur : article.title.en;
-    final summary = urdu ? article.summary.ur : article.summary.en;
-    final type = AppTypography.of(context).forScript(urduScript: urdu);
+    final title = article.title.forLanguage(language);
+    final summary = article.summary.forLanguage(language);
+    final typography = AppTypography.of(context);
+    final type = language.isArabic
+        ? typography.arabic
+        : typography.forScript(urduScript: urdu);
 
     return RepaintBoundary(
       child: Semantics(

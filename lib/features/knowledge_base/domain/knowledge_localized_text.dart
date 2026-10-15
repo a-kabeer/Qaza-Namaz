@@ -6,20 +6,26 @@ class KnowledgeLocalizedText {
     required this.ur,
     required this.en,
     this.ar = '',
+    this.urLatn = '',
   });
 
   final String ur;
   final String en;
   final String ar;
+  final String urLatn;
 
   String forLanguage(KnowledgeLanguage language) => switch (language) {
         KnowledgeLanguage.urdu => ur,
+        KnowledgeLanguage.romanUrdu => urLatn,
         KnowledgeLanguage.english => en,
         KnowledgeLanguage.arabic => ar,
       };
 
   bool get isComplete =>
-      ur.trim().isNotEmpty && en.trim().isNotEmpty && ar.trim().isNotEmpty;
+      ur.trim().isNotEmpty &&
+      urLatn.trim().isNotEmpty &&
+      en.trim().isNotEmpty &&
+      ar.trim().isNotEmpty;
 }
 
 /// Per-language search vocabulary. Keywords are reader vocabulary, not
@@ -29,6 +35,7 @@ class KnowledgeLocalizedKeywords {
     required this.ur,
     required this.en,
     this.ar = const [],
+    this.urLatn = const [],
   });
 
   static const empty = KnowledgeLocalizedKeywords(ur: [], en: [], ar: []);
@@ -36,14 +43,16 @@ class KnowledgeLocalizedKeywords {
   final List<String> ur;
   final List<String> en;
   final List<String> ar;
+  final List<String> urLatn;
 
   List<String> forLanguage(KnowledgeLanguage language) => switch (language) {
         KnowledgeLanguage.urdu => ur,
+        KnowledgeLanguage.romanUrdu => urLatn,
         KnowledgeLanguage.english => en,
         KnowledgeLanguage.arabic => ar,
       };
 
   /// Combined search vocabulary for operations that intentionally search all
   /// supported language terms.
-  Iterable<String> get all => [...en, ...ur, ...ar];
+  Iterable<String> get all => [...en, ...ur, ...urLatn, ...ar];
 }

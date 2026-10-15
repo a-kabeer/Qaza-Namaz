@@ -24,14 +24,17 @@ const _primaryArticle = KnowledgeArticle(
   title: KnowledgeLocalizedText(
     ur: 'قضا نماز کا عنوان',
     en: 'English article title',
+    urLatn: 'Qaza namaz ka unwan',
   ),
   question: KnowledgeLocalizedText(
     ur: 'قضا نماز کے بارے میں سوال',
     en: 'A question about missed prayers',
+    urLatn: 'Qaza namaz ke baray mein sawal',
   ),
   summary: KnowledgeLocalizedText(
     ur: 'یہ قضا نماز کے بارے میں ایک طویل خلاصہ ہے۔',
     en: 'A longer summary about making up missed prayers.',
+    urLatn: 'Yeh qaza namaz ke baray mein aik taweel khulasa hai.',
   ),
   body: KnowledgeLocalizedText(
     ur: 'قضا نماز کی ادائیگی کے لیے روزانہ کا ہدف مقرر کریں۔ '
@@ -40,6 +43,8 @@ const _primaryArticle = KnowledgeArticle(
         'یہ متن کئی سطروں میں لپٹنا چاہیے اور اگلے متن سے نہیں ٹکرانا چاہیے۔',
     en: 'Set a daily target for making up missed prayers. '
         'Review your progress regularly and adjust the target when needed.',
+    urLatn: 'Qaza namaz ki adaigi ke liye rozana ka hadaf muqarrar karein. '
+        'Apni pesh raft baqaidgi se dekhein aur zaroorat ke mutabiq hadaf tabdeel karein.',
   ),
   keywords: KnowledgeLocalizedKeywords.empty,
   references: [
@@ -61,18 +66,22 @@ const _relatedArticle = KnowledgeArticle(
   title: KnowledgeLocalizedText(
     ur: 'متعلقہ مضمون کا عنوان',
     en: 'Related article title',
+    urLatn: 'Mutaliqa mazmoon ka unwan',
   ),
   question: KnowledgeLocalizedText(
     ur: 'متعلقہ سوال',
     en: 'Related question',
+    urLatn: 'Mutaliqa sawal',
   ),
   summary: KnowledgeLocalizedText(
     ur: 'متعلقہ خلاصہ',
     en: 'Related summary',
+    urLatn: 'Mutaliqa khulasa',
   ),
   body: KnowledgeLocalizedText(
     ur: 'متعلقہ مضمون کی عبارت',
     en: 'Related article body',
+    urLatn: 'Mutaliqa mazmoon ka matn',
   ),
   keywords: KnowledgeLocalizedKeywords.empty,
   references: [],
@@ -151,6 +160,35 @@ void main() {
         .read(knowledgeLanguageProvider.notifier)
         .set(KnowledgeLanguage.urdu);
   });
+
+  testWidgets(
+    'Roman Urdu article renders left-to-right in an English interface',
+    (tester) async {
+      container
+          .read(knowledgeLanguageProvider.notifier)
+          .set(KnowledgeLanguage.romanUrdu);
+
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp(
+            locale: const Locale('en'),
+            supportedLocales: AppLocalizations.supportedLocales,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            theme: AppTheme.light(locale: const Locale('en')),
+            home: const KnowledgeArticleDetailPage(articleId: 'masala_001'),
+          ),
+        ),
+      );
+      await _pumpUntilFound(tester, find.text('Qaza namaz ka unwan'));
+
+      final title = tester.widget<Text>(find.text('Qaza namaz ka unwan'));
+      expect(title.textDirection, TextDirection.ltr);
+      final body = tester.widget<SelectableText>(find.byType(SelectableText));
+      expect(body.textDirection, TextDirection.ltr);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
     'Urdu article stays RTL while English interface headings stay LTR',

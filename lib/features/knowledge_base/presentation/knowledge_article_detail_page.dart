@@ -49,14 +49,16 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
             return const _MissingArticleState();
           }
 
-          final title = showUrdu ? article.title.ur : article.title.en;
-          final body = showUrdu ? article.body.ur : article.body.en;
+          final title = article.title.forLanguage(language);
+          final body = article.body.forLanguage(language);
           final direction = language.direction;
           final textAlign = language.textAlign;
           // The article's language is independent of the interface language,
           // so the scale is chosen from the content rather than the locale.
           final typography = AppTypography.of(context);
-          final type = typography.forScript(urduScript: showUrdu);
+          final type = language.isArabic
+              ? typography.arabic
+              : typography.forScript(urduScript: showUrdu);
 
           return CustomScrollView(
             slivers: [
@@ -85,7 +87,9 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                         body,
                         textDirection: direction,
                         textAlign: textAlign,
-                        style: typography.readingBody(urduScript: showUrdu),
+                        style: language.isArabic
+                            ? typography.arabic.bodyLarge?.copyWith(height: 1.7)
+                            : typography.readingBody(urduScript: showUrdu),
                       ),
                       if (article.references.isNotEmpty) ...[
                         const SizedBox(height: 28),
@@ -138,9 +142,8 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                           itemCount: related.length,
                           itemBuilder: (context, index) {
                             final relatedArticle = related[index];
-                            final relatedTitle = showUrdu
-                                ? relatedArticle.title.ur
-                                : relatedArticle.title.en;
+                            final relatedTitle =
+                                relatedArticle.title.forLanguage(language);
                             return Semantics(
                               button: true,
                               label: relatedTitle,

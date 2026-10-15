@@ -3,7 +3,7 @@ import 'knowledge_language.dart';
 import 'knowledge_localized_text.dart';
 import 'knowledge_reference.dart';
 
-/// One Masala or Mugalata, assembled from the English, Urdu and Arabic data.
+/// One Masala or Mugalata, assembled from all supported language datasets.
 ///
 /// Stable IDs and shared metadata are preserved across language datasets so
 /// every translation refers to the same article.
@@ -42,15 +42,7 @@ class KnowledgeArticle {
   /// References remain in their authored bibliographic form so a citation can
   /// be traced back to its source. Article prose and search vocabulary come
   /// only from the selected language.
-  String searchableTextFor({
-    required bool urdu,
-    bool arabic = false,
-  }) {
-    final language = arabic
-        ? KnowledgeLanguage.arabic
-        : urdu
-            ? KnowledgeLanguage.urdu
-            : KnowledgeLanguage.english;
+  String searchableTextFor({required KnowledgeLanguage language}) {
     return [
       id,
       topicId,

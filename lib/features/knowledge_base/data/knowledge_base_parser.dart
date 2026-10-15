@@ -15,7 +15,7 @@ class KnowledgeBaseParseException implements Exception {
 }
 
 /// Turns the English and Urdu datasets into a base article set. The strict
-/// [parseTriple] entry point adds and validates the Arabic translation.
+/// [parseTriple] and [parseQuadruple] entry points add further languages.
 ///
 /// The Urdu and English content are authored and shipped as separate files, so
 /// the parser reads both and joins them on `id`. Everything the files agree on
@@ -58,9 +58,9 @@ class KnowledgeBaseParser {
 
   /// Parses and validates all three language datasets.
   ///
-  /// The existing two-language parser remains available for its focused
-  /// legacy tests; production loading must use this strict triple parser so
-  /// missing Arabic articles never silently fall back to another language.
+  /// The pair and triple parsers remain available for focused tests;
+  /// production loading uses the strict quadruple parser so missing language
+  /// content never silently falls back to another dataset.
   List<KnowledgeArticle> parseTriple({
     required String english,
     required String urdu,
@@ -151,6 +151,119 @@ class KnowledgeBaseParser {
             en: article.keywords.en,
             ur: article.keywords.ur,
             ar: _stringList(translated, 'keywordsAr', prefix),
+          ),
+          references: article.references,
+          relatedArticleIds: article.relatedArticleIds,
+        ),
+      );
+    }
+
+    return List.unmodifiable(articles);
+  }
+
+  /// Parses all four bundled content datasets, including Roman Urdu.
+  ///
+  /// Roman Urdu is validated against the same stable IDs, shared metadata and
+  /// references used by the other languages; missing text never falls back to
+  /// another language.
+  List<KnowledgeArticle> parseQuadruple({
+    required String english,
+    required String urdu,
+    required String arabic,
+    required String romanUrdu,
+    String englishSource = 'english dataset',
+    String urduSource = 'urdu dataset',
+    String arabicSource = 'arabic dataset',
+    String romanUrduSource = 'Roman Urdu dataset',
+  }) {
+    final baseArticles = parseTriple(
+      english: english,
+      urdu: urdu,
+      arabic: arabic,
+      englishSource: englishSource,
+      urduSource: urduSource,
+      arabicSource: arabicSource,
+    );
+    final englishEntries = _entriesById(english, englishSource);
+    final romanEntries = _entriesById(romanUrdu, romanUrduSource);
+
+    final missingRoman = englishEntries.keys.toSet()
+      ..removeAll(romanEntries.keys);
+    if (missingRoman.isNotEmpty) {
+      throw KnowledgeBaseParseException(
+        '$romanUrduSource: missing entries for ${_sample(missingRoman)}.',
+      );
+    }
+    final missingEnglish = romanEntries.keys.toSet()
+      ..removeAll(englishEntries.keys);
+    if (missingEnglish.isNotEmpty) {
+      throw KnowledgeBaseParseException(
+        '$englishSource: missing entries for ${_sample(missingEnglish)}.',
+      );
+    }
+
+    final articles = <KnowledgeArticle>[];
+    for (final article in baseArticles) {
+      final source = englishEntries[article.id]!;
+      final translated = romanEntries[article.id]!;
+      final prefix = 'entry "${article.id}"';
+
+      for (final field in const [
+        'type',
+        'categoryId',
+        'sortOrder',
+        'isPublished',
+      ]) {
+        _requireSame(prefix, field, source[field], translated[field]);
+      }
+
+      final romanReferences = _parseReferences(
+        translated['references'],
+        '$romanUrduSource: $prefix',
+      );
+      if (article.references.length != romanReferences.length ||
+          !_sameReferences(article.references, romanReferences)) {
+        throw KnowledgeBaseParseException(
+          '$prefix: references differ between English and Roman Urdu datasets.',
+        );
+      }
+
+      articles.add(
+        KnowledgeArticle(
+          id: article.id,
+          category: article.category,
+          topicId: article.topicId,
+          sortOrder: article.sortOrder,
+          isPublished: article.isPublished,
+          title: KnowledgeLocalizedText(
+            en: article.title.en,
+            ur: article.title.ur,
+            ar: article.title.ar,
+            urLatn: _requiredString(translated, 'titleUrLatn', prefix),
+          ),
+          question: KnowledgeLocalizedText(
+            en: article.question.en,
+            ur: article.question.ur,
+            ar: article.question.ar,
+            urLatn: _requiredString(translated, 'questionUrLatn', prefix),
+          ),
+          summary: KnowledgeLocalizedText(
+            en: article.summary.en,
+            ur: article.summary.ur,
+            ar: article.summary.ar,
+            urLatn: _requiredString(translated, 'summaryUrLatn', prefix),
+          ),
+          body: KnowledgeLocalizedText(
+            en: article.body.en,
+            ur: article.body.ur,
+            ar: article.body.ar,
+            urLatn: _requiredString(translated, 'contentUrLatn', prefix),
+          ),
+          keywords: KnowledgeLocalizedKeywords(
+            en: article.keywords.en,
+            ur: article.keywords.ur,
+            ar: article.keywords.ar,
+            urLatn: _stringList(translated, 'keywordsUrLatn', prefix),
           ),
           references: article.references,
           relatedArticleIds: article.relatedArticleIds,
@@ -313,11 +426,16 @@ class KnowledgeBaseParser {
   }
 
   void _requireSame(
-      String prefix, String field, Object expected, Object? actual) {
+    String prefix,
+    String field,
+    Object expected,
+    Object? actual,
+  ) {
     if (actual != expected) {
       throw KnowledgeBaseParseException(
-          '$prefix: "$field" is "$actual" in the Urdu dataset but "$expected" '
-          'in the English one.');
+        '$prefix: "$field" is "$actual" in a translated dataset; '
+        'expected "$expected" from the English dataset.',
+      );
     }
   }
 

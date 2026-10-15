@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://qaza-namaz.local/schemas/knowledge-base-content.schema.json",
   "title": "Qaza Namaz Knowledge Base Content",
-  "description": "One language file for Masail/Mugalat content. English, Urdu and Arabic files are joined by stable ID and must share all non-language fields.",
+  "description": "One language file for Masail/Mugalat content. English, Urdu, Roman Urdu and Arabic files are joined by stable ID and must share all non-language fields.",
   "type": "array",
   "items": { "$ref": "#/$defs/entry" },
   "$defs": {
@@ -26,6 +26,11 @@
         "summaryUr": { "$ref": "#/$defs/text" },
         "contentUr": { "$ref": "#/$defs/text" },
         "keywordsUr": { "$ref": "#/$defs/keywords" },
+        "titleUrLatn": { "$ref": "#/$defs/text" },
+        "questionUrLatn": { "$ref": "#/$defs/text" },
+        "summaryUrLatn": { "$ref": "#/$defs/text" },
+        "contentUrLatn": { "$ref": "#/$defs/text" },
+        "keywordsUrLatn": { "$ref": "#/$defs/keywords" },
         "titleAr": { "$ref": "#/$defs/text" },
         "questionAr": { "$ref": "#/$defs/text" },
         "summaryAr": { "$ref": "#/$defs/text" },
@@ -39,15 +44,19 @@
       "oneOf": [
         {
           "required": ["titleEn", "questionEn", "summaryEn", "contentEn", "keywordsEn"],
-          "not": { "anyOf": [{ "required": ["titleUr"] }, { "required": ["titleAr"] }] }
+          "not": { "anyOf": [{ "required": ["titleUr"] }, { "required": ["titleAr"] }, { "required": ["titleUrLatn"] }] }
         },
         {
           "required": ["titleUr", "questionUr", "summaryUr", "contentUr", "keywordsUr"],
-          "not": { "anyOf": [{ "required": ["titleEn"] }, { "required": ["titleAr"] }] }
+          "not": { "anyOf": [{ "required": ["titleEn"] }, { "required": ["titleAr"] }, { "required": ["titleUrLatn"] }] }
         },
         {
           "required": ["titleAr", "questionAr", "summaryAr", "contentAr", "keywordsAr"],
-          "not": { "anyOf": [{ "required": ["titleEn"] }, { "required": ["titleUr"] }] }
+          "not": { "anyOf": [{ "required": ["titleEn"] }, { "required": ["titleUr"] }, { "required": ["titleUrLatn"] }] }
+        },
+        {
+          "required": ["titleUrLatn", "questionUrLatn", "summaryUrLatn", "contentUrLatn", "keywordsUrLatn"],
+          "not": { "anyOf": [{ "required": ["titleEn"] }, { "required": ["titleUr"] }, { "required": ["titleAr"] }] }
         }
       ]
     },
