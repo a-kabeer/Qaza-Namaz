@@ -238,10 +238,8 @@ void main() {
 }
 
 class _CountingGateway extends GoogleSignInGateway {
-  _CountingGateway({
-    this.authorizationAvailable = true,
-    this.restoredAccount,
-  }) : super();
+  _CountingGateway({this.authorizationAvailable = true, this.restoredAccount})
+    : super();
 
   final bool authorizationAvailable;
   final GoogleSignInAccount? restoredAccount;
