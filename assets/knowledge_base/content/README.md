@@ -19,7 +19,7 @@ all four files. The machine-readable contract is `content.schema.json`.
 
 ## Entry fields
 
-Shared by all three files and required to be identical:
+Shared by all four files and required to be identical:
 
 - `id`: stable identifier (for example `masala_001`); never change it when
   editing an existing entry.
@@ -44,7 +44,7 @@ enter; literal word-for-word keyword translations are not required.
 
 Edit JSON content only. Do not embed article prose in Dart widgets, providers,
 repositories, or other application code. Keep article IDs and shared metadata
-in sync across all three files.
+in sync across all four files.
 
 Arabic article text is bundled for offline use. Translation drafts must retain
 the meaning and qualifications of the source text and be reviewed by a
