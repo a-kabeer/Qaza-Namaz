@@ -46,10 +46,12 @@ Edit JSON content only. Do not embed article prose in Dart widgets, providers,
 repositories, or other application code. Keep article IDs and shared metadata
 in sync across all four files.
 
-Arabic article text is bundled for offline use. Translation drafts must retain
+Arabic article text is bundled for offline use. Translation and transliteration drafts must retain
 the meaning and qualifications of the source text and be reviewed by a
 qualified Arabic-speaking Islamic reviewer before being treated as an
-authoritatively reviewed religious translation. The app must not silently
+authoritatively reviewed religious translation. Roman Urdu wording and religious
+terminology should be reviewed by a fluent Roman Urdu reader and an Islamic-content
+reviewer before release. The app must not silently
 substitute another language when a translation is missing.
 
 Use `sortOrder` for presentation order rather than relying on array order.
@@ -75,5 +77,5 @@ language; bibliographic citations remain in their authored form for traceability
 
 ## Compatibility
 
-Any incompatible schema change must update all three files, the schema and
+Any incompatible schema change must update all four files, the schema and
 parser together. Do not silently change the meaning of an existing field.
