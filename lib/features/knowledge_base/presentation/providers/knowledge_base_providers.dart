@@ -129,7 +129,7 @@ final knowledgeQueryProvider = Provider<KnowledgeQuery>(
 /// switcher rather than Settings -> Language, which owns the interface.
 final knowledgeLocalizationsProvider = Provider<AppLocalizations>(
   (ref) => lookupAppLocalizations(
-    Locale(ref.watch(knowledgeLanguageProvider).code),
+    ref.watch(knowledgeLanguageProvider).locale,
   ),
 );
 
