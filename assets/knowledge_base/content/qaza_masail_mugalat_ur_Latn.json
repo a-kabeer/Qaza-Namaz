@@ -128,8 +128,8 @@
     "categoryId": "basic",
     "titleUrLatn": "kya qaza namaz aur waqt par ada ki janay wali namaz aik hi cheez hain?",
     "questionUrLatn": "kya qaza namaz aur waqt par ada ki janay wali namaz aik hi cheez hain?",
-    "summaryUrLatn": "fiil namaz apni jagah wohi hai, lekin qaza is namaz ki takmeel hai jo apne muqarrara waqt mein ada na hosaki.",
-    "contentUrLatn": "fiil namaz apni jagah wohi hai, lekin qaza is namaz ki takmeel hai jo apne muqarrara waqt mein ada na hosaki.",
+    "summaryUrLatn": "fi'l-e namaz apni jagah wohi hai, lekin qaza is namaz ki takmeel hai jo apne muqarrara waqt mein ada na hosaki.",
+    "contentUrLatn": "fi'l-e namaz apni jagah wohi hai, lekin qaza is namaz ki takmeel hai jo apne muqarrara waqt mein ada na hosaki.",
     "keywordsUrLatn": [
       "ada",
       "qaza"
@@ -181,8 +181,8 @@
     "categoryId": "basic",
     "titleUrLatn": "kya mehaz sadqa denay se fawt shuda farz namaz ki qaza hojati hai?",
     "questionUrLatn": "kya mehaz sadqa denay se fawt shuda farz namaz ki qaza hojati hai?",
-    "summaryUrLatn": "charon mazahib ke manqool usool ke mutabiq fawt shuda farz namaz ki qaza baqi rehti hai; sadqa is namaz ki qaza ka badal nahin banaia gaya.",
-    "contentUrLatn": "charon mazahib ke manqool usool ke mutabiq fawt shuda farz namaz ki qaza baqi rehti hai; sadqa is namaz ki qaza ka badal nahin banaia gaya.",
+    "summaryUrLatn": "charon mazahib ke manqool usool ke mutabiq fawt shuda farz namaz ki qaza baqi rehti hai; sadqa is namaz ki qaza ka badal nahin banaya gaya.",
+    "contentUrLatn": "charon mazahib ke manqool usool ke mutabiq fawt shuda farz namaz ki qaza baqi rehti hai; sadqa is namaz ki qaza ka badal nahin banaya gaya.",
     "keywordsUrLatn": [
       "sadqa",
       "badal"
@@ -340,8 +340,8 @@
     "categoryId": "sleep_forgetfulness",
     "titleUrLatn": "kya bhooli hui namaz ki alag kaffara bhi hai?",
     "questionUrLatn": "kya bhooli hui namaz ki alag kaffara bhi hai?",
-    "summaryUrLatn": "sahih hadees mein aaia hai ke bhooli hui namaz ka kaffara yehi hai ke usay yaad aanay par parha jaye.",
-    "contentUrLatn": "sahih hadees mein aaia hai ke bhooli hui namaz ka kaffara yehi hai ke usay yaad aanay par parha jaye.",
+    "summaryUrLatn": "Sahih hadees mein aaya hai ke bhooli hui namaz ka kaffara yehi hai ke usay yaad aanay par parha jaye.",
+    "contentUrLatn": "sahih hadees mein aaya hai ke bhooli hui namaz ka kaffara yehi hai ke usay yaad aanay par parha jaye.",
     "keywordsUrLatn": [
       "kaffara"
     ],
@@ -366,8 +366,8 @@
     "categoryId": "sleep_forgetfulness",
     "titleUrLatn": "kya sirf yeh keh dena kaafi hai ke namaz neend ya bhool se reh gayi thi?",
     "questionUrLatn": "kya sirf yeh keh dena kaafi hai ke namaz neend ya bhool se reh gayi thi?",
-    "summaryUrLatn": "nahin. sharai hukm namaz ko ada karne ka hai; sirf maazrat ya doi se qaza ada nahin hoti.",
-    "contentUrLatn": "nahin. sharai hukm namaz ko ada karne ka hai; sirf maazrat ya doi se qaza ada nahin hoti.",
+    "summaryUrLatn": "Nahin. Sharai hukm namaz ko ada karne ka hai; sirf maazrat ya dawe se qaza ada nahin hoti.",
+    "contentUrLatn": "nahin. sharai hukm namaz ko ada karne ka hai; sirf maazrat ya dawe se qaza ada nahin hoti.",
     "keywordsUrLatn": [
       "takmeel"
     ],
@@ -445,8 +445,8 @@
     "categoryId": "sleep_forgetfulness",
     "titleUrLatn": "kya neend ya bhool se reh janay wali namaz ke liye naya sharai waqt muqarrar kya gaya hai?",
     "questionUrLatn": "kya neend ya bhool se reh janay wali namaz ke liye naya sharai waqt muqarrar kya gaya hai?",
-    "summaryUrLatn": "nahin. bunyadi hukm yeh hai ke yaad aanay ya bidar honay par usay ada kya jaye.",
-    "contentUrLatn": "nahin. bunyadi hukm yeh hai ke yaad aanay ya bidar honay par usay ada kya jaye.",
+    "summaryUrLatn": "nahin. bunyadi hukm yeh hai ke yaad aanay ya bedar honay par usay ada kya jaye.",
+    "contentUrLatn": "nahin. bunyadi hukm yeh hai ke yaad aanay ya bedar honay par usay ada kya jaye.",
     "keywordsUrLatn": [
       "auqaat"
     ],
@@ -523,8 +523,8 @@
     "categoryId": "intentional_omission",
     "titleUrLatn": "kya bila uzr jaan bojh kar namaz chhorna gunah hai?",
     "questionUrLatn": "kya bila uzr jaan bojh kar namaz chhorna gunah hai?",
-    "summaryUrLatn": "jee haan. muqarrara waqt par farz namaz ada na karna bila uzr taqasir aur gunah hai.",
-    "contentUrLatn": "jee haan. muqarrara waqt par farz namaz ada na karna bila uzr taqasir aur gunah hai.",
+    "summaryUrLatn": "jee haan. muqarrara waqt par farz namaz ada na karna bila uzr kotahi aur gunah hai.",
+    "contentUrLatn": "jee haan. muqarrara waqt par farz namaz ada na karna bila uzr kotahi aur gunah hai.",
     "keywordsUrLatn": [
       "jaan bojh kar tark",
       "gunah"
@@ -550,8 +550,8 @@
     "categoryId": "intentional_omission",
     "titleUrLatn": "kya jaan bojh kar chhori hui namaz ke baray mein bhi qaza ka hukm hai?",
     "questionUrLatn": "kya jaan bojh kar chhori hui namaz ke baray mein bhi qaza ka hukm hai?",
-    "summaryUrLatn": "charon mrof sani mazahib ke baray mein dar alafata Misr ne fawt shuda farz namazon ki qaza ko lazim qarar denay par atafaq naqal kya hai, jas mein danasatah chhori gayi namazein bhi shamil ki gayi hain.",
-    "contentUrLatn": "charon mrof sani mazahib ke baray mein dar alafata Misr ne fawt shuda farz namazon ki qaza ko lazim qarar denay par atafaq naqal kya hai, jas mein danasatah chhori gayi namazein bhi shamil ki gayi hain.",
+    "summaryUrLatn": "Charon maroof Sunni mazahib ke baray mein Dar al-Ifta Misr ne fawt shuda farz namazon ki qaza ko lazim qarar denay par ittifaq naqal kiya hai, jis mein danista chhori gayi namazein bhi shamil ki gayi hain.",
+    "contentUrLatn": "charon maroof Sunni mazahib ke baray mein Dar al-Ifta Misr ne fawt shuda farz namazon ki qaza ko lazim qarar denay par ittifaq naqal kya hai, jis mein danista chhori gayi namazein bhi shamil ki gayi hain.",
     "keywordsUrLatn": [
       "jaan bojh kar tark",
       "qaza"
@@ -601,8 +601,8 @@
     "id": "masala_024",
     "type": "masala",
     "categoryId": "intentional_omission",
-    "titleUrLatn": "kya jaan bojh kar namaz chahoranay walay ko tauba bhi karni chahiye?",
-    "questionUrLatn": "kya jaan bojh kar namaz chahoranay walay ko tauba bhi karni chahiye?",
+    "titleUrLatn": "kya jaan bojh kar namaz chhorne walay ko tauba bhi karni chahiye?",
+    "questionUrLatn": "kya jaan bojh kar namaz chhorne walay ko tauba bhi karni chahiye?",
     "summaryUrLatn": "jee haan. jaan bojh kar tark ki soorat mein tauba zaroori hai, aur fawt shuda farz namaz ki qaza alag zimma hai.",
     "contentUrLatn": "jee haan. jaan bojh kar tark ki soorat mein tauba zaroori hai, aur fawt shuda farz namaz ki qaza alag zimma hai.",
     "keywordsUrLatn": [
@@ -729,8 +729,8 @@
     "categoryId": "intentional_omission",
     "titleUrLatn": "kya qaza sirf aik khas tadaad tak mahdood hai?",
     "questionUrLatn": "kya qaza sirf aik khas tadaad tak mahdood hai?",
-    "summaryUrLatn": "nahin. bohat si namazein fawt hui hoon to in ki qaza baqi rehti hai; alabatah tarteeb aur auqaat ki baaz tafseelaat mein mazahib ka ikhtilaf hai.",
-    "contentUrLatn": "nahin. bohat si namazein fawt hui hoon to in ki qaza baqi rehti hai; alabatah tarteeb aur auqaat ki baaz tafseelaat mein mazahib ka ikhtilaf hai.",
+    "summaryUrLatn": "Nahin. Bohat si namazein fawt hui hon to in ki qaza baqi rehti hai; albatta tarteeb aur auqaat ki baaz tafseelaat mein mazahib ka ikhtilaf hai.",
+    "contentUrLatn": "nahin. bohat si namazein fawt hui hon to in ki qaza baqi rehti hai; alabatah tarteeb aur auqaat ki baaz tafseelaat mein mazahib ka ikhtilaf hai.",
     "keywordsUrLatn": [
       "miqdaar",
       "baqi namazein"
@@ -921,10 +921,10 @@
     "id": "masala_036",
     "type": "masala",
     "categoryId": "prayer_units",
-    "titleUrLatn": "paanch farz namazon mein majamoi farz rakatein kitni hain?",
-    "questionUrLatn": "paanch farz namazon mein majamoi farz rakatein kitni hain?",
-    "summaryUrLatn": "Fajr 2, Zuhr 4, Asr 4, Maghrib 3, Isha 4; majamoh 17 farz rakatein banati hain.",
-    "contentUrLatn": "Fajr 2, Zuhr 4, Asr 4, Maghrib 3, Isha 4; majamoh 17 farz rakatein banati hain.",
+    "titleUrLatn": "Paanch farz namazon mein majmooi farz rakatein kitni hain?",
+    "questionUrLatn": "paanch farz namazon mein majmooi farz rakatein kitni hain?",
+    "summaryUrLatn": "Fajr 2, Zuhr 4, Asr 4, Maghrib 3, Isha 4; majmooa 17 farz rakatein banti hain.",
+    "contentUrLatn": "Fajr 2, Zuhr 4, Asr 4, Maghrib 3, Isha 4; majmooa 17 farz rakatein banati hain.",
     "keywordsUrLatn": [
       "17 rakat"
     ],
@@ -1001,8 +1001,8 @@
     "categoryId": "prayer_units",
     "titleUrLatn": "kya Zuhr ki qaza hamesha do rakat hoti hai?",
     "questionUrLatn": "kya Zuhr ki qaza hamesha do rakat hoti hai?",
-    "summaryUrLatn": "aam asal mein Zuhr ke farz ki qaza chaar rakat hai. safar ki haalat se mutaliq baaz alag faqahi tafseelaat hain, is liye unhein charon mazahib ka yaksan hukm bana kar pish na kya jaye.",
-    "contentUrLatn": "aam asal mein Zuhr ke farz ki qaza chaar rakat hai. safar ki haalat se mutaliq baaz alag faqahi tafseelaat hain, is liye unhein charon mazahib ka yaksan hukm bana kar pish na kya jaye.",
+    "summaryUrLatn": "aam asal mein Zuhr ke farz ki qaza chaar rakat hai. safar ki haalat se mutaliq baaz alag faqahi tafseelaat hain, is liye unhein charon mazahib ka yaksan hukm bana kar pesh na kya jaye.",
+    "contentUrLatn": "aam asal mein Zuhr ke farz ki qaza chaar rakat hai. safar ki haalat se mutaliq baaz alag faqahi tafseelaat hain, is liye unhein charon mazahib ka yaksan hukm bana kar pesh na kya jaye.",
     "keywordsUrLatn": [
       "Zuhr",
       "safar se mutaliq not"
@@ -1138,7 +1138,7 @@
     "categoryId": "menstruation",
     "titleUrLatn": "haiz ki namazon ki qaza na karne ki asal daleel kya hai?",
     "questionUrLatn": "haiz ki namazon ki qaza na karne ki asal daleel kya hai?",
-    "summaryUrLatn": "Hazrat Aisha razi Allah anha ki sahih riwayat hai ke haiz ki wajah se reh janay wali namazon ki qaza ka hukm nahin diya jata taha.",
+    "summaryUrLatn": "Hazrat Aisha razi Allah anha ki sahih riwayat hai ke haiz ki wajah se reh janay wali namazon ki qaza ka hukm nahin diya jata tha.",
     "contentUrLatn": "Hazrat Aisha razi Allah anha ki sahih riwayat hai ke haiz ki wajah se reh janay wali namazon ki qaza ka hukm nahin diya jata taha.",
     "keywordsUrLatn": [
       "daleel",
@@ -1160,7 +1160,7 @@
     "categoryId": "nifas",
     "titleUrLatn": "kya nifas ke dinon mein reh janay wali farz namazon ki qaza hai?",
     "questionUrLatn": "kya nifas ke dinon mein reh janay wali farz namazon ki qaza hai?",
-    "summaryUrLatn": "nahin. nifas ke doraan namaz ka makalafanah ada na hona haiz ki tarah qaza ke dairay mein nahin aata.",
+    "summaryUrLatn": "Nahin. Nifas ke doraan namaz ka mukallafana ada na hona haiz ki tarah qaza ke dairay mein nahin aata.",
     "contentUrLatn": "nahin. nifas ke doraan namaz ka makalafanah ada na hona haiz ki tarah qaza ke dairay mein nahin aata.",
     "keywordsUrLatn": [
       "nifas"
@@ -1205,10 +1205,10 @@
     "id": "masala_047",
     "type": "masala",
     "categoryId": "menstruation_nifas",
-    "titleUrLatn": "kya haiz ke namaz na parhnay ko aam 'fawt shuda namaz' samajah kar qaza lijar mein shamil karna darasat hai?",
-    "questionUrLatn": "kya haiz ke namaz na parhnay ko aam 'fawt shuda namaz' samajah kar qaza lijar mein shamil karna darasat hai?",
-    "summaryUrLatn": "nahin. haiz ke doraan jan namazon ki sharit ne qaza muqarrar nahin ki, unhein aam qaza zimma mein shumar nahin kya jaye ga.",
-    "contentUrLatn": "nahin. haiz ke doraan jan namazon ki sharit ne qaza muqarrar nahin ki, unhein aam qaza zimma mein shumar nahin kya jaye ga.",
+    "titleUrLatn": "kya haiz ke namaz na parhnay ko aam 'fawt shuda namaz' samajah kar qaza lijar mein shamil karna durust hai?",
+    "questionUrLatn": "kya haiz ke namaz na parhnay ko aam 'fawt shuda namaz' samajah kar qaza lijar mein shamil karna durust hai?",
+    "summaryUrLatn": "Nahin. Haiz ke doraan jin namazon ki shariat ne qaza muqarrar nahin ki, unhein aam qaza zimma mein shumar nahin kiya jaye ga.",
+    "contentUrLatn": "nahin. haiz ke doraan jan namazon ki shariat ne qaza muqarrar nahin ki, unhein aam qaza zimma mein shumar nahin kya jaye ga.",
     "keywordsUrLatn": [
       "app record",
       "haiz"
@@ -1256,8 +1256,8 @@
     "categoryId": "menstruation",
     "titleUrLatn": "haiz mein namaz aur rozay ke qaza hukm mein kya farq hai?",
     "questionUrLatn": "haiz mein namaz aur rozay ke qaza hukm mein kya farq hai?",
-    "summaryUrLatn": "haiz mein fawt honay walay rozon ki qaza ki jati hai, jabakah fawt honay wali namazon ki qaza nahin ki jati.",
-    "contentUrLatn": "haiz mein fawt honay walay rozon ki qaza ki jati hai, jabakah fawt honay wali namazon ki qaza nahin ki jati.",
+    "summaryUrLatn": "Haiz mein fawt honay walay rozon ki qaza ki jati hai, jabke fawt honay wali namazon ki qaza nahin ki jati.",
+    "contentUrLatn": "haiz mein fawt honay walay rozon ki qaza ki jati hai, jabke fawt honay wali namazon ki qaza nahin ki jati.",
     "keywordsUrLatn": [
       "roza aur namaz ka farq"
     ],
@@ -1368,10 +1368,10 @@
     "id": "masala_054",
     "type": "masala",
     "categoryId": "friday",
-    "titleUrLatn": "agar kasi sharai uzr ki wajah se Jumma reh jaye to kya phir bhi do rakat Jumma parahani hogi?",
-    "questionUrLatn": "agar kasi sharai uzr ki wajah se Jumma reh jaye to kya phir bhi do rakat Jumma parahani hogi?",
-    "summaryUrLatn": "nahin. sharai uzr ke baais Jumma na malanay ki soorat mein Zuhr ki chaar rakat parhi jati hain.",
-    "contentUrLatn": "nahin. sharai uzr ke baais Jumma na malanay ki soorat mein Zuhr ki chaar rakat parhi jati hain.",
+    "titleUrLatn": "Agar kisi sharai uzr ki wajah se Jumma reh jaye to kya phir bhi do rakat Jumma parhni hogi?",
+    "questionUrLatn": "agar kasi sharai uzr ki wajah se Jumma reh jaye to kya phir bhi do rakat Jumma parhani hogi?",
+    "summaryUrLatn": "nahin. sharai uzr ke baais Jumma na milne ki soorat mein Zuhr ki chaar rakat parhi jati hain.",
+    "contentUrLatn": "nahin. sharai uzr ke baais Jumma na milne ki soorat mein Zuhr ki chaar rakat parhi jati hain.",
     "keywordsUrLatn": [
       "Jumma",
       "uzr"
@@ -1390,8 +1390,8 @@
     "id": "masala_055",
     "type": "masala",
     "categoryId": "friday",
-    "titleUrLatn": "agar koi bila uzr Jumma chhor de to kya baad mein do rakat Jumma qaza karasakata hai?",
-    "questionUrLatn": "agar koi bila uzr Jumma chhor de to kya baad mein do rakat Jumma qaza karasakata hai?",
+    "titleUrLatn": "agar koi bila uzr Jumma chhor de to kya baad mein do rakat Jumma qaza kar sakta hai?",
+    "questionUrLatn": "agar koi bila uzr Jumma chhor de to kya baad mein do rakat Jumma qaza kar sakta hai?",
     "summaryUrLatn": "nahin. Jumma ki qaza do rakat Jumma ke tor par nahin; Zuhr ki chaar rakat ada ki jayein gi. bila uzr tark Jumma gunah ka baais hai.",
     "contentUrLatn": "nahin. Jumma ki qaza do rakat Jumma ke tor par nahin; Zuhr ki chaar rakat ada ki jayein gi. bila uzr tark Jumma gunah ka baais hai.",
     "keywordsUrLatn": [
@@ -1433,10 +1433,10 @@
     "id": "mugalata_002",
     "type": "mugalata",
     "categoryId": "misconceptions",
-    "titleUrLatn": "namaz bhool jaye to bas mafi manag lena kaafi hai.",
-    "questionUrLatn": "namaz bhool jaye to bas mafi manag lena kaafi hai.",
-    "summaryUrLatn": "ghalat. yaad aanay par namaz ada karna hadees ka oazah hukm hai.",
-    "contentUrLatn": "ghalat. yaad aanay par namaz ada karna hadees ka oazah hukm hai.",
+    "titleUrLatn": "namaz bhool jaye to bas mafi maang lena kaafi hai.",
+    "questionUrLatn": "namaz bhool jaye to bas mafi maang lena kaafi hai.",
+    "summaryUrLatn": "Ghalat. Yaad aanay par namaz ada karna hadees ka wazeh hukm hai.",
+    "contentUrLatn": "ghalat. yaad aanay par namaz ada karna hadees ka wazeh hukm hai.",
     "keywordsUrLatn": [
       "bhool"
     ],
@@ -1459,8 +1459,8 @@
     "id": "mugalata_003",
     "type": "mugalata",
     "categoryId": "misconceptions",
-    "titleUrLatn": "tauba karali to pachahali farz namazon ki qaza khatam hogayi.",
-    "questionUrLatn": "tauba karali to pachahali farz namazon ki qaza khatam hogayi.",
+    "titleUrLatn": "tauba kar li to pichhli farz namazon ki qaza khatam hogayi.",
+    "questionUrLatn": "tauba kar li to pichhli farz namazon ki qaza khatam hogayi.",
     "summaryUrLatn": "ghalat. charon mazahib ke baray mein manqool moqaf ke mutabiq qaza bhi baqi rehti hai.",
     "contentUrLatn": "ghalat. charon mazahib ke baray mein manqool moqaf ke mutabiq qaza bhi baqi rehti hai.",
     "keywordsUrLatn": [
@@ -1689,8 +1689,8 @@
     "id": "mugalata_012",
     "type": "mugalata",
     "categoryId": "misconceptions",
-    "titleUrLatn": "Jumma reh jaye to koi namaz nahin parahani.",
-    "questionUrLatn": "Jumma reh jaye to koi namaz nahin parahani.",
+    "titleUrLatn": "Jumma reh jaye to koi namaz nahin parhani.",
+    "questionUrLatn": "Jumma reh jaye to koi namaz nahin parhani.",
     "summaryUrLatn": "ghalat. fawt shuda Jumma ki jagah Zuhr ki chaar rakat parhi jati hain.",
     "contentUrLatn": "ghalat. fawt shuda Jumma ki jagah Zuhr ki chaar rakat parhi jati hain.",
     "keywordsUrLatn": [
@@ -1712,8 +1712,8 @@
     "categoryId": "misconceptions",
     "titleUrLatn": "haiz mein reh janay wali namazein Ramzan ke rozon ki tarah qaza hoon gi.",
     "questionUrLatn": "haiz mein reh janay wali namazein Ramzan ke rozon ki tarah qaza hoon gi.",
-    "summaryUrLatn": "ghalat. sahih masalam mein Hazrat Aisha razi Allah anha ki riwayat ke mutabiq haiz ki chahoti hui namazon ki qaza ka hukm nahin diya gaya.",
-    "contentUrLatn": "ghalat. sahih masalam mein Hazrat Aisha razi Allah anha ki riwayat ke mutabiq haiz ki chahoti hui namazon ki qaza ka hukm nahin diya gaya.",
+    "summaryUrLatn": "Ghalat. Sahih Muslim mein Hazrat Aisha razi Allah anha ki riwayat ke mutabiq haiz ki chhooti hui namazon ki qaza ka hukm nahin diya gaya.",
+    "contentUrLatn": "ghalat. Sahih Muslim mein Hazrat Aisha razi Allah anha ki riwayat ke mutabiq haiz ki chhooti hui namazon ki qaza ka hukm nahin diya gaya.",
     "keywordsUrLatn": [
       "haiz"
     ],
@@ -1780,8 +1780,8 @@
     "categoryId": "misconceptions",
     "titleUrLatn": "qaza ka matlab sirf aglay din wohi namaz parh lena hai; purani qaza nahin hoti.",
     "questionUrLatn": "qaza ka matlab sirf aglay din wohi namaz parh lena hai; purani qaza nahin hoti.",
-    "summaryUrLatn": "ghalat. accumulated ini taweel muddat ki fawt shuda namazon ki qaza ka bhi hukm hai.",
-    "contentUrLatn": "ghalat. accumulated ini taweel muddat ki fawt shuda namazon ki qaza ka bhi hukm hai.",
+    "summaryUrLatn": "Ghalat. Yaani taweel muddat ki fawt shuda namazon ki qaza ka bhi hukm hai.",
+    "contentUrLatn": "ghalat. yaani taweel muddat ki fawt shuda namazon ki qaza ka bhi hukm hai.",
     "keywordsUrLatn": [
       "jama shuda qaza"
     ],
@@ -1799,10 +1799,10 @@
     "id": "mugalata_017",
     "type": "mugalata",
     "categoryId": "misconceptions",
-    "titleUrLatn": "qaza shuru karne ke liye pehle saari purani namazon ki mukammal faharasat hatah se tiar karna lazami hai.",
-    "questionUrLatn": "qaza shuru karne ke liye pehle saari purani namazon ki mukammal faharasat hatah se tiar karna lazami hai.",
-    "summaryUrLatn": "ghalat. qaza shuru ki ja sakti hai; mukammal hisaab aur anadazah laganay ki amali tafasil alag masla hai.",
-    "contentUrLatn": "ghalat. qaza shuru ki ja sakti hai; mukammal hisaab aur anadazah laganay ki amali tafasil alag masla hai.",
+    "titleUrLatn": "qaza shuru karne ke liye pehle saari purani namazon ki mukammal fehrist haath se tayyar karna lazmi hai.",
+    "questionUrLatn": "qaza shuru karne ke liye pehle saari purani namazon ki mukammal fehrist haath se tayyar karna lazmi hai.",
+    "summaryUrLatn": "Ghalat. Qaza shuru ki ja sakti hai; mukammal hisaab aur andaza laganay ki amali tafseel alag masla hai.",
+    "contentUrLatn": "ghalat. qaza shuru ki ja sakti hai; mukammal hisaab aur andaza laganay ki amali tafasil alag masla hai.",
     "keywordsUrLatn": [
       "hisaab rakahana"
     ],
@@ -1827,8 +1827,8 @@
     "categoryId": "misconceptions",
     "titleUrLatn": "charon mazahib mein fawt shuda namazon ki tarteeb bilkul yaksan aur har soorat mein wajib hai.",
     "questionUrLatn": "charon mazahib mein fawt shuda namazon ki tarteeb bilkul yaksan aur har soorat mein wajib hai.",
-    "summaryUrLatn": "ghalat. tarteeb ke hukm aur is ki sharait mein charon mazahib ke daramian ikhtilaf mojood hai. app mein usay matafaq alaihi na lakaha jaye.",
-    "contentUrLatn": "ghalat. tarteeb ke hukm aur is ki sharait mein charon mazahib ke daramian ikhtilaf mojood hai. app mein usay matafaq alaihi na lakaha jaye.",
+    "summaryUrLatn": "Ghalat. Tarteeb ke hukm aur is ki sharaait mein charon mazahib ke darmiyan ikhtilaf mojood hai. App mein usay muttafaq alaih na likha jaye.",
+    "contentUrLatn": "ghalat. tarteeb ke hukm aur is ki sharait mein charon mazahib ke darmiyan ikhtilaf mojood hai. app mein usay muttafaq alaih na likha jaye.",
     "keywordsUrLatn": [
       "tarteeb",
       "ikhtilaf"
@@ -1849,8 +1849,8 @@
     "categoryId": "misconceptions",
     "titleUrLatn": "qaza sirf aik namaz rozana karne tak mahdood hai.",
     "questionUrLatn": "qaza sirf aik namaz rozana karne tak mahdood hai.",
-    "summaryUrLatn": "ghalat fahami. taweel qaza ke liye aisi oahad charon mazahib ki had muqarrar nahin; amali shidol aur tarteeb ke jaziiat alag hain.",
-    "contentUrLatn": "ghalat fahami. taweel qaza ke liye aisi oahad charon mazahib ki had muqarrar nahin; amali shidol aur tarteeb ke jaziiat alag hain.",
+    "summaryUrLatn": "Ghalat fahami. Taweel qaza ke liye aisi wahid charon mazahib ki had muqarrar nahin; amali jadwal aur tarteeb ke juz'iyat alag hain.",
+    "contentUrLatn": "ghalat fahami. taweel qaza ke liye aisi wahid charon mazahib ki had muqarrar nahin; amali jadwal aur tarteeb ke juz'iyat alag hain.",
     "keywordsUrLatn": [
       "roz aik namaz"
     ],
