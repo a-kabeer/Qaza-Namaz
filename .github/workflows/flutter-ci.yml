@@ -38,6 +38,8 @@ jobs:
 
       - name: Pub get
         run: flutter pub get
+      - name: Generate localization code
+        run: flutter gen-l10n
 
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
@@ -96,6 +98,8 @@ jobs:
 
       - name: Pub get
         run: flutter pub get
+      - name: Generate localization code
+        run: flutter gen-l10n
 
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
