@@ -5,16 +5,17 @@ Mugalāṭāt content.
 
 ## Source format
 
-The Knowledge Base ships three UTF-8 JSON files, one per supported reading
+The Knowledge Base ships four UTF-8 JSON files, one per supported reading
 language:
 
 - `qaza_masail_mugalat_en.json`
 - `qaza_masail_mugalat_ur.json`
 - `qaza_masail_mugalat_ar.json`
+- `qaza_masail_mugalat_ur_Latn.json`
 
-Each file is a JSON **array** of entries. The three files describe the same
+Each file is a JSON **array** of entries. The four files describe the same
 articles and are joined on `id` at load time. Every article ID must occur in
-all three files. The machine-readable contract is `content.schema.json`.
+all four files. The machine-readable contract is `content.schema.json`.
 
 ## Entry fields
 
@@ -34,6 +35,7 @@ Language-specific fields use these suffixes:
 - English: `titleEn`, `questionEn`, `summaryEn`, `contentEn`, `keywordsEn`
 - Urdu: `titleUr`, `questionUr`, `summaryUr`, `contentUr`, `keywordsUr`
 - Arabic: `titleAr`, `questionAr`, `summaryAr`, `contentAr`, `keywordsAr`
+- Roman Urdu: `titleUrLatn`, `questionUrLatn`, `summaryUrLatn`, `contentUrLatn`, `keywordsUrLatn`
 
 Search keywords should use the words a reader of that language is likely to
 enter; literal word-for-word keyword translations are not required.
@@ -65,7 +67,7 @@ or omitting a required translated field is a load-time validation error.
 | `keywordsEn` / `keywordsUr` / `keywordsAr` | `KnowledgeLocalizedKeywords` |
 | `references[]` | `KnowledgeReference` |
 
-`KnowledgeBaseParser.parseTriple` validates and joins all three language
+`KnowledgeBaseParser.parseQuadruple` validates and joins all four language
 files. `BundledKnowledgeBaseRepository` loads the bundled files, filters
 unpublished entries, orders articles by section and `sortOrder`, and answers
 queries. Search only matches article text and keywords in the selected reading
