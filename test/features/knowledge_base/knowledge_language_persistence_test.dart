@@ -126,7 +126,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.pump();
 
-    expect(container.read(knowledgeLanguageProvider), KnowledgeLanguage.romanUrdu);
+    expect(
+      container.read(knowledgeLanguageProvider),
+      KnowledgeLanguage.romanUrdu,
+    );
     expect(container.read(localeProvider).languageCode, 'en');
     final romanRows = await database.customSelect(
       "SELECT value FROM meta_store WHERE key = 'qaza_knowledge_language'",
