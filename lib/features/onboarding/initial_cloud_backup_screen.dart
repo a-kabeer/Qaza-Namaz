@@ -109,12 +109,13 @@ class _InitialCloudBackupScreenState
     final progress = _progress;
     final total = progress?.totalBytes ?? 0;
     final sent = progress?.sentBytes ?? 0;
-    final hasByteProgress =
-        (progress?.stage == CloudBackupProgressStage.uploading ||
-            progress?.stage == CloudBackupProgressStage.downloading) &&
-        total > 0;
-    final ratio =
-        hasByteProgress ? (sent / total).clamp(0.0, 1.0).toDouble() : null;
+    final isByteTransfer =
+        progress?.stage == CloudBackupProgressStage.uploading ||
+        progress?.stage == CloudBackupProgressStage.downloading;
+    final hasByteProgress = isByteTransfer && (total > 0 || sent > 0);
+    final ratio = hasByteProgress && total > 0
+        ? (sent / total).clamp(0.0, 1.0).toDouble()
+        : null;
     // Bytes consumed by the HTTP request are not server confirmation. Hold
     // the visible percentage below 100 until the adapter confirms success.
     final visibleRatio = ratio == null ? null : (ratio >= 1 ? 0.99 : ratio);
@@ -171,9 +172,11 @@ class _InitialCloudBackupScreenState
                     if (hasByteProgress) ...[
                       const SizedBox(height: 8),
                       Text(
-                        '${(sent / (1024 * 1024)).toStringAsFixed(2)} MB / '
-                        '${(total / (1024 * 1024)).toStringAsFixed(2)} MB'
-                        ' · ${visiblePercent ?? 0}%',
+                        total > 0
+                            ? '${(sent / (1024 * 1024)).toStringAsFixed(2)} MB / '
+                                  '${(total / (1024 * 1024)).toStringAsFixed(2)} MB'
+                                  ' · ${visiblePercent ?? 0}%'
+                            : '${(sent / (1024 * 1024)).toStringAsFixed(2)} MB',
                         textAlign: TextAlign.center,
                         style: theme.textTheme.bodySmall,
                       ),
