@@ -33,7 +33,9 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: Text(AppLocalizations.of(context).knowledgeArticleTitle),
-        bottom: const KnowledgeLanguageBar(),
+        bottom: KnowledgeLanguageBar(
+          height: KnowledgeLanguageBar.heightFor(context),
+        ),
       ),
       body: articleAsync.when(
         loading: () => const _KnowledgeArticleSkeleton(),
@@ -47,16 +49,14 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
             return const _MissingArticleState();
           }
 
-          final title = article.title.forLanguage(language);
-          final body = article.body.forLanguage(language);
+          final title = showUrdu ? article.title.ur : article.title.en;
+          final body = showUrdu ? article.body.ur : article.body.en;
           final direction = language.direction;
           final textAlign = language.textAlign;
           // The article's language is independent of the interface language,
           // so the scale is chosen from the content rather than the locale.
           final typography = AppTypography.of(context);
-          final type = language.isArabic
-              ? typography.arabic
-              : typography.forScript(urduScript: showUrdu);
+          final type = typography.forScript(urduScript: showUrdu);
 
           return CustomScrollView(
             slivers: [
@@ -74,24 +74,25 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                       ),
                       const SizedBox(height: 20),
                       _CategoryBadge(
-                          category: article.category, topicId: article.topicId),
+                        category: article.category,
+                        topicId: article.topicId,
+                        direction: direction,
+                        textAlign: textAlign,
+                        labelStyle: type.labelLarge!,
+                      ),
                       const SizedBox(height: 20),
                       SelectableText(
                         body,
                         textDirection: direction,
                         textAlign: textAlign,
-                        style: language.isArabic
-                            ? typography.arabic.bodyLarge?.copyWith(height: 1.7)
-                            : typography.readingBody(urduScript: showUrdu),
+                        style: typography.readingBody(urduScript: showUrdu),
                       ),
                       if (article.references.isNotEmpty) ...[
                         const SizedBox(height: 28),
                         Text(
                           AppLocalizations.of(context)
                               .knowledgeArticleReferences,
-                          textDirection: direction,
-                          textAlign: textAlign,
-                          style: type.titleLarge,
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
                         const SizedBox(height: 8),
                         ...article.references.map(
@@ -129,9 +130,7 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                           child: Text(
                             AppLocalizations.of(context)
                                 .knowledgeArticleRelated,
-                            textDirection: direction,
-                            textAlign: textAlign,
-                            style: type.titleLarge,
+                            style: Theme.of(context).textTheme.titleLarge,
                           ),
                         ),
                         const SliverToBoxAdapter(child: SizedBox(height: 8)),
@@ -139,8 +138,9 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                           itemCount: related.length,
                           itemBuilder: (context, index) {
                             final relatedArticle = related[index];
-                            final relatedTitle =
-                                relatedArticle.title.forLanguage(language);
+                            final relatedTitle = showUrdu
+                                ? relatedArticle.title.ur
+                                : relatedArticle.title.en;
                             return Semantics(
                               button: true,
                               label: relatedTitle,
@@ -261,23 +261,25 @@ class _RelatedArticleSkeleton extends StatelessWidget {
 }
 
 class _CategoryBadge extends ConsumerWidget {
-  const _CategoryBadge({required this.category, required this.topicId});
+  const _CategoryBadge({
+    required this.category,
+    required this.topicId,
+    required this.direction,
+    required this.textAlign,
+    required this.labelStyle,
+  });
 
   final KnowledgeCategory category;
   final String topicId;
+  final TextDirection direction;
+  final TextAlign textAlign;
+  final TextStyle labelStyle;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // The section and topic name the content, so they follow the article's
     // language rather than the interface language.
     final l10n = ref.watch(knowledgeLocalizationsProvider);
-    final language = ref.watch(knowledgeLanguageProvider);
-    final typography = AppTypography.of(context);
-    final labelStyle = language.isArabic
-        ? typography.arabic.labelLarge
-        : language.isUrdu
-            ? typography.urdu.labelLarge
-            : typography.latin.labelLarge;
     final section = switch (category) {
       KnowledgeCategory.masail => l10n.knowledgeCategoryMasail,
       KnowledgeCategory.mugalat => l10n.knowledgeCategoryMugalat,
@@ -290,11 +292,18 @@ class _CategoryBadge extends ConsumerWidget {
         children: [
           Chip(
             avatar: const Icon(Icons.category_outlined, size: 18),
-            label: Text(section, style: labelStyle),
+            label: Text(
+              section,
+              textDirection: direction,
+              textAlign: textAlign,
+              style: labelStyle,
+            ),
           ),
           Chip(
             label: Text(
               localizedKnowledgeTopic(topicId, l10n),
+              textDirection: direction,
+              textAlign: textAlign,
               style: labelStyle,
             ),
           ),

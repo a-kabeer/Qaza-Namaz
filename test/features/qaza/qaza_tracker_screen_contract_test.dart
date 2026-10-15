@@ -161,7 +161,8 @@ void main() {
       ),
     );
     expect(source, contains('const SizedBox(height: AppSpacing.sm),'));
-    expect(source, contains('height: _headerContentHeight,'));
+    expect(source, contains('constraints: const BoxConstraints('));
+    expect(source, contains('minHeight: _headerContentHeight'));
     expect(source, contains('child: selectionMode'));
     expect(source, contains('? const _SelectionContextHeader()'));
     expect(source, contains('l10n.addQazaSelectionLabel'));
@@ -1027,7 +1028,8 @@ void main() {
     final header = source.substring(start, end);
 
     expect(header, contains('static const double _headerHeight = 84;'));
-    expect(header, contains('height: _headerHeight,'));
+    expect(header, contains('constraints: const BoxConstraints('));
+    expect(header, contains('minHeight: _headerHeight'));
     expect(header, contains("Key('qaza_tracker_progress_header')"));
     expect(header, contains('qazaAdditionDetailProvider(additionId!)'));
     expect(header, contains('progressSummaryProvider'));
