@@ -49,8 +49,8 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
             return const _MissingArticleState();
           }
 
-          final title = showUrdu ? article.title.ur : article.title.en;
-          final body = showUrdu ? article.body.ur : article.body.en;
+          final title = article.title.forLanguage(language);
+          final body = article.body.forLanguage(language);
           final direction = language.direction;
           final textAlign = language.textAlign;
           // The article's language is independent of the interface language,
@@ -138,9 +138,8 @@ class KnowledgeArticleDetailPage extends ConsumerWidget {
                           itemCount: related.length,
                           itemBuilder: (context, index) {
                             final relatedArticle = related[index];
-                            final relatedTitle = showUrdu
-                                ? relatedArticle.title.ur
-                                : relatedArticle.title.en;
+                            final relatedTitle =
+                                relatedArticle.title.forLanguage(language);
                             return Semantics(
                               button: true,
                               label: relatedTitle,
