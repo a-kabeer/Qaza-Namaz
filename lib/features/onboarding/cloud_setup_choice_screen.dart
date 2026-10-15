@@ -279,6 +279,8 @@ class _CloudSetupChoiceScreenState
 
     setState(() {
       _working = true;
+      _restoring = true;
+      _restoreProgress = const CloudBackupProgress.checking();
       _error = null;
     });
     try {
@@ -286,6 +288,9 @@ class _CloudSetupChoiceScreenState
             conflict: conflict,
             choice: CloudConflictChoice.useRemote,
             confirmed: true,
+            onProgress: (progress) {
+              if (mounted) setState(() => _restoreProgress = progress);
+            },
           );
       if (!mounted) return;
 
@@ -318,7 +323,13 @@ class _CloudSetupChoiceScreenState
     } catch (error) {
       if (mounted) setState(() => _error = error.toString());
     } finally {
-      if (mounted) setState(() => _working = false);
+      if (mounted) {
+        setState(() {
+          _working = false;
+          _restoring = false;
+          _restoreProgress = null;
+        });
+      }
     }
   }
 
@@ -449,7 +460,7 @@ class _CloudSetupChoiceScreenState
                     ),
                   ),
                 ],
-                if (_restoring) ...[
+                if (_working) ...[
                   const SizedBox(height: 20),
                   Card(
                     child: Padding(
@@ -458,12 +469,24 @@ class _CloudSetupChoiceScreenState
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Restoring your Google Drive backup',
+                            _restoring
+                                ? switch (_restoreProgress?.stage) {
+                                    CloudBackupProgressStage.preparing =>
+                                      'Restoring your verified backup',
+                                    CloudBackupProgressStage.uploading =>
+                                      'Transferring backup data',
+                                    CloudBackupProgressStage.completed =>
+                                      'Finishing restore',
+                                    _ => 'Checking and validating your backup',
+                                  }
+                                : 'Connecting to Google Drive and searching for a backup',
                             style: theme.textTheme.titleMedium,
                           ),
                           const SizedBox(height: 8),
-                          const Text(
-                            'Downloading, validating, and safely restoring your data. Keep the app open.',
+                          Text(
+                            _restoring
+                                ? 'Your backup is being validated and restored safely. Keep the app open.'
+                                : 'Checking your Google account and looking for an existing backup.',
                           ),
                           const SizedBox(height: 12),
                           const LinearProgressIndicator(),
