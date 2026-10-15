@@ -183,15 +183,17 @@ class GoogleDriveAppDataStore
   final GoogleSignInGateway _auth;
 
   @override
-  Future<CloudRemoteSnapshot?> latest({required bool allowInteractive}) =>
-      _withDrive<CloudRemoteSnapshot?>(
-        allowInteractive: allowInteractive,
-        action: (driveApi, _) async {
-          final metadata = await _latestMetadata(driveApi);
-          if (metadata == null) return null;
-          return _downloadBackup(driveApi, metadata);
-        },
-      );
+  Future<CloudRemoteSnapshot?> latest({
+    required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
+  }) => _withDrive<CloudRemoteSnapshot?>(
+    allowInteractive: allowInteractive,
+    action: (driveApi, _) async {
+      final metadata = await _latestMetadata(driveApi);
+      if (metadata == null) return null;
+      return _downloadBackup(driveApi, metadata, onProgress: onProgress);
+    },
+  );
 
   @override
   Future<CloudRemoteMetadata?> latestMetadata({
@@ -205,9 +207,14 @@ class GoogleDriveAppDataStore
   Future<CloudRemoteSnapshot> download(
     CloudRemoteMetadata metadata, {
     required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
   }) => _withDrive<CloudRemoteSnapshot>(
     allowInteractive: allowInteractive,
-    action: (driveApi, _) => _downloadBackup(driveApi, metadata),
+    action: (driveApi, _) => _downloadBackup(
+      driveApi,
+      metadata,
+      onProgress: onProgress,
+    ),
   );
 
   Future<CloudRemoteMetadata?> _latestMetadata(drive.DriveApi driveApi) async {
@@ -218,7 +225,7 @@ class GoogleDriveAppDataStore
         orderBy: 'modifiedTime desc,name desc',
         pageSize: 1,
         $fields:
-            'files(id,name,modifiedTime,version,md5Checksum,appProperties)',
+            'files(id,name,size,modifiedTime,version,md5Checksum,appProperties)',
       ),
     );
     final files = response.files ?? const <drive.File>[];
@@ -245,13 +252,15 @@ class GoogleDriveAppDataStore
       remoteVersion: version,
       modifiedAt: file.modifiedTime?.toUtc(),
       hasAuthoritativeVersion: version != null && version.isNotEmpty,
+      sizeBytes: int.tryParse(file.size ?? ''),
     );
   }
 
   Future<CloudRemoteSnapshot> _downloadBackup(
     drive.DriveApi driveApi,
-    CloudRemoteMetadata metadata,
-  ) async {
+    CloudRemoteMetadata metadata, {
+    CloudBackupProgressCallback? onProgress,
+  }) async {
     final bytes = await _retryReadAfterTransportFailure(() async {
       final raw = await driveApi.files.get(
         metadata.fileId,
@@ -263,8 +272,21 @@ class GoogleDriveAppDataStore
         );
       }
       final result = <int>[];
+      final totalBytes = metadata.sizeBytes ?? 0;
+      onProgress?.call(
+        CloudBackupProgress.downloading(
+          receivedBytes: 0,
+          totalBytes: totalBytes,
+        ),
+      );
       await for (final chunk in raw.stream) {
         result.addAll(chunk);
+        onProgress?.call(
+          CloudBackupProgress.downloading(
+            receivedBytes: result.length,
+            totalBytes: totalBytes,
+          ),
+        );
       }
       return result;
     });
