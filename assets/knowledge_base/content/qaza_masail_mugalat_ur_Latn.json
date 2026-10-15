@@ -153,8 +153,8 @@
     "id": "masala_007",
     "type": "masala",
     "categoryId": "basic",
-    "titleUrLatn": "agar kai saal ki namazein reh gayi hoon to kya woh bilkul khatam hojati hain?",
-    "questionUrLatn": "agar kai saal ki namazein reh gayi hoon to kya woh bilkul khatam hojati hain?",
+    "titleUrLatn": "Agar kai saal ki namazein reh gayi hon to kya woh bilkul khatam ho jati hain?",
+    "questionUrLatn": "Agar kai saal ki namazein reh gayi hon to kya woh bilkul khatam ho jati hain?",
     "summaryUrLatn": "nahin. waqt guzarnay ya baras guzarnay se zimma khatam nahin hota; fawt shuda farz namazon ki qaza baqi rehti hai.",
     "contentUrLatn": "nahin. waqt guzarnay ya baras guzarnay se zimma khatam nahin hota; fawt shuda farz namazon ki qaza baqi rehti hai.",
     "keywordsUrLatn": [
@@ -1161,7 +1161,7 @@
     "titleUrLatn": "kya nifas ke dinon mein reh janay wali farz namazon ki qaza hai?",
     "questionUrLatn": "kya nifas ke dinon mein reh janay wali farz namazon ki qaza hai?",
     "summaryUrLatn": "Nahin. Nifas ke doraan namaz ka mukallafana ada na hona haiz ki tarah qaza ke dairay mein nahin aata.",
-    "contentUrLatn": "nahin. nifas ke doraan namaz ka makalafanah ada na hona haiz ki tarah qaza ke dairay mein nahin aata.",
+    "contentUrLatn": "Nahin. Nifas ke doraan namaz ka mukallafana ada na hona haiz ki tarah qaza ke dairay mein nahin aata.",
     "keywordsUrLatn": [
       "nifas"
     ],
@@ -1710,8 +1710,8 @@
     "id": "mugalata_013",
     "type": "mugalata",
     "categoryId": "misconceptions",
-    "titleUrLatn": "haiz mein reh janay wali namazein Ramzan ke rozon ki tarah qaza hoon gi.",
-    "questionUrLatn": "haiz mein reh janay wali namazein Ramzan ke rozon ki tarah qaza hoon gi.",
+    "titleUrLatn": "Haiz mein reh janay wali namazein Ramzan ke rozon ki tarah qaza hongi.",
+    "questionUrLatn": "Haiz mein reh janay wali namazein Ramzan ke rozon ki tarah qaza hongi.",
     "summaryUrLatn": "Ghalat. Sahih Muslim mein Hazrat Aisha razi Allah anha ki riwayat ke mutabiq haiz ki chhooti hui namazon ki qaza ka hukm nahin diya gaya.",
     "contentUrLatn": "ghalat. Sahih Muslim mein Hazrat Aisha razi Allah anha ki riwayat ke mutabiq haiz ki chhooti hui namazon ki qaza ka hukm nahin diya gaya.",
     "keywordsUrLatn": [
@@ -1731,8 +1731,8 @@
     "id": "mugalata_014",
     "type": "mugalata",
     "categoryId": "misconceptions",
-    "titleUrLatn": "nifas ke baad jatani namazein rahin sab qaza karni hoon gi.",
-    "questionUrLatn": "nifas ke baad jatani namazein rahin sab qaza karni hoon gi.",
+    "titleUrLatn": "Nifas ke baad jitni namazein rahin sab qaza karni hongi.",
+    "questionUrLatn": "Nifas ke baad jitni namazein rahin sab qaza karni hongi.",
     "summaryUrLatn": "ghalat. nifas ke doraan reh janay wali namazon ki qaza nahin ki jati.",
     "contentUrLatn": "ghalat. nifas ke doraan reh janay wali namazon ki qaza nahin ki jati.",
     "keywordsUrLatn": [
