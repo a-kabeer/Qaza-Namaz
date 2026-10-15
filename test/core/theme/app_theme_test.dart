@@ -170,6 +170,18 @@ void main() {
       expect(theme.textTheme.bodyMedium?.fontFamily, 'Manrope');
     });
 
+    test('Roman Urdu uses Latin typography rather than Nastaleeq', () {
+      const romanUrdu =
+          Locale.fromSubtags(languageCode: 'ur', scriptCode: 'Latn');
+      final light = AppTheme.light(locale: romanUrdu);
+      final dark = AppTheme.dark(locale: romanUrdu);
+
+      expect(AppTheme.isUrdu(romanUrdu), isFalse);
+      expect(light.textTheme.bodyMedium?.fontFamily, 'Manrope');
+      expect(dark.textTheme.bodyMedium?.fontFamily, 'Manrope');
+      expect(light.textTheme.bodyMedium?.fontFamily, isNot(AppTheme.urduFamily));
+    });
+
     test('theme mode mapping preserves system, light and dark choices', () {
       expect(AppThemeMode.system.materialMode, ThemeMode.system);
       expect(AppThemeMode.light.materialMode, ThemeMode.light);

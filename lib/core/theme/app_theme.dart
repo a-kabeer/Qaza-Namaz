@@ -51,7 +51,9 @@ class AppTheme {
   static const double _urduLargeSize = 24;
   static const double _urduLargeMaxHeight = 2.0;
 
-  static bool isUrdu(Locale? locale) => locale?.languageCode == 'ur';
+  static bool isUrdu(Locale? locale) =>
+      locale?.languageCode == 'ur' &&
+      locale?.scriptCode?.toLowerCase() != 'latn';
 
   /// Large tally counter; tabular so an incrementing count never shifts layout.
   static const TextStyle numericLarge = TextStyle(

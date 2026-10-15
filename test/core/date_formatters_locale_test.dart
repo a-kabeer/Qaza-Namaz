@@ -37,6 +37,32 @@ void main() {
       );
     });
 
+    test('uses Latin dates and Roman Urdu day-period text for Roman Urdu', () {
+      intl.Intl.defaultLocale = 'ur_Latn';
+      final date = DateTime(2026, 10, 11);
+      final arabicScript = RegExp(r'[\u0600-\u06FF]');
+
+      expect(DateFormatters.formatGregorianFull(date), '11 October 2026');
+      expect(DateFormatters.formatGregorianDatePadded(date), '11 Oct 2026');
+      expect(
+        DateFormatters.formatGregorianWeekdayShortFull(date),
+        'Sun, Oct 11, 2026',
+      );
+      expect(DateFormatters.formatWeekdayShort(date), 'Sun');
+      expect(
+        DateFormatters.formatClockTime(DateTime(2026, 10, 11, 16, 5)),
+        '04:05 dopahar',
+      );
+      expect(
+        [
+          DateFormatters.formatGregorianFull(date),
+          DateFormatters.formatGregorianWeekdayShortFull(date),
+          DateFormatters.formatWeekdayShort(date),
+        ].any(arabicScript.hasMatch),
+        isFalse,
+      );
+    });
+
     test('uses Urdu month, weekday, and day-period text for Urdu locale', () {
       intl.Intl.defaultLocale = 'ur';
       final urduScript = RegExp(r'[\u0600-\u06FF]');

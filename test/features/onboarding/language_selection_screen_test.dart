@@ -163,6 +163,24 @@ void main() {
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
   });
 
+  testWidgets('Roman Urdu is labelled Urdu and persists its script identifier',
+      (tester) async {
+    final repository = _FakeUserProfileRepository();
+    await tester.pumpWidget(_app(repository: repository));
+
+    await _chooseLanguage(tester, 'ur_Latn');
+    expect(find.text('Urdu'), findsOneWidget);
+
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+
+    final prefs = await SharedPreferences.getInstance();
+    expect(repository.saveCount, 1);
+    expect(repository.savedProfile?.languageCode, 'ur');
+    expect(prefs.getString(LocaleNotifier.storageKey), 'ur_Latn');
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+  });
+
   testWidgets('profile-save failure does not persist locale or navigate',
       (tester) async {
     final repository = _FakeUserProfileRepository(

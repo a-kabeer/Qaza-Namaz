@@ -29,9 +29,11 @@ class SettingsScreen extends ConsumerWidget {
     }
 
     Future<void> changeLanguage(Locale selectedLocale) async {
-      final resolved = LocaleNotifier.resolve(selectedLocale.languageCode);
+      final resolved =
+          LocaleNotifier.resolve(LocaleNotifier.localeKey(selectedLocale));
       if (resolved == null ||
-          ref.read(localeProvider).languageCode == resolved.languageCode) {
+          LocaleNotifier.localeKey(ref.read(localeProvider)) ==
+              LocaleNotifier.localeKey(resolved)) {
         return;
       }
 
@@ -85,6 +87,7 @@ class SettingsScreen extends ConsumerWidget {
                       (supportedLocale) => LanguageOption<Locale>(
                         value: supportedLocale,
                         languageCode: supportedLocale.languageCode,
+                        scriptCode: supportedLocale.scriptCode,
                       ),
                     )
                     .toList(growable: false),

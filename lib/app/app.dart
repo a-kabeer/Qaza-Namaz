@@ -9,6 +9,7 @@ import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
 import '../features/onboarding/startup_gate.dart';
 import '../l10n/app_localizations.dart';
+import '../l10n/roman_urdu_widgets_localizations.dart';
 import 'providers.dart';
 
 class QazaNamazApp extends ConsumerStatefulWidget {
@@ -54,7 +55,10 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
       darkTheme: AppTheme.dark(locale: locale, assetPackage: assetPackage),
       themeMode: ref.watch(themeModeProvider).materialMode,
       locale: locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      localizationsDelegates: <LocalizationsDelegate<dynamic>>[
+        const RomanUrduWidgetsLocalizationsDelegate(),
+        ...AppLocalizations.localizationsDelegates,
+      ],
       supportedLocales: AppLocalizations.supportedLocales,
       builder: (context, child) => AppScaffoldMessenger(
         key: appScaffoldMessengerKey,
