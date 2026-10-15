@@ -69,16 +69,18 @@ class KnowledgeLanguageBar extends StatelessWidget
       return scaler.scale(size) * (resolved.height ?? 1.2) + 20;
     }
 
-    return math.max(
-      _minimumHeight,
-      math.max(
-        scaledLineBox(typography.urdu.labelLarge),
-        math.max(
-          scaledLineBox(typography.arabic.labelLarge),
-          scaledLineBox(typography.latin.labelLarge),
-        ),
-      ),
-    ).toDouble();
+    return math
+        .max(
+          _minimumHeight,
+          math.max(
+            scaledLineBox(typography.urdu.labelLarge),
+            math.max(
+              scaledLineBox(typography.arabic.labelLarge),
+              scaledLineBox(typography.latin.labelLarge),
+            ),
+          ),
+        )
+        .toDouble();
   }
 
   @override
