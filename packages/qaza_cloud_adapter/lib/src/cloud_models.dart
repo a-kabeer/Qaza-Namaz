@@ -263,6 +263,7 @@ class CloudRemoteMetadata {
     required this.remoteVersion,
     required this.modifiedAt,
     required this.hasAuthoritativeVersion,
+    this.sizeBytes,
   });
 
   final String fileId;
@@ -270,6 +271,9 @@ class CloudRemoteMetadata {
   final String? remoteVersion;
   final DateTime? modifiedAt;
   final bool hasAuthoritativeVersion;
+
+  /// Content length reported by Google Drive, if available.
+  final int? sizeBytes;
 
   /// Unknown versions must never qualify for the metadata-only fast path.
   bool matchesCursor(CloudSyncCursor cursor) =>
