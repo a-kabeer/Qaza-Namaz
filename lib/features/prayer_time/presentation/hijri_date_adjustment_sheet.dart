@@ -142,7 +142,9 @@ class _AdjustmentOption extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: textTheme.bodyLarge?.copyWith(
                   fontWeight: selected ? FontWeight.w700 : FontWeight.w500,
-                  color: selected ? scheme.onSecondaryContainer : scheme.onSurface,
+                  color: selected
+                      ? scheme.onSecondaryContainer
+                      : scheme.onSurface,
                 ),
               ),
               const SizedBox(height: 2),
