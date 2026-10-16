@@ -56,8 +56,9 @@ class HijriDateAdjustmentSheet extends StatelessWidget {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             Center(
@@ -159,6 +160,7 @@ class _AdjustmentOption extends StatelessWidget {
               ),
             ],
           ),
+        ),
         ),
       ),
     );
