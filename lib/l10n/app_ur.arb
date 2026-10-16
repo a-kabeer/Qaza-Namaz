@@ -1049,5 +1049,20 @@
   "cloudSetupChoiceDescription": "اپنی چھوٹی ہوئی نمازوں کا حساب رکھیں اور قضا کی پیش رفت کو اپنی سہولت کے مطابق منظم کریں۔ آپ کا ریکارڈ اسی ڈیوائس پر محفوظ رہتا ہے۔ مختلف ڈیوائسز پر بیک اپ اور بحالی کے لیے آپ اختیاری طور پر گوگل استعمال کر سکتے ہیں۔",
   "cloudSetupUseGoogle": "گوگل کے ساتھ جاری رکھیں",
   "cloudSetupContinueLocal": "اسی ڈیوائس پر جاری رکھیں",
-  "cloudConnectionFailed": "گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔"
+  "cloudConnectionFailed": "گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔",
+  "dailySalahTrackingTitle": "روزانہ نماز کا ریکارڈ",
+  "dailySalahTrackingEnableTitle": "روزانہ نماز کا ریکارڈ فعال کریں",
+  "dailySalahTrackingEnableSubtitle": "اپنی ادا کی گئی یا رہ جانے والی نمازیں درج کریں۔ غیر درج نماز کو خودکار طور پر قضا نہیں سمجھا جائے گا۔",
+  "dailySalahTrackingEnableAction": "فعال کریں",
+  "dailySalahTrackingPrayed": "ادا کی",
+  "dailySalahTrackingMissed": "رہ گئی",
+  "dailySalahTrackingUnrecorded": "درج نہیں",
+  "dailySalahTrackingConfirmMissedTitle": "نماز رہ جانے کے طور پر درج کریں؟",
+  "dailySalahTrackingConfirmMissedMessage": "اس نماز اور تاریخ کے لیے صرف اسی صورت میں قضا ریکارڈ بنے گا جب پہلے سے موجود نہ ہو۔",
+  "dailySalahTrackingUndoQaza": "ٹریکنگ سے بنا قضا ریکارڈ واپس کریں",
+  "dailySalahTrackingUndoTitle": "یہ قضا ریکارڈ حذف کریں؟",
+  "dailySalahTrackingUndoMessage": "صرف Daily Salah Tracking کا بنایا ہوا یہی قضا ریکارڈ حذف ہوگا، اور صرف اس وقت جب ابھی زیرِ التوا ہو۔",
+  "dailySalahTrackingPreviousDay": "پچھلا دن",
+  "dailySalahTrackingNextDay": "اگلا دن",
+  "dailySalahTrackingUndoUnavailable": "یہ قضا ریکارڈ اب زیرِ التوا نہیں، اس لیے اسے حذف نہیں کیا گیا۔"
 }
