@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/features/prayer_time/presentation/hijri_date_adjustment_sheet.dart';
+import 'package:qaza_namaz/features/prayer_time/presentation/hijri_date_chip.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
@@ -54,6 +55,53 @@ void main() {
     expect(find.text('Adjust Hijri Date'), findsOneWidget);
     expect(find.text('No adjustment'), findsOneWidget);
     expect(find.textContaining('Selected'), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+
+  testWidgets('Hijri chip keeps its date and action on one narrow row',
+      (tester) async {
+    tester.view.physicalSize = const Size(320, 720);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: Padding(
+            padding: const EdgeInsets.all(12),
+            child: SizedBox(
+              width: 296,
+              child: Row(
+                children: [
+                  const Icon(Icons.calendar_today, size: 24),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Friday, 16 October 2026',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Flexible(
+                    child: HijriDateChip(
+                      label: '29 Rabi al-Thani 1448 AH',
+                      onAdjust: () {},
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('prayer_time_hijri_adjustment')), findsOneWidget);
+    expect(find.text('Friday, 16 October 2026'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
