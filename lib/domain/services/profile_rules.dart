@@ -101,9 +101,8 @@ class ProfileRules {
     final acceptedDate = profile.islamAcceptanceDate;
     final gender = profile.gender;
     if (dob == null || acceptedDate == null || gender == null) return true;
-    final maximumAge = gender == Gender.male
-        ? maleMaxPubertyAge
-        : femaleMaxPubertyAge;
+    final maximumAge =
+        gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
     final threshold = fixedMilestoneDate(dob, maximumAge);
     return _compareCalendarDates(acceptedDate, threshold) < 0;
   }
@@ -118,8 +117,7 @@ class ProfileRules {
     final acceptedDate = profile.islamAcceptanceDate;
     if (acceptedDate == null) return null;
     if (requiresPubertyInput(profile) && puberty == null) return null;
-    if (puberty == null ||
-        _compareCalendarDates(acceptedDate, puberty) > 0) {
+    if (puberty == null || _compareCalendarDates(acceptedDate, puberty) > 0) {
       return LocalDateService.dateOnly(acceptedDate);
     }
     return LocalDateService.dateOnly(puberty);

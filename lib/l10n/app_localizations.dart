@@ -3005,17 +3005,52 @@ abstract class AppLocalizations {
   /// **'Hijri date is shown after you select the Gregorian date.'**
   String get profileHijriHint;
 
+  /// No description provided for @profileIslamicBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Islamic background'**
+  String get profileIslamicBackground;
+
+  /// No description provided for @profileMuslimFromChildhood.
+  ///
+  /// In en, this message translates to:
+  /// **'I was Muslim from childhood'**
+  String get profileMuslimFromChildhood;
+
+  /// No description provided for @profileAcceptedIslamLater.
+  ///
+  /// In en, this message translates to:
+  /// **'I accepted Islam later in life'**
+  String get profileAcceptedIslamLater;
+
+  /// No description provided for @profileIslamAcceptanceDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date I accepted Islam'**
+  String get profileIslamAcceptanceDate;
+
+  /// No description provided for @profileStartPrayingDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date I started praying'**
+  String get profileStartPrayingDate;
+
+  /// No description provided for @profileNewMuslimQazaHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza is counted only after accepting Islam and once Salah became obligatory. Prayers missed before accepting Islam are excluded.'**
+  String get profileNewMuslimQazaHelp;
+
+  /// No description provided for @profileErrorIslamAcceptanceDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid Islam acceptance date on or after your date of birth.'**
+  String get profileErrorIslamAcceptanceDate;
+
   /// No description provided for @profilePubertyAge.
   ///
   /// In en, this message translates to:
   /// **'Puberty Age'**
-  String get profileIslamicBackground;
-  String get profileMuslimFromChildhood;
-  String get profileAcceptedIslamLater;
-  String get profileIslamAcceptanceDate;
-  String get profileStartPrayingDate;
-  String get profileNewMuslimQazaHelp;
-
   String get profilePubertyAge;
 
   /// No description provided for @profileStartPrayingAge.
@@ -3322,13 +3357,12 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Please select a valid puberty age for the selected gender.'**
-  String get profileErrorIslamAcceptanceDate;
   String get profileErrorPuberty;
 
   /// No description provided for @profileErrorStartPraying.
   ///
   /// In en, this message translates to:
-  /// **'Please select a valid praying start age.'**
+  /// **'Please select a valid prayer-start age or date.'**
   String get profileErrorStartPraying;
 
   /// No description provided for @profileErrorWitr.

@@ -91,11 +91,13 @@ void main() {
               profile.startPrayingDate!.year,
               profile.startPrayingDate!.month,
               profile.startPrayingDate!.day,
-            ).difference(DateTime.utc(
-              expectedStart.year,
-              expectedStart.month,
-              expectedStart.day,
-            )).inDays
+            )
+              .difference(DateTime.utc(
+                expectedStart.year,
+                expectedStart.month,
+                expectedStart.day,
+              ))
+              .inDays
           : 0,
     );
     expect(plan.endDate, profile.startPrayingDate);
@@ -119,7 +121,8 @@ void main() {
     expect(plan.endDate, DateTime(2014, 1, 1));
   });
 
-  test('hidden puberty input uses Islam acceptance as Qaza eligibility start', () {
+  test('hidden puberty input uses Islam acceptance as Qaza eligibility start',
+      () {
     final cutoff = ProfileRules.fixedMilestoneDate(
       dob,
       ProfileRules.maleMaxPubertyAge,
@@ -204,7 +207,8 @@ void main() {
     );
   });
 
-  test('new Muslim fields round-trip and missing legacy fields default safely', () {
+  test('new Muslim fields round-trip and missing legacy fields default safely',
+      () {
     final profile = newMuslimProfile(
       acceptedDate: DateTime(2013, 1, 1),
       pubertyAge: 12,

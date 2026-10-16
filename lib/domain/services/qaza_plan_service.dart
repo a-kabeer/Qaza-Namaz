@@ -48,7 +48,8 @@ class QazaPlanService {
           acceptedDate == null ||
           LocalDateService.compareCalendarDates(acceptedDate, dob) < 0 ||
           LocalDateService.compareCalendarDates(acceptedDate, today) > 0 ||
-          LocalDateService.compareCalendarDates(startPrayingDate, acceptedDate) <
+          LocalDateService.compareCalendarDates(
+                  startPrayingDate, acceptedDate) <
               0 ||
           LocalDateService.compareCalendarDates(startPrayingDate, today) > 0) {
         return null;

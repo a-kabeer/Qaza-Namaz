@@ -475,8 +475,7 @@ void main() {
                 dateOfBirth: dob,
                 pubertyAge: 12,
                 isNewMuslim: true,
-                islamAcceptanceDate:
-                    cutoff.subtract(const Duration(days: 1)),
+                islamAcceptanceDate: cutoff.subtract(const Duration(days: 1)),
                 startPrayingDate: cutoff.add(const Duration(days: 10)),
                 witrIncluded: true,
               ),
@@ -497,5 +496,4 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-
 }

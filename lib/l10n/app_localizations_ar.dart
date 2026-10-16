@@ -1721,24 +1721,29 @@ class AppLocalizationsAr extends AppLocalizations {
       'سيظهر التاريخ الهجري بعد تحديد التاريخ الميلادي.';
 
   @override
-  @override
-  String get profileIslamicBackground => "الخلفية الإسلامية";
+  String get profileIslamicBackground => 'الخلفية الإسلامية';
 
   @override
-  String get profileMuslimFromChildhood => "كنت على الإسلام منذ الطفولة";
+  String get profileMuslimFromChildhood => 'كنت على الإسلام منذ الطفولة';
 
   @override
-  String get profileAcceptedIslamLater => "اعتنقت الإسلام لاحقًا";
+  String get profileAcceptedIslamLater => 'اعتنقت الإسلام لاحقًا';
 
   @override
-  String get profileIslamAcceptanceDate => "تاريخ اعتناق الإسلام";
+  String get profileIslamAcceptanceDate => 'تاريخ اعتناق الإسلام';
 
   @override
-  String get profileStartPrayingDate => "تاريخ بدء الصلاة";
+  String get profileStartPrayingDate => 'تاريخ بدء الصلاة';
 
   @override
-  String get profileNewMuslimQazaHelp => "يُحتسب القضاء فقط بعد اعتناق الإسلام ومنذ وجوب الصلاة. لا تُحتسب الصلوات الفائتة قبل اعتناق الإسلام.";
+  String get profileNewMuslimQazaHelp =>
+      'يُحتسب القضاء فقط بعد اعتناق الإسلام ومنذ وجوب الصلاة. لا تُحتسب الصلوات الفائتة قبل اعتناق الإسلام.';
 
+  @override
+  String get profileErrorIslamAcceptanceDate =>
+      'يرجى إدخال تاريخ صحيح لاعتناق الإسلام، لا يسبق تاريخ الميلاد.';
+
+  @override
   String get profilePubertyAge => 'سن البلوغ';
 
   @override
@@ -1909,14 +1914,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profileErrorDob => 'يرجى إدخال تاريخ ميلاد صحيح.';
 
   @override
-  @override
-  String get profileErrorIslamAcceptanceDate => "يرجى إدخال تاريخ صحيح لاعتناق الإسلام، لا يسبق تاريخ الميلاد.";
-
-  @override
   String get profileErrorPuberty => 'يرجى تحديد سن بلوغ صحيح للجنس المحدد.';
 
   @override
-  String get profileErrorStartPraying => "يرجى تحديد عمر أو تاريخ صحيح لبدء الصلاة.";
+  String get profileErrorStartPraying =>
+      'يرجى تحديد عمر أو تاريخ صحيح لبدء الصلاة.';
 
   @override
   String get profileErrorWitr => 'يرجى تحديد إعداد صحيح للوتر.';

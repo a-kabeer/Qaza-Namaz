@@ -436,8 +436,7 @@ class _ProfileFormState extends State<ProfileForm> {
               yearLabel: l10n.profileDobYear,
               cancelLabel: l10n.commonCancel,
               confirmLabel: l10n.commonDone,
-              onCancel: () =>
-                  setState(() => _startPrayingDateExpanded = false),
+              onCancel: () => setState(() => _startPrayingDateExpanded = false),
               onConfirm: (picked) {
                 final updated = ProfileRules.normalize(
                   _profile.copyWith(
@@ -739,8 +738,7 @@ class _DateOfBirthPickerInlineState extends State<_DateOfBirthPickerInline> {
           year,
       ];
   List<int> get _months => [
-        for (var month = _earliestMonth; month <= _latestMonth; month++)
-          month,
+        for (var month = _earliestMonth; month <= _latestMonth; month++) month,
       ];
   List<int> get _days => [
         for (var day = _earliestDay; day <= _latestDay; day++) day,
