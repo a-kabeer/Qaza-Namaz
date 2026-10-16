@@ -125,4 +125,17 @@ void main() {
       isTrue,
     );
   });
+
+  test('future dates remain locked', () {
+    expect(
+      dailySalahPrayerTimeHasPassed(
+        date: tomorrow,
+        trackingDate: today,
+        prayerType: PrayerType.fajr,
+        snapshot: snapshot,
+        now: DateTime.utc(2026, 10, 16, 0),
+      ),
+      isFalse,
+    );
+  });
 }
