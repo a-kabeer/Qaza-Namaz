@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/confirmation_dialog.dart';
@@ -332,7 +333,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
 
 enum _AdditionAction { edit, delete }
 
-class _SummaryDates extends StatefulWidget {
+class _SummaryDates extends ConsumerStatefulWidget {
   const _SummaryDates({
     required this.snapshot,
     required this.l10n,
@@ -347,12 +348,16 @@ class _SummaryDates extends StatefulWidget {
   State<_SummaryDates> createState() => _SummaryDatesState();
 }
 
-class _SummaryDatesState extends State<_SummaryDates> {
+class _SummaryDatesState extends ConsumerState<_SummaryDates> {
   bool _expanded = false;
 
   @override
   Widget build(BuildContext context) {
-    final summary = QazaAdditionDateSummary(widget.snapshot);
+    final summary = QazaAdditionDateSummary(
+      widget.snapshot,
+      hijriOffsetDays:
+          ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+    );
     if (summary.selectedDates.isEmpty) {
       return Text(
         widget.l10n.qazaHistoryNoDates,
