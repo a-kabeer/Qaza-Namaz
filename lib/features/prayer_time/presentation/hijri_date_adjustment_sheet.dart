@@ -95,6 +95,7 @@ class HijriDateAdjustmentSheet extends StatelessWidget {
                 if (offset != offsets.last) const SizedBox(height: 6),
               ],
             ],
+          ),
         ),
       ),
     );
