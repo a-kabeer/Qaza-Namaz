@@ -7,12 +7,16 @@ class UserProfile {
     this.dateOfBirth,
     this.pubertyAge,
     this.startPrayingAge,
+    this.pubertyInputMode = ProfileInputMode.ageEstimate,
+    this.pubertyDateOverride,
+    this.startPrayingInputMode = ProfileInputMode.ageEstimate,
+    this.startPrayingDateOverride,
     this.witrIncluded,
     this.onboardingCompleted = false,
     this.schemaVersion = currentSchemaVersion,
   });
 
-  static const int currentSchemaVersion = 2;
+  static const int currentSchemaVersion = 3;
   static const String localLedgerUserId = 'guest';
   static const int defaultDailyQazaTarget = 5;
   static const int minDailyQazaTarget = 1;
@@ -44,6 +48,10 @@ class UserProfile {
   final DateTime? dateOfBirth;
   final int? pubertyAge;
   final int? startPrayingAge;
+  final ProfileInputMode pubertyInputMode;
+  final DateTime? pubertyDateOverride;
+  final ProfileInputMode startPrayingInputMode;
+  final DateTime? startPrayingDateOverride;
   final bool? witrIncluded;
   final bool onboardingCompleted;
   final int schemaVersion;
@@ -53,8 +61,12 @@ class UserProfile {
       gender != null &&
       madhab != null &&
       dateOfBirth != null &&
-      pubertyAge != null &&
-      startPrayingAge != null &&
+      (pubertyInputMode == ProfileInputMode.ageEstimate
+          ? pubertyAge != null
+          : pubertyDateOverride != null) &&
+      (startPrayingInputMode == ProfileInputMode.ageEstimate
+          ? startPrayingAge != null
+          : startPrayingDateOverride != null) &&
       witrIncluded != null;
 
   UserProfile copyWith({
@@ -70,6 +82,12 @@ class UserProfile {
     bool clearPubertyAge = false,
     int? startPrayingAge,
     bool clearStartPrayingAge = false,
+    ProfileInputMode? pubertyInputMode,
+    DateTime? pubertyDateOverride,
+    bool clearPubertyDateOverride = false,
+    ProfileInputMode? startPrayingInputMode,
+    DateTime? startPrayingDateOverride,
+    bool clearStartPrayingDateOverride = false,
     bool? witrIncluded,
     bool clearWitrIncluded = false,
     bool? onboardingCompleted,
@@ -87,6 +105,15 @@ class UserProfile {
         startPrayingAge: clearStartPrayingAge
             ? null
             : startPrayingAge ?? this.startPrayingAge,
+        pubertyInputMode: pubertyInputMode ?? this.pubertyInputMode,
+        pubertyDateOverride: clearPubertyDateOverride
+            ? null
+            : pubertyDateOverride ?? this.pubertyDateOverride,
+        startPrayingInputMode:
+            startPrayingInputMode ?? this.startPrayingInputMode,
+        startPrayingDateOverride: clearStartPrayingDateOverride
+            ? null
+            : startPrayingDateOverride ?? this.startPrayingDateOverride,
         witrIncluded:
             clearWitrIncluded ? null : witrIncluded ?? this.witrIncluded,
         onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
@@ -105,6 +132,10 @@ class UserProfile {
         'dateOfBirth': dateOfBirth?.toIso8601String(),
         'pubertyAge': pubertyAge,
         'startPrayingAge': startPrayingAge,
+        'pubertyInputMode': pubertyInputMode.name,
+        'pubertyDateOverride': pubertyDateOverride?.toIso8601String(),
+        'startPrayingInputMode': startPrayingInputMode.name,
+        'startPrayingDateOverride': startPrayingDateOverride?.toIso8601String(),
         'witrIncluded': witrIncluded,
         'onboardingCompleted': onboardingCompleted,
       };
@@ -114,6 +145,8 @@ class UserProfile {
         Gender.values.where((item) => item.name == value).firstOrNull;
     Madhab? parseMadhab(String? value) =>
         Madhab.values.where((item) => item.name == value).firstOrNull;
+    ProfileInputMode? parseInputMode(String? value) =>
+        ProfileInputMode.values.where((item) => item.name == value).firstOrNull;
     DateTime? parseDate(Object? value) =>
         value is String ? DateTime.tryParse(value) : null;
 
@@ -129,6 +162,13 @@ class UserProfile {
       dateOfBirth: parseDate(json['dateOfBirth']),
       pubertyAge: (json['pubertyAge'] as num?)?.toInt(),
       startPrayingAge: (json['startPrayingAge'] as num?)?.toInt(),
+      pubertyInputMode: parseInputMode(json['pubertyInputMode'] as String?) ??
+          ProfileInputMode.ageEstimate,
+      pubertyDateOverride: parseDate(json['pubertyDateOverride']),
+      startPrayingInputMode:
+          parseInputMode(json['startPrayingInputMode'] as String?) ??
+              ProfileInputMode.ageEstimate,
+      startPrayingDateOverride: parseDate(json['startPrayingDateOverride']),
       witrIncluded: json['witrIncluded'] as bool?,
       onboardingCompleted: json['onboardingCompleted'] as bool? ?? false,
       schemaVersion:
@@ -140,3 +180,5 @@ class UserProfile {
 enum Gender { male, female }
 
 enum Madhab { hanafi, shafi, maliki, hanbali, other }
+
+enum ProfileInputMode { ageEstimate, rememberedDate }

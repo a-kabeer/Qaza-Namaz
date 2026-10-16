@@ -66,26 +66,48 @@ class ProfileRules {
 
   /// Returns start-praying ages that remain mutually consistent with the
   /// selected puberty age and today's fixed arithmetic age.
+  /// Returns Namaz Start ages independently of the puberty input.
   static List<int> startPrayingAgeOptions(
     UserProfile profile, {
     required DateTime today,
   }) {
     final dob = profile.dateOfBirth;
-    final puberty = profile.pubertyAge;
-    if (dob == null || puberty == null) return const <int>[];
-
+    if (dob == null) return const <int>[];
     final maxAge = currentAge(dob, today);
-    if (maxAge < puberty) return const <int>[];
-
+    if (maxAge < 7) return const <int>[];
     return [
-      for (var age = puberty; age <= maxAge; age++)
-        if (_milestoneReachedAndMaterialized(
-          dob: dob,
-          age: age,
-          today: today,
-        ))
+      for (var age = 7; age <= maxAge; age++)
+        if (_milestoneReachedAndMaterialized(dob: dob, age: age, today: today))
           age,
     ];
+  }
+
+  static DateTime? minimumPubertyDate(UserProfile profile) {
+    final dob = profile.dateOfBirth;
+    final gender = profile.gender;
+    if (dob == null || gender == null) return null;
+    final age = gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
+    return fixedMilestoneDate(dob, age);
+  }
+
+  static DateTime? maximumPubertyDate(
+    UserProfile profile, {
+    required DateTime today,
+  }) {
+    final dob = profile.dateOfBirth;
+    final gender = profile.gender;
+    if (dob == null || gender == null) return null;
+    final age = gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
+    final projected = fixedMilestoneDate(dob, age);
+    return _compareCalendarDates(projected, today) <= 0
+        ? projected
+        : LocalDateService.dateOnly(today);
+  }
+
+  static DateTime? minimumStartPrayingDate(UserProfile profile) {
+    final dob = profile.dateOfBirth;
+    if (dob == null) return null;
+    return fixedMilestoneDate(dob, 7);
   }
 
   static bool isWitrEditable(Madhab? madhab) => madhab == Madhab.other;
@@ -141,16 +163,40 @@ class ProfileRules {
 
   static DateTime? pubertyDate(UserProfile profile) {
     final dob = profile.dateOfBirth;
+    if (dob == null) return null;
+    if (profile.pubertyInputMode == ProfileInputMode.rememberedDate) {
+      final date = profile.pubertyDateOverride;
+      final min = minimumPubertyDate(profile);
+      final max = maximumPubertyDate(profile, today: LocalDateService.today());
+      if (date == null ||
+          min == null ||
+          max == null ||
+          _compareCalendarDates(min, max) > 0 ||
+          _compareCalendarDates(date, min) < 0 ||
+          _compareCalendarDates(date, max) > 0) return null;
+      return LocalDateService.dateOnly(date);
+    }
     final age = profile.pubertyAge;
-    if (dob == null || age == null) return null;
+    if (age == null) return null;
     return fixedMilestoneDate(dob, age);
   }
 
   static DateTime? startPrayingDate(UserProfile profile) {
     final dob = profile.dateOfBirth;
+    if (dob == null) return null;
+    if (profile.startPrayingInputMode == ProfileInputMode.rememberedDate) {
+      final date = profile.startPrayingDateOverride;
+      final min = minimumStartPrayingDate(profile);
+      final today = LocalDateService.today();
+      if (date == null ||
+          min == null ||
+          _compareCalendarDates(date, min) < 0 ||
+          _compareCalendarDates(date, today) > 0) return null;
+      return LocalDateService.dateOnly(date);
+    }
     final age = profile.startPrayingAge;
-    if (dob == null || age == null) return null;
-    return anniversaryDate(dob, age);
+    if (age == null) return null;
+    return fixedMilestoneDate(dob, age);
   }
 
   static ProfileValidation validate(
@@ -178,115 +224,105 @@ class ProfileRules {
       return const ProfileValidation(error: ProfileValidationError.dobFuture);
     }
 
-    final puberty = profile.pubertyAge;
-    if (puberty == null) {
-      return const ProfileValidation(
-          error: ProfileValidationError.pubertyMissing);
-    }
-    if (!isPubertyAgeAllowed(gender, puberty)) {
-      return const ProfileValidation(
-          error: ProfileValidationError.pubertyInvalid);
-    }
-
-    final pubertyDateValue = pubertyDate(profile);
-    if (pubertyDateValue == null ||
-        !_milestoneReachedAndMaterialized(
-          dob: dob,
-          age: puberty,
-          today: today,
-        )) {
-      return const ProfileValidation(
-        error: ProfileValidationError.pubertyInvalid,
-      );
-    }
-
-    final startAge = profile.startPrayingAge;
-    if (startAge == null) {
-      return const ProfileValidation(
-        error: ProfileValidationError.startPrayingAgeMissing,
-      );
+    if (profile.pubertyInputMode == ProfileInputMode.ageEstimate) {
+      final age = profile.pubertyAge;
+      if (age == null) {
+        return const ProfileValidation(
+            error: ProfileValidationError.pubertyMissing);
+      }
+      if (!isPubertyAgeAllowed(gender, age) ||
+          !_milestoneReachedAndMaterialized(dob: dob, age: age, today: today)) {
+        return const ProfileValidation(
+            error: ProfileValidationError.pubertyInvalid);
+      }
+    } else {
+      final date = profile.pubertyDateOverride;
+      final min = minimumPubertyDate(profile);
+      final max = maximumPubertyDate(profile, today: today);
+      if (date == null ||
+          min == null ||
+          max == null ||
+          _compareCalendarDates(min, max) > 0 ||
+          _compareCalendarDates(date, min) < 0 ||
+          _compareCalendarDates(date, max) > 0) {
+        return const ProfileValidation(
+            error: ProfileValidationError.pubertyInvalid);
+      }
     }
 
-    final currentAgeValue = currentAge(dob, today);
-    final startDateValue = startPrayingDate(profile);
-    if (startDateValue == null ||
-        startAge < puberty ||
-        startAge > currentAgeValue ||
-        !_milestoneReachedAndMaterialized(
-          dob: dob,
-          age: startAge,
-          today: today,
-        ) ||
-        _compareCalendarDates(startDateValue, pubertyDateValue) < 0) {
-      return const ProfileValidation(
-        error: ProfileValidationError.startPrayingAgeInvalid,
-      );
+    if (profile.startPrayingInputMode == ProfileInputMode.ageEstimate) {
+      final age = profile.startPrayingAge;
+      if (age == null) {
+        return const ProfileValidation(
+            error: ProfileValidationError.startPrayingAgeMissing);
+      }
+      if (age < 7 ||
+          age > currentAge(dob, today) ||
+          !_milestoneReachedAndMaterialized(dob: dob, age: age, today: today)) {
+        return const ProfileValidation(
+            error: ProfileValidationError.startPrayingAgeInvalid);
+      }
+    } else {
+      final date = profile.startPrayingDateOverride;
+      final min = minimumStartPrayingDate(profile);
+      if (date == null ||
+          min == null ||
+          _compareCalendarDates(date, min) < 0 ||
+          _compareCalendarDates(date, today) > 0) {
+        return const ProfileValidation(
+            error: ProfileValidationError.startPrayingAgeInvalid);
+      }
     }
 
     final witr = profile.witrIncluded;
     if (witr == null || witr != effectiveWitr(profile)) {
       return const ProfileValidation(error: ProfileValidationError.witrInvalid);
     }
-
     return const ProfileValidation();
   }
 
   static UserProfile normalize(UserProfile profile) {
     var next = profile;
-    final normalizedDailyTarget =
-        UserProfile.normalizeDailyQazaTarget(next.dailyQazaTarget);
-    if (normalizedDailyTarget != next.dailyQazaTarget) {
-      next = next.copyWith(dailyQazaTarget: normalizedDailyTarget);
+    final target = UserProfile.normalizeDailyQazaTarget(next.dailyQazaTarget);
+    if (target != next.dailyQazaTarget) {
+      next = next.copyWith(dailyQazaTarget: target);
     }
+    final today = LocalDateService.today();
+    final dob = next.dateOfBirth;
     final gender = next.gender;
-    final puberty = next.pubertyAge;
-    if (gender != null &&
-        puberty != null &&
-        !isPubertyAgeAllowed(gender, puberty)) {
-      next = next.copyWith(clearPubertyAge: true, clearStartPrayingAge: true);
-    }
 
+    if (next.pubertyInputMode == ProfileInputMode.ageEstimate) {
+      final age = next.pubertyAge;
+      if (age != null &&
+          gender != null &&
+          dob != null &&
+          (!isPubertyAgeAllowed(gender, age) ||
+              !_milestoneReachedAndMaterialized(
+                dob: dob,
+                age: age,
+                today: today,
+              ))) {
+        next = next.copyWith(clearPubertyAge: true);
+      }
+    }
+    if (next.startPrayingInputMode == ProfileInputMode.ageEstimate) {
+      final age = next.startPrayingAge;
+      if (age != null &&
+          (age < 7 ||
+              (dob != null &&
+                  (age > currentAge(dob, today) ||
+                      !_milestoneReachedAndMaterialized(
+                        dob: dob,
+                        age: age,
+                        today: today,
+                      ))))) {
+        next = next.copyWith(clearStartPrayingAge: true);
+      }
+    }
     final madhab = next.madhab;
     if (madhab != null && !isWitrEditable(madhab)) {
       next = next.copyWith(witrIncluded: effectiveWitr(next));
     }
-
-    final dob = next.dateOfBirth;
-    final validGender = next.gender;
-    final validPuberty = next.pubertyAge;
-    if (dob != null && validGender != null && validPuberty != null) {
-      final today = LocalDateService.today();
-      final maxAge = currentAge(dob, today);
-      if (!isPubertyAgeAllowed(validGender, validPuberty) ||
-          validPuberty > maxAge ||
-          !_milestoneReachedAndMaterialized(
-            dob: dob,
-            age: validPuberty,
-            today: today,
-          )) {
-        next = next.copyWith(clearPubertyAge: true, clearStartPrayingAge: true);
-      }
-    }
-
-    final normalizedDob = next.dateOfBirth;
-    final normalizedStart = next.startPrayingAge;
-    final normalizedPuberty = next.pubertyAge;
-    if (normalizedDob != null &&
-        normalizedStart != null &&
-        normalizedPuberty != null) {
-      final today = LocalDateService.today();
-      final maxStart = currentAge(normalizedDob, today);
-      if (normalizedStart < normalizedPuberty ||
-          normalizedStart > maxStart ||
-          !_milestoneReachedAndMaterialized(
-            dob: normalizedDob,
-            age: normalizedStart,
-            today: today,
-          )) {
-        next = next.copyWith(clearStartPrayingAge: true);
-      }
-    }
-
     return next;
   }
 

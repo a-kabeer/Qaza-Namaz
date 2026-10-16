@@ -40,9 +40,9 @@ void main() {
       languageCode: 'en',
       gender: Gender.male,
       madhab: Madhab.hanafi,
-      dateOfBirth: DateTime(2018, 11, 12),
-      pubertyAge: 5,
-      startPrayingAge: 6,
+      dateOfBirth: DateTime(2000, 1, 1),
+      pubertyAge: 12,
+      startPrayingAge: 13,
       witrIncluded: true,
     );
 

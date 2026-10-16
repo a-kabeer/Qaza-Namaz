@@ -1471,5 +1471,7 @@
   "dailySalahTrackingUndoMessage": "Only the exact Qaza entry created by Daily Salah Tracking will be removed, and only if it is still pending.",
   "dailySalahTrackingPreviousDay": "Previous day",
   "dailySalahTrackingNextDay": "Next day",
-  "dailySalahTrackingUndoUnavailable": "This Qaza entry is no longer pending, so it was not removed."
+  "dailySalahTrackingUndoUnavailable": "This Qaza entry is no longer pending, so it was not removed.",
+  "profileRememberDate": "I remember the date",
+  "profileEstimateUsingAge": "Estimate using age"
 }

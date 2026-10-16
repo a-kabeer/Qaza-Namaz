@@ -1,4 +1,3 @@
-import '../../core/calendar/fixed_hijri_arithmetic_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/time/local_date_service.dart';
 import '../entities/user_profile.dart';
@@ -34,28 +33,36 @@ class QazaPlanService {
   const QazaPlanService();
 
   QazaPlan? planFor(UserProfile profile) {
-    final start = ProfileRules.pubertyDate(profile);
+    final dob = profile.dateOfBirth;
+    if (dob == null) return null;
+    final currentAge = ProfileRules.currentAge(dob, LocalDateService.today());
+
+    if (profile.pubertyInputMode == ProfileInputMode.ageEstimate) {
+      final age = profile.pubertyAge;
+      if (profile.gender == null ||
+          age == null ||
+          !ProfileRules.isPubertyAgeAllowed(profile.gender!, age) ||
+          age > currentAge) {
+        return null;
+      }
+    }
+    if (profile.startPrayingInputMode == ProfileInputMode.ageEstimate) {
+      final age = profile.startPrayingAge;
+      if (age == null || age < 7 || age > currentAge) return null;
+    }
+
+    final pubertyDate = ProfileRules.pubertyDate(profile);
     final startPrayingDate = ProfileRules.startPrayingDate(profile);
-    final pubertyAge = profile.pubertyAge;
-    final startPrayingAge = profile.startPrayingAge;
-    if (start == null ||
-        startPrayingDate == null ||
-        pubertyAge == null ||
-        startPrayingAge == null ||
-        startPrayingAge < pubertyAge) {
-      return null;
-    }
+    if (pubertyDate == null || startPrayingDate == null) return null;
 
-    final totalDays = FixedHijriArithmeticService.durationForAges(
-      pubertyAge: pubertyAge,
-      startPrayingAge: startPrayingAge,
+    // The Qaza interval is [puberty date, Namaz Start date). If Namaz Start
+    // is on or before puberty, a zero-day plan is valid rather than missing.
+    final difference = LocalDateService.calendarDayDifference(
+      pubertyDate,
+      startPrayingDate,
     );
-    final end = LocalDateService.addCalendarDays(start, totalDays);
-    if (end != startPrayingDate ||
-        LocalDateService.compareCalendarDates(end, start) < 0) {
-      return null;
-    }
-
+    final totalDays = difference > 0 ? difference : 0;
+    final end = totalDays == 0 ? pubertyDate : startPrayingDate;
     final includeWitr = ProfileRules.effectiveWitr(profile);
     final prayerBreakdown = <PrayerType, int>{
       for (final prayer in PrayerType.values)
@@ -63,7 +70,7 @@ class QazaPlanService {
     };
 
     return QazaPlan(
-      startDate: start,
+      startDate: pubertyDate,
       endDate: end,
       totalDays: totalDays,
       includeWitr: includeWitr,

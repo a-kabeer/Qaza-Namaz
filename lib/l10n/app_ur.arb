@@ -1084,5 +1084,7 @@
   "dailySalahTrackingUndoMessage": "صرف Daily Salah Tracking کا بنایا ہوا یہی قضا ریکارڈ حذف ہوگا، اور صرف اس وقت جب ابھی زیرِ التوا ہو۔",
   "dailySalahTrackingPreviousDay": "پچھلا دن",
   "dailySalahTrackingNextDay": "اگلا دن",
-  "dailySalahTrackingUndoUnavailable": "یہ قضا ریکارڈ اب زیرِ التوا نہیں، اس لیے اسے حذف نہیں کیا گیا۔"
+  "dailySalahTrackingUndoUnavailable": "یہ قضا ریکارڈ اب زیرِ التوا نہیں، اس لیے اسے حذف نہیں کیا گیا۔",
+  "profileRememberDate": "مجھے تاریخ یاد ہے",
+  "profileEstimateUsingAge": "عمر کے اندازے سے"
 }

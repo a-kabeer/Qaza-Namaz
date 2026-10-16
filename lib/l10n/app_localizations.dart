@@ -4709,6 +4709,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This Qaza entry is no longer pending, so it was not removed.'**
   String get dailySalahTrackingUndoUnavailable;
+
+  /// No description provided for @profileRememberDate.
+  ///
+  /// In en, this message translates to:
+  /// **'I remember the date'**
+  String get profileRememberDate;
+
+  /// No description provided for @profileEstimateUsingAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate using age'**
+  String get profileEstimateUsingAge;
 }
 
 class _AppLocalizationsDelegate
