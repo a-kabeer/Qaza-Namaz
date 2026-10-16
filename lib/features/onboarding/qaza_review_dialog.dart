@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/user_profile.dart';
@@ -9,7 +10,7 @@ enum QazaReviewAction { edit, add }
 
 typedef QazaReviewConfirm = Future<bool> Function();
 
-class QazaReviewDialog extends StatefulWidget {
+class QazaReviewDialog extends ConsumerStatefulWidget {
   const QazaReviewDialog({
     super.key,
     required this.profile,
@@ -25,7 +26,7 @@ class QazaReviewDialog extends StatefulWidget {
   State<QazaReviewDialog> createState() => _QazaReviewDialogState();
 }
 
-class _QazaReviewDialogState extends State<QazaReviewDialog> {
+class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
   bool _starting = false;
   String? _error;
 
@@ -241,5 +242,8 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year.toString()}';
 
   String _formatHijri(AppLocalizations l10n, DateTime date) =>
-      l10n.formatHijriDate(date);
+      l10n.formatHijriDate(
+        date,
+        offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+      );
 }
