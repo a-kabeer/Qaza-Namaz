@@ -337,6 +337,8 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final hijriOffsetDays =
+        ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     final selection = ref.watch(homePrayerSelectionProvider);
     final restricted = ref.watch(qazaCompletionRestrictedProvider);
     final isAutoSequence =
@@ -430,6 +432,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                         refreshing: true,
                         onComplete: widget.onComplete,
                         selectionSource: widget.selected.source,
+                        hijriOffsetDays: hijriOffsetDays,
                       );
                     }
                   }
@@ -465,6 +468,7 @@ class _NextQazaPanelState extends ConsumerState<_NextQazaPanel> {
                     refreshing: state.isLoading || state.isRefreshing,
                     onComplete: widget.onComplete,
                     selectionSource: widget.selected.source,
+                    hijriOffsetDays: hijriOffsetDays,
                   );
                 },
               );
@@ -484,6 +488,7 @@ class _HomeNextQazaRecord extends StatelessWidget {
     required this.refreshing,
     required this.onComplete,
     required this.selectionSource,
+    required this.hijriOffsetDays,
   });
 
   final QazaRecord record;
@@ -497,6 +502,7 @@ class _HomeNextQazaRecord extends StatelessWidget {
     HomePrayerSelectionSource selectionSource,
   ) onComplete;
   final HomePrayerSelectionSource selectionSource;
+  final int hijriOffsetDays;
 
   @override
   Widget build(BuildContext context) {
@@ -553,9 +559,7 @@ class _HomeNextQazaRecord extends StatelessWidget {
                   Text(
                     l10n.formatHijriDate(
                       record.originalDate,
-                      offsetDays:
-                          ref.watch(hijriDateAdjustmentProvider).valueOrNull ??
-                              0,
+                      offsetDays: hijriOffsetDays,
                     ),
                     key: const Key('home_oldest_qaza_date_hijri'),
                     style: theme.textTheme.bodySmall,
