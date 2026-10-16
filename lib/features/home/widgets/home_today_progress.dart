@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/diagnostics/diagnostics.dart';
@@ -550,7 +551,12 @@ class _HomeNextQazaRecord extends StatelessWidget {
                     key: const Key('home_oldest_qaza_date'),
                   ),
                   Text(
-                    l10n.formatHijriDate(record.originalDate),
+                    l10n.formatHijriDate(
+                      record.originalDate,
+                      offsetDays:
+                          ref.watch(hijriDateAdjustmentProvider).valueOrNull ??
+                              0,
+                    ),
                     key: const Key('home_oldest_qaza_date_hijri'),
                     style: theme.textTheme.bodySmall,
                   ),
