@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/utils/date_formatters.dart';
@@ -51,6 +52,8 @@ class _QazaRecordEditorState extends ConsumerState<_QazaRecordEditor> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final hijriOffset =
+        ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     final theme = Theme.of(context);
     final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
 
@@ -111,7 +114,10 @@ class _QazaRecordEditorState extends ConsumerState<_QazaRecordEditor> {
                   style: theme.textTheme.titleMedium,
                 ),
                 Text(
-                  l10n.formatHijriDate(_originalDate),
+                  l10n.formatHijriDate(
+                    _originalDate,
+                    offsetDays: hijriOffset,
+                  ),
                   style: theme.textTheme.bodySmall,
                 ),
               ],
