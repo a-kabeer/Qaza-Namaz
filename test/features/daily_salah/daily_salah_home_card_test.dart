@@ -40,7 +40,8 @@ void main() {
     await database.close();
   });
 
-  testWidgets('Skip for now hides setup, persists dismissal, and uses app snackbar',
+  testWidgets(
+      'Skip for now hides setup, persists dismissal, and uses app snackbar',
       (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -65,7 +66,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('daily_salah_enable_tracking')), findsOneWidget);
+    expect(
+        find.byKey(const Key('daily_salah_enable_tracking')), findsOneWidget);
     expect(find.byKey(const Key('daily_salah_skip_tracking')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('daily_salah_skip_tracking')));
