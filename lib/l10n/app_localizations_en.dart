@@ -2746,4 +2746,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profilePubertyDate => 'Puberty Date';
+
+  @override
+  String get profileEstimateUsingAge => 'Estimate using age';
 }

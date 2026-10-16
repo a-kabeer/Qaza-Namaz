@@ -93,7 +93,6 @@ void main() {
         find.byKey(const Key('profile_puberty_age_increment')),
         findsOneWidget,
       );
-
       await tester.scrollUntilVisible(
         find.byKey(const Key('profile_start_praying_age_decrement')),
         300,
@@ -526,7 +525,7 @@ void main() {
                 dateOfBirth: dob,
                 isNewMuslim: true,
                 islamAcceptanceDate: DateTime(2005, 1, 1),
-                pubertyInputMode: PubertyInputMode.rememberDate,
+                pubertyInputMode: ProfileInputMode.rememberedDate,
                 pubertyDate: DateTime(2012, 1, 1),
                 startPrayingDate: DateTime(2014, 1, 1),
                 witrIncluded: true,

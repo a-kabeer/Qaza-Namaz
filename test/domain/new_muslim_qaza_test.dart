@@ -8,7 +8,7 @@ UserProfile newMuslimProfile({
   required DateTime acceptedDate,
   int? pubertyAge,
   DateTime? pubertyDate,
-  PubertyInputMode pubertyInputMode = PubertyInputMode.estimateAge,
+  ProfileInputMode pubertyInputMode = ProfileInputMode.ageEstimate,
   required DateTime startPrayingDate,
   Gender gender = Gender.male,
 }) =>
@@ -150,7 +150,7 @@ void main() {
     final rememberedPubertyDate = DateTime(2012, 1, 1);
     final profile = newMuslimProfile(
       acceptedDate: DateTime(2005, 1, 1),
-      pubertyInputMode: PubertyInputMode.rememberDate,
+      pubertyInputMode: ProfileInputMode.rememberedDate,
       pubertyDate: rememberedPubertyDate,
       startPrayingDate: DateTime(2014, 1, 1),
     );
@@ -171,7 +171,7 @@ void main() {
   test('remembered puberty date respects existing puberty-age limits', () {
     final tooEarly = newMuslimProfile(
       acceptedDate: DateTime(2005, 1, 1),
-      pubertyInputMode: PubertyInputMode.rememberDate,
+      pubertyInputMode: ProfileInputMode.rememberedDate,
       pubertyDate: DateTime(2010, 1, 1),
       startPrayingDate: DateTime(2014, 1, 1),
     );
@@ -251,7 +251,7 @@ void main() {
       () {
     final profile = newMuslimProfile(
       acceptedDate: DateTime(2013, 1, 1),
-      pubertyInputMode: PubertyInputMode.rememberDate,
+      pubertyInputMode: ProfileInputMode.rememberedDate,
       pubertyDate: DateTime(2012, 1, 1),
       startPrayingDate: DateTime(2014, 1, 1),
     );
@@ -259,7 +259,7 @@ void main() {
 
     expect(restored.isNewMuslim, isTrue);
     expect(restored.islamAcceptanceDate, DateTime(2013, 1, 1));
-    expect(restored.pubertyInputMode, PubertyInputMode.rememberDate);
+    expect(restored.pubertyInputMode, ProfileInputMode.rememberedDate);
     expect(restored.pubertyDate, DateTime(2012, 1, 1));
     expect(restored.startPrayingDate, DateTime(2014, 1, 1));
 
@@ -271,7 +271,7 @@ void main() {
     expect(legacy.isNewMuslim, isFalse);
     expect(legacy.islamAcceptanceDate, isNull);
     expect(legacy.startPrayingDate, isNull);
-    expect(legacy.pubertyInputMode, PubertyInputMode.estimateAge);
+    expect(legacy.pubertyInputMode, ProfileInputMode.ageEstimate);
     expect(legacy.pubertyDate, isNull);
     expect(legacy.pubertyAge, 12);
     expect(legacy.startPrayingAge, 15);

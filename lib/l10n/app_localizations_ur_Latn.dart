@@ -2778,4 +2778,7 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   @override
   String get initialCloudBackupStageDownloading =>
       'Backup download ho raha hai…';
+
+  @override
+  String get profileEstimateUsingAge => 'Umar ke andazay se';
 }

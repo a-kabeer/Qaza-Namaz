@@ -4769,6 +4769,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Puberty Date'**
   String get profilePubertyDate;
+
+  /// No description provided for @profileEstimateUsingAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate using age'**
+  String get profileEstimateUsingAge;
 }
 
 class _AppLocalizationsDelegate

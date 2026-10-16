@@ -2752,6 +2752,9 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get profilePubertyDate => 'بلوغت کی تاریخ';
+
+  @override
+  String get profileEstimateUsingAge => 'عمر کے اندازے سے';
 }
 
 /// The translations for Urdu, using the Latin script (`ur_Latn`).
@@ -5528,4 +5531,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get profilePubertyDate => 'Puberty ki tareekh';
+
+  @override
+  String get profileEstimateUsingAge => 'Umar ke andazay se';
 }

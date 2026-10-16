@@ -6,17 +6,31 @@ class UserProfile {
     this.madhab,
     this.dateOfBirth,
     this.pubertyAge,
-    this.pubertyDate,
-    this.pubertyInputMode = PubertyInputMode.estimateAge,
+    DateTime? pubertyDateOverride,
+    DateTime? pubertyDate,
+    ProfileInputMode? pubertyInputMode,
     this.startPrayingAge,
-    this.startPrayingDate,
+    DateTime? startPrayingDateOverride,
+    DateTime? startPrayingDate,
+    ProfileInputMode? startPrayingInputMode,
     this.isNewMuslim = false,
     this.islamAcceptanceDate,
     this.witrIncluded,
     this.onboardingCompleted = false,
     this.schemaVersion = currentSchemaVersion,
-  });
+  })  : pubertyDateOverride = pubertyDateOverride ?? pubertyDate,
+        pubertyInputMode = pubertyInputMode ??
+            ((pubertyDateOverride ?? pubertyDate) == null
+                ? ProfileInputMode.ageEstimate
+                : ProfileInputMode.rememberedDate),
+        startPrayingDateOverride =
+            startPrayingDateOverride ?? startPrayingDate,
+        startPrayingInputMode = startPrayingInputMode ??
+            ((startPrayingDateOverride ?? startPrayingDate) == null
+                ? ProfileInputMode.ageEstimate
+                : ProfileInputMode.rememberedDate);
 
+  /// Schema 4 includes both independent input modes and new-Muslim eligibility.
   static const int currentSchemaVersion = 4;
   static const String localLedgerUserId = 'guest';
   static const int defaultDailyQazaTarget = 5;
@@ -48,25 +62,34 @@ class UserProfile {
   final Madhab? madhab;
   final DateTime? dateOfBirth;
   final int? pubertyAge;
-  final DateTime? pubertyDate;
-  final PubertyInputMode pubertyInputMode;
+  final DateTime? pubertyDateOverride;
+  final ProfileInputMode pubertyInputMode;
   final int? startPrayingAge;
-  final DateTime? startPrayingDate;
+  final DateTime? startPrayingDateOverride;
+  final ProfileInputMode startPrayingInputMode;
   final bool isNewMuslim;
   final DateTime? islamAcceptanceDate;
   final bool? witrIncluded;
   final bool onboardingCompleted;
   final int schemaVersion;
 
+  /// Compatibility aliases for data written by the new-Muslim feature branch.
+  DateTime? get pubertyDate => pubertyDateOverride;
+  DateTime? get startPrayingDate => startPrayingDateOverride;
+
   bool get isComplete =>
       onboardingCompleted &&
       gender != null &&
       madhab != null &&
       dateOfBirth != null &&
-      (pubertyAge != null ||
-          pubertyDate != null ||
-          (isNewMuslim && islamAcceptanceDate != null)) &&
-      (isNewMuslim ? startPrayingDate != null : startPrayingAge != null) &&
+      (!isNewMuslim || islamAcceptanceDate != null) &&
+      ((isNewMuslim && islamAcceptanceDate != null) ||
+          (pubertyInputMode == ProfileInputMode.ageEstimate
+              ? pubertyAge != null
+              : pubertyDateOverride != null)) &&
+      (startPrayingInputMode == ProfileInputMode.ageEstimate
+          ? startPrayingAge != null
+          : startPrayingDateOverride != null) &&
       witrIncluded != null;
 
   UserProfile copyWith({
@@ -80,13 +103,18 @@ class UserProfile {
     bool clearDateOfBirth = false,
     int? pubertyAge,
     bool clearPubertyAge = false,
+    DateTime? pubertyDateOverride,
     DateTime? pubertyDate,
+    bool clearPubertyDateOverride = false,
     bool clearPubertyDate = false,
-    PubertyInputMode? pubertyInputMode,
+    ProfileInputMode? pubertyInputMode,
     int? startPrayingAge,
     bool clearStartPrayingAge = false,
+    DateTime? startPrayingDateOverride,
     DateTime? startPrayingDate,
+    bool clearStartPrayingDateOverride = false,
     bool clearStartPrayingDate = false,
+    ProfileInputMode? startPrayingInputMode,
     bool? isNewMuslim,
     DateTime? islamAcceptanceDate,
     bool clearIslamAcceptanceDate = false,
@@ -104,14 +132,22 @@ class UserProfile {
         madhab: clearMadhab ? null : madhab ?? this.madhab,
         dateOfBirth: clearDateOfBirth ? null : dateOfBirth ?? this.dateOfBirth,
         pubertyAge: clearPubertyAge ? null : pubertyAge ?? this.pubertyAge,
-        pubertyDate: clearPubertyDate ? null : pubertyDate ?? this.pubertyDate,
+        pubertyDateOverride:
+            clearPubertyDateOverride || clearPubertyDate
+                ? null
+                : pubertyDateOverride ?? pubertyDate ?? this.pubertyDateOverride,
         pubertyInputMode: pubertyInputMode ?? this.pubertyInputMode,
         startPrayingAge: clearStartPrayingAge
             ? null
             : startPrayingAge ?? this.startPrayingAge,
-        startPrayingDate: clearStartPrayingDate
-            ? null
-            : startPrayingDate ?? this.startPrayingDate,
+        startPrayingDateOverride:
+            clearStartPrayingDateOverride || clearStartPrayingDate
+                ? null
+                : startPrayingDateOverride ??
+                    startPrayingDate ??
+                    this.startPrayingDateOverride,
+        startPrayingInputMode:
+            startPrayingInputMode ?? this.startPrayingInputMode,
         isNewMuslim: isNewMuslim ?? this.isNewMuslim,
         islamAcceptanceDate: clearIslamAcceptanceDate
             ? null
@@ -133,10 +169,14 @@ class UserProfile {
         'madhab': madhab?.name,
         'dateOfBirth': dateOfBirth?.toIso8601String(),
         'pubertyAge': pubertyAge,
-        'pubertyDate': pubertyDate?.toIso8601String(),
         'pubertyInputMode': pubertyInputMode.name,
+        'pubertyDateOverride': pubertyDateOverride?.toIso8601String(),
+        // Keep the legacy aliases in serialized data for safe migration.
+        'pubertyDate': pubertyDateOverride?.toIso8601String(),
         'startPrayingAge': startPrayingAge,
-        'startPrayingDate': startPrayingDate?.toIso8601String(),
+        'startPrayingInputMode': startPrayingInputMode.name,
+        'startPrayingDateOverride': startPrayingDateOverride?.toIso8601String(),
+        'startPrayingDate': startPrayingDateOverride?.toIso8601String(),
         'isNewMuslim': isNewMuslim,
         'islamAcceptanceDate': islamAcceptanceDate?.toIso8601String(),
         'witrIncluded': witrIncluded,
@@ -148,6 +188,16 @@ class UserProfile {
         Gender.values.where((item) => item.name == value).firstOrNull;
     Madhab? parseMadhab(String? value) =>
         Madhab.values.where((item) => item.name == value).firstOrNull;
+    ProfileInputMode? parseInputMode(String? value) {
+      if (value == 'rememberedDate' || value == 'rememberDate') {
+        return ProfileInputMode.rememberedDate;
+      }
+      if (value == 'ageEstimate' || value == 'estimateAge') {
+        return ProfileInputMode.ageEstimate;
+      }
+      return null;
+    }
+
     DateTime? parseDate(Object? value) =>
         value is String ? DateTime.tryParse(value) : null;
 
@@ -162,13 +212,15 @@ class UserProfile {
       madhab: parseMadhab(json['madhab'] as String?),
       dateOfBirth: parseDate(json['dateOfBirth']),
       pubertyAge: (json['pubertyAge'] as num?)?.toInt(),
-      pubertyDate: parseDate(json['pubertyDate']),
-      pubertyInputMode:
-          json['pubertyInputMode'] == PubertyInputMode.rememberDate.name
-              ? PubertyInputMode.rememberDate
-              : PubertyInputMode.estimateAge,
+      pubertyInputMode: parseInputMode(json['pubertyInputMode'] as String?),
+      pubertyDateOverride:
+          parseDate(json['pubertyDateOverride'] ?? json['pubertyDate']),
       startPrayingAge: (json['startPrayingAge'] as num?)?.toInt(),
-      startPrayingDate: parseDate(json['startPrayingDate']),
+      startPrayingInputMode:
+          parseInputMode(json['startPrayingInputMode'] as String?),
+      startPrayingDateOverride: parseDate(
+        json['startPrayingDateOverride'] ?? json['startPrayingDate'],
+      ),
       isNewMuslim: json['isNewMuslim'] as bool? ?? false,
       islamAcceptanceDate: parseDate(json['islamAcceptanceDate']),
       witrIncluded: json['witrIncluded'] as bool?,
@@ -181,6 +233,6 @@ class UserProfile {
 
 enum Gender { male, female }
 
-enum PubertyInputMode { rememberDate, estimateAge }
+enum ProfileInputMode { ageEstimate, rememberedDate }
 
 enum Madhab { hanafi, shafi, maliki, hanbali, other }

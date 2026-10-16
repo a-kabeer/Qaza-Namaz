@@ -94,12 +94,12 @@ class ProfileOverview extends StatelessWidget {
                   icon: Icons.timelapse_outlined,
                   label: profile.isNewMuslim &&
                           profile.pubertyInputMode ==
-                              PubertyInputMode.rememberDate
+                              ProfileInputMode.rememberedDate
                       ? l10n.profilePubertyDate
                       : l10n.profilePubertyAge,
                   value: profile.isNewMuslim &&
                           profile.pubertyInputMode ==
-                              PubertyInputMode.rememberDate
+                              ProfileInputMode.rememberedDate
                       ? profile.pubertyDate == null
                           ? '—'
                           : DateFormatters.formatGregorianFull(
@@ -110,7 +110,7 @@ class ProfileOverview extends StatelessWidget {
                           : l10n.profileAgeYears(profile.pubertyAge!),
                   secondaryValue: profile.isNewMuslim &&
                           profile.pubertyInputMode ==
-                              PubertyInputMode.rememberDate &&
+                              ProfileInputMode.rememberedDate &&
                           profile.pubertyDate != null
                       ? l10n.formatHijriDate(profile.pubertyDate!)
                       : null,

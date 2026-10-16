@@ -68,33 +68,25 @@ class ProfileRules {
 
   /// Returns start-praying ages that remain mutually consistent with the
   /// selected puberty age and today's fixed arithmetic age.
+  /// Returns Namaz Start ages independently of the puberty input.
   static List<int> startPrayingAgeOptions(
     UserProfile profile, {
     required DateTime today,
   }) {
-    if (profile.isNewMuslim) return const <int>[];
     final dob = profile.dateOfBirth;
-    final puberty = profile.pubertyAge;
-    if (dob == null || puberty == null) return const <int>[];
-
+    if (dob == null) return const <int>[];
     final maxAge = currentAge(dob, today);
-    if (maxAge < puberty) return const <int>[];
-
+    if (maxAge < 7) return const <int>[];
     return [
-      for (var age = puberty; age <= maxAge; age++)
-        if (_milestoneReachedAndMaterialized(
-          dob: dob,
-          age: age,
-          today: today,
-        ))
+      for (var age = 7; age <= maxAge; age++)
+        if (_milestoneReachedAndMaterialized(dob: dob, age: age, today: today))
           age,
     ];
   }
 
-  /// Whether the user must provide a puberty age for Qaza calculation.
-  ///
-  /// The existing maximum puberty-age threshold is a cutoff only; puberty is
-  /// never assumed to occur at that age.
+  /// New Muslims are asked for puberty information only when the Islam
+  /// acceptance date precedes the existing maximum-puberty-age cutoff.
+  /// The cutoff is only an input rule; it is not an assumed puberty date.
   static bool requiresPubertyInput(UserProfile profile) {
     if (!profile.isNewMuslim) return true;
     final dob = profile.dateOfBirth;
@@ -109,18 +101,49 @@ class ProfileRules {
 
   /// Earliest date from which Qaza may be counted for this profile.
   ///
-  /// New Muslims are never assigned Qaza for prayers missed before accepting
+  /// New Muslims are not assigned Qaza for prayers missed before accepting
   /// Islam. If puberty input is not applicable, acceptance is the start date.
   static DateTime? qazaEligibilityStartDate(UserProfile profile) {
     final puberty = pubertyDate(profile);
     if (!profile.isNewMuslim) return puberty;
     final acceptedDate = profile.islamAcceptanceDate;
     if (acceptedDate == null) return null;
-    if (requiresPubertyInput(profile) && puberty == null) return null;
-    if (puberty == null || _compareCalendarDates(acceptedDate, puberty) > 0) {
+    if (!requiresPubertyInput(profile)) {
+      return LocalDateService.dateOnly(acceptedDate);
+    }
+    if (puberty == null) return null;
+    if (_compareCalendarDates(acceptedDate, puberty) > 0) {
       return LocalDateService.dateOnly(acceptedDate);
     }
     return LocalDateService.dateOnly(puberty);
+  }
+
+  static DateTime? minimumPubertyDate(UserProfile profile) {
+    final dob = profile.dateOfBirth;
+    final gender = profile.gender;
+    if (dob == null || gender == null) return null;
+    final age = gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
+    return fixedMilestoneDate(dob, age);
+  }
+
+  static DateTime? maximumPubertyDate(
+    UserProfile profile, {
+    required DateTime today,
+  }) {
+    final dob = profile.dateOfBirth;
+    final gender = profile.gender;
+    if (dob == null || gender == null) return null;
+    final age = gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
+    final projected = fixedMilestoneDate(dob, age);
+    return _compareCalendarDates(projected, today) <= 0
+        ? projected
+        : LocalDateService.dateOnly(today);
+  }
+
+  static DateTime? minimumStartPrayingDate(UserProfile profile) {
+    final dob = profile.dateOfBirth;
+    if (dob == null) return null;
+    return fixedMilestoneDate(dob, 7);
   }
 
   static bool isWitrEditable(Madhab? madhab) => madhab == Madhab.other;
@@ -175,50 +198,41 @@ class ProfileRules {
       FixedHijriArithmeticService.currentAge(dob, today);
 
   static DateTime? pubertyDate(UserProfile profile) {
-    if (profile.pubertyInputMode == PubertyInputMode.rememberDate) {
-      final date = profile.pubertyDate;
-      return date == null ? null : LocalDateService.dateOnly(date);
-    }
     final dob = profile.dateOfBirth;
+    if (dob == null) return null;
+    if (profile.pubertyInputMode == ProfileInputMode.rememberedDate) {
+      final date = profile.pubertyDateOverride;
+      final min = minimumPubertyDate(profile);
+      final max = maximumPubertyDate(profile, today: LocalDateService.today());
+      if (date == null ||
+          min == null ||
+          max == null ||
+          _compareCalendarDates(min, max) > 0 ||
+          _compareCalendarDates(date, min) < 0 ||
+          _compareCalendarDates(date, max) > 0) return null;
+      return LocalDateService.dateOnly(date);
+    }
     final age = profile.pubertyAge;
-    if (dob == null || age == null) return null;
+    if (age == null) return null;
     return fixedMilestoneDate(dob, age);
-  }
-
-  static DateTime? minimumPubertyDate(Gender? gender, DateTime? dob) {
-    if (gender == null || dob == null) return null;
-    final age = gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
-    return fixedMilestoneDate(dob, age);
-  }
-
-  static DateTime? maximumPubertyDate(Gender? gender, DateTime? dob) {
-    if (gender == null || dob == null) return null;
-    final age = gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
-    return fixedMilestoneDate(dob, age);
-  }
-
-  static bool isPubertyDateAllowed({
-    required Gender gender,
-    required DateTime dob,
-    required DateTime date,
-    required DateTime today,
-  }) {
-    final minimum = minimumPubertyDate(gender, dob)!;
-    final maximum = maximumPubertyDate(gender, dob)!;
-    return _compareCalendarDates(date, minimum) >= 0 &&
-        _compareCalendarDates(date, maximum) <= 0 &&
-        _compareCalendarDates(date, today) <= 0;
   }
 
   static DateTime? startPrayingDate(UserProfile profile) {
-    if (profile.isNewMuslim) {
-      final date = profile.startPrayingDate;
-      return date == null ? null : LocalDateService.dateOnly(date);
-    }
     final dob = profile.dateOfBirth;
+    if (dob == null) return null;
+    if (profile.startPrayingInputMode == ProfileInputMode.rememberedDate) {
+      final date = profile.startPrayingDateOverride;
+      final min = minimumStartPrayingDate(profile);
+      final today = LocalDateService.today();
+      if (date == null ||
+          min == null ||
+          _compareCalendarDates(date, min) < 0 ||
+          _compareCalendarDates(date, today) > 0) return null;
+      return LocalDateService.dateOnly(date);
+    }
     final age = profile.startPrayingAge;
-    if (dob == null || age == null) return null;
-    return anniversaryDate(dob, age);
+    if (age == null) return null;
+    return fixedMilestoneDate(dob, age);
   }
 
   static ProfileValidation validate(
@@ -261,46 +275,34 @@ class ProfileRules {
       }
     }
 
-    final puberty = profile.pubertyAge;
-    final pubertyRequired = requiresPubertyInput(profile);
-    DateTime? pubertyDateValue;
-    if (pubertyRequired) {
-      if (profile.isNewMuslim &&
-          profile.pubertyInputMode == PubertyInputMode.rememberDate) {
-        final exactDate = profile.pubertyDate;
-        if (exactDate == null) {
+    if (requiresPubertyInput(profile)) {
+      if (profile.pubertyInputMode == ProfileInputMode.ageEstimate) {
+        final age = profile.pubertyAge;
+        if (age == null) {
           return const ProfileValidation(
             error: ProfileValidationError.pubertyMissing,
           );
         }
-        if (_compareCalendarDates(exactDate, today) > 0 ||
-            _compareCalendarDates(exactDate, dob) < 0 ||
-            !isPubertyDateAllowed(
-              gender: gender,
+        if (!isPubertyAgeAllowed(gender, age) ||
+            !_milestoneReachedAndMaterialized(
               dob: dob,
-              date: exactDate,
+              age: age,
               today: today,
             )) {
           return const ProfileValidation(
             error: ProfileValidationError.pubertyInvalid,
           );
         }
-        pubertyDateValue = LocalDateService.dateOnly(exactDate);
       } else {
-        if (puberty == null) {
-          return const ProfileValidation(
-              error: ProfileValidationError.pubertyMissing);
-        }
-        if (!isPubertyAgeAllowed(gender, puberty)) {
-          return const ProfileValidation(
-              error: ProfileValidationError.pubertyInvalid);
-        }
-        pubertyDateValue = fixedMilestoneDate(dob, puberty);
-        if (!_milestoneReachedAndMaterialized(
-          dob: dob,
-          age: puberty,
-          today: today,
-        )) {
+        final date = profile.pubertyDateOverride;
+        final minimum = minimumPubertyDate(profile);
+        final maximum = maximumPubertyDate(profile, today: today);
+        if (date == null ||
+            minimum == null ||
+            maximum == null ||
+            _compareCalendarDates(minimum, maximum) > 0 ||
+            _compareCalendarDates(date, minimum) < 0 ||
+            _compareCalendarDates(date, maximum) > 0) {
           return const ProfileValidation(
             error: ProfileValidationError.pubertyInvalid,
           );
@@ -308,38 +310,41 @@ class ProfileRules {
       }
     }
 
-    final startDateValue = startPrayingDate(profile);
-    if (profile.isNewMuslim) {
-      if (startDateValue == null) {
-        return const ProfileValidation(
-          error: ProfileValidationError.startPrayingAgeMissing,
-        );
-      }
-      if (_compareCalendarDates(startDateValue, profile.islamAcceptanceDate!) <
-              0 ||
-          _compareCalendarDates(startDateValue, today) > 0) {
-        return const ProfileValidation(
-          error: ProfileValidationError.startPrayingAgeInvalid,
-        );
-      }
-    } else {
-      final startAge = profile.startPrayingAge;
-      if (startAge == null) {
+    if (profile.startPrayingInputMode == ProfileInputMode.ageEstimate) {
+      final age = profile.startPrayingAge;
+      if (age == null) {
         return const ProfileValidation(
             error: ProfileValidationError.startPrayingAgeMissing);
       }
+      if (age < 7 ||
+          age > currentAge(dob, today) ||
+          !_milestoneReachedAndMaterialized(dob: dob, age: age, today: today)) {
+        return const ProfileValidation(
+            error: ProfileValidationError.startPrayingAgeInvalid);
+      }
+    } else {
+      final date = profile.startPrayingDateOverride;
+      final min = minimumStartPrayingDate(profile);
+      if (date == null ||
+          min == null ||
+          _compareCalendarDates(date, min) < 0 ||
+          _compareCalendarDates(date, today) > 0) {
+        return const ProfileValidation(
+            error: ProfileValidationError.startPrayingAgeInvalid);
+      }
+    }
 
-      final currentAgeValue = currentAge(dob, today);
-      if (startDateValue == null ||
-          pubertyDateValue == null ||
-          startAge < puberty! ||
-          startAge > currentAgeValue ||
-          !_milestoneReachedAndMaterialized(
-            dob: dob,
-            age: startAge,
-            today: today,
-          ) ||
-          _compareCalendarDates(startDateValue, pubertyDateValue) < 0) {
+    if (profile.isNewMuslim) {
+      final acceptedDate = profile.islamAcceptanceDate;
+      final startDate = startPrayingDate(profile);
+      if (acceptedDate == null) {
+        return const ProfileValidation(
+          error: ProfileValidationError.islamAcceptanceDateMissing,
+        );
+      }
+      if (startDate == null ||
+          _compareCalendarDates(startDate, acceptedDate) < 0 ||
+          _compareCalendarDates(startDate, today) > 0) {
         return const ProfileValidation(
           error: ProfileValidationError.startPrayingAgeInvalid,
         );
@@ -350,143 +355,64 @@ class ProfileRules {
     if (witr == null || witr != effectiveWitr(profile)) {
       return const ProfileValidation(error: ProfileValidationError.witrInvalid);
     }
-
     return const ProfileValidation();
   }
 
   static UserProfile normalize(UserProfile profile) {
     var next = profile;
-
-    if (!next.isNewMuslim) {
-      if (next.islamAcceptanceDate != null ||
-          next.startPrayingDate != null ||
-          next.pubertyDate != null ||
-          next.pubertyInputMode != PubertyInputMode.estimateAge) {
-        next = next.copyWith(
-          clearIslamAcceptanceDate: true,
-          clearStartPrayingDate: true,
-          clearPubertyDate: true,
-          pubertyInputMode: PubertyInputMode.estimateAge,
-        );
+    if (!next.isNewMuslim && next.islamAcceptanceDate != null) {
+      next = next.copyWith(clearIslamAcceptanceDate: true);
+    }
+    if (next.isNewMuslim) {
+      final acceptedDate = next.islamAcceptanceDate;
+      final dob = next.dateOfBirth;
+      final today = LocalDateService.today();
+      if (acceptedDate != null &&
+          ((dob != null && _compareCalendarDates(acceptedDate, dob) < 0) ||
+              _compareCalendarDates(acceptedDate, today) > 0)) {
+        next = next.copyWith(clearIslamAcceptanceDate: true);
       }
-    } else {
-      if (next.startPrayingAge != null) {
+    }
+    final target = UserProfile.normalizeDailyQazaTarget(next.dailyQazaTarget);
+    if (target != next.dailyQazaTarget) {
+      next = next.copyWith(dailyQazaTarget: target);
+    }
+    final today = LocalDateService.today();
+    final dob = next.dateOfBirth;
+    final gender = next.gender;
+
+    if (next.pubertyInputMode == ProfileInputMode.ageEstimate) {
+      final age = next.pubertyAge;
+      if (age != null &&
+          gender != null &&
+          dob != null &&
+          (!isPubertyAgeAllowed(gender, age) ||
+              !_milestoneReachedAndMaterialized(
+                dob: dob,
+                age: age,
+                today: today,
+              ))) {
+        next = next.copyWith(clearPubertyAge: true);
+      }
+    }
+    if (next.startPrayingInputMode == ProfileInputMode.ageEstimate) {
+      final age = next.startPrayingAge;
+      if (age != null &&
+          (age < 7 ||
+              (dob != null &&
+                  (age > currentAge(dob, today) ||
+                      !_milestoneReachedAndMaterialized(
+                        dob: dob,
+                        age: age,
+                        today: today,
+                      ))))) {
         next = next.copyWith(clearStartPrayingAge: true);
       }
-      final dob = next.dateOfBirth;
-      final acceptedDate = next.islamAcceptanceDate;
-      if (dob != null &&
-          acceptedDate != null &&
-          _compareCalendarDates(acceptedDate, dob) < 0) {
-        next = next.copyWith(clearIslamAcceptanceDate: true);
-      } else if (acceptedDate != null &&
-          next.startPrayingDate != null &&
-          _compareCalendarDates(next.startPrayingDate!, acceptedDate) < 0) {
-        next = next.copyWith(clearStartPrayingDate: true);
-      }
-
-      if (next.pubertyInputMode == PubertyInputMode.rememberDate) {
-        if (next.pubertyAge != null) {
-          next = next.copyWith(clearPubertyAge: true);
-        }
-        final exactDate = next.pubertyDate;
-        if (exactDate != null &&
-            dob != null &&
-            next.gender != null &&
-            !isPubertyDateAllowed(
-              gender: next.gender!,
-              dob: dob,
-              date: exactDate,
-              today: LocalDateService.today(),
-            )) {
-          next = next.copyWith(clearPubertyDate: true);
-        }
-      } else if (next.pubertyDate != null) {
-        next = next.copyWith(clearPubertyDate: true);
-      }
     }
-
-    if (next.isNewMuslim &&
-        next.dateOfBirth != null &&
-        next.startPrayingDate != null &&
-        _compareCalendarDates(next.startPrayingDate!, next.dateOfBirth!) < 0) {
-      next = next.copyWith(clearStartPrayingDate: true);
-    }
-
-    if (next.isNewMuslim &&
-        next.islamAcceptanceDate != null &&
-        !requiresPubertyInput(next)) {
-      next = next.copyWith(
-        clearPubertyAge: true,
-        clearPubertyDate: true,
-      );
-    }
-
-    final normalizedDailyTarget =
-        UserProfile.normalizeDailyQazaTarget(next.dailyQazaTarget);
-    if (normalizedDailyTarget != next.dailyQazaTarget) {
-      next = next.copyWith(dailyQazaTarget: normalizedDailyTarget);
-    }
-    final gender = next.gender;
-    final puberty = next.pubertyAge;
-    if (gender != null &&
-        puberty != null &&
-        !isPubertyAgeAllowed(gender, puberty)) {
-      next = next.copyWith(clearPubertyAge: true, clearStartPrayingAge: true);
-    }
-
     final madhab = next.madhab;
     if (madhab != null && !isWitrEditable(madhab)) {
       next = next.copyWith(witrIncluded: effectiveWitr(next));
     }
-
-    if (next.isNewMuslim &&
-        next.islamAcceptanceDate != null &&
-        !requiresPubertyInput(next) &&
-        next.pubertyAge != null) {
-      next = next.copyWith(clearPubertyAge: true);
-    }
-
-    final dob = next.dateOfBirth;
-    final validGender = next.gender;
-    final validPuberty = next.pubertyAge;
-    if (next.pubertyInputMode == PubertyInputMode.estimateAge &&
-        dob != null &&
-        validGender != null &&
-        validPuberty != null) {
-      final today = LocalDateService.today();
-      final maxAge = currentAge(dob, today);
-      if (!isPubertyAgeAllowed(validGender, validPuberty) ||
-          validPuberty > maxAge ||
-          !_milestoneReachedAndMaterialized(
-            dob: dob,
-            age: validPuberty,
-            today: today,
-          )) {
-        next = next.copyWith(clearPubertyAge: true, clearStartPrayingAge: true);
-      }
-    }
-
-    final normalizedDob = next.dateOfBirth;
-    final normalizedStart = next.startPrayingAge;
-    final normalizedPuberty = next.pubertyAge;
-    if (!next.isNewMuslim &&
-        normalizedDob != null &&
-        normalizedStart != null &&
-        normalizedPuberty != null) {
-      final today = LocalDateService.today();
-      final maxStart = currentAge(normalizedDob, today);
-      if (normalizedStart < normalizedPuberty ||
-          normalizedStart > maxStart ||
-          !_milestoneReachedAndMaterialized(
-            dob: normalizedDob,
-            age: normalizedStart,
-            today: today,
-          )) {
-        next = next.copyWith(clearStartPrayingAge: true);
-      }
-    }
-
     return next;
   }
 

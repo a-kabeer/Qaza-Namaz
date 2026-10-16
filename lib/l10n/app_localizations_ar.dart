@@ -2739,4 +2739,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get profilePubertyDate => 'تاريخ البلوغ';
+
+  @override
+  String get profileEstimateUsingAge => 'تقدير باستخدام العمر';
 }

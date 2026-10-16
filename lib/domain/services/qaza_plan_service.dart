@@ -1,4 +1,3 @@
-import '../../core/calendar/fixed_hijri_arithmetic_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/time/local_date_service.dart';
 import '../entities/user_profile.dart';
@@ -34,53 +33,62 @@ class QazaPlanService {
   const QazaPlanService();
 
   QazaPlan? planFor(UserProfile profile) {
-    final start = ProfileRules.qazaEligibilityStartDate(profile);
-    final startPrayingDate = ProfileRules.startPrayingDate(profile);
-    if (start == null || startPrayingDate == null) return null;
+    final dob = profile.dateOfBirth;
+    if (dob == null) return null;
+    final today = LocalDateService.today();
+    final currentAge = ProfileRules.currentAge(dob, today);
+    final gender = profile.gender;
+    if (gender == null) return null;
 
-    late final int totalDays;
-    late final DateTime end;
     if (profile.isNewMuslim) {
-      final dob = profile.dateOfBirth;
       final acceptedDate = profile.islamAcceptanceDate;
-      final today = LocalDateService.today();
-      if (dob == null ||
-          acceptedDate == null ||
+      if (acceptedDate == null ||
           LocalDateService.compareCalendarDates(acceptedDate, dob) < 0 ||
-          LocalDateService.compareCalendarDates(acceptedDate, today) > 0 ||
-          LocalDateService.compareCalendarDates(
-                  startPrayingDate, acceptedDate) <
-              0 ||
-          LocalDateService.compareCalendarDates(startPrayingDate, today) > 0) {
-        return null;
-      }
-
-      // Qaza is counted only after both Islam acceptance and Salah becoming
-      // obligatory. A prayer-start date before that boundary yields zero days.
-      final gap =
-          LocalDateService.calendarDayDifference(start, startPrayingDate);
-      totalDays = gap < 0 ? 0 : gap;
-      end = LocalDateService.addCalendarDays(start, totalDays);
-    } else {
-      final pubertyAge = profile.pubertyAge;
-      final startPrayingAge = profile.startPrayingAge;
-      if (pubertyAge == null ||
-          startPrayingAge == null ||
-          startPrayingAge < pubertyAge) {
-        return null;
-      }
-
-      totalDays = FixedHijriArithmeticService.durationForAges(
-        pubertyAge: pubertyAge,
-        startPrayingAge: startPrayingAge,
-      );
-      end = LocalDateService.addCalendarDays(start, totalDays);
-      if (end != startPrayingDate ||
-          LocalDateService.compareCalendarDates(end, start) < 0) {
+          LocalDateService.compareCalendarDates(acceptedDate, today) > 0) {
         return null;
       }
     }
 
+    if (ProfileRules.requiresPubertyInput(profile)) {
+      if (profile.pubertyInputMode == ProfileInputMode.ageEstimate) {
+        final age = profile.pubertyAge;
+        if (age == null ||
+            !ProfileRules.isPubertyAgeAllowed(gender, age) ||
+            age > currentAge) {
+          return null;
+        }
+      } else {
+        final puberty = ProfileRules.pubertyDate(profile);
+        if (puberty == null) return null;
+      }
+    }
+
+    if (profile.startPrayingInputMode == ProfileInputMode.ageEstimate) {
+      final age = profile.startPrayingAge;
+      if (age == null || age < 7 || age > currentAge) return null;
+    }
+
+    final eligibilityStart = ProfileRules.qazaEligibilityStartDate(profile);
+    final startPrayingDate = ProfileRules.startPrayingDate(profile);
+    if (eligibilityStart == null || startPrayingDate == null) return null;
+
+    if (profile.isNewMuslim) {
+      final acceptedDate = profile.islamAcceptanceDate!;
+      if (LocalDateService.compareCalendarDates(startPrayingDate, acceptedDate) <
+              0 ||
+          LocalDateService.compareCalendarDates(startPrayingDate, today) > 0) {
+        return null;
+      }
+    }
+
+    // A prayer-start date on or before the eligibility date is a valid
+    // zero-Qaza plan. This also permits independent date/age input modes.
+    final difference = LocalDateService.calendarDayDifference(
+      eligibilityStart,
+      startPrayingDate,
+    );
+    final totalDays = difference > 0 ? difference : 0;
+    final end = totalDays == 0 ? eligibilityStart : startPrayingDate;
     final includeWitr = ProfileRules.effectiveWitr(profile);
     final prayerBreakdown = <PrayerType, int>{
       for (final prayer in PrayerType.values)
@@ -88,7 +96,7 @@ class QazaPlanService {
     };
 
     return QazaPlan(
-      startDate: start,
+      startDate: eligibilityStart,
       endDate: end,
       totalDays: totalDays,
       includeWitr: includeWitr,
