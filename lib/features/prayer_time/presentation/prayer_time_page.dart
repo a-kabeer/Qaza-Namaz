@@ -4,7 +4,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../../app/providers.dart';
-import '../../../core/calendar/hijri_date_adjustment_provider.dart';
+import 'hijri_date_adjustment_provider.dart';
 import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
