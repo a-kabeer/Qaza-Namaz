@@ -2,7 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/calendar/hijri_date_service.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
@@ -36,7 +38,7 @@ Future<ProfileQazaChangeDialogResult?> showProfileQazaChangeDialog({
   );
 }
 
-class _ProfileQazaChangeDialog extends StatefulWidget {
+class _ProfileQazaChangeDialog extends ConsumerStatefulWidget {
   const _ProfileQazaChangeDialog({
     required this.preview,
     this.previousProfile,
@@ -52,7 +54,7 @@ class _ProfileQazaChangeDialog extends StatefulWidget {
       _ProfileQazaChangeDialogState();
 }
 
-class _ProfileQazaChangeDialogState extends State<_ProfileQazaChangeDialog> {
+class _ProfileQazaChangeDialogState extends ConsumerState<_ProfileQazaChangeDialog> {
   ProfileQazaPlanPreview? _resolvedPreview;
   Object? _error;
   bool _loading = true;
@@ -383,7 +385,13 @@ class _PlanSummary extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            _formatHijriPlanRange(l10n, start!, end),
+            _formatHijriPlanRange(
+                l10n,
+                start!,
+                end,
+                offsetDays:
+                    ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+              ),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurfaceVariant,
             ),
@@ -481,11 +489,14 @@ String _formatGregorianPlanRange(DateTime start, DateTime? end) {
 String _formatHijriPlanRange(
   AppLocalizations l10n,
   DateTime start,
-  DateTime? end,
-) {
+  DateTime? end, {
+  int offsetDays = 0,
+}) {
   final last = _lastPlanDate(start, end);
-  final startText = HijriDateService.format(start, l10n);
-  final lastText = HijriDateService.format(last, l10n);
+  final startText =
+      HijriDateService.format(start, l10n, offsetDays: offsetDays);
+  final lastText =
+      HijriDateService.format(last, l10n, offsetDays: offsetDays);
 
   return start == last ? startText : '$startText – $lastText';
 }
