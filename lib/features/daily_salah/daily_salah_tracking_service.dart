@@ -162,17 +162,10 @@ class DailySalahTrackingService {
 
     if (matching.isNotEmpty) {
       final previousId = previous?.trackerCreatedQazaId;
-      final deterministicId = _trackerQazaId(
-        userId,
-        prayerType,
-        normalizedDate,
-      );
-      final trackerId = matching.any((record) => record.id == deterministicId)
-          ? deterministicId
-          : previousId != null &&
-                  matching.any((record) => record.id == previousId)
-              ? previousId
-              : null;
+      final trackerId = previousId != null &&
+              matching.any((record) => record.id == previousId)
+          ? previousId
+          : null;
       await _writeLog(
         userId: userId,
         prayerType: prayerType,
