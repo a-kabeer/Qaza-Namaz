@@ -2993,6 +2993,12 @@ abstract class AppLocalizations {
   /// **'Select date'**
   String get profileSelectDate;
 
+  /// Label for entering a remembered exact date.
+  String get profileRememberDate;
+
+  /// Label for using an age estimate.
+  String get profileEstimateUsingAge;
+
   /// No description provided for @profileSelectDobHelp.
   ///
   /// In en, this message translates to:
