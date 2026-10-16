@@ -359,7 +359,11 @@ void main() {
 
       // Reopen the inline selector to verify Cancel retained the original DOB.
       final dobButton = find.byKey(const Key('profile_dob'));
-      await tester.ensureVisible(dobButton);
+      await tester.scrollUntilVisible(
+        dobButton,
+        300,
+        scrollable: find.byType(Scrollable),
+      );
       await tester.tap(dobButton);
       await tester.pumpAndSettle();
       expect(
