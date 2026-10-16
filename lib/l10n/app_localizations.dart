@@ -503,6 +503,18 @@ abstract class AppLocalizations {
   /// **'{day} {month} {year} AH'**
   String hijriDate(Object day, Object month, Object year);
 
+  /// Short Hijri date without the year for adjustment choices.
+  String hijriDateShort(Object day, Object month);
+
+  /// Title shown by the Prayer Time Hijri date adjustment sheet.
+  String get hijriAdjustmentTitle;
+
+  String get hijriAdjustmentEarlierTwo;
+  String get hijriAdjustmentEarlierOne;
+  String get hijriAdjustmentNoChange;
+  String get hijriAdjustmentLaterOne;
+  String get hijriAdjustmentLaterTwo;
+
   /// Hijri month/year header; Gregorian remains primary
   ///
   /// In en, this message translates to:
