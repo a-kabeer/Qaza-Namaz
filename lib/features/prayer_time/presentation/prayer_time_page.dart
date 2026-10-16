@@ -22,6 +22,7 @@ import 'prayer_timeline_row.dart';
 import 'qibla_screen.dart';
 import 'qibla_summary_card.dart';
 import 'hijri_date_adjustment_sheet.dart';
+import 'hijri_date_chip.dart';
 
 class PrayerTimePage extends ConsumerStatefulWidget {
   const PrayerTimePage({super.key});
@@ -673,47 +674,9 @@ class _PrayerTimeHeader extends StatelessWidget {
                 ),
               ),
               Flexible(
-                child: Container(
-                  padding: const EdgeInsetsDirectional.only(
-                    start: 8,
-                    end: 4,
-                    top: 4,
-                    bottom: 4,
-                  ),
-                  decoration: BoxDecoration(
-                    color: scheme.surfaceContainerHighest,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          hijri,
-                          maxLines: 1,
-                          softWrap: false,
-                          overflow: TextOverflow.ellipsis,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: scheme.onSurfaceVariant,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        key: const Key('prayer_time_hijri_adjustment'),
-                        tooltip: AppLocalizations.of(context)
-                            .hijriAdjustmentTitle,
-                        onPressed: onAdjustHijriDate,
-                        visualDensity: VisualDensity.compact,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints.tightFor(
-                          width: 32,
-                          height: 32,
-                        ),
-                        icon: const Icon(Icons.tune_rounded, size: 16),
-                      ),
-                    ],
-                  ),
+                child: HijriDateChip(
+                  label: hijri,
+                  onAdjust: onAdjustHijriDate,
                 ),
               ),
             ],
