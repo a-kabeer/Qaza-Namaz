@@ -2,6 +2,7 @@ import 'package:calendar_date_picker2/calendar_date_picker2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../l10n/app_localizations.dart';
@@ -145,11 +146,18 @@ class _CalendarPickerState extends ConsumerState<CalendarPicker> {
     _goToMonth(DateTime(year, clampedMonth, 1));
   }
 
+  int get _hijriOffsetDays =>
+      ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
+
   String _hijriLabel(DateTime date, AppLocalizations l10n) =>
-      l10n.formatHijriDate(date);
+      l10n.formatHijriDate(date, offsetDays: _hijriOffsetDays);
 
   String _hijriMonthLabel(DateTime month, AppLocalizations l10n) =>
-      HijriDateService.monthYearLabel(month, l10n);
+      HijriDateService.monthYearLabel(
+        month,
+        l10n,
+        offsetDays: _hijriOffsetDays,
+      );
 
   DateSelectionMode get _mode =>
       ref.read(calendarControllerProvider).selectionMode;
