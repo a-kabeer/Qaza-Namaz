@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_addition.dart';
@@ -273,7 +274,7 @@ class _RecentAdditions extends StatelessWidget {
   }
 }
 
-class _RecentAdditionCard extends StatefulWidget {
+class _RecentAdditionCard extends ConsumerStatefulWidget {
   const _RecentAdditionCard({
     super.key,
     required this.item,
@@ -287,7 +288,7 @@ class _RecentAdditionCard extends StatefulWidget {
   State<_RecentAdditionCard> createState() => _RecentAdditionCardState();
 }
 
-class _RecentAdditionCardState extends State<_RecentAdditionCard> {
+class _RecentAdditionCardState extends ConsumerState<_RecentAdditionCard> {
   bool _datesExpanded = false;
 
   Future<void> _openDetail() async {
@@ -303,7 +304,11 @@ class _RecentAdditionCardState extends State<_RecentAdditionCard> {
   Widget build(BuildContext context) {
     final item = widget.item;
     final snapshot = item.addition.currentInputSnapshot;
-    final summary = QazaAdditionDateSummary(snapshot);
+    final summary = QazaAdditionDateSummary(
+      snapshot,
+      hijriOffsetDays:
+          ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+    );
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final total = item.pendingCount + item.completedCount;
