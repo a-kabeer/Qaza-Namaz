@@ -162,10 +162,17 @@ class DailySalahTrackingService {
 
     if (matching.isNotEmpty) {
       final previousId = previous?.trackerCreatedQazaId;
-      final trackerId = previousId != null &&
-              matching.any((record) => record.id == previousId)
-          ? previousId
-          : null;
+      final deterministicId = _trackerQazaId(
+        userId,
+        prayerType,
+        normalizedDate,
+      );
+      final trackerId = matching.any((record) => record.id == deterministicId)
+          ? deterministicId
+          : previousId != null &&
+                  matching.any((record) => record.id == previousId)
+              ? previousId
+              : null;
       await _writeLog(
         userId: userId,
         prayerType: prayerType,
@@ -352,7 +359,8 @@ class DailySalahTrackingService {
     final trackerId = replaceTrackerCreatedQazaId
         ? trackerCreatedQazaId
         : trackerCreatedQazaId ?? existing?.trackerCreatedQazaId;
-    await _database.customUpdate(
+    await _database.transactionWithRevision<void>(() async {
+      await _database.customUpdate(
       'INSERT INTO daily_salah_logs '
       '(user_id, prayer_date, prayer_type, status, tracker_created_qaza_id, updated_at) '
       'VALUES (?, ?, ?, ?, ?, ?) '
@@ -368,7 +376,8 @@ class DailySalahTrackingService {
         Variable(trackerId),
         Variable(DateTime.now().toUtc().toIso8601String()),
       ],
-    );
+      );
+    }, mutationPredicate: (_) => true);
   }
 
   Future<void> _requireEnabled() async {
