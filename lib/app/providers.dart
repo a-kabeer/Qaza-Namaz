@@ -400,7 +400,6 @@ class HijriDateAdjustmentNotifier extends AsyncNotifier<int> {
   }
 }
 
-
 class LocaleNotifier extends Notifier<Locale> {
   static const String storageKey = 'language_code';
   static const Locale fallback = Locale('en');
