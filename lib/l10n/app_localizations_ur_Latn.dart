@@ -1744,8 +1744,6 @@ class AppLocalizationsUrLatn extends AppLocalizations {
       'Gregorian tareekh muntakhab karne ke baad Hijri tareekh bhi dikhayi jaye gi';
 
   @override
-  @override
-  @override
   String get profileRememberDate => "Mujhe tareekh yaad hai";
 
   @override
@@ -1754,6 +1752,7 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   @override
   String get profilePubertyDate => "Puberty ki tareekh";
 
+  @override
   String get profileIslamicBackground => "Islami pas-e-manzar";
 
   @override

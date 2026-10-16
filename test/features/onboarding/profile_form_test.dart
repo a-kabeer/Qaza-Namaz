@@ -93,6 +93,12 @@ void main() {
         find.byKey(const Key('profile_puberty_age_increment')),
         findsOneWidget,
       );
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_start_praying_age_decrement')),
+        300,
+        scrollable: find.byType(Scrollable),
+      );
       expect(
         find.byKey(const Key('profile_start_praying_age_decrement')),
         findsOneWidget,
@@ -102,6 +108,11 @@ void main() {
         findsOneWidget,
       );
 
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_puberty_age_increment')),
+        300,
+        scrollable: find.byType(Scrollable),
+      );
       await tester.tap(find.byKey(const Key('profile_puberty_age_increment')));
       await tester.pump();
       expect(changed?.pubertyAge, 13);
@@ -539,4 +550,5 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
 }

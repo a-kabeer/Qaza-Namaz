@@ -1736,6 +1736,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hijri date is shown after you select the Gregorian date.';
 
   @override
+  String get profileRememberDate => "I remember the date";
+
+  @override
+  String get profileNotSure => "I'm not sure";
+
+  @override
+  String get profilePubertyDate => "Puberty Date";
+
+  @override
   String get profileIslamicBackground => 'Islamic background';
 
   @override
@@ -2737,13 +2746,4 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       'This Qaza entry is no longer pending, so it was not removed.';
-
-  @override
-  String get profileRememberDate => 'I remember the date';
-
-  @override
-  String get profileNotSure => 'I\'m not sure';
-
-  @override
-  String get profilePubertyDate => 'Puberty Date';
 }

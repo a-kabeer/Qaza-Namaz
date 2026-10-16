@@ -163,10 +163,10 @@ class UserProfile {
       dateOfBirth: parseDate(json['dateOfBirth']),
       pubertyAge: (json['pubertyAge'] as num?)?.toInt(),
       pubertyDate: parseDate(json['pubertyDate']),
-      pubertyInputMode: PubertyInputMode.values
-              .where((item) => item.name == json['pubertyInputMode'])
-              .firstOrNull ??
-          PubertyInputMode.estimateAge,
+      pubertyInputMode:
+          json['pubertyInputMode'] == PubertyInputMode.rememberDate.name
+              ? PubertyInputMode.rememberDate
+              : PubertyInputMode.estimateAge,
       startPrayingAge: (json['startPrayingAge'] as num?)?.toInt(),
       startPrayingDate: parseDate(json['startPrayingDate']),
       isNewMuslim: json['isNewMuslim'] as bool? ?? false,

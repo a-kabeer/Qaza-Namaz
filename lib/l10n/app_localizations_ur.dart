@@ -1733,6 +1733,15 @@ class AppLocalizationsUr extends AppLocalizations {
       'گریگورین تاریخ منتخب کرنے کے بعد ہجری تاریخ بھی دکھائی جائے گی۔';
 
   @override
+  String get profileRememberDate => "مجھے تاریخ یاد ہے";
+
+  @override
+  String get profileNotSure => "مجھے یقین نہیں";
+
+  @override
+  String get profilePubertyDate => "بلوغت کی تاریخ";
+
+  @override
   String get profileIslamicBackground => 'اسلامی پس منظر';
 
   @override
@@ -2743,15 +2752,6 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       'یہ قضا ریکارڈ اب زیرِ التوا نہیں، اس لیے اسے حذف نہیں کیا گیا۔';
-
-  @override
-  String get profileRememberDate => 'مجھے تاریخ یاد ہے';
-
-  @override
-  String get profileNotSure => 'مجھے یقین نہیں';
-
-  @override
-  String get profilePubertyDate => 'بلوغت کی تاریخ';
 }
 
 /// The translations for Urdu, using the Latin script (`ur_Latn`).
@@ -4494,6 +4494,15 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       'Gregorian tareekh muntakhab karne ke baad Hijri tareekh bhi dikhayi jaye gi';
 
   @override
+  String get profileRememberDate => "Mujhe tareekh yaad hai";
+
+  @override
+  String get profileNotSure => "Mujhe yaqeen nahi";
+
+  @override
+  String get profilePubertyDate => "Puberty ki tareekh";
+
+  @override
   String get profileIslamicBackground => 'Islami pas-e-manzar';
 
   @override
@@ -5519,13 +5528,4 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       'Yeh Qaza record ab pending nahi, is liye hataya nahi gaya.';
-
-  @override
-  String get profileRememberDate => 'Mujhe tareekh yaad hai';
-
-  @override
-  String get profileNotSure => 'Mujhe yaqeen nahi';
-
-  @override
-  String get profilePubertyDate => 'Puberty ki tareekh';
 }
