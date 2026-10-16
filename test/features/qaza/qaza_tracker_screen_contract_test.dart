@@ -652,7 +652,9 @@ void main() {
     expect(row, contains('final hijriDate = l10n.formatHijriDate('));
     expect(
       row,
-      contains('offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,'),
+      contains(
+        'offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,',
+      ),
     );
     expect(row, contains('title: Text('));
     expect(row, contains('subtitle: Text('));
@@ -1137,7 +1139,9 @@ void main() {
     expect(source, contains('final hijriDate = l10n.formatHijriDate('));
     expect(
       source,
-      contains('offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,'),
+      contains(
+        'offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,',
+      ),
     );
     expect(source, contains('maxLines: 2'));
   });
