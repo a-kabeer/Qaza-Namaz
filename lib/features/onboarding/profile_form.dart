@@ -478,7 +478,8 @@ class _ProfileFormState extends State<ProfileForm> {
                 onConfirm: (picked) {
                   final updated = ProfileRules.normalize(
                     _profile.copyWith(
-                      pubertyDate: DateTime(picked.year, picked.month, picked.day),
+                      pubertyDate:
+                          DateTime(picked.year, picked.month, picked.day),
                       clearPubertyAge: true,
                     ),
                   );
@@ -842,8 +843,7 @@ class _DateOfBirthPickerInlineState extends State<_DateOfBirthPickerInline> {
   int get _daysInMonth => DateTime(_year, _month + 1, 0).day;
   int get _earliestMonth =>
       _year == _earliestDate.year ? _earliestDate.month : 1;
-  int get _latestMonth =>
-      _year == _latestDate.year ? _latestDate.month : 12;
+  int get _latestMonth => _year == _latestDate.year ? _latestDate.month : 12;
   int get _earliestDay =>
       _year == _earliestDate.year && _month == _earliestDate.month
           ? _earliestDate.day

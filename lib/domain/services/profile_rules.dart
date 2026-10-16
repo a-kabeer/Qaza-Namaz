@@ -187,15 +187,13 @@ class ProfileRules {
 
   static DateTime? minimumPubertyDate(Gender? gender, DateTime? dob) {
     if (gender == null || dob == null) return null;
-    final age =
-        gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
+    final age = gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
     return fixedMilestoneDate(dob, age);
   }
 
   static DateTime? maximumPubertyDate(Gender? gender, DateTime? dob) {
     if (gender == null || dob == null) return null;
-    final age =
-        gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
+    final age = gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
     return fixedMilestoneDate(dob, age);
   }
 

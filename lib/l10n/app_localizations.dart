@@ -3009,9 +3009,6 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Islamic background'**
-  String get profileRememberDate;
-  String get profileNotSure;
-  String get profilePubertyDate;
   String get profileIslamicBackground;
 
   /// No description provided for @profileMuslimFromChildhood.
@@ -4754,6 +4751,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This Qaza entry is no longer pending, so it was not removed.'**
   String get dailySalahTrackingUndoUnavailable;
+
+  /// No description provided for @profileRememberDate.
+  ///
+  /// In en, this message translates to:
+  /// **'I remember the date'**
+  String get profileRememberDate;
+
+  /// No description provided for @profileNotSure.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m not sure'**
+  String get profileNotSure;
+
+  /// No description provided for @profilePubertyDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Puberty Date'**
+  String get profilePubertyDate;
 }
 
 class _AppLocalizationsDelegate

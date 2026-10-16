@@ -1721,15 +1721,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'سيظهر التاريخ الهجري بعد تحديد التاريخ الميلادي.';
 
   @override
-  @override
-  String get profileRememberDate => "أتذكر التاريخ";
-
-  @override
-  String get profileNotSure => "لست متأكدًا";
-
-  @override
-  String get profilePubertyDate => "تاريخ البلوغ";
-
   String get profileIslamicBackground => 'الخلفية الإسلامية';
 
   @override
@@ -2739,4 +2730,13 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       'لم تعد هذه الصلاة قيد الانتظار، لذلك لم تتم إزالتها.';
+
+  @override
+  String get profileRememberDate => 'أتذكر التاريخ';
+
+  @override
+  String get profileNotSure => 'لست متأكدًا';
+
+  @override
+  String get profilePubertyDate => 'تاريخ البلوغ';
 }
