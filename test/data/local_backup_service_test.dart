@@ -131,13 +131,12 @@ void main() {
       '''INSERT INTO daily_salah_logs
          (user_id, prayer_date, prayer_type, status,
           tracker_created_qaza_id, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?)''',
+         VALUES (?, ?, ?, ?, NULL, ?)''',
       variables: [
         Variable.withString('guest'),
         Variable.withString('2026-10-16'),
         Variable.withString('fajr'),
         Variable.withString('prayed'),
-        Variable<String>(null),
         Variable.withString(DateTime.utc(2026, 10, 16).toIso8601String()),
       ],
     );
