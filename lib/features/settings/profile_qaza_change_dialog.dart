@@ -123,6 +123,7 @@ class _ProfileQazaChangeDialogState extends State<_ProfileQazaChangeDialog> {
                     preview: _resolvedPreview!,
                     previousProfile: widget.previousProfile,
                     newProfile: widget.newProfile,
+                    hijriOffsetDays: widget.hijriOffsetDays,
                   ),
       ),
       actions: [
@@ -166,11 +167,13 @@ class _ProfileQazaReviewContent extends StatelessWidget {
     required this.preview,
     this.previousProfile,
     this.newProfile,
+    required this.hijriOffsetDays,
   });
 
   final ProfileQazaPlanPreview preview;
   final UserProfile? previousProfile;
   final UserProfile? newProfile;
+  final int hijriOffsetDays;
 
   @override
   Widget build(BuildContext context) {
@@ -202,6 +205,7 @@ class _ProfileQazaReviewContent extends StatelessWidget {
             total: previousPlan?.totalWithWitr ?? 0,
             start: previousPlan?.startDate,
             end: previousPlan?.endDate,
+            hijriOffsetDays: hijriOffsetDays,
           ),
           const SizedBox(height: 24),
           _PlanSummary(
@@ -209,6 +213,7 @@ class _ProfileQazaReviewContent extends StatelessWidget {
             total: preview.newPlanTotal,
             start: preview.newPlan.startDate,
             end: preview.newPlan.endDate,
+            hijriOffsetDays: hijriOffsetDays,
           ),
           const SizedBox(height: 24),
           Text(
@@ -346,12 +351,14 @@ class _PlanSummary extends StatelessWidget {
     required this.total,
     this.start,
     this.end,
+    required this.hijriOffsetDays,
   });
 
   final String title;
   final int total;
   final DateTime? start;
   final DateTime? end;
+  final int hijriOffsetDays;
 
   @override
   Widget build(BuildContext context) {
@@ -391,7 +398,7 @@ class _PlanSummary extends StatelessWidget {
                 l10n,
                 start!,
                 end,
-                offsetDays: widget.hijriOffsetDays,
+                offsetDays: hijriOffsetDays,
               ),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurfaceVariant,
