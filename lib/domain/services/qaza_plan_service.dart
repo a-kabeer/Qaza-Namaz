@@ -74,7 +74,8 @@ class QazaPlanService {
 
     if (profile.isNewMuslim) {
       final acceptedDate = profile.islamAcceptanceDate!;
-      if (LocalDateService.compareCalendarDates(startPrayingDate, acceptedDate) <
+      if (LocalDateService.compareCalendarDates(
+                  startPrayingDate, acceptedDate) <
               0 ||
           LocalDateService.compareCalendarDates(startPrayingDate, today) > 0) {
         return null;

@@ -23,8 +23,7 @@ class UserProfile {
             ((pubertyDateOverride ?? pubertyDate) == null
                 ? ProfileInputMode.ageEstimate
                 : ProfileInputMode.rememberedDate),
-        startPrayingDateOverride =
-            startPrayingDateOverride ?? startPrayingDate,
+        startPrayingDateOverride = startPrayingDateOverride ?? startPrayingDate,
         startPrayingInputMode = startPrayingInputMode ??
             ((startPrayingDateOverride ?? startPrayingDate) == null
                 ? ProfileInputMode.ageEstimate
@@ -132,10 +131,9 @@ class UserProfile {
         madhab: clearMadhab ? null : madhab ?? this.madhab,
         dateOfBirth: clearDateOfBirth ? null : dateOfBirth ?? this.dateOfBirth,
         pubertyAge: clearPubertyAge ? null : pubertyAge ?? this.pubertyAge,
-        pubertyDateOverride:
-            clearPubertyDateOverride || clearPubertyDate
-                ? null
-                : pubertyDateOverride ?? pubertyDate ?? this.pubertyDateOverride,
+        pubertyDateOverride: clearPubertyDateOverride || clearPubertyDate
+            ? null
+            : pubertyDateOverride ?? pubertyDate ?? this.pubertyDateOverride,
         pubertyInputMode: pubertyInputMode ?? this.pubertyInputMode,
         startPrayingAge: clearStartPrayingAge
             ? null
