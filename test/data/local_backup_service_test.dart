@@ -133,11 +133,11 @@ void main() {
           tracker_created_qaza_id, updated_at)
          VALUES (?, ?, ?, ?, ?, ?)''',
       variables: [
-        const Variable.withString('guest'),
-        const Variable.withString('2026-10-16'),
-        const Variable.withString('fajr'),
-        const Variable.withString('prayed'),
-        const Variable<String>(null),
+        Variable.withString('guest'),
+        Variable.withString('2026-10-16'),
+        Variable.withString('fajr'),
+        Variable.withString('prayed'),
+        Variable<String>(null),
         Variable.withString(DateTime.utc(2026, 10, 16).toIso8601String()),
       ],
     );
