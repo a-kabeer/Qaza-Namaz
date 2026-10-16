@@ -175,10 +175,41 @@ class ProfileRules {
       FixedHijriArithmeticService.currentAge(dob, today);
 
   static DateTime? pubertyDate(UserProfile profile) {
+    if (profile.pubertyInputMode == PubertyInputMode.rememberDate) {
+      final date = profile.pubertyDate;
+      return date == null ? null : LocalDateService.dateOnly(date);
+    }
     final dob = profile.dateOfBirth;
     final age = profile.pubertyAge;
     if (dob == null || age == null) return null;
     return fixedMilestoneDate(dob, age);
+  }
+
+  static DateTime? minimumPubertyDate(Gender? gender, DateTime? dob) {
+    if (gender == null || dob == null) return null;
+    final age =
+        gender == Gender.male ? maleMinPubertyAge : femaleMinPubertyAge;
+    return fixedMilestoneDate(dob, age);
+  }
+
+  static DateTime? maximumPubertyDate(Gender? gender, DateTime? dob) {
+    if (gender == null || dob == null) return null;
+    final age =
+        gender == Gender.male ? maleMaxPubertyAge : femaleMaxPubertyAge;
+    return fixedMilestoneDate(dob, age);
+  }
+
+  static bool isPubertyDateAllowed({
+    required Gender gender,
+    required DateTime dob,
+    required DateTime date,
+    required DateTime today,
+  }) {
+    final minimum = minimumPubertyDate(gender, dob)!;
+    final maximum = maximumPubertyDate(gender, dob)!;
+    return _compareCalendarDates(date, minimum) >= 0 &&
+        _compareCalendarDates(date, maximum) <= 0 &&
+        _compareCalendarDates(date, today) <= 0;
   }
 
   static DateTime? startPrayingDate(UserProfile profile) {
@@ -236,24 +267,46 @@ class ProfileRules {
     final pubertyRequired = requiresPubertyInput(profile);
     DateTime? pubertyDateValue;
     if (pubertyRequired) {
-      if (puberty == null) {
-        return const ProfileValidation(
-            error: ProfileValidationError.pubertyMissing);
-      }
-      if (!isPubertyAgeAllowed(gender, puberty)) {
-        return const ProfileValidation(
-            error: ProfileValidationError.pubertyInvalid);
-      }
-      pubertyDateValue = pubertyDate(profile);
-      if (pubertyDateValue == null ||
-          !_milestoneReachedAndMaterialized(
-            dob: dob,
-            age: puberty,
-            today: today,
-          )) {
-        return const ProfileValidation(
-          error: ProfileValidationError.pubertyInvalid,
-        );
+      if (profile.isNewMuslim &&
+          profile.pubertyInputMode == PubertyInputMode.rememberDate) {
+        final exactDate = profile.pubertyDate;
+        if (exactDate == null) {
+          return const ProfileValidation(
+            error: ProfileValidationError.pubertyMissing,
+          );
+        }
+        if (_compareCalendarDates(exactDate, today) > 0 ||
+            _compareCalendarDates(exactDate, dob) < 0 ||
+            !isPubertyDateAllowed(
+              gender: gender,
+              dob: dob,
+              date: exactDate,
+              today: today,
+            )) {
+          return const ProfileValidation(
+            error: ProfileValidationError.pubertyInvalid,
+          );
+        }
+        pubertyDateValue = LocalDateService.dateOnly(exactDate);
+      } else {
+        if (puberty == null) {
+          return const ProfileValidation(
+              error: ProfileValidationError.pubertyMissing);
+        }
+        if (!isPubertyAgeAllowed(gender, puberty)) {
+          return const ProfileValidation(
+              error: ProfileValidationError.pubertyInvalid);
+        }
+        pubertyDateValue = fixedMilestoneDate(dob, puberty);
+        if (!_milestoneReachedAndMaterialized(
+          dob: dob,
+          age: puberty,
+          today: today,
+        )) {
+          return const ProfileValidation(
+            error: ProfileValidationError.pubertyInvalid,
+          );
+        }
       }
     }
 
@@ -307,10 +360,15 @@ class ProfileRules {
     var next = profile;
 
     if (!next.isNewMuslim) {
-      if (next.islamAcceptanceDate != null || next.startPrayingDate != null) {
+      if (next.islamAcceptanceDate != null ||
+          next.startPrayingDate != null ||
+          next.pubertyDate != null ||
+          next.pubertyInputMode != PubertyInputMode.estimateAge) {
         next = next.copyWith(
           clearIslamAcceptanceDate: true,
           clearStartPrayingDate: true,
+          clearPubertyDate: true,
+          pubertyInputMode: PubertyInputMode.estimateAge,
         );
       }
     } else {
@@ -328,6 +386,26 @@ class ProfileRules {
           _compareCalendarDates(next.startPrayingDate!, acceptedDate) < 0) {
         next = next.copyWith(clearStartPrayingDate: true);
       }
+
+      if (next.pubertyInputMode == PubertyInputMode.rememberDate) {
+        if (next.pubertyAge != null) {
+          next = next.copyWith(clearPubertyAge: true);
+        }
+        final exactDate = next.pubertyDate;
+        if (exactDate != null &&
+            dob != null &&
+            next.gender != null &&
+            !isPubertyDateAllowed(
+              gender: next.gender!,
+              dob: dob,
+              date: exactDate,
+              today: LocalDateService.today(),
+            )) {
+          next = next.copyWith(clearPubertyDate: true);
+        }
+      } else if (next.pubertyDate != null) {
+        next = next.copyWith(clearPubertyDate: true);
+      }
     }
 
     if (next.isNewMuslim &&
@@ -335,6 +413,15 @@ class ProfileRules {
         next.startPrayingDate != null &&
         _compareCalendarDates(next.startPrayingDate!, next.dateOfBirth!) < 0) {
       next = next.copyWith(clearStartPrayingDate: true);
+    }
+
+    if (next.isNewMuslim &&
+        next.islamAcceptanceDate != null &&
+        !requiresPubertyInput(next)) {
+      next = next.copyWith(
+        clearPubertyAge: true,
+        clearPubertyDate: true,
+      );
     }
 
     final normalizedDailyTarget =
@@ -365,7 +452,10 @@ class ProfileRules {
     final dob = next.dateOfBirth;
     final validGender = next.gender;
     final validPuberty = next.pubertyAge;
-    if (dob != null && validGender != null && validPuberty != null) {
+    if (next.pubertyInputMode == PubertyInputMode.estimateAge &&
+        dob != null &&
+        validGender != null &&
+        validPuberty != null) {
       final today = LocalDateService.today();
       final maxAge = currentAge(dob, today);
       if (!isPubertyAgeAllowed(validGender, validPuberty) ||

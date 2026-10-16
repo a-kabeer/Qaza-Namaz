@@ -85,15 +85,35 @@ class ProfileOverview extends StatelessWidget {
                       : l10n.formatHijriDate(profile.islamAcceptanceDate!),
                 ),
               ],
-              if (!profile.isNewMuslim || profile.pubertyAge != null) ...[
+              if (!profile.isNewMuslim ||
+                  profile.pubertyAge != null ||
+                  profile.pubertyDate != null) ...[
                 const _DetailDivider(),
                 _ProfileDetailRow(
                   key: const Key('profile_overview_puberty_age'),
                   icon: Icons.timelapse_outlined,
-                  label: l10n.profilePubertyAge,
-                  value: profile.pubertyAge == null
-                      ? '—'
-                      : l10n.profileAgeYears(profile.pubertyAge!),
+                  label: profile.isNewMuslim &&
+                          profile.pubertyInputMode ==
+                              PubertyInputMode.rememberDate
+                      ? l10n.profilePubertyDate
+                      : l10n.profilePubertyAge,
+                  value: profile.isNewMuslim &&
+                          profile.pubertyInputMode ==
+                              PubertyInputMode.rememberDate
+                      ? profile.pubertyDate == null
+                          ? '—'
+                          : DateFormatters.formatGregorianFull(
+                              profile.pubertyDate!,
+                            )
+                      : profile.pubertyAge == null
+                          ? '—'
+                          : l10n.profileAgeYears(profile.pubertyAge!),
+                  secondaryValue: profile.isNewMuslim &&
+                          profile.pubertyInputMode ==
+                              PubertyInputMode.rememberDate &&
+                          profile.pubertyDate != null
+                      ? l10n.formatHijriDate(profile.pubertyDate!)
+                      : null,
                 ),
               ],
               const _DetailDivider(),

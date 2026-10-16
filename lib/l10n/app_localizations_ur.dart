@@ -1733,6 +1733,24 @@ class AppLocalizationsUr extends AppLocalizations {
       'گریگورین تاریخ منتخب کرنے کے بعد ہجری تاریخ بھی دکھائی جائے گی۔';
 
   @override
+  @override
+  String get profileRememberDate => "مجھے تاریخ یاد ہے";
+
+  @override
+  String get profileNotSure => "مجھے یقین نہیں";
+
+  @override
+  String get profilePubertyDate => "بلوغت کی تاریخ";
+
+  @override
+  String get profileRememberDate => "Mujhe tareekh yaad hai";
+
+  @override
+  String get profileNotSure => "Mujhe yaqeen nahi";
+
+  @override
+  String get profilePubertyDate => "Puberty ki tareekh";
+
   String get profileIslamicBackground => 'اسلامی پس منظر';
 
   @override

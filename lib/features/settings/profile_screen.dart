@@ -41,6 +41,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         original.isNewMuslim != draft.isNewMuslim ||
         !_sameDate(original.islamAcceptanceDate, draft.islamAcceptanceDate) ||
         original.pubertyAge != draft.pubertyAge ||
+        !_sameDate(original.pubertyDate, draft.pubertyDate) ||
+        original.pubertyInputMode != draft.pubertyInputMode ||
         original.startPrayingAge != draft.startPrayingAge ||
         !_sameDate(original.startPrayingDate, draft.startPrayingDate) ||
         ProfileRules.effectiveWitr(original) !=

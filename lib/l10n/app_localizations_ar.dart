@@ -1721,6 +1721,15 @@ class AppLocalizationsAr extends AppLocalizations {
       'سيظهر التاريخ الهجري بعد تحديد التاريخ الميلادي.';
 
   @override
+  @override
+  String get profileRememberDate => "أتذكر التاريخ";
+
+  @override
+  String get profileNotSure => "لست متأكدًا";
+
+  @override
+  String get profilePubertyDate => "تاريخ البلوغ";
+
   String get profileIslamicBackground => 'الخلفية الإسلامية';
 
   @override

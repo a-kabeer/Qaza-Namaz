@@ -7,6 +7,8 @@ UserProfile newMuslimProfile({
   DateTime? dob,
   required DateTime acceptedDate,
   int? pubertyAge,
+  DateTime? pubertyDate,
+  PubertyInputMode pubertyInputMode = PubertyInputMode.estimateAge,
   required DateTime startPrayingDate,
   Gender gender = Gender.male,
 }) =>
@@ -18,6 +20,8 @@ UserProfile newMuslimProfile({
       isNewMuslim: true,
       islamAcceptanceDate: acceptedDate,
       pubertyAge: pubertyAge,
+      pubertyDate: pubertyDate,
+      pubertyInputMode: pubertyInputMode,
       startPrayingDate: startPrayingDate,
       witrIncluded: true,
     );
@@ -91,13 +95,11 @@ void main() {
               profile.startPrayingDate!.year,
               profile.startPrayingDate!.month,
               profile.startPrayingDate!.day,
-            )
-              .difference(DateTime.utc(
-                expectedStart.year,
-                expectedStart.month,
-                expectedStart.day,
-              ))
-              .inDays
+            ).difference(DateTime.utc(
+              expectedStart.year,
+              expectedStart.month,
+              expectedStart.day,
+            )).inDays
           : 0,
     );
     expect(plan.endDate, profile.startPrayingDate);
@@ -121,8 +123,7 @@ void main() {
     expect(plan.endDate, DateTime(2014, 1, 1));
   });
 
-  test('hidden puberty input uses Islam acceptance as Qaza eligibility start',
-      () {
+  test('hidden puberty input uses Islam acceptance as Qaza eligibility start', () {
     final cutoff = ProfileRules.fixedMilestoneDate(
       dob,
       ProfileRules.maleMaxPubertyAge,
@@ -140,6 +141,41 @@ void main() {
     expect(plan.startDate, accepted);
     expect(plan.totalDays, 10);
     expect(plan.endDate, accepted.add(const Duration(days: 10)));
+  });
+
+  test('remembered puberty date independently determines eligibility', () {
+    final rememberedPubertyDate = DateTime(2012, 1, 1);
+    final profile = newMuslimProfile(
+      acceptedDate: DateTime(2005, 1, 1),
+      pubertyInputMode: PubertyInputMode.rememberDate,
+      pubertyDate: rememberedPubertyDate,
+      startPrayingDate: DateTime(2014, 1, 1),
+    );
+    final plan = planService.planFor(profile)!;
+
+    expect(ProfileRules.requiresPubertyInput(profile), isTrue);
+    expect(ProfileRules.pubertyDate(profile), rememberedPubertyDate);
+    expect(ProfileRules.qazaEligibilityStartDate(profile), rememberedPubertyDate);
+    expect(plan.startDate, rememberedPubertyDate);
+    expect(plan.totalDays, 731);
+    expect(
+      ProfileRules.validate(profile, today: today).isValid,
+      isTrue,
+    );
+  });
+
+  test('remembered puberty date respects existing puberty-age limits', () {
+    final tooEarly = newMuslimProfile(
+      acceptedDate: DateTime(2005, 1, 1),
+      pubertyInputMode: PubertyInputMode.rememberDate,
+      pubertyDate: DateTime(2010, 1, 1),
+      startPrayingDate: DateTime(2014, 1, 1),
+    );
+
+    expect(
+      ProfileRules.validate(tooEarly, today: today).error,
+      ProfileValidationError.pubertyInvalid,
+    );
   });
 
   test('praying before Salah becomes obligatory produces a zero-day plan', () {
@@ -207,17 +243,19 @@ void main() {
     );
   });
 
-  test('new Muslim fields round-trip and missing legacy fields default safely',
-      () {
+  test('new Muslim fields round-trip and missing legacy fields default safely', () {
     final profile = newMuslimProfile(
       acceptedDate: DateTime(2013, 1, 1),
-      pubertyAge: 12,
+      pubertyInputMode: PubertyInputMode.rememberDate,
+      pubertyDate: DateTime(2012, 1, 1),
       startPrayingDate: DateTime(2014, 1, 1),
     );
     final restored = UserProfile.fromJson(profile.toJson());
 
     expect(restored.isNewMuslim, isTrue);
     expect(restored.islamAcceptanceDate, DateTime(2013, 1, 1));
+    expect(restored.pubertyInputMode, PubertyInputMode.rememberDate);
+    expect(restored.pubertyDate, DateTime(2012, 1, 1));
     expect(restored.startPrayingDate, DateTime(2014, 1, 1));
 
     final legacy = UserProfile.fromJson({
@@ -228,6 +266,8 @@ void main() {
     expect(legacy.isNewMuslim, isFalse);
     expect(legacy.islamAcceptanceDate, isNull);
     expect(legacy.startPrayingDate, isNull);
+    expect(legacy.pubertyInputMode, PubertyInputMode.estimateAge);
+    expect(legacy.pubertyDate, isNull);
     expect(legacy.pubertyAge, 12);
     expect(legacy.startPrayingAge, 15);
   });

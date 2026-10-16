@@ -1736,6 +1736,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hijri date is shown after you select the Gregorian date.';
 
   @override
+  @override
+  String get profileRememberDate => "I remember the date";
+
+  @override
+  String get profileNotSure => "I'm not sure";
+
+  @override
+  String get profilePubertyDate => "Puberty Date";
+
   String get profileIslamicBackground => 'Islamic background';
 
   @override

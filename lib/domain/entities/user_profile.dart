@@ -6,6 +6,8 @@ class UserProfile {
     this.madhab,
     this.dateOfBirth,
     this.pubertyAge,
+    this.pubertyDate,
+    this.pubertyInputMode = PubertyInputMode.estimateAge,
     this.startPrayingAge,
     this.startPrayingDate,
     this.isNewMuslim = false,
@@ -15,7 +17,7 @@ class UserProfile {
     this.schemaVersion = currentSchemaVersion,
   });
 
-  static const int currentSchemaVersion = 3;
+  static const int currentSchemaVersion = 4;
   static const String localLedgerUserId = 'guest';
   static const int defaultDailyQazaTarget = 5;
   static const int minDailyQazaTarget = 1;
@@ -46,6 +48,8 @@ class UserProfile {
   final Madhab? madhab;
   final DateTime? dateOfBirth;
   final int? pubertyAge;
+  final DateTime? pubertyDate;
+  final PubertyInputMode pubertyInputMode;
   final int? startPrayingAge;
   final DateTime? startPrayingDate;
   final bool isNewMuslim;
@@ -59,7 +63,9 @@ class UserProfile {
       gender != null &&
       madhab != null &&
       dateOfBirth != null &&
-      (pubertyAge != null || (isNewMuslim && islamAcceptanceDate != null)) &&
+      (pubertyAge != null ||
+          pubertyDate != null ||
+          (isNewMuslim && islamAcceptanceDate != null)) &&
       (isNewMuslim ? startPrayingDate != null : startPrayingAge != null) &&
       witrIncluded != null;
 
@@ -74,6 +80,9 @@ class UserProfile {
     bool clearDateOfBirth = false,
     int? pubertyAge,
     bool clearPubertyAge = false,
+    DateTime? pubertyDate,
+    bool clearPubertyDate = false,
+    PubertyInputMode? pubertyInputMode,
     int? startPrayingAge,
     bool clearStartPrayingAge = false,
     DateTime? startPrayingDate,
@@ -95,6 +104,8 @@ class UserProfile {
         madhab: clearMadhab ? null : madhab ?? this.madhab,
         dateOfBirth: clearDateOfBirth ? null : dateOfBirth ?? this.dateOfBirth,
         pubertyAge: clearPubertyAge ? null : pubertyAge ?? this.pubertyAge,
+        pubertyDate: clearPubertyDate ? null : pubertyDate ?? this.pubertyDate,
+        pubertyInputMode: pubertyInputMode ?? this.pubertyInputMode,
         startPrayingAge: clearStartPrayingAge
             ? null
             : startPrayingAge ?? this.startPrayingAge,
@@ -122,6 +133,8 @@ class UserProfile {
         'madhab': madhab?.name,
         'dateOfBirth': dateOfBirth?.toIso8601String(),
         'pubertyAge': pubertyAge,
+        'pubertyDate': pubertyDate?.toIso8601String(),
+        'pubertyInputMode': pubertyInputMode.name,
         'startPrayingAge': startPrayingAge,
         'startPrayingDate': startPrayingDate?.toIso8601String(),
         'isNewMuslim': isNewMuslim,
@@ -149,6 +162,11 @@ class UserProfile {
       madhab: parseMadhab(json['madhab'] as String?),
       dateOfBirth: parseDate(json['dateOfBirth']),
       pubertyAge: (json['pubertyAge'] as num?)?.toInt(),
+      pubertyDate: parseDate(json['pubertyDate']),
+      pubertyInputMode: PubertyInputMode.values
+              .where((item) => item.name == json['pubertyInputMode'])
+              .firstOrNull ??
+          PubertyInputMode.estimateAge,
       startPrayingAge: (json['startPrayingAge'] as num?)?.toInt(),
       startPrayingDate: parseDate(json['startPrayingDate']),
       isNewMuslim: json['isNewMuslim'] as bool? ?? false,
@@ -162,5 +180,7 @@ class UserProfile {
 }
 
 enum Gender { male, female }
+
+enum PubertyInputMode { rememberDate, estimateAge }
 
 enum Madhab { hanafi, shafi, maliki, hanbali, other }

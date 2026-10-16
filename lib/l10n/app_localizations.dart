@@ -3009,6 +3009,9 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Islamic background'**
+  String get profileRememberDate;
+  String get profileNotSure;
+  String get profilePubertyDate;
   String get profileIslamicBackground;
 
   /// No description provided for @profileMuslimFromChildhood.

@@ -1745,6 +1745,15 @@ class AppLocalizationsUrLatn extends AppLocalizations {
 
   @override
   @override
+  @override
+  String get profileRememberDate => "Mujhe tareekh yaad hai";
+
+  @override
+  String get profileNotSure => "Mujhe yaqeen nahi";
+
+  @override
+  String get profilePubertyDate => "Puberty ki tareekh";
+
   String get profileIslamicBackground => "Islami pas-e-manzar";
 
   @override

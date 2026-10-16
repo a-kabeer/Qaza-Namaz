@@ -37,6 +37,7 @@ class _ProfileFormState extends State<ProfileForm> {
   bool _saving = false;
   bool _dobExpanded = false;
   bool _islamAcceptanceExpanded = false;
+  bool _pubertyDateExpanded = false;
   bool _startPrayingDateExpanded = false;
 
   @override
@@ -95,6 +96,24 @@ class _ProfileFormState extends State<ProfileForm> {
     if (dob != null &&
         LocalDateService.compareCalendarDates(initial, dob) < 0) {
       return LocalDateService.dateOnly(dob);
+    }
+    return LocalDateService.dateOnly(initial);
+  }
+
+  DateTime _initialPubertyDate(DateTime today) {
+    final dob = _profile.dateOfBirth;
+    final gender = _profile.gender;
+    final minimum = ProfileRules.minimumPubertyDate(gender, dob) ?? today;
+    final maximum = ProfileRules.maximumPubertyDate(gender, dob) ?? today;
+    final latest = LocalDateService.compareCalendarDates(maximum, today) > 0
+        ? LocalDateService.dateOnly(today)
+        : LocalDateService.dateOnly(maximum);
+    final initial = _profile.pubertyDate ?? minimum;
+    if (LocalDateService.compareCalendarDates(initial, minimum) < 0) {
+      return minimum;
+    }
+    if (LocalDateService.compareCalendarDates(initial, latest) > 0) {
+      return latest;
     }
     return LocalDateService.dateOnly(initial);
   }
@@ -384,23 +403,116 @@ class _ProfileFormState extends State<ProfileForm> {
         if (showPubertyInput) ...[
           const SizedBox(height: 20),
           Text(
-            l10n.profilePubertyAge,
+            profile.isNewMuslim &&
+                    profile.pubertyInputMode == PubertyInputMode.rememberDate
+                ? l10n.profilePubertyDate
+                : l10n.profilePubertyAge,
             style: Theme.of(context).textTheme.titleMedium,
           ),
+          if (profile.isNewMuslim) ...[
+            const SizedBox(height: 8),
+            SegmentedButton<PubertyInputMode>(
+              key: const Key('profile_puberty_input_mode'),
+              segments: [
+                ButtonSegment(
+                  value: PubertyInputMode.rememberDate,
+                  label: Text(l10n.profileRememberDate),
+                ),
+                ButtonSegment(
+                  value: PubertyInputMode.estimateAge,
+                  label: Text(l10n.profileNotSure),
+                ),
+              ],
+              selected: {profile.pubertyInputMode},
+              onSelectionChanged: (value) {
+                final mode = value.first;
+                _update(
+                  _profile.copyWith(
+                    pubertyInputMode: mode,
+                    clearPubertyAge: true,
+                    clearPubertyDate: true,
+                  ),
+                );
+                setState(() => _pubertyDateExpanded = false);
+              },
+            ),
+          ],
           const SizedBox(height: 8),
-          _buildAgeSelector(
-            fieldKey: const Key('profile_puberty_age'),
-            decrementKey: const Key('profile_puberty_age_decrement'),
-            incrementKey: const Key('profile_puberty_age_increment'),
-            value: profile.pubertyAge,
-            options: pubertyOptions,
-            enabled: gender != null,
-            labelText: l10n.profilePubertyAge,
-            helperText: gender == null ? l10n.profileSelectGenderFirst : null,
-            onChanged: (value) {
-              _update(_profile.copyWith(pubertyAge: value));
-            },
-          ),
+          if (profile.isNewMuslim &&
+              profile.pubertyInputMode == PubertyInputMode.rememberDate) ...[
+            OutlinedButton.icon(
+              key: const Key('profile_puberty_date'),
+              onPressed: () => setState(
+                () => _pubertyDateExpanded = !_pubertyDateExpanded,
+              ),
+              icon: const Icon(Icons.event_outlined),
+              label: Text(
+                profile.pubertyDate == null
+                    ? l10n.profileSelectDate
+                    : _formatDate(profile.pubertyDate!),
+              ),
+            ),
+            if (_pubertyDateExpanded) ...[
+              const SizedBox(height: 12),
+              _DateOfBirthPickerInline(
+                key: const Key('profile_puberty_date_picker_panel'),
+                keyPrefix: 'profile_puberty_date',
+                initialDate: _initialPubertyDate(today),
+                today: today,
+                earliestDate: ProfileRules.minimumPubertyDate(
+                  gender,
+                  profile.dateOfBirth,
+                ),
+                latestDate: ProfileRules.maximumPubertyDate(
+                  gender,
+                  profile.dateOfBirth,
+                ),
+                title: l10n.profilePubertyDate,
+                helpText: l10n.profileNewMuslimQazaHelp,
+                dayLabel: l10n.profileDobDay,
+                monthLabel: l10n.profileDobMonth,
+                yearLabel: l10n.profileDobYear,
+                cancelLabel: l10n.commonCancel,
+                confirmLabel: l10n.commonDone,
+                onCancel: () => setState(() => _pubertyDateExpanded = false),
+                onConfirm: (picked) {
+                  final updated = ProfileRules.normalize(
+                    _profile.copyWith(
+                      pubertyDate: DateTime(picked.year, picked.month, picked.day),
+                      clearPubertyAge: true,
+                    ),
+                  );
+                  setState(() {
+                    _error = null;
+                    _profile = updated;
+                    _pubertyDateExpanded = false;
+                  });
+                  widget.onChanged?.call(updated);
+                },
+              ),
+            ],
+            if (profile.pubertyDate != null) ...[
+              const SizedBox(height: 4),
+              Text(
+                l10n.formatHijriDate(profile.pubertyDate!),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ] else ...[
+            _buildAgeSelector(
+              fieldKey: const Key('profile_puberty_age'),
+              decrementKey: const Key('profile_puberty_age_decrement'),
+              incrementKey: const Key('profile_puberty_age_increment'),
+              value: profile.pubertyAge,
+              options: pubertyOptions,
+              enabled: gender != null,
+              labelText: l10n.profilePubertyAge,
+              helperText: gender == null ? l10n.profileSelectGenderFirst : null,
+              onChanged: (value) {
+                _update(_profile.copyWith(pubertyAge: value));
+              },
+            ),
+          ],
         ],
         const SizedBox(height: 20),
         if (profile.isNewMuslim) ...[
@@ -675,6 +787,7 @@ class _DateOfBirthPickerInline extends StatefulWidget {
     super.key,
     this.keyPrefix = 'profile_dob',
     this.earliestDate,
+    this.latestDate,
     required this.initialDate,
     required this.today,
     required this.title,
@@ -690,6 +803,7 @@ class _DateOfBirthPickerInline extends StatefulWidget {
 
   final String keyPrefix;
   final DateTime? earliestDate;
+  final DateTime? latestDate;
   final DateTime initialDate;
   final DateTime today;
   final String title;
@@ -715,24 +829,35 @@ class _DateOfBirthPickerInlineState extends State<_DateOfBirthPickerInline> {
   DateTime get _earliestDate => LocalDateService.dateOnly(
         widget.earliestDate ?? DateTime(1900, 1, 1),
       );
+  DateTime get _latestDate {
+    final today = LocalDateService.dateOnly(widget.today);
+    final configured = widget.latestDate;
+    if (configured == null ||
+        LocalDateService.compareCalendarDates(configured, today) > 0) {
+      return today;
+    }
+    return LocalDateService.dateOnly(configured);
+  }
+
   int get _daysInMonth => DateTime(_year, _month + 1, 0).day;
   int get _earliestMonth =>
       _year == _earliestDate.year ? _earliestDate.month : 1;
-  int get _latestMonth => _year == widget.today.year ? widget.today.month : 12;
+  int get _latestMonth =>
+      _year == _latestDate.year ? _latestDate.month : 12;
   int get _earliestDay =>
       _year == _earliestDate.year && _month == _earliestDate.month
           ? _earliestDate.day
           : 1;
 
   int get _latestDay {
-    if (_year == widget.today.year && _month == widget.today.month) {
-      return widget.today.day;
+    if (_year == _latestDate.year && _month == _latestDate.month) {
+      return _latestDate.day;
     }
     return _daysInMonth;
   }
 
   List<int> get _years => [
-        for (var year = widget.today.year;
+        for (var year = _latestDate.year;
             year >= _earliestDate.year && year >= 1900;
             year--)
           year,
@@ -758,10 +883,25 @@ class _DateOfBirthPickerInlineState extends State<_DateOfBirthPickerInline> {
       widget.today.day,
     );
     if (initial.isBefore(_earliestDate)) initial = _earliestDate;
+    if (initial.isAfter(_latestDate)) initial = _latestDate;
     if (initial.isAfter(today)) initial = today;
     _year = initial.year;
     _month = initial.month;
     _day = initial.day;
+    _clampDay();
+  }
+
+  @override
+  void didUpdateWidget(covariant _DateOfBirthPickerInline oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    var current = DateTime(_year, _month, _day);
+    if (current.isBefore(_earliestDate)) current = _earliestDate;
+    if (current.isAfter(_latestDate)) current = _latestDate;
+    _year = current.year;
+    _month = current.month;
+    _day = current.day;
+    if (_month > _latestMonth) _month = _latestMonth;
+    if (_month < _earliestMonth) _month = _earliestMonth;
     _clampDay();
   }
 

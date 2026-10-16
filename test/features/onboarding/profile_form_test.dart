@@ -496,4 +496,48 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'new Muslim can enter a remembered puberty date independently',
+    (tester) async {
+      final dob = DateTime(2000, 1, 1);
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: UserProfile(
+                languageCode: 'en',
+                gender: Gender.male,
+                madhab: Madhab.hanafi,
+                dateOfBirth: dob,
+                isNewMuslim: true,
+                islamAcceptanceDate: DateTime(2005, 1, 1),
+                pubertyInputMode: PubertyInputMode.rememberDate,
+                pubertyDate: DateTime(2012, 1, 1),
+                startPrayingDate: DateTime(2014, 1, 1),
+                witrIncluded: true,
+              ),
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final dateMode = find.byKey(const Key('profile_puberty_input_mode'));
+      await tester.scrollUntilVisible(
+        dateMode,
+        300,
+        scrollable: find.byType(Scrollable),
+      );
+      expect(dateMode, findsOneWidget);
+      expect(find.byKey(const Key('profile_puberty_date')), findsOneWidget);
+      expect(find.byKey(const Key('profile_puberty_age')), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
 }
