@@ -363,21 +363,27 @@ void main() {
       await tester.tap(dobButton);
       await tester.pumpAndSettle();
       expect(
-        tester.widget<DropdownButton<int>>(
-          find.byKey(const Key('profile_dob_day')),
-        ).value,
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('profile_dob_day')),
+            )
+            .value,
         originalDob.day,
       );
       expect(
-        tester.widget<DropdownButton<int>>(
-          find.byKey(const Key('profile_dob_month')),
-        ).value,
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('profile_dob_month')),
+            )
+            .value,
         originalDob.month,
       );
       expect(
-        tester.widget<DropdownButton<int>>(
-          find.byKey(const Key('profile_dob_year')),
-        ).value,
+        tester
+            .widget<DropdownButton<int>>(
+              find.byKey(const Key('profile_dob_year')),
+            )
+            .value,
         originalDob.year,
       );
       expect(tester.takeException(), isNull);
