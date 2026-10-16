@@ -955,6 +955,8 @@ class LocalBackupService {
       'record_id' ||
       'prayer_type' ||
       'prayer_date' ||
+      'status' ||
+      'tracker_created_qaza_id' ||
       'original_date' ||
       'completed_at' ||
       'completion_id' ||
