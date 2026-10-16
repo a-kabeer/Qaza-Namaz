@@ -2,11 +2,11 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
-import 'package:qaza_namaz/domain/entities/qaza_record.dart';
-import 'package:qaza_namaz/features/daily_salah/daily_salah_tracking_service.dart';
 import 'package:qaza_namaz/data/local/drift_qaza_local_store.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
+import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
+import 'package:qaza_namaz/features/daily_salah/daily_salah_tracking_service.dart';
 
 void main() {
   late AppDatabase database;
