@@ -67,6 +67,17 @@
   "commonToday": "آج",
   "commonYesterday": "کل",
   "hijriDate": "{day} {month} {year} ھ",
+  "hijriDateShort": "{day} {month}",
+  "@hijriDateShort": {
+    "description": "Short Hijri date for adjustment choices",
+    "placeholders": { "day": {}, "month": {} }
+  },
+  "hijriAdjustmentTitle": "ہجری تاریخ میں ترمیم",
+  "hijriAdjustmentEarlierTwo": "2 دن پہلے",
+  "hijriAdjustmentEarlierOne": "1 دن پہلے",
+  "hijriAdjustmentNoChange": "کوئی تبدیلی نہیں",
+  "hijriAdjustmentLaterOne": "1 دن بعد",
+  "hijriAdjustmentLaterTwo": "2 دن بعد",
   "hijriMonthYear": "{month} {year} ھ",
   "@hijriMonthYear": {
     "description": "ہجری مہینہ اور سال؛ گریگورین تاریخ بنیادی رہے گی",
