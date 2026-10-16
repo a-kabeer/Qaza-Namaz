@@ -5,6 +5,7 @@ import '../prayer_time/application/prayer_time_providers.dart';
 import '../prayer_time/presentation/prayer_timeline_row.dart';
 
 import '../../app/providers.dart';
+import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
@@ -719,7 +720,7 @@ class _TrackerSkeletonRow extends StatelessWidget {
   }
 }
 
-class _RecordRow extends StatelessWidget {
+class _RecordRow extends ConsumerWidget {
   const _RecordRow({
     super.key,
     required this.record,
@@ -747,12 +748,15 @@ class _RecordRow extends StatelessWidget {
   final Future<bool> Function()? onSwipeComplete;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final l10n = AppLocalizations.of(context);
     final originalDate =
         DateFormatters.formatGregorianDatePadded(record.originalDate);
-    final hijriDate = l10n.formatHijriDate(record.originalDate);
+    final hijriDate = l10n.formatHijriDate(
+      record.originalDate,
+      offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+    );
     final selectable =
         record.status == QazaStatus.pending && onTap != null && !busy;
 
@@ -1132,7 +1136,7 @@ class _CompletedTrackerBodyState extends State<_CompletedTrackerBody> {
   }
 }
 
-class _CompletedRecordRow extends StatelessWidget {
+class _CompletedRecordRow extends ConsumerWidget {
   const _CompletedRecordRow({
     required this.record,
     required this.selected,
@@ -1170,7 +1174,7 @@ class _CompletedRecordRow extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final completedAt = record.completedAt!.toLocal();
@@ -1178,7 +1182,10 @@ class _CompletedRecordRow extends StatelessWidget {
     final completionTime = DateFormatters.formatClockTime(completedAt);
     final originalDate =
         DateFormatters.formatGregorianDatePadded(record.originalDate);
-    final hijriDate = l10n.formatHijriDate(record.originalDate);
+    final hijriDate = l10n.formatHijriDate(
+      record.originalDate,
+      offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+    );
 
     final semanticLabel = '${record.prayerType.localizedLabel(l10n)}, '
         '$completionDate, $completionTime, '
