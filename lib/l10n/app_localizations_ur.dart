@@ -5218,4 +5218,49 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get cloudConnectionFailed =>
       'Google se rabta mukammal nahi ho ska dobara koshish karein ya mqami tor par jari rkhin';
+
+  @override
+  String get dailySalahTrackingTitle => "روزانہ نماز کا ریکارڈ";
+
+  @override
+  String get dailySalahTrackingEnableTitle => "روزانہ نماز کا ریکارڈ فعال کریں";
+
+  @override
+  String get dailySalahTrackingEnableSubtitle => "اپنی ادا کی گئی یا رہ جانے والی نمازیں درج کریں۔ غیر درج نماز کو خودکار طور پر قضا نہیں سمجھا جائے گا۔";
+
+  @override
+  String get dailySalahTrackingEnableAction => "فعال کریں";
+
+  @override
+  String get dailySalahTrackingPrayed => "ادا کی";
+
+  @override
+  String get dailySalahTrackingMissed => "رہ گئی";
+
+  @override
+  String get dailySalahTrackingUnrecorded => "درج نہیں";
+
+  @override
+  String get dailySalahTrackingConfirmMissedTitle => "نماز رہ جانے کے طور پر درج کریں؟";
+
+  @override
+  String get dailySalahTrackingConfirmMissedMessage => "اس نماز اور تاریخ کے لیے صرف اسی صورت میں قضا ریکارڈ بنے گا جب پہلے سے موجود نہ ہو۔";
+
+  @override
+  String get dailySalahTrackingUndoQaza => "ٹریکنگ سے بنا قضا ریکارڈ واپس کریں";
+
+  @override
+  String get dailySalahTrackingUndoTitle => "یہ قضا ریکارڈ حذف کریں؟";
+
+  @override
+  String get dailySalahTrackingUndoMessage => "صرف Daily Salah Tracking کا بنایا ہوا یہی قضا ریکارڈ حذف ہوگا، اور صرف اس وقت جب ابھی زیرِ التوا ہو۔";
+
+  @override
+  String get dailySalahTrackingPreviousDay => "پچھلا دن";
+
+  @override
+  String get dailySalahTrackingNextDay => "اگلا دن";
+
+  @override
+  String get dailySalahTrackingUndoUnavailable => "یہ قضا ریکارڈ اب زیرِ التوا نہیں، اس لیے اسے حذف نہیں کیا گیا۔";
 }
