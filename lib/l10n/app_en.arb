@@ -106,6 +106,17 @@
       "year": {}
     }
   },
+  "hijriDateShort": "{day} {month}",
+  "@hijriDateShort": {
+    "description": "Short Hijri date for adjustment choices",
+    "placeholders": { "day": {}, "month": {} }
+  },
+  "hijriAdjustmentTitle": "Adjust Hijri Date",
+  "hijriAdjustmentEarlierTwo": "2 days earlier",
+  "hijriAdjustmentEarlierOne": "1 day earlier",
+  "hijriAdjustmentNoChange": "No adjustment",
+  "hijriAdjustmentLaterOne": "1 day later",
+  "hijriAdjustmentLaterTwo": "2 days later",
   "hijriMonthYear": "{month} {year} AH",
   "@hijriMonthYear": {
     "description": "Hijri month/year header; Gregorian remains primary",

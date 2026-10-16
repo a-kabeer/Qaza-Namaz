@@ -474,7 +474,7 @@ class _PrayerSelection extends StatelessWidget {
   }
 }
 
-class _SelectionSummary extends StatelessWidget {
+class _SelectionSummary extends ConsumerWidget {
   const _SelectionSummary({
     required this.mode,
     required this.dates,
@@ -495,9 +495,12 @@ class _SelectionSummary extends StatelessWidget {
       );
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final summary = QazaAdditionDateSummary(_snapshot);
+    final summary = QazaAdditionDateSummary(
+      _snapshot,
+      hijriOffsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+    );
 
     return Card(
       child: Padding(

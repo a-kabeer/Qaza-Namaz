@@ -67,6 +67,17 @@
   "commonToday": "Aaj",
   "commonYesterday": "Kal",
   "hijriDate": "{day} {month} {year} h",
+  "hijriDateShort": "{day} {month}",
+  "@hijriDateShort": {
+    "description": "Short Hijri date for adjustment choices",
+    "placeholders": { "day": {}, "month": {} }
+  },
+  "hijriAdjustmentTitle": "Hijri tareekh adjust karein",
+  "hijriAdjustmentEarlierTwo": "2 din pehle",
+  "hijriAdjustmentEarlierOne": "1 din pehle",
+  "hijriAdjustmentNoChange": "Koi tabdeeli nahi",
+  "hijriAdjustmentLaterOne": "1 din baad",
+  "hijriAdjustmentLaterTwo": "2 din baad",
   "hijriMonthYear": "{month} {year} h",
   "@hijriMonthYear": {
     "description": "ہجری مہینہ اور سال؛ گریگورین تاریخ بنیادی رہے گی",

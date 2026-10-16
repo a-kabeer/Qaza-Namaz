@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../../domain/services/profile_rules.dart';
@@ -47,6 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
+    final hijriOffset = ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     final l10n = AppLocalizations.of(context);
 
     return PopScope<void>(
@@ -96,6 +98,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             return ProfileForm(
               key: ValueKey<int>(_editSession),
               initialProfile: _draftProfile ?? loaded,
+              hijriOffsetDays: hijriOffset,
               showIntro: false,
               showDailyQazaTarget: true,
               submitLabel: l10n.profileSave,
@@ -201,6 +204,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
           preview: useCase.prepareSettingsSave(newProfile: finalizedProfile),
           previousProfile: currentProfile,
           newProfile: finalizedProfile,
+          hijriOffsetDays:
+              ref.read(hijriDateAdjustmentProvider).valueOrNull ?? 0,
         );
         if (!mounted || review == null || review.choice == null) return;
         preview = review.preview;
@@ -217,6 +222,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             preview: preview,
             previousProfile: currentProfile,
             newProfile: finalizedProfile,
+            hijriOffsetDays:
+                ref.read(hijriDateAdjustmentProvider).valueOrNull ?? 0,
           );
           if (!mounted || review == null || review.choice == null) return;
           preview = review.preview;

@@ -17,6 +17,7 @@ class ProfileForm extends StatefulWidget {
     this.submitLabel,
     this.showIntro = true,
     this.showDailyQazaTarget = false,
+    this.hijriOffsetDays = 0,
   });
 
   final UserProfile initialProfile;
@@ -26,6 +27,7 @@ class ProfileForm extends StatefulWidget {
   final String? submitLabel;
   final bool showIntro;
   final bool showDailyQazaTarget;
+  final int hijriOffsetDays;
 
   @override
   State<ProfileForm> createState() => _ProfileFormState();
@@ -257,7 +259,10 @@ class _ProfileFormState extends State<ProfileForm> {
         if (profile.dateOfBirth != null) ...[
           const SizedBox(height: 4),
           Text(
-            l10n.formatHijriDate(profile.dateOfBirth!),
+            l10n.formatHijriDate(
+              profile.dateOfBirth!,
+              offsetDays: widget.hijriOffsetDays,
+            ),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],

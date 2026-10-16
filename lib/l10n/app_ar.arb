@@ -264,6 +264,17 @@
   "profileLanguageIntro": "اختر اللغة التي تريد استخدامها في التطبيق.",
   "profileErrorLanguage": "يرجى اختيار اللغة.",
   "hijriDate": "{day} {month} {year} هـ",
+  "hijriDateShort": "{day} {month}",
+  "@hijriDateShort": {
+    "description": "Short Hijri date for adjustment choices",
+    "placeholders": { "day": {}, "month": {} }
+  },
+  "hijriAdjustmentTitle": "تعديل التاريخ الهجري",
+  "hijriAdjustmentEarlierTwo": "قبل يومين",
+  "hijriAdjustmentEarlierOne": "قبل يوم واحد",
+  "hijriAdjustmentNoChange": "دون تعديل",
+  "hijriAdjustmentLaterOne": "بعد يوم واحد",
+  "hijriAdjustmentLaterTwo": "بعد يومين",
   "hijriMonthYear": "{month} {year} هـ",
   "homeCompletedCount": "{count} مكتملة",
   "homeDailyProgress": "تم إكمال {completed} من أصل {target}",

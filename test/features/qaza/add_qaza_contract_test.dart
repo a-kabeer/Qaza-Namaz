@@ -52,7 +52,8 @@ void main() {
     expect(source, contains('DateSelectionMode.multiple'));
     expect(source, contains('CalendarPicker('));
     expect(source, contains('class _SelectionSummary'));
-    expect(source, contains('QazaAdditionDateSummary(_snapshot)'));
+    expect(source, contains('QazaAdditionDateSummary('));
+    expect(source, contains('hijriOffsetDays:'));
     expect(source, contains('class _PrayerSelection'));
     expect(source, contains('PrayerSelectionGrid('));
     final prayerGrid =

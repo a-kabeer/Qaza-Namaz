@@ -24,6 +24,7 @@ Future<ProfileQazaChangeDialogResult?> showProfileQazaChangeDialog({
   required FutureOr<ProfileQazaPlanPreview> preview,
   UserProfile? previousProfile,
   UserProfile? newProfile,
+  int hijriOffsetDays = 0,
 }) {
   return showDialog<ProfileQazaChangeDialogResult>(
     context: context,
@@ -32,6 +33,7 @@ Future<ProfileQazaChangeDialogResult?> showProfileQazaChangeDialog({
       preview: preview,
       previousProfile: previousProfile,
       newProfile: newProfile,
+      hijriOffsetDays: hijriOffsetDays,
     ),
   );
 }
@@ -41,11 +43,13 @@ class _ProfileQazaChangeDialog extends StatefulWidget {
     required this.preview,
     this.previousProfile,
     this.newProfile,
+    required this.hijriOffsetDays,
   });
 
   final FutureOr<ProfileQazaPlanPreview> preview;
   final UserProfile? previousProfile;
   final UserProfile? newProfile;
+  final int hijriOffsetDays;
 
   @override
   State<_ProfileQazaChangeDialog> createState() =>
@@ -119,6 +123,7 @@ class _ProfileQazaChangeDialogState extends State<_ProfileQazaChangeDialog> {
                     preview: _resolvedPreview!,
                     previousProfile: widget.previousProfile,
                     newProfile: widget.newProfile,
+                    hijriOffsetDays: widget.hijriOffsetDays,
                   ),
       ),
       actions: [
@@ -162,11 +167,13 @@ class _ProfileQazaReviewContent extends StatelessWidget {
     required this.preview,
     this.previousProfile,
     this.newProfile,
+    required this.hijriOffsetDays,
   });
 
   final ProfileQazaPlanPreview preview;
   final UserProfile? previousProfile;
   final UserProfile? newProfile;
+  final int hijriOffsetDays;
 
   @override
   Widget build(BuildContext context) {
@@ -198,6 +205,7 @@ class _ProfileQazaReviewContent extends StatelessWidget {
             total: previousPlan?.totalWithWitr ?? 0,
             start: previousPlan?.startDate,
             end: previousPlan?.endDate,
+            hijriOffsetDays: hijriOffsetDays,
           ),
           const SizedBox(height: 24),
           _PlanSummary(
@@ -205,6 +213,7 @@ class _ProfileQazaReviewContent extends StatelessWidget {
             total: preview.newPlanTotal,
             start: preview.newPlan.startDate,
             end: preview.newPlan.endDate,
+            hijriOffsetDays: hijriOffsetDays,
           ),
           const SizedBox(height: 24),
           Text(
@@ -342,12 +351,14 @@ class _PlanSummary extends StatelessWidget {
     required this.total,
     this.start,
     this.end,
+    required this.hijriOffsetDays,
   });
 
   final String title;
   final int total;
   final DateTime? start;
   final DateTime? end;
+  final int hijriOffsetDays;
 
   @override
   Widget build(BuildContext context) {
@@ -383,7 +394,12 @@ class _PlanSummary extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            _formatHijriPlanRange(l10n, start!, end),
+            _formatHijriPlanRange(
+              l10n,
+              start!,
+              end,
+              offsetDays: hijriOffsetDays,
+            ),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurfaceVariant,
             ),
@@ -481,11 +497,13 @@ String _formatGregorianPlanRange(DateTime start, DateTime? end) {
 String _formatHijriPlanRange(
   AppLocalizations l10n,
   DateTime start,
-  DateTime? end,
-) {
+  DateTime? end, {
+  int offsetDays = 0,
+}) {
   final last = _lastPlanDate(start, end);
-  final startText = HijriDateService.format(start, l10n);
-  final lastText = HijriDateService.format(last, l10n);
+  final startText =
+      HijriDateService.format(start, l10n, offsetDays: offsetDays);
+  final lastText = HijriDateService.format(last, l10n, offsetDays: offsetDays);
 
   return start == last ? startText : '$startText – $lastText';
 }

@@ -60,7 +60,8 @@ void main() {
     final source = File('lib/features/qaza/qaza_addition_history_screen.dart')
         .readAsStringSync();
 
-    expect(source, contains('QazaAdditionDateSummary(snapshot)'));
+    expect(source, contains('QazaAdditionDateSummary('));
+    expect(source, contains('hijriOffsetDays:'));
     expect(
       source,
       contains('final total = item.pendingCount + item.completedCount;'),
@@ -107,7 +108,8 @@ void main() {
     final source =
         File('lib/features/qaza/add_qaza_screen.dart').readAsStringSync();
 
-    expect(source, contains('QazaAdditionDateSummary(_snapshot)'));
+    expect(source, contains('QazaAdditionDateSummary('));
+    expect(source, contains('hijriOffsetDays:'));
     expect(source, contains('summary.consecutiveGroups'));
     expect(source, contains('summary.formatConsecutiveRange('));
     expect(source, contains('summary.formatHijri(l10n, date)'));

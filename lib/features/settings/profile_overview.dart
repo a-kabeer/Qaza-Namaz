@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../domain/entities/user_profile.dart';
@@ -7,7 +9,7 @@ import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
 import '../daily_salah/daily_salah_tracking_settings_tile.dart';
 
-class ProfileOverview extends StatelessWidget {
+class ProfileOverview extends ConsumerWidget {
   const ProfileOverview({
     super.key,
     required this.profile,
@@ -18,7 +20,8 @@ class ProfileOverview extends StatelessWidget {
   final VoidCallback onEdit;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hijriOffset = ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final dateOfBirth = profile.dateOfBirth;
@@ -67,7 +70,10 @@ class ProfileOverview extends StatelessWidget {
                     : DateFormatters.formatGregorianFull(dateOfBirth),
                 secondaryValue: dateOfBirth == null
                     ? null
-                    : l10n.formatHijriDate(dateOfBirth),
+                    : l10n.formatHijriDate(
+                        dateOfBirth,
+                        offsetDays: hijriOffset,
+                      ),
               ),
               const _DetailDivider(),
               _ProfileDetailRow(

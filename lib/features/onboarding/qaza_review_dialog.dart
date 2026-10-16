@@ -15,11 +15,13 @@ class QazaReviewDialog extends StatefulWidget {
     required this.profile,
     required this.plan,
     required this.onConfirm,
+    this.hijriOffsetDays = 0,
   });
 
   final UserProfile profile;
   final QazaPlan plan;
   final QazaReviewConfirm onConfirm;
+  final int hijriOffsetDays;
 
   @override
   State<QazaReviewDialog> createState() => _QazaReviewDialogState();
@@ -241,5 +243,8 @@ class _QazaReviewDialogState extends State<QazaReviewDialog> {
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year.toString()}';
 
   String _formatHijri(AppLocalizations l10n, DateTime date) =>
-      l10n.formatHijriDate(date);
+      l10n.formatHijriDate(
+        date,
+        offsetDays: widget.hijriOffsetDays,
+      );
 }

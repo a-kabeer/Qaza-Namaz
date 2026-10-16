@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
@@ -103,6 +104,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     await ref.read(userProfileProvider.future);
 
     if (!mounted) return;
+    final hijriOffset = await ref.read(hijriDateAdjustmentProvider.future);
+    if (!mounted) return;
 
     final action = await showDialog<QazaReviewAction>(
       context: context,
@@ -110,6 +113,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       builder: (_) => QazaReviewDialog(
         profile: finalizedProfile,
         plan: plan,
+        hijriOffsetDays: hijriOffset,
         onConfirm: () => _startQazaPlanImport(
           plan,
           finalizedProfile,
@@ -175,6 +179,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final hijriOffset = ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.profileSetupTitle),
@@ -185,6 +190,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
             Expanded(
               child: ProfileForm(
                 initialProfile: _draft,
+                hijriOffsetDays: hijriOffset,
                 submitLabel: l10n.profileSubmit,
                 onChanged: _saveDraft,
                 onSubmit: _submit,

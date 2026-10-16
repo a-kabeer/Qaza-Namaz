@@ -228,6 +228,29 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String hijriDateShort(Object day, Object month) {
+    return '$day $month';
+  }
+
+  @override
+  String get hijriAdjustmentTitle => 'ہجری تاریخ میں ترمیم';
+
+  @override
+  String get hijriAdjustmentEarlierTwo => '2 دن پہلے';
+
+  @override
+  String get hijriAdjustmentEarlierOne => '1 دن پہلے';
+
+  @override
+  String get hijriAdjustmentNoChange => 'کوئی تبدیلی نہیں';
+
+  @override
+  String get hijriAdjustmentLaterOne => '1 دن بعد';
+
+  @override
+  String get hijriAdjustmentLaterTwo => '2 دن بعد';
+
+  @override
   String hijriMonthYear(Object month, Object year) {
     return '$month $year ھ';
   }
@@ -2952,6 +2975,29 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String hijriDate(Object day, Object month, Object year) {
     return '$day $month $year h';
   }
+
+  @override
+  String hijriDateShort(Object day, Object month) {
+    return '$day $month';
+  }
+
+  @override
+  String get hijriAdjustmentTitle => 'Hijri tareekh adjust karein';
+
+  @override
+  String get hijriAdjustmentEarlierTwo => '2 din pehle';
+
+  @override
+  String get hijriAdjustmentEarlierOne => '1 din pehle';
+
+  @override
+  String get hijriAdjustmentNoChange => 'Koi tabdeeli nahi';
+
+  @override
+  String get hijriAdjustmentLaterOne => '1 din baad';
+
+  @override
+  String get hijriAdjustmentLaterTwo => '2 din baad';
 
   @override
   String hijriMonthYear(Object month, Object year) {

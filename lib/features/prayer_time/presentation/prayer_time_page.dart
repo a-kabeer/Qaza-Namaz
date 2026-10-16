@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart' as intl;
 import 'package:timezone/timezone.dart' as tz;
 
+import '../../../app/providers.dart';
 import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/date_formatters.dart';
@@ -19,6 +20,8 @@ import 'location_selector.dart';
 import 'prayer_timeline_row.dart';
 import 'qibla_screen.dart';
 import 'qibla_summary_card.dart';
+import 'hijri_date_adjustment_sheet.dart';
+import 'hijri_date_chip.dart';
 
 class PrayerTimePage extends ConsumerStatefulWidget {
   const PrayerTimePage({super.key});
@@ -296,6 +299,7 @@ class _PrayerTimeContent extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
     final now = ref.watch(prayerTimeClockProvider).valueOrNull;
+    final hijriOffset = ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     final current = ref.watch(currentPrayerStateProvider);
     final restricted = ref.watch(restrictedTimeStateProvider);
     final showAllRestrictedTimes =
@@ -470,6 +474,38 @@ class _PrayerTimeContent extends ConsumerWidget {
       }
     }
 
+    Future<void> openHijriAdjustment() async {
+      int currentOffset;
+      try {
+        currentOffset = await ref.read(hijriDateAdjustmentProvider.future);
+      } catch (_) {
+        currentOffset = hijriOffset;
+      }
+      if (!context.mounted) return;
+
+      final selectedOffset = await HijriDateAdjustmentSheet.show(
+        context: context,
+        date: displayDate,
+        selectedOffset: currentOffset,
+      );
+      if (selectedOffset == null ||
+          selectedOffset == currentOffset ||
+          !context.mounted) {
+        return;
+      }
+
+      try {
+        await ref
+            .read(hijriDateAdjustmentProvider.notifier)
+            .setOffset(selectedOffset);
+      } catch (_) {
+        if (!context.mounted) return;
+        ref
+            .read(appSnackbarServiceProvider)
+            .error(AppLocalizations.of(context).errorStorage);
+      }
+    }
+
     return RefreshIndicator(
       onRefresh: () =>
           ref.read(prayerTimeControllerProvider.notifier).refreshSchedule(),
@@ -480,7 +516,11 @@ class _PrayerTimeContent extends ConsumerWidget {
           _PrayerTimeHeader(
             location: snapshot.location,
             date: displayDate,
-            hijri: l10n.formatHijriDate(displayDate),
+            hijri: l10n.formatHijriDate(
+              displayDate,
+              offsetDays: hijriOffset,
+            ),
+            onAdjustHijriDate: openHijriAdjustment,
             refreshing: refreshing,
             onUseCurrentLocation: refreshing
                 ? null
@@ -552,6 +592,7 @@ class _PrayerTimeHeader extends StatelessWidget {
     required this.hijri,
     required this.refreshing,
     required this.onUseCurrentLocation,
+    required this.onAdjustHijriDate,
   });
 
   final PrayerLocation location;
@@ -559,6 +600,7 @@ class _PrayerTimeHeader extends StatelessWidget {
   final String hijri;
   final bool refreshing;
   final VoidCallback? onUseCurrentLocation;
+  final VoidCallback onAdjustHijriDate;
 
   @override
   Widget build(BuildContext context) {
@@ -623,26 +665,17 @@ class _PrayerTimeHeader extends StatelessWidget {
               Expanded(
                 child: Text(
                   DateFormatters.formatGregorianWeekdayShortFull(date),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w700,
                   ),
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 7,
-                ),
-                decoration: BoxDecoration(
-                  color: scheme.surfaceContainerHighest,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  hijri,
-                  style: textTheme.bodySmall?.copyWith(
-                    color: scheme.onSurfaceVariant,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Flexible(
+                child: HijriDateChip(
+                  label: hijri,
+                  onAdjust: onAdjustHijriDate,
                 ),
               ),
             ],

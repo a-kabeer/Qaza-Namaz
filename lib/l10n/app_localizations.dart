@@ -503,6 +503,48 @@ abstract class AppLocalizations {
   /// **'{day} {month} {year} AH'**
   String hijriDate(Object day, Object month, Object year);
 
+  /// Short Hijri date for adjustment choices
+  ///
+  /// In en, this message translates to:
+  /// **'{day} {month}'**
+  String hijriDateShort(Object day, Object month);
+
+  /// No description provided for @hijriAdjustmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust Hijri Date'**
+  String get hijriAdjustmentTitle;
+
+  /// No description provided for @hijriAdjustmentEarlierTwo.
+  ///
+  /// In en, this message translates to:
+  /// **'2 days earlier'**
+  String get hijriAdjustmentEarlierTwo;
+
+  /// No description provided for @hijriAdjustmentEarlierOne.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day earlier'**
+  String get hijriAdjustmentEarlierOne;
+
+  /// No description provided for @hijriAdjustmentNoChange.
+  ///
+  /// In en, this message translates to:
+  /// **'No adjustment'**
+  String get hijriAdjustmentNoChange;
+
+  /// No description provided for @hijriAdjustmentLaterOne.
+  ///
+  /// In en, this message translates to:
+  /// **'1 day later'**
+  String get hijriAdjustmentLaterOne;
+
+  /// No description provided for @hijriAdjustmentLaterTwo.
+  ///
+  /// In en, this message translates to:
+  /// **'2 days later'**
+  String get hijriAdjustmentLaterTwo;
+
   /// Hijri month/year header; Gregorian remains primary
   ///
   /// In en, this message translates to:
