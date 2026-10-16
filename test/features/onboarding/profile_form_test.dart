@@ -85,6 +85,11 @@ void main() {
         ),
       );
 
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_puberty_age_decrement')),
+        300,
+        scrollable: find.byType(Scrollable),
+      );
       expect(
         find.byKey(const Key('profile_puberty_age_decrement')),
         findsOneWidget,
@@ -347,10 +352,33 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(changed, isNull);
-      expect(find.text('29/02/2000'), findsOneWidget);
       expect(
         find.byKey(const Key('profile_dob_picker_panel')),
         findsNothing,
+      );
+
+      // Reopen the inline selector to verify Cancel retained the original DOB.
+      final dobButton = find.byKey(const Key('profile_dob'));
+      await tester.ensureVisible(dobButton);
+      await tester.tap(dobButton);
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<DropdownButton<int>>(
+          find.byKey(const Key('profile_dob_day')),
+        ).value,
+        originalDob.day,
+      );
+      expect(
+        tester.widget<DropdownButton<int>>(
+          find.byKey(const Key('profile_dob_month')),
+        ).value,
+        originalDob.month,
+      );
+      expect(
+        tester.widget<DropdownButton<int>>(
+          find.byKey(const Key('profile_dob_year')),
+        ).value,
+        originalDob.year,
       );
       expect(tester.takeException(), isNull);
     },
