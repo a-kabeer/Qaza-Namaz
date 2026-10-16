@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
-import '../../prayer_time/presentation/hijri_date_adjustment_provider.dart';
 import '../../../core/calendar/hijri_date_service.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../core/diagnostics/diagnostics.dart';
