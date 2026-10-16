@@ -306,7 +306,11 @@ class OfflineFirstQazaRepository
     _validateActive(userId);
     final store = _localStore;
     if (store is! PendingQazaRecordDeletionStore) return false;
-    return store.deletePendingRecord(userId: userId, recordId: recordId);
+    final pendingStore = store as PendingQazaRecordDeletionStore;
+    return pendingStore.deletePendingRecord(
+      userId: userId,
+      recordId: recordId,
+    );
   }
 
   @override
