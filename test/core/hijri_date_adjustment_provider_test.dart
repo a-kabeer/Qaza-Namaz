@@ -2,7 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'package:qaza_namaz/features/prayer_time/presentation/hijri_date_adjustment_provider.dart';
+import 'package:qaza_namaz/app/providers.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
