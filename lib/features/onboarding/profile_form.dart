@@ -335,6 +335,9 @@ class _ProfileFormState extends State<ProfileForm> {
               today: today,
               minimumDate: pubertyDateMin,
               maximumDate: pubertyDateMax,
+              initialDateIsSelected: profile.pubertyDateOverride != null &&
+                  !profile.pubertyDateOverride!.isBefore(pubertyDateMin) &&
+                  !profile.pubertyDateOverride!.isAfter(pubertyDateMax),
               title: l10n.profilePubertyAge,
               helpText: l10n.profileSelectDate,
               dayLabel: l10n.profileDobDay,
@@ -425,6 +428,11 @@ class _ProfileFormState extends State<ProfileForm> {
               today: today,
               minimumDate: startPrayingDateMin,
               maximumDate: today,
+              initialDateIsSelected:
+                  profile.startPrayingDateOverride != null &&
+                      !profile.startPrayingDateOverride!
+                          .isBefore(startPrayingDateMin) &&
+                      !profile.startPrayingDateOverride!.isAfter(today),
               title: l10n.profileStartPrayingAge,
               helpText: l10n.profileSelectDate,
               dayLabel: l10n.profileDobDay,
@@ -644,6 +652,7 @@ class _DateOfBirthPickerInline extends StatefulWidget {
     this.minimumDate,
     this.maximumDate,
     this.keyPrefix = 'profile_dob',
+    this.initialDateIsSelected = true,
     required this.title,
     required this.helpText,
     required this.dayLabel,
@@ -660,6 +669,7 @@ class _DateOfBirthPickerInline extends StatefulWidget {
   final DateTime? minimumDate;
   final DateTime? maximumDate;
   final String keyPrefix;
+  final bool initialDateIsSelected;
   final String title;
   final String helpText;
   final String dayLabel;
@@ -679,6 +689,7 @@ class _DateOfBirthPickerInlineState extends State<_DateOfBirthPickerInline> {
   late int _day;
   late int _month;
   late int _year;
+  late bool _canConfirm;
 
   DateTime get _minimumDate => DateTime(
         widget.minimumDate?.year ?? 1900,
@@ -726,11 +737,13 @@ class _DateOfBirthPickerInlineState extends State<_DateOfBirthPickerInline> {
     _year = initial.year;
     _month = initial.month;
     _day = initial.day;
+    _canConfirm = widget.initialDateIsSelected;
     _clampDay();
   }
 
   void _setYear(int year) {
     setState(() {
+      _canConfirm = true;
       _year = year;
       if (_month > _latestMonth) _month = _latestMonth;
       if (_month < _earliestMonth) _month = _earliestMonth;
@@ -740,6 +753,7 @@ class _DateOfBirthPickerInlineState extends State<_DateOfBirthPickerInline> {
 
   void _setMonth(int month) {
     setState(() {
+      _canConfirm = true;
       _month = month;
       _clampDay();
     });
@@ -812,7 +826,12 @@ class _DateOfBirthPickerInlineState extends State<_DateOfBirthPickerInline> {
                         ),
                     ],
                     onChanged: (value) {
-                      if (value != null) setState(() => _day = value);
+                      if (value != null) {
+                        setState(() {
+                          _day = value;
+                          _canConfirm = true;
+                        });
+                      }
                     },
                   ),
                 ),
@@ -871,8 +890,9 @@ class _DateOfBirthPickerInlineState extends State<_DateOfBirthPickerInline> {
                 const SizedBox(width: 8),
                 FilledButton(
                   key: Key('${widget.keyPrefix}_confirm'),
-                  onPressed: () =>
-                      widget.onConfirm(DateTime(_year, _month, _day)),
+                  onPressed: _canConfirm
+                      ? () => widget.onConfirm(DateTime(_year, _month, _day))
+                      : null,
                   child: Text(widget.confirmLabel),
                 ),
               ],

@@ -280,16 +280,29 @@ class ProfileRules {
 
     if (next.pubertyInputMode == ProfileInputMode.ageEstimate) {
       final age = next.pubertyAge;
-      if (age != null && (gender == null || dob == null ||
-          !isPubertyAgeAllowed(gender, age) ||
-          !_milestoneReachedAndMaterialized(dob: dob, age: age, today: today))) {
+      if (age != null &&
+          gender != null &&
+          dob != null &&
+          (!isPubertyAgeAllowed(gender, age) ||
+              !_milestoneReachedAndMaterialized(
+                dob: dob,
+                age: age,
+                today: today,
+              ))) {
         next = next.copyWith(clearPubertyAge: true);
       }
     }
     if (next.startPrayingInputMode == ProfileInputMode.ageEstimate) {
       final age = next.startPrayingAge;
-      if (age != null && (dob == null || age < 7 || age > currentAge(dob, today) ||
-          !_milestoneReachedAndMaterialized(dob: dob, age: age, today: today))) {
+      if (age != null &&
+          (age < 7 ||
+              (dob != null &&
+                  (age > currentAge(dob, today) ||
+                      !_milestoneReachedAndMaterialized(
+                        dob: dob,
+                        age: age,
+                        today: today,
+                      ))))) {
         next = next.copyWith(clearStartPrayingAge: true);
       }
     }

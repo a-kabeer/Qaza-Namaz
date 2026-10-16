@@ -93,6 +93,26 @@ void main() {
     );
   });
 
+  test('invalid remembered dates are rejected rather than adjusted', () {
+    final minimum = ProfileRules.minimumPubertyDate(makeProfile())!;
+    final invalidPuberty = makeProfile(
+      pubertyMode: ProfileInputMode.rememberedDate,
+      pubertyDate: minimum.subtract(const Duration(days: 1)),
+    );
+    expect(ProfileRules.pubertyDate(invalidPuberty), isNull);
+    expect(
+      ProfileRules.validate(invalidPuberty, today: DateTime.now()).error,
+      isNotNull,
+    );
+
+    final minimumStart = ProfileRules.minimumStartPrayingDate(makeProfile())!;
+    final invalidStart = makeProfile(
+      startMode: ProfileInputMode.rememberedDate,
+      startDate: minimumStart.subtract(const Duration(days: 1)),
+    );
+    expect(ProfileRules.startPrayingDate(invalidStart), isNull);
+  });
+
   test('legacy profiles migrate to age mode without changing calculations', () {
     final legacy = UserProfile.fromJson({
       'schemaVersion': 2,
