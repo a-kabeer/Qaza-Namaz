@@ -2688,6 +2688,21 @@ class AppLocalizationsUrLatn extends AppLocalizations {
 
   @override
   String get dailySalahTrackingEnableAction => "On Karein";
+  @override
+  String get dailySalahTrackingSkipForNow => "Filhal chhor dein";
+
+  @override
+  String get dailySalahTrackingSkippedMessage => "Daily Namaz Tracking skip kar di gayi hai. Aap ise Profile se kisi bhi waqt enable kar sakte hain.";
+
+  @override
+  String get dailySalahTrackingRemoveStatusTitle => "Namaz ka status hatayen?";
+
+  @override
+  String get dailySalahTrackingRemoveStatusMessage => "Is se namaz unrecorded ho jayegi. Mojooda Qaza record mein koi tabdeeli nahi hogi.";
+
+  @override
+  String get dailySalahTrackingRemoveStatusAction => "Status hatayen";
+
 
   @override
   String get dailySalahTrackingPrayed => "Parhi";

@@ -2706,6 +2706,21 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get dailySalahTrackingEnableAction => 'فعال کریں';
+  @override
+  String get dailySalahTrackingSkipForNow => "ابھی چھوڑ دیں";
+
+  @override
+  String get dailySalahTrackingSkippedMessage => "روزانہ نماز ٹریکنگ چھوڑ دی گئی۔ آپ اسے پروفائل سے کسی بھی وقت فعال کر سکتے ہیں۔";
+
+  @override
+  String get dailySalahTrackingRemoveStatusTitle => "نماز کی کیفیت ختم کریں؟";
+
+  @override
+  String get dailySalahTrackingRemoveStatusMessage => "یہ نماز کو غیر درج شدہ کر دے گا۔ موجودہ قضا ریکارڈ میں کوئی تبدیلی نہیں ہوگی۔";
+
+  @override
+  String get dailySalahTrackingRemoveStatusAction => "کیفیت ختم کریں";
+
 
   @override
   String get dailySalahTrackingPrayed => 'ادا کی';
