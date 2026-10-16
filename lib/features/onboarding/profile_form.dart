@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/time/local_date_service.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
 
-class ProfileForm extends StatefulWidget {
+class ProfileForm extends ConsumerStatefulWidget {
   const ProfileForm({
     super.key,
     required this.initialProfile,
@@ -31,7 +32,7 @@ class ProfileForm extends StatefulWidget {
   State<ProfileForm> createState() => _ProfileFormState();
 }
 
-class _ProfileFormState extends State<ProfileForm> {
+class _ProfileFormState extends ConsumerState<ProfileForm> {
   late UserProfile _profile;
   ProfileValidationError? _error;
   bool _saving = false;
@@ -112,6 +113,8 @@ class _ProfileFormState extends State<ProfileForm> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final hijriOffset =
+        ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     final profile = _profile;
     final gender = profile.gender;
     final madhab = profile.madhab;
@@ -247,7 +250,10 @@ class _ProfileFormState extends State<ProfileForm> {
         if (profile.dateOfBirth != null) ...[
           const SizedBox(height: 4),
           Text(
-            l10n.formatHijriDate(profile.dateOfBirth!),
+            l10n.formatHijriDate(
+              profile.dateOfBirth!,
+              offsetDays: hijriOffset,
+            ),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
