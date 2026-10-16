@@ -125,8 +125,7 @@ bool dailySalahPrayerTimeHasPassed({
 }
 
 final dailySalahPrayerAvailableProvider =
-    Provider.family<bool, DailySalahPrayerAvailabilityRequest>(
-        (ref, request) {
+    Provider.family<bool, DailySalahPrayerAvailabilityRequest>((ref, request) {
   final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
   final now = ref.watch(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
   return dailySalahPrayerTimeHasPassed(
