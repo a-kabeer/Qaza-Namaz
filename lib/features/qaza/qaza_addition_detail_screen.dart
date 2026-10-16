@@ -344,7 +344,7 @@ class _SummaryDates extends ConsumerStatefulWidget {
   final TextTheme textTheme;
 
   @override
-  State<_SummaryDates> createState() => _SummaryDatesState();
+  ConsumerState<_SummaryDates> createState() => _SummaryDatesState();
 }
 
 class _SummaryDatesState extends ConsumerState<_SummaryDates> {
