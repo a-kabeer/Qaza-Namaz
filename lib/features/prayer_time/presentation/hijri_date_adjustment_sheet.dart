@@ -24,6 +24,7 @@ class HijriDateAdjustmentSheet extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return showModalBottomSheet<int>(
       context: context,
+      isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: scheme.surface,
       clipBehavior: Clip.antiAlias,
