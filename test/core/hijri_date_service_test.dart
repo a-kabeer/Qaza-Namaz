@@ -210,6 +210,92 @@ void main() {
     );
   });
 
+  test('offset changes only Hijri formatting, not the Gregorian source', () {
+    final date = DateTime(2026, 9, 26);
+    final original = HijriDateService.fromGregorian(date);
+    final previous = HijriDateService.fromGregorian(
+      DateTime(date.year, date.month, date.day - 1),
+    );
+    final next = HijriDateService.fromGregorian(
+      DateTime(date.year, date.month, date.day + 1),
+    );
+
+    expect(
+      HijriDateService.format(date, en, offsetDays: -1),
+      en.hijriDate(
+        previous.day,
+        HijriDateService.monthNameFor(previous.month, en),
+        previous.year,
+      ),
+    );
+    expect(
+      HijriDateService.format(date, en, offsetDays: 1),
+      en.hijriDate(
+        next.day,
+        HijriDateService.monthNameFor(next.month, en),
+        next.year,
+      ),
+    );
+    expect(HijriDateService.fromGregorian(date).day, original.day);
+    expect(HijriDateService.fromGregorian(date).month, original.month);
+    expect(HijriDateService.fromGregorian(date).year, original.year);
+  });
+
+  test('display offsets cross Hijri month and year boundaries safely', () {
+    DateTime? monthBoundary;
+    DateTime? yearBoundary;
+
+    for (
+      var candidate = DateTime(2024, 1, 1);
+      candidate.isBefore(DateTime(2032, 1, 1));
+      candidate = candidate.add(const Duration(days: 1))
+    ) {
+      final current = HijriDateService.fromGregorian(candidate);
+      final nextDate = DateTime(
+        candidate.year,
+        candidate.month,
+        candidate.day + 1,
+      );
+      final next = HijriDateService.fromGregorian(nextDate);
+
+      if (monthBoundary == null && current.month != next.month) {
+        monthBoundary = candidate;
+      }
+      if (yearBoundary == null && current.year != next.year) {
+        yearBoundary = candidate;
+      }
+      if (monthBoundary != null && yearBoundary != null) break;
+    }
+
+    expect(monthBoundary, isNotNull);
+    expect(yearBoundary, isNotNull);
+
+    final monthEnd = monthBoundary!;
+    final nextMonthParts = HijriDateService.fromGregorian(
+      DateTime(monthEnd.year, monthEnd.month, monthEnd.day + 1),
+    );
+    expect(
+      HijriDateService.formatShort(monthEnd, en, offsetDays: 1),
+      en.hijriDateShort(
+        nextMonthParts.day,
+        HijriDateService.monthNameFor(nextMonthParts.month, en),
+      ),
+    );
+
+    final yearEnd = yearBoundary!;
+    final nextYearParts = HijriDateService.fromGregorian(
+      DateTime(yearEnd.year, yearEnd.month, yearEnd.day + 1),
+    );
+    expect(
+      HijriDateService.format(yearEnd, en, offsetDays: 1),
+      en.hijriDate(
+        nextYearParts.day,
+        HijriDateService.monthNameFor(nextYearParts.month, en),
+        nextYearParts.year,
+      ),
+    );
+  });
+
   test('feature and application lib code cannot bypass the Hijri boundary', () {
     final lib = Directory('lib');
     expect(lib.existsSync(), isTrue);
