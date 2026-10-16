@@ -284,7 +284,8 @@ class _RecentAdditionCard extends ConsumerStatefulWidget {
   final QazaAdditionHistoryController controller;
 
   @override
-  ConsumerState<_RecentAdditionCard> createState() => _RecentAdditionCardState();
+  ConsumerState<_RecentAdditionCard> createState() =>
+      _RecentAdditionCardState();
 }
 
 class _RecentAdditionCardState extends ConsumerState<_RecentAdditionCard> {
