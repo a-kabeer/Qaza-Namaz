@@ -2599,6 +2599,77 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get cloudConnectionFailed =>
       'گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔';
+
+  @override
+  String get cloudRestoreProgressTitle =>
+      'آپ کے Google Drive بیک اپ کو بحال کیا جا رہا ہے';
+
+  @override
+  String get cloudRestoreProgressBody =>
+      'آپ کا ڈیٹا ڈاؤن لوڈ، جانچ اور محفوظ طریقے سے بحال ہو رہا ہے۔ ایپ کھلی رکھیں۔';
+
+  @override
+  String get cloudRestoreConnectingTitle =>
+      'Google Drive سے رابطہ قائم کیا جا رہا ہے';
+
+  @override
+  String get cloudRestoreConnectingBody =>
+      'Google اکاؤنٹ کی جانچ اور موجودہ بیک اپ کی تلاش جاری ہے۔';
+
+  @override
+  String get cloudRestoreStageChecking => 'بیک اپ کی جانچ کی جا رہی ہے…';
+
+  @override
+  String get cloudRestoreStageRestoring =>
+      'تصدیق شدہ بیک اپ بحال کیا جا رہا ہے…';
+
+  @override
+  String get cloudRestoreStageTransferring => 'بیک اپ ڈیٹا منتقل ہو رہا ہے…';
+
+  @override
+  String get cloudRestoreStageFinishing => 'بحالی مکمل کی جا رہی ہے…';
+
+  @override
+  String get initialCloudBackupAppBarTitle => 'اپنی پیش رفت محفوظ کریں';
+
+  @override
+  String get initialCloudBackupTitle =>
+      'پہلا Google Drive بیک اپ بنایا جا رہا ہے';
+
+  @override
+  String get initialCloudBackupBody =>
+      'آپ کا پروفائل اور قضا نماز کا ڈیٹا ڈیوائس پر محفوظ ہے۔ بیک اپ مکمل ہونے تک ایپ کھلی رکھیں۔';
+
+  @override
+  String get initialCloudBackupFailedTitle =>
+      'آپ کا ڈیٹا اس ڈیوائس پر محفوظ ہے';
+
+  @override
+  String get initialCloudBackupFailedBody =>
+      'کلاؤڈ بیک اپ مکمل نہیں ہو سکا۔ آپ کا مقامی پروفائل اور قضا نماز کا ڈیٹا محفوظ ہے۔';
+
+  @override
+  String get initialCloudBackupStageChecking =>
+      'Google Drive کی جانچ ہو رہی ہے…';
+
+  @override
+  String get initialCloudBackupStagePreparing => 'بیک اپ تیار ہو رہا ہے…';
+
+  @override
+  String get initialCloudBackupStageUploading => 'بیک اپ اپ لوڈ ہو رہا ہے…';
+
+  @override
+  String get initialCloudBackupStageCompleted =>
+      'بیک اپ کامیابی سے محفوظ ہو گیا';
+
+  @override
+  String get initialCloudBackupRetry => 'بیک اپ دوبارہ آزمائیں';
+
+  @override
+  String get initialCloudBackupContinueHome => 'ہوم پر جائیں';
+
+  @override
+  String get initialCloudBackupStageDownloading => 'بیک اپ ڈاؤن لوڈ ہو رہا ہے…';
 }
 
 /// The translations for Urdu, using the Latin script (`ur_Latn`).
@@ -5218,4 +5289,78 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get cloudConnectionFailed =>
       'Google se rabta mukammal nahi ho ska dobara koshish karein ya mqami tor par jari rkhin';
+
+  @override
+  String get cloudRestoreProgressTitle =>
+      'Google Drive backup restore ho raha hai';
+
+  @override
+  String get cloudRestoreProgressBody =>
+      'Aap ka data download, verify aur mehfooz tareeqe se restore ho raha hai. App khuli rakhein.';
+
+  @override
+  String get cloudRestoreConnectingTitle =>
+      'Google Drive se connection ho raha hai';
+
+  @override
+  String get cloudRestoreConnectingBody =>
+      'Google account check ho raha hai aur mojooda backup talash kiya ja raha hai.';
+
+  @override
+  String get cloudRestoreStageChecking =>
+      'Backup check aur verify ho raha hai…';
+
+  @override
+  String get cloudRestoreStageRestoring =>
+      'Verified backup restore ho raha hai…';
+
+  @override
+  String get cloudRestoreStageTransferring =>
+      'Backup data transfer ho raha hai…';
+
+  @override
+  String get cloudRestoreStageFinishing => 'Restore mukammal ho raha hai…';
+
+  @override
+  String get initialCloudBackupAppBarTitle => 'Apni progress mehfooz karein';
+
+  @override
+  String get initialCloudBackupTitle =>
+      'Pehla Google Drive backup ban raha hai';
+
+  @override
+  String get initialCloudBackupBody =>
+      'Aap ka profile aur Qaza Namaz data device par save hai. Initial backup banne tak app khuli rakhein.';
+
+  @override
+  String get initialCloudBackupFailedTitle =>
+      'Aap ka data is device par mehfooz hai';
+
+  @override
+  String get initialCloudBackupFailedBody =>
+      'Cloud backup mukammal nahi ho saka. Aap ka local profile aur Qaza data mehfooz hai.';
+
+  @override
+  String get initialCloudBackupStageChecking =>
+      'Google Drive check ho raha hai…';
+
+  @override
+  String get initialCloudBackupStagePreparing => 'Backup tayyar ho raha hai…';
+
+  @override
+  String get initialCloudBackupStageUploading => 'Backup upload ho raha hai…';
+
+  @override
+  String get initialCloudBackupStageCompleted =>
+      'Backup kamyabi se save ho gaya';
+
+  @override
+  String get initialCloudBackupRetry => 'Backup dobara try karein';
+
+  @override
+  String get initialCloudBackupContinueHome => 'Home par jayein';
+
+  @override
+  String get initialCloudBackupStageDownloading =>
+      'Backup download ho raha hai…';
 }

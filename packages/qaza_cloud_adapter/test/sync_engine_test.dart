@@ -1180,6 +1180,7 @@ class FakeMetadataRemote extends FakeRemote
   Future<CloudRemoteSnapshot> download(
     CloudRemoteMetadata metadata, {
     required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
   }) async {
     downloadCount++;
     final snapshot = latestSnapshot;
@@ -1198,7 +1199,10 @@ class FakeRemote implements CloudRemoteStore {
   int latestCount = 0;
 
   @override
-  Future<CloudRemoteSnapshot?> latest({required bool allowInteractive}) async {
+  Future<CloudRemoteSnapshot?> latest({
+    required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
+  }) async {
     latestCount++;
     if (latestSnapshots != null && latestSnapshots!.isNotEmpty) {
       latestSnapshot = latestSnapshots!.removeAt(0);

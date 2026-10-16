@@ -113,10 +113,14 @@ class CloudSyncEngine {
           remote = await metadataStore.download(
             remoteMetadata,
             allowInteractive: allowInteractive,
+            onProgress: onProgress,
           );
         }
       } else {
-        remote = await _remote.latest(allowInteractive: allowInteractive);
+        remote = await _remote.latest(
+          allowInteractive: allowInteractive,
+          onProgress: onProgress,
+        );
         remoteFound = remote != null;
       }
     } on CloudAuthorizationUnavailable catch (error) {
@@ -360,7 +364,10 @@ class CloudSyncEngine {
     if (!await _state.isCloudSyncEnabled()) {
       return CloudSyncResult.skipped('Cloud sync was disabled.');
     }
-    final remote = await _remote.latest(allowInteractive: allowInteractive);
+    final remote = await _remote.latest(
+      allowInteractive: allowInteractive,
+      onProgress: onProgress,
+    );
     if (remote == null ||
         remote.backup.lineage.backupId != conflict.remoteLineage.backupId ||
         remote.remoteVersion != conflict.remoteVersion) {
@@ -441,6 +448,7 @@ class CloudSyncEngine {
         return CloudSyncResult.uploaded(backup);
 
       case CloudConflictDecision.useRemote:
+        onProgress?.call(const CloudBackupProgress.checking());
         // Persist the old Phase 1 export in encrypted local SQLite before
         // replacing current application data. Import is not attempted if this
         // snapshot fails to save.
@@ -489,6 +497,7 @@ class CloudSyncEngine {
             onProgress: onProgress,
           );
         }
+        onProgress?.call(const CloudBackupProgress.preparing());
         await _phase1.importBackup(latest.backup.phase1BackupJson);
         final importedRevision = await _phase1.readDbRevision();
         await _state.writeCursor(

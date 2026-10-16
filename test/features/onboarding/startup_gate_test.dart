@@ -44,6 +44,7 @@ class _FakeCloudSyncProvider implements CloudSyncProvider {
   });
 
   final CloudBackupDiscoverySnapshot discoveryResult;
+  int resolveConflictCalls = 0;
 
   @override
   bool get isSupported => true;
@@ -80,8 +81,10 @@ class _FakeCloudSyncProvider implements CloudSyncProvider {
     required CloudConflictChoice choice,
     required bool confirmed,
     CloudBackupProgressCallback? onProgress,
-  }) async =>
-      const CloudSyncSnapshot.disconnected();
+  }) async {
+    resolveConflictCalls++;
+    return const CloudSyncSnapshot.disconnected();
+  }
 
   @override
   Future<CloudSyncSnapshot> restoreLocalRecoverySnapshot({
@@ -239,6 +242,7 @@ void main() {
     expect(find.byType(LanguageSelectionScreen), findsNothing);
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
     expect(find.text('اپنا پروفائل مکمل کریں'), findsOneWidget);
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
   });
 
   testWidgets('sign-in failure keeps local continuation available',
@@ -350,6 +354,12 @@ void main() {
       find.byKey(const Key('cloud_setup_connect_google')),
     );
 
+    expect(
+      (container.read(cloudSyncProvider) as _FakeCloudSyncProvider)
+          .resolveConflictCalls,
+      1,
+      reason: 'a verified fresh installation should attempt automatic restore',
+    );
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
     expect(find.byKey(const Key('cloud_setup_restore_backup')), findsOneWidget);
     expect(find.byType(ProfileSetupScreen), findsNothing);

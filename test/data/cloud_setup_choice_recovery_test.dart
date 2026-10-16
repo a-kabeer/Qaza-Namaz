@@ -33,4 +33,31 @@ void main() {
     expect(await database.readLocalRecoverySnapshot(), isNull);
     expect(await database.hasLocalRecoverySnapshot(), isFalse);
   });
+  test('fresh-install restore gate allows only an empty uncompleted database',
+      () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    expect(await database.isFreshInstallationForCloudRestore(), isTrue);
+
+    await database.customStatement(
+      '''INSERT INTO account_profiles
+         (local_account_id, payload_json, updated_at, writer_device_id, operation_id)
+         VALUES ('guest', '{}', 1, 'device-test', 'operation-test')''',
+    );
+    expect(await database.isFreshInstallationForCloudRestore(), isFalse);
+  });
+
+  test('initial cloud backup pending marker survives reads and can be cleared',
+      () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    expect(await database.hasPendingInitialCloudBackup(), isFalse);
+    await database.markInitialCloudBackupPending();
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
+    await database.clearPendingInitialCloudBackup();
+    expect(await database.hasPendingInitialCloudBackup(), isFalse);
+  });
 }
