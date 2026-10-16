@@ -649,7 +649,11 @@ void main() {
         row,
         contains(
             'DateFormatters.formatGregorianDatePadded(record.originalDate)'));
-    expect(row, contains('l10n.formatHijriDate(record.originalDate)'));
+    expect(row, contains('final hijriDate = l10n.formatHijriDate('));
+    expect(
+      row,
+      contains('offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,'),
+    );
     expect(row, contains('title: Text('));
     expect(row, contains('subtitle: Text('));
     expect(row, contains('trailing: Row('));
@@ -962,7 +966,7 @@ void main() {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final start =
-        source.indexOf('class _CompletedRecordRow extends StatelessWidget {');
+        source.indexOf('class _CompletedRecordRow extends ConsumerWidget {');
     final end = source.indexOf(
         'class _CompletedBatchActionBar extends ConsumerWidget {', start);
     final row = source.substring(start, end);
@@ -1051,7 +1055,7 @@ void main() {
       () {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
-    final start = source.indexOf('class _RecordRow extends StatelessWidget {');
+    final start = source.indexOf('class _RecordRow extends ConsumerWidget {');
     final end = source.indexOf(
       'class _PendingRecordDetails extends StatelessWidget {',
       start,
@@ -1130,7 +1134,11 @@ void main() {
         source,
         contains(
             'DateFormatters.formatGregorianDatePadded(record.originalDate)'));
-    expect(source, contains('l10n.formatHijriDate(record.originalDate)'));
+    expect(source, contains('final hijriDate = l10n.formatHijriDate('));
+    expect(
+      source,
+      contains('offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,'),
+    );
     expect(source, contains('maxLines: 2'));
   });
 
@@ -1184,7 +1192,7 @@ void main() {
     final source =
         File('lib/features/qaza/qaza_tracker_screen.dart').readAsStringSync();
     final start =
-        source.indexOf('class _CompletedRecordRow extends StatelessWidget {');
+        source.indexOf('class _CompletedRecordRow extends ConsumerWidget {');
     final end = source.indexOf(
       'class _CompletedBatchActionBar extends ConsumerWidget {',
       start,
