@@ -5,6 +5,7 @@ import '../../core/utils/date_formatters.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
+import '../daily_salah/daily_salah_tracking_settings_tile.dart';
 
 class ProfileOverview extends StatelessWidget {
   const ProfileOverview({
@@ -32,6 +33,8 @@ class ProfileOverview extends StatelessWidget {
             color: theme.colorScheme.onSurfaceVariant,
           ),
         ),
+        const SizedBox(height: 16),
+        const DailySalahTrackingSettingsTile(),
         const SizedBox(height: 16),
         Card(
           clipBehavior: Clip.antiAlias,
