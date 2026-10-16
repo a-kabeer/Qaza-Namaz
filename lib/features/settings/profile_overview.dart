@@ -71,7 +71,10 @@ class ProfileOverview extends ConsumerWidget {
                     : DateFormatters.formatGregorianFull(dateOfBirth),
                 secondaryValue: dateOfBirth == null
                     ? null
-                    : l10n.formatHijriDate(dateOfBirth, offsetDays: hijriOffset),
+                    : l10n.formatHijriDate(
+                        dateOfBirth,
+                        offsetDays: hijriOffset,
+                      ),
               ),
               const _DetailDivider(),
               _ProfileDetailRow(
