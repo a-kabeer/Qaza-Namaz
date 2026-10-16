@@ -229,6 +229,28 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String hijriDateShort(Object day, Object month) {
+    return '$day $month';
+  }
+
+  @override
+  String get hijriAdjustmentTitle => 'تعديل التاريخ الهجري';
+
+  @override
+  String get hijriAdjustmentEarlierTwo => 'قبل يومين';
+
+  @override
+  String get hijriAdjustmentEarlierOne => 'قبل يوم واحد';
+
+  @override
+  String get hijriAdjustmentNoChange => 'دون تعديل';
+
+  @override
+  String get hijriAdjustmentLaterOne => 'بعد يوم واحد';
+
+  @override
+  String get hijriAdjustmentLaterTwo => 'بعد يومين';
+  @override
   String hijriMonthYear(Object month, Object year) {
     return '$month $year هـ';
   }
