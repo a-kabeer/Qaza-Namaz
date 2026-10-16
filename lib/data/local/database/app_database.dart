@@ -51,11 +51,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 19 is the current local-only database schema.
-  /// Qaza records, additions, profile data, and completion markers are stored
-  /// exclusively in the local encrypted SQLite database.
+  /// Schema version 20 adds optional daily Salah logs to the encrypted database.
   @override
-  int get schemaVersion => 19;
+  int get schemaVersion => 20;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -66,6 +64,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
           await _ensureMetaStoreSchema();
+          await _ensureDailySalahTrackingSchema();
           await _ensureCloudSetupChoiceSchema();
           await _ensureLocalRecoverySnapshotSchema();
         },
@@ -126,6 +125,9 @@ class AppDatabase extends _$AppDatabase {
             await _ensureCloudSetupChoiceSchema();
             await _ensureLocalRecoverySnapshotSchema();
           }
+          if (from < 20) {
+            await _ensureDailySalahTrackingSchema();
+          }
         },
       );
 
@@ -150,6 +152,64 @@ class AppDatabase extends _$AppDatabase {
       "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
       "('db_revision', '1')",
     );
+    await customStatement(
+      "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
+      "('daily_salah_tracking_enabled', '0')",
+    );
+  }
+
+  Future<void> _ensureDailySalahTrackingSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS daily_salah_logs (
+        user_id TEXT NOT NULL,
+        prayer_date TEXT NOT NULL,
+        prayer_type TEXT NOT NULL,
+        status TEXT NOT NULL,
+        tracker_created_qaza_id TEXT,
+        updated_at TEXT NOT NULL,
+        PRIMARY KEY (user_id, prayer_date, prayer_type),
+        CHECK (prayer_type IN ('fajr', 'zuhr', 'asr', 'maghrib', 'isha', 'witr')),
+        CHECK (status IN ('prayed', 'missed', 'unrecorded'))
+      )
+    ''');
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS daily_salah_logs_user_date_idx '
+      'ON daily_salah_logs (user_id, prayer_date)',
+    );
+    await customStatement(
+      "INSERT OR IGNORE INTO meta_store (key, value) "
+      "VALUES ('daily_salah_tracking_enabled', '0')",
+    );
+  }
+
+  Future<bool> isDailySalahTrackingEnabled() async {
+    await _ensureMetaStoreSchema();
+    final rows = await customSelect(
+      "SELECT value FROM meta_store "
+      "WHERE key = 'daily_salah_tracking_enabled' LIMIT 1",
+    ).get();
+    return rows.isNotEmpty && rows.first.read<String>('value') == '1';
+  }
+
+  Future<void> setDailySalahTrackingEnabled(bool enabled) async {
+    await transactionWithRevision<bool>(
+      () => setDailySalahTrackingEnabledInTransaction(enabled),
+      mutationPredicate: (changed) => changed,
+    );
+  }
+
+  /// Persists the feature toggle within an existing database transaction.
+  /// Used by backup restore as well as the normal settings control.
+  Future<bool> setDailySalahTrackingEnabledInTransaction(bool enabled) async {
+    final current = await isDailySalahTrackingEnabled();
+    if (current == enabled) return false;
+    await customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('daily_salah_tracking_enabled', ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [Variable(enabled ? '1' : '0')],
+    );
+    return true;
   }
 
   Future<void> _ensureCloudSetupChoiceSchema() async {

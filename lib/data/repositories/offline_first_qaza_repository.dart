@@ -6,6 +6,7 @@ import '../../domain/entities/qaza_progress.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/qaza_completion_result.dart';
 import '../../domain/repositories/qaza_repository.dart';
+import '../../domain/repositories/pending_qaza_deletion_repository.dart';
 import '../../domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import '../../domain/repositories/qaza_bulk_delete_repository.dart';
 import '../../domain/repositories/qaza_bulk_write_repository.dart';
@@ -25,7 +26,8 @@ class OfflineFirstQazaRepository
         QazaBulkWriteRepository,
         QazaBulkDeleteRepository,
         QazaUndoRepository,
-        QazaActivityRepository {
+        QazaActivityRepository,
+        PendingQazaRecordDeletionRepository {
   OfflineFirstQazaRepository({
     required QazaLocalStore localStore,
     DiagnosticsService diagnostics = const NoopDiagnostics(),
@@ -291,6 +293,21 @@ class OfflineFirstQazaRepository
   }) async {
     _validateActive(userId);
     await _localStore.deleteRecord(
+      userId: userId,
+      recordId: recordId,
+    );
+  }
+
+  @override
+  Future<bool> deletePendingRecord({
+    required String userId,
+    required String recordId,
+  }) async {
+    _validateActive(userId);
+    final store = _localStore;
+    if (store is! PendingQazaRecordDeletionStore) return false;
+    final pendingStore = store as PendingQazaRecordDeletionStore;
+    return pendingStore.deletePendingRecord(
       userId: userId,
       recordId: recordId,
     );

@@ -6,9 +6,10 @@ import '../../../l10n/app_localizations.dart';
 import '../../qaza/qaza_navigation.dart';
 
 class HomeEmptyState extends StatelessWidget {
-  const HomeEmptyState({super.key, this.onAddQaza});
+  const HomeEmptyState({super.key, this.onAddQaza, this.leadingContent});
 
   final VoidCallback? onAddQaza;
+  final Widget? leadingContent;
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +20,8 @@ class HomeEmptyState extends StatelessWidget {
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 12, 16, AppSpacing.fabClearance),
       children: [
+        if (leadingContent != null) leadingContent!,
+        if (leadingContent != null) const SizedBox(height: 12),
         const SizedBox(height: 6),
         Center(
           child: ConstrainedBox(

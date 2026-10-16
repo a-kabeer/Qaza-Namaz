@@ -4619,6 +4619,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Downloading your backup…'**
   String get initialCloudBackupStageDownloading;
+
+  /// No description provided for @dailySalahTrackingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Salah Tracking'**
+  String get dailySalahTrackingTitle;
+
+  /// No description provided for @dailySalahTrackingEnableTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Daily Salah Tracking'**
+  String get dailySalahTrackingEnableTitle;
+
+  /// No description provided for @dailySalahTrackingEnableSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record prayers you prayed or missed. Unrecorded prayers are never marked missed automatically.'**
+  String get dailySalahTrackingEnableSubtitle;
+
+  /// No description provided for @dailySalahTrackingEnableAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable'**
+  String get dailySalahTrackingEnableAction;
+
+  /// No description provided for @dailySalahTrackingPrayed.
+  ///
+  /// In en, this message translates to:
+  /// **'Prayed'**
+  String get dailySalahTrackingPrayed;
+
+  /// No description provided for @dailySalahTrackingMissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Missed'**
+  String get dailySalahTrackingMissed;
+
+  /// No description provided for @dailySalahTrackingUnrecorded.
+  ///
+  /// In en, this message translates to:
+  /// **'Unrecorded'**
+  String get dailySalahTrackingUnrecorded;
+
+  /// No description provided for @dailySalahTrackingConfirmMissedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Record prayer as missed?'**
+  String get dailySalahTrackingConfirmMissedTitle;
+
+  /// No description provided for @dailySalahTrackingConfirmMissedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This creates a Qaza entry for this prayer and date only if one does not already exist.'**
+  String get dailySalahTrackingConfirmMissedMessage;
+
+  /// No description provided for @dailySalahTrackingUndoQaza.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo tracker-created Qaza'**
+  String get dailySalahTrackingUndoQaza;
+
+  /// No description provided for @dailySalahTrackingUndoTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove this Qaza entry?'**
+  String get dailySalahTrackingUndoTitle;
+
+  /// No description provided for @dailySalahTrackingUndoMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the exact Qaza entry created by Daily Salah Tracking will be removed, and only if it is still pending.'**
+  String get dailySalahTrackingUndoMessage;
+
+  /// No description provided for @dailySalahTrackingPreviousDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Previous day'**
+  String get dailySalahTrackingPreviousDay;
+
+  /// No description provided for @dailySalahTrackingNextDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Next day'**
+  String get dailySalahTrackingNextDay;
+
+  /// No description provided for @dailySalahTrackingUndoUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This Qaza entry is no longer pending, so it was not removed.'**
+  String get dailySalahTrackingUndoUnavailable;
 }
 
 class _AppLocalizationsDelegate

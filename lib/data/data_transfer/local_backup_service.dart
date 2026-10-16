@@ -59,6 +59,19 @@ class LocalBackupService {
         },
         'data': {
           'qaza_records': records,
+          'daily_salah_logs': await _selectMaps(
+            'SELECT user_id, prayer_date, prayer_type, status, '
+            'tracker_created_qaza_id, updated_at FROM daily_salah_logs '
+            'ORDER BY user_id, prayer_date, prayer_type',
+            [
+              'user_id',
+              'prayer_date',
+              'prayer_type',
+              'status',
+              'tracker_created_qaza_id',
+              'updated_at',
+            ],
+          ),
           'qaza_additions': await _selectMaps(
             'SELECT id, user_id, mode, input_snapshot, revision, created_at, updated_at '
             'FROM qaza_additions ORDER BY id',
@@ -148,6 +161,8 @@ class LocalBackupService {
           ),
           'meta_store': {
             'is_onboarding_completed': await database.isOnboardingCompleted(),
+            'daily_salah_tracking_enabled':
+                await database.isDailySalahTrackingEnabled(),
           },
         },
       };
@@ -193,6 +208,21 @@ class LocalBackupService {
         final record = QazaRecord.fromJson(map);
         await database.qazaRecordsDao.insertRecord(_recordCompanion(record));
       }
+
+      // Older backups omit the table; new backups preserve daily tracking
+      // history independently from the canonical Qaza ledger.
+      await _insertMaps(
+        'daily_salah_logs',
+        [
+          'user_id',
+          'prayer_date',
+          'prayer_type',
+          'status',
+          'tracker_created_qaza_id',
+          'updated_at',
+        ],
+        (data['daily_salah_logs'] as List<dynamic>?) ?? const <dynamic>[],
+      );
 
       await _insertMaps(
         'qaza_additions',
@@ -280,6 +310,9 @@ class LocalBackupService {
       await database.setOnboardingCompletedInTransaction(
         meta['is_onboarding_completed'] == true,
       );
+      await database.setDailySalahTrackingEnabledInTransaction(
+        meta['daily_salah_tracking_enabled'] == true,
+      );
       await database.setDbRevisionInTransaction(newRevision);
     });
 
@@ -344,7 +377,10 @@ class LocalBackupService {
         'Backup database schema version is invalid.',
       );
     }
-    if (databaseSchema != database.schemaVersion) {
+    // Schema 19 backups predate the optional daily Salah table. They remain
+    // importable because the Qaza ledger shape is unchanged and missing logs
+    // safely default to an empty history with tracking disabled.
+    if (databaseSchema != database.schemaVersion && databaseSchema != 19) {
       throw LocalBackupException(
         'Backup database schema $databaseSchema is not supported by this release '
         '(current schema: ${database.schemaVersion}).',
@@ -918,6 +954,9 @@ class LocalBackupService {
       'deletion_action_id' ||
       'record_id' ||
       'prayer_type' ||
+      'prayer_date' ||
+      'status' ||
+      'tracker_created_qaza_id' ||
       'original_date' ||
       'completed_at' ||
       'completion_id' ||
@@ -965,6 +1004,7 @@ class LocalBackupService {
   }
 
   Future<void> _clearBusinessState() async {
+    await database.customStatement('DELETE FROM daily_salah_logs');
     await database.customStatement(
       'DELETE FROM qaza_deletion_action_record_snapshots',
     );

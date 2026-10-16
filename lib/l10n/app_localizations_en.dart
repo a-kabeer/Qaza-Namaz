@@ -2665,4 +2665,53 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get initialCloudBackupStageDownloading => 'Downloading your backup…';
+
+  @override
+  String get dailySalahTrackingTitle => 'Daily Salah Tracking';
+
+  @override
+  String get dailySalahTrackingEnableTitle => 'Enable Daily Salah Tracking';
+
+  @override
+  String get dailySalahTrackingEnableSubtitle =>
+      'Record prayers you prayed or missed. Unrecorded prayers are never marked missed automatically.';
+
+  @override
+  String get dailySalahTrackingEnableAction => 'Enable';
+
+  @override
+  String get dailySalahTrackingPrayed => 'Prayed';
+
+  @override
+  String get dailySalahTrackingMissed => 'Missed';
+
+  @override
+  String get dailySalahTrackingUnrecorded => 'Unrecorded';
+
+  @override
+  String get dailySalahTrackingConfirmMissedTitle => 'Record prayer as missed?';
+
+  @override
+  String get dailySalahTrackingConfirmMissedMessage =>
+      'This creates a Qaza entry for this prayer and date only if one does not already exist.';
+
+  @override
+  String get dailySalahTrackingUndoQaza => 'Undo tracker-created Qaza';
+
+  @override
+  String get dailySalahTrackingUndoTitle => 'Remove this Qaza entry?';
+
+  @override
+  String get dailySalahTrackingUndoMessage =>
+      'Only the exact Qaza entry created by Daily Salah Tracking will be removed, and only if it is still pending.';
+
+  @override
+  String get dailySalahTrackingPreviousDay => 'Previous day';
+
+  @override
+  String get dailySalahTrackingNextDay => 'Next day';
+
+  @override
+  String get dailySalahTrackingUndoUnavailable =>
+      'This Qaza entry is no longer pending, so it was not removed.';
 }

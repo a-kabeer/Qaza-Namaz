@@ -1069,5 +1069,20 @@
   "initialCloudBackupStageCompleted": "Backup kamyabi se save ho gaya",
   "initialCloudBackupRetry": "Backup dobara try karein",
   "initialCloudBackupContinueHome": "Home par jayein",
-  "initialCloudBackupStageDownloading": "Backup download ho raha hai…"
+  "initialCloudBackupStageDownloading": "Backup download ho raha hai…",
+  "dailySalahTrackingTitle": "Rozana Namaz ka Record",
+  "dailySalahTrackingEnableTitle": "Rozana Namaz Tracking On Karein",
+  "dailySalahTrackingEnableSubtitle": "Parhi hui ya reh jane wali namazen record karein. Jo namaz record na ho, use khud-ba-khud missed mark nahi kiya jata.",
+  "dailySalahTrackingEnableAction": "On Karein",
+  "dailySalahTrackingPrayed": "Parhi",
+  "dailySalahTrackingMissed": "Reh gayi",
+  "dailySalahTrackingUnrecorded": "Record nahi",
+  "dailySalahTrackingConfirmMissedTitle": "Namaz ko missed record karein?",
+  "dailySalahTrackingConfirmMissedMessage": "Is namaz aur tareekh ka Qaza record sirf tab banega jab pehle se mojood na ho.",
+  "dailySalahTrackingUndoQaza": "Tracker ka banaya Qaza wapas karein",
+  "dailySalahTrackingUndoTitle": "Yeh Qaza record hatayein?",
+  "dailySalahTrackingUndoMessage": "Sirf Daily Salah Tracking ka banaya hua yahi Qaza record hataya jayega, aur sirf jab woh pending ho.",
+  "dailySalahTrackingPreviousDay": "Pichla din",
+  "dailySalahTrackingNextDay": "Agla din",
+  "dailySalahTrackingUndoUnavailable": "Yeh Qaza record ab pending nahi, is liye hataya nahi gaya."
 }

@@ -9,6 +9,8 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
 import '../../features/settings/profile_screen.dart';
+import '../daily_salah/daily_salah_home_card.dart';
+import '../daily_salah/daily_salah_tracking_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
 import '../qaza/qaza_navigation.dart';
@@ -238,6 +240,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     if (summary.overall.total == 0) {
       return HomeEmptyState(
         onAddQaza: () => openAddQaza(context),
+        leadingContent: DailySalahHomeCard(
+          date: ref.watch(homeLocalDateProvider),
+          onOpen: () => _open(
+            context,
+            ref,
+            const DailySalahTrackingScreen(),
+          ),
+        ),
       );
     }
 
@@ -259,6 +269,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                DailySalahHomeCard(
+                  date: ref.watch(homeLocalDateProvider),
+                  onOpen: () => _open(
+                    context,
+                    ref,
+                    const DailySalahTrackingScreen(),
+                  ),
+                ),
+                const SizedBox(height: 16),
                 HomeOverallProgress(
                   progress: summary.overall,
                   onDetails: () => _open(
