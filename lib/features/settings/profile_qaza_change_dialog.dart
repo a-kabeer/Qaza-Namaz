@@ -395,11 +395,11 @@ class _PlanSummary extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             _formatHijriPlanRange(
-                l10n,
-                start!,
-                end,
-                offsetDays: hijriOffsetDays,
-              ),
+              l10n,
+              start!,
+              end,
+              offsetDays: hijriOffsetDays,
+            ),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurfaceVariant,
             ),
