@@ -251,6 +251,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hijriAdjustmentLaterTwo => '2 days later';
+
   @override
   String hijriMonthYear(Object month, Object year) {
     return '$month $year AH';
