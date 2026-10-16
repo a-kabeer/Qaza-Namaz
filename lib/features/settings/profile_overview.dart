@@ -69,24 +69,57 @@ class ProfileOverview extends StatelessWidget {
                     ? null
                     : l10n.formatHijriDate(dateOfBirth),
               ),
+              if (profile.isNewMuslim) ...[
+                const _DetailDivider(),
+                _ProfileDetailRow(
+                  key: const Key('profile_overview_islam_acceptance_date'),
+                  icon: Icons.event_available_outlined,
+                  label: l10n.profileIslamAcceptanceDate,
+                  value: profile.islamAcceptanceDate == null
+                      ? '—'
+                      : DateFormatters.formatGregorianFull(
+                          profile.islamAcceptanceDate!,
+                        ),
+                  secondaryValue: profile.islamAcceptanceDate == null
+                      ? null
+                      : l10n.formatHijriDate(profile.islamAcceptanceDate!),
+                ),
+              ],
+              if (!profile.isNewMuslim || profile.pubertyAge != null) ...[
+                const _DetailDivider(),
+                _ProfileDetailRow(
+                  key: const Key('profile_overview_puberty_age'),
+                  icon: Icons.timelapse_outlined,
+                  label: l10n.profilePubertyAge,
+                  value: profile.pubertyAge == null
+                      ? '—'
+                      : l10n.profileAgeYears(profile.pubertyAge!),
+                ),
+              ],
               const _DetailDivider(),
-              _ProfileDetailRow(
-                key: const Key('profile_overview_puberty_age'),
-                icon: Icons.timelapse_outlined,
-                label: l10n.profilePubertyAge,
-                value: profile.pubertyAge == null
-                    ? '—'
-                    : l10n.profileAgeYears(profile.pubertyAge!),
-              ),
-              const _DetailDivider(),
-              _ProfileDetailRow(
-                key: const Key('profile_overview_start_age'),
-                icon: Icons.schedule_outlined,
-                label: l10n.profileStartPrayingAge,
-                value: profile.startPrayingAge == null
-                    ? '—'
-                    : l10n.profileAgeYears(profile.startPrayingAge!),
-              ),
+              if (profile.isNewMuslim)
+                _ProfileDetailRow(
+                  key: const Key('profile_overview_start_date'),
+                  icon: Icons.schedule_outlined,
+                  label: l10n.profileStartPrayingDate,
+                  value: profile.startPrayingDate == null
+                      ? '—'
+                      : DateFormatters.formatGregorianFull(
+                          profile.startPrayingDate!,
+                        ),
+                  secondaryValue: profile.startPrayingDate == null
+                      ? null
+                      : l10n.formatHijriDate(profile.startPrayingDate!),
+                )
+              else
+                _ProfileDetailRow(
+                  key: const Key('profile_overview_start_age'),
+                  icon: Icons.schedule_outlined,
+                  label: l10n.profileStartPrayingAge,
+                  value: profile.startPrayingAge == null
+                      ? '—'
+                      : l10n.profileAgeYears(profile.startPrayingAge!),
+                ),
               const _DetailDivider(),
               _ProfileDetailRow(
                 key: const Key('profile_overview_witr'),

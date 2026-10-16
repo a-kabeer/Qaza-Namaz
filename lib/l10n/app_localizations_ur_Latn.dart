@@ -1744,6 +1744,24 @@ class AppLocalizationsUrLatn extends AppLocalizations {
       'Gregorian tareekh muntakhab karne ke baad Hijri tareekh bhi dikhayi jaye gi';
 
   @override
+  @override
+  String get profileIslamicBackground => "Islami pas-e-manzar";
+
+  @override
+  String get profileMuslimFromChildhood => "Main bachpan se Islam par hoon";
+
+  @override
+  String get profileAcceptedIslamLater => "Main ne baad mein Islam qabool kiya";
+
+  @override
+  String get profileIslamAcceptanceDate => "Islam qabool karne ki tareekh";
+
+  @override
+  String get profileStartPrayingDate => "Namaz shuru karne ki tareekh";
+
+  @override
+  String get profileNewMuslimQazaHelp => "Qaza sirf Islam qabool karne aur Namaz farz hone ke baad shumar hogi. Islam qabool karne se pehle chhuti Namazein shamil nahi hongi.";
+
   String get profilePubertyAge => 'balughat ki umar';
 
   @override
@@ -1918,12 +1936,15 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get profileErrorDob => 'barah karam durust tareekh paidaish darj krin';
 
   @override
+  @override
+  String get profileErrorIslamAcceptanceDate => "Barah-e-karam Islam qabool karne ki durust tareekh dein jo tareekh paidaish se pehle na ho.";
+
+  @override
   String get profileErrorPuberty =>
       'muntakhab jins ke liye durust balughat ki umar muntakhab krin';
 
   @override
-  String get profileErrorStartPraying =>
-      'barah karam Namaz shuru karne ki durust umar muntakhab krin';
+  String get profileErrorStartPraying => "Barah-e-karam Namaz shuru karne ki durust umar ya tareekh muntakhab karein.";
 
   @override
   String get profileErrorWitr =>

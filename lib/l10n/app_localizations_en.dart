@@ -1736,6 +1736,24 @@ class AppLocalizationsEn extends AppLocalizations {
       'Hijri date is shown after you select the Gregorian date.';
 
   @override
+  @override
+  String get profileIslamicBackground => "Islamic background";
+
+  @override
+  String get profileMuslimFromChildhood => "I was Muslim from childhood";
+
+  @override
+  String get profileAcceptedIslamLater => "I accepted Islam later in life";
+
+  @override
+  String get profileIslamAcceptanceDate => "Date I accepted Islam";
+
+  @override
+  String get profileStartPrayingDate => "Date I started praying";
+
+  @override
+  String get profileNewMuslimQazaHelp => "Qaza is counted only after accepting Islam and once Salah became obligatory. Prayers missed before accepting Islam are excluded.";
+
   String get profilePubertyAge => 'Puberty Age';
 
   @override
@@ -1905,12 +1923,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileErrorDob => 'Please enter a valid date of birth.';
 
   @override
+  @override
+  String get profileErrorIslamAcceptanceDate => "Please enter a valid Islam acceptance date on or after your date of birth.";
+
+  @override
   String get profileErrorPuberty =>
       'Please select a valid puberty age for the selected gender.';
 
   @override
-  String get profileErrorStartPraying =>
-      'Please select a valid praying start age.';
+  String get profileErrorStartPraying => "Please select a valid prayer-start age or date.";
 
   @override
   String get profileErrorWitr => 'Please select a valid Witr setting.';

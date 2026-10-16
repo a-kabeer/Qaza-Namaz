@@ -34,26 +34,50 @@ class QazaPlanService {
   const QazaPlanService();
 
   QazaPlan? planFor(UserProfile profile) {
-    final start = ProfileRules.pubertyDate(profile);
+    final start = ProfileRules.qazaEligibilityStartDate(profile);
     final startPrayingDate = ProfileRules.startPrayingDate(profile);
-    final pubertyAge = profile.pubertyAge;
-    final startPrayingAge = profile.startPrayingAge;
-    if (start == null ||
-        startPrayingDate == null ||
-        pubertyAge == null ||
-        startPrayingAge == null ||
-        startPrayingAge < pubertyAge) {
-      return null;
-    }
+    if (start == null || startPrayingDate == null) return null;
 
-    final totalDays = FixedHijriArithmeticService.durationForAges(
-      pubertyAge: pubertyAge,
-      startPrayingAge: startPrayingAge,
-    );
-    final end = LocalDateService.addCalendarDays(start, totalDays);
-    if (end != startPrayingDate ||
-        LocalDateService.compareCalendarDates(end, start) < 0) {
-      return null;
+    late final int totalDays;
+    late final DateTime end;
+    if (profile.isNewMuslim) {
+      final dob = profile.dateOfBirth;
+      final acceptedDate = profile.islamAcceptanceDate;
+      final today = LocalDateService.today();
+      if (dob == null ||
+          acceptedDate == null ||
+          LocalDateService.compareCalendarDates(acceptedDate, dob) < 0 ||
+          LocalDateService.compareCalendarDates(acceptedDate, today) > 0 ||
+          LocalDateService.compareCalendarDates(startPrayingDate, acceptedDate) <
+              0 ||
+          LocalDateService.compareCalendarDates(startPrayingDate, today) > 0) {
+        return null;
+      }
+
+      // Qaza is counted only after both Islam acceptance and Salah becoming
+      // obligatory. A prayer-start date before that boundary yields zero days.
+      final gap =
+          LocalDateService.calendarDayDifference(start, startPrayingDate);
+      totalDays = gap < 0 ? 0 : gap;
+      end = LocalDateService.addCalendarDays(start, totalDays);
+    } else {
+      final pubertyAge = profile.pubertyAge;
+      final startPrayingAge = profile.startPrayingAge;
+      if (pubertyAge == null ||
+          startPrayingAge == null ||
+          startPrayingAge < pubertyAge) {
+        return null;
+      }
+
+      totalDays = FixedHijriArithmeticService.durationForAges(
+        pubertyAge: pubertyAge,
+        startPrayingAge: startPrayingAge,
+      );
+      end = LocalDateService.addCalendarDays(start, totalDays);
+      if (end != startPrayingDate ||
+          LocalDateService.compareCalendarDates(end, start) < 0) {
+        return null;
+      }
     }
 
     final includeWitr = ProfileRules.effectiveWitr(profile);

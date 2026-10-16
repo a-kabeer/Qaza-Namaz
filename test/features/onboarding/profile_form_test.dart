@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/time/local_date_service.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
+import 'package:qaza_namaz/domain/services/profile_rules.dart';
 import 'package:qaza_namaz/features/onboarding/profile_form.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
@@ -400,4 +401,101 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'new Muslim at the maximum puberty-age cutoff uses date-based prayer start',
+    (tester) async {
+      final dob = DateTime(2000, 1, 1);
+      final cutoff = ProfileRules.fixedMilestoneDate(
+        dob,
+        ProfileRules.maleMaxPubertyAge,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: UserProfile(
+                languageCode: 'en',
+                gender: Gender.male,
+                madhab: Madhab.hanafi,
+                dateOfBirth: dob,
+                pubertyAge: 12,
+                isNewMuslim: true,
+                islamAcceptanceDate: cutoff,
+                startPrayingDate: cutoff.add(const Duration(days: 10)),
+                witrIncluded: true,
+              ),
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('profile_puberty_age')), findsNothing);
+      expect(find.byKey(const Key('profile_start_praying_age')), findsNothing);
+
+      final startDate = find.byKey(const Key('profile_start_praying_date'));
+      await tester.scrollUntilVisible(
+        startDate,
+        300,
+        scrollable: find.byType(Scrollable),
+      );
+      expect(startDate, findsOneWidget);
+      expect(
+        find.byKey(const Key('profile_islam_acceptance_date')),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
+
+  testWidgets(
+    'new Muslim before the maximum puberty-age cutoff sees puberty input',
+    (tester) async {
+      final dob = DateTime(2000, 1, 1);
+      final cutoff = ProfileRules.fixedMilestoneDate(
+        dob,
+        ProfileRules.femaleMaxPubertyAge,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: UserProfile(
+                languageCode: 'en',
+                gender: Gender.female,
+                madhab: Madhab.hanafi,
+                dateOfBirth: dob,
+                pubertyAge: 12,
+                isNewMuslim: true,
+                islamAcceptanceDate:
+                    cutoff.subtract(const Duration(days: 1)),
+                startPrayingDate: cutoff.add(const Duration(days: 10)),
+                witrIncluded: true,
+              ),
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final puberty = find.byKey(const Key('profile_puberty_age'));
+      await tester.scrollUntilVisible(
+        puberty,
+        300,
+        scrollable: find.byType(Scrollable),
+      );
+      expect(puberty, findsOneWidget);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
 }

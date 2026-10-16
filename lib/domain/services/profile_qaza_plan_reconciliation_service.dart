@@ -380,8 +380,11 @@ class ProfileQazaPlanReconciliationService {
       'gender',
       'madhab',
       'dateOfBirth',
+      'isNewMuslim',
+      'islamAcceptanceDate',
       'pubertyAge',
       'startPrayingAge',
+      'startPrayingDate',
       'effectiveWitr',
     ];
     return [
@@ -394,8 +397,11 @@ class ProfileQazaPlanReconciliationService {
         'gender': profile.gender?.name,
         'madhab': profile.madhab?.name,
         'dateOfBirth': profile.dateOfBirth?.toIso8601String(),
+        'isNewMuslim': profile.isNewMuslim,
+        'islamAcceptanceDate': profile.islamAcceptanceDate?.toIso8601String(),
         'pubertyAge': profile.pubertyAge,
         'startPrayingAge': profile.startPrayingAge,
+        'startPrayingDate': profile.startPrayingDate?.toIso8601String(),
         'effectiveWitr': ProfileRules.effectiveWitr(profile),
       };
 }

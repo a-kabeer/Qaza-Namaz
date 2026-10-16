@@ -3009,6 +3009,13 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Puberty Age'**
+  String get profileIslamicBackground;
+  String get profileMuslimFromChildhood;
+  String get profileAcceptedIslamLater;
+  String get profileIslamAcceptanceDate;
+  String get profileStartPrayingDate;
+  String get profileNewMuslimQazaHelp;
+
   String get profilePubertyAge;
 
   /// No description provided for @profileStartPrayingAge.
@@ -3315,6 +3322,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Please select a valid puberty age for the selected gender.'**
+  String get profileErrorIslamAcceptanceDate;
   String get profileErrorPuberty;
 
   /// No description provided for @profileErrorStartPraying.

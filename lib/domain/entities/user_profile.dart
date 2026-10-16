@@ -7,12 +7,15 @@ class UserProfile {
     this.dateOfBirth,
     this.pubertyAge,
     this.startPrayingAge,
+    this.startPrayingDate,
+    this.isNewMuslim = false,
+    this.islamAcceptanceDate,
     this.witrIncluded,
     this.onboardingCompleted = false,
     this.schemaVersion = currentSchemaVersion,
   });
 
-  static const int currentSchemaVersion = 2;
+  static const int currentSchemaVersion = 3;
   static const String localLedgerUserId = 'guest';
   static const int defaultDailyQazaTarget = 5;
   static const int minDailyQazaTarget = 1;
@@ -44,6 +47,9 @@ class UserProfile {
   final DateTime? dateOfBirth;
   final int? pubertyAge;
   final int? startPrayingAge;
+  final DateTime? startPrayingDate;
+  final bool isNewMuslim;
+  final DateTime? islamAcceptanceDate;
   final bool? witrIncluded;
   final bool onboardingCompleted;
   final int schemaVersion;
@@ -53,8 +59,8 @@ class UserProfile {
       gender != null &&
       madhab != null &&
       dateOfBirth != null &&
-      pubertyAge != null &&
-      startPrayingAge != null &&
+      (pubertyAge != null || (isNewMuslim && islamAcceptanceDate != null)) &&
+      (isNewMuslim ? startPrayingDate != null : startPrayingAge != null) &&
       witrIncluded != null;
 
   UserProfile copyWith({
@@ -70,6 +76,11 @@ class UserProfile {
     bool clearPubertyAge = false,
     int? startPrayingAge,
     bool clearStartPrayingAge = false,
+    DateTime? startPrayingDate,
+    bool clearStartPrayingDate = false,
+    bool? isNewMuslim,
+    DateTime? islamAcceptanceDate,
+    bool clearIslamAcceptanceDate = false,
     bool? witrIncluded,
     bool clearWitrIncluded = false,
     bool? onboardingCompleted,
@@ -87,6 +98,13 @@ class UserProfile {
         startPrayingAge: clearStartPrayingAge
             ? null
             : startPrayingAge ?? this.startPrayingAge,
+        startPrayingDate: clearStartPrayingDate
+            ? null
+            : startPrayingDate ?? this.startPrayingDate,
+        isNewMuslim: isNewMuslim ?? this.isNewMuslim,
+        islamAcceptanceDate: clearIslamAcceptanceDate
+            ? null
+            : islamAcceptanceDate ?? this.islamAcceptanceDate,
         witrIncluded:
             clearWitrIncluded ? null : witrIncluded ?? this.witrIncluded,
         onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
@@ -105,6 +123,9 @@ class UserProfile {
         'dateOfBirth': dateOfBirth?.toIso8601String(),
         'pubertyAge': pubertyAge,
         'startPrayingAge': startPrayingAge,
+        'startPrayingDate': startPrayingDate?.toIso8601String(),
+        'isNewMuslim': isNewMuslim,
+        'islamAcceptanceDate': islamAcceptanceDate?.toIso8601String(),
         'witrIncluded': witrIncluded,
         'onboardingCompleted': onboardingCompleted,
       };
@@ -129,6 +150,9 @@ class UserProfile {
       dateOfBirth: parseDate(json['dateOfBirth']),
       pubertyAge: (json['pubertyAge'] as num?)?.toInt(),
       startPrayingAge: (json['startPrayingAge'] as num?)?.toInt(),
+      startPrayingDate: parseDate(json['startPrayingDate']),
+      isNewMuslim: json['isNewMuslim'] as bool? ?? false,
+      islamAcceptanceDate: parseDate(json['islamAcceptanceDate']),
       witrIncluded: json['witrIncluded'] as bool?,
       onboardingCompleted: json['onboardingCompleted'] as bool? ?? false,
       schemaVersion:

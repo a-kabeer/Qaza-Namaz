@@ -38,8 +38,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         original.gender != draft.gender ||
         original.madhab != draft.madhab ||
         !_sameDate(original.dateOfBirth, draft.dateOfBirth) ||
+        original.isNewMuslim != draft.isNewMuslim ||
+        !_sameDate(original.islamAcceptanceDate, draft.islamAcceptanceDate) ||
         original.pubertyAge != draft.pubertyAge ||
         original.startPrayingAge != draft.startPrayingAge ||
+        !_sameDate(original.startPrayingDate, draft.startPrayingDate) ||
         ProfileRules.effectiveWitr(original) !=
             ProfileRules.effectiveWitr(draft);
   }
