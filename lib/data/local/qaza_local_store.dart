@@ -101,6 +101,14 @@ class LocalQazaPage {
       records.isEmpty ? null : records.last.prayerType;
 }
 
+/// Optional atomic capability for deleting only pending Qaza entries.
+abstract interface class PendingQazaRecordDeletionStore {
+  Future<bool> deletePendingRecord({
+    required String userId,
+    required String recordId,
+  });
+}
+
 abstract class QazaLocalStore {
   Future<OfflineCacheSnapshot> load();
   Future<void> saveRecords(String userId, List<QazaRecord> records);
