@@ -2587,57 +2587,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذر إكمال الاتصال بـ Google. حاول مرة أخرى أو تابع محليًا.';
 
   @override
-  String get dailySalahTrackingTitle => 'متابعة الصلوات اليومية';
-
-  @override
-  String get dailySalahTrackingEnableTitle => 'تفعيل متابعة الصلوات اليومية';
-
-  @override
-  String get dailySalahTrackingEnableSubtitle =>
-      'سجّل الصلوات التي أديتها أو فاتتك. لن تُسجّل أي صلاة غير مسجّلة كفائتة تلقائيًا.';
-
-  @override
-  String get dailySalahTrackingEnableAction => 'تفعيل';
-
-  @override
-  String get dailySalahTrackingPrayed => 'أديت';
-
-  @override
-  String get dailySalahTrackingMissed => 'فاتتني';
-
-  @override
-  String get dailySalahTrackingUnrecorded => 'غير مسجلة';
-
-  @override
-  String get dailySalahTrackingConfirmMissedTitle => 'تسجيل الصلاة كفائتة؟';
-
-  @override
-  String get dailySalahTrackingConfirmMissedMessage =>
-      'سيُضاف سجل قضاء لهذه الصلاة والتاريخ فقط إذا لم يكن موجودًا بالفعل.';
-
-  @override
-  String get dailySalahTrackingUndoQaza =>
-      'التراجع عن سجل القضاء الذي أنشأه المتتبع';
-
-  @override
-  String get dailySalahTrackingUndoTitle => 'إزالة سجل القضاء هذا؟';
-
-  @override
-  String get dailySalahTrackingUndoMessage =>
-      'ستتم إزالة سجل القضاء الذي أنشأته متابعة الصلوات اليومية فقط، وفقط إذا كان لا يزال غير مكتمل.';
-
-  @override
-  String get dailySalahTrackingPreviousDay => 'اليوم السابق';
-
-  @override
-  String get dailySalahTrackingNextDay => 'اليوم التالي';
-
-  @override
-  String get dailySalahTrackingUndoUnavailable =>
-      'لم تعد هذه الصلاة قيد الانتظار، لذلك لم تتم إزالتها.';
-
-
-  @override
   String get cloudRestoreProgressTitle =>
       'جارٍ استعادة النسخة الاحتياطية من Google Drive';
 
@@ -2707,4 +2656,54 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get initialCloudBackupStageDownloading =>
       'جارٍ تنزيل النسخة الاحتياطية…';
+
+  @override
+  String get dailySalahTrackingTitle => 'متابعة الصلوات اليومية';
+
+  @override
+  String get dailySalahTrackingEnableTitle => 'تفعيل متابعة الصلوات اليومية';
+
+  @override
+  String get dailySalahTrackingEnableSubtitle =>
+      'سجّل الصلوات التي أديتها أو فاتتك. لن تُسجّل أي صلاة غير مسجّلة كفائتة تلقائيًا.';
+
+  @override
+  String get dailySalahTrackingEnableAction => 'تفعيل';
+
+  @override
+  String get dailySalahTrackingPrayed => 'أديت';
+
+  @override
+  String get dailySalahTrackingMissed => 'فاتتني';
+
+  @override
+  String get dailySalahTrackingUnrecorded => 'غير مسجلة';
+
+  @override
+  String get dailySalahTrackingConfirmMissedTitle => 'تسجيل الصلاة كفائتة؟';
+
+  @override
+  String get dailySalahTrackingConfirmMissedMessage =>
+      'سيُضاف سجل قضاء لهذه الصلاة والتاريخ فقط إذا لم يكن موجودًا بالفعل.';
+
+  @override
+  String get dailySalahTrackingUndoQaza =>
+      'التراجع عن سجل القضاء الذي أنشأه المتتبع';
+
+  @override
+  String get dailySalahTrackingUndoTitle => 'إزالة سجل القضاء هذا؟';
+
+  @override
+  String get dailySalahTrackingUndoMessage =>
+      'ستتم إزالة سجل القضاء الذي أنشأته متابعة الصلوات اليومية فقط، وفقط إذا كان لا يزال غير مكتمل.';
+
+  @override
+  String get dailySalahTrackingPreviousDay => 'اليوم السابق';
+
+  @override
+  String get dailySalahTrackingNextDay => 'اليوم التالي';
+
+  @override
+  String get dailySalahTrackingUndoUnavailable =>
+      'لم تعد هذه الصلاة قيد الانتظار، لذلك لم تتم إزالتها.';
 }

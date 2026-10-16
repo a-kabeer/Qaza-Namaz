@@ -2673,7 +2673,6 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get dailySalahTrackingUndoUnavailable =>
       "Yeh Qaza record ab pending nahi, is liye hataya nahi gaya.";
 
-
   @override
   String get cloudRestoreProgressTitle =>
       'Google Drive backup restore ho raha hai';
