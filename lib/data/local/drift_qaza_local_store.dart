@@ -16,7 +16,7 @@ import 'qaza_local_store.dart';
 /// path. It is retained only by the one-time migration bootstrap so existing
 /// installations can be upgraded safely.
 class DriftQazaLocalStore extends QazaLocalStore
-    implements QazaBulkDeleteRepository {
+    implements QazaBulkDeleteRepository, PendingQazaRecordDeletionStore {
   DriftQazaLocalStore({required AppDatabase database}) : _database = database;
 
   final AppDatabase _database;
@@ -204,6 +204,21 @@ class DriftQazaLocalStore extends QazaLocalStore
       return true;
     });
   }
+
+  @override
+  Future<bool> deletePendingRecord({
+    required String userId,
+    required String recordId,
+  }) =>
+      _database.transactionWithRevision(() async {
+        final deleted = await _database.qazaRecordsDao.deletePendingById(
+          userId: userId,
+          id: recordId,
+        );
+        if (deleted == 0) return false;
+        await _deleteProfilePlanProvenance(userId, [recordId]);
+        return true;
+      });
 
   @override
   Future<bool> updateRecordAndOutbox({
