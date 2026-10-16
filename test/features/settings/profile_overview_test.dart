@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
+import 'package:qaza_namaz/features/daily_salah/daily_salah_tracking_providers.dart';
 import 'package:qaza_namaz/features/settings/profile_overview.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
-import 'package:qaza_namaz/features/daily_salah/daily_salah_tracking_providers.dart';
 
 void main() {
   const profile = UserProfile(
@@ -24,14 +24,14 @@ void main() {
         dailySalahTrackingEnabledProvider.overrideWith((ref) async => false),
       ],
       child: MaterialApp(
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      home: Scaffold(
-        body: ProfileOverview(
-          profile: profile,
-          onEdit: onEdit,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        home: Scaffold(
+          body: ProfileOverview(
+            profile: profile,
+            onEdit: onEdit,
+          ),
         ),
-      ),
       ),
     );
   }
