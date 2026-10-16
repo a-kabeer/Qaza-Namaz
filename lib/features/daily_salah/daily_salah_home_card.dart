@@ -129,9 +129,9 @@ class DailySalahHomeCard extends ConsumerWidget {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '$prayed ' + l10n.dailySalahTrackingPrayed + '  •  ' +
-                                  '$missed ' + l10n.dailySalahTrackingMissed + '  •  ' +
-                                  '$unrecorded ' + l10n.dailySalahTrackingUnrecorded,
+                              '$prayed \${l10n.dailySalahTrackingPrayed}  •  '
+                              '$missed \${l10n.dailySalahTrackingMissed}  •  '
+                              '$unrecorded \${l10n.dailySalahTrackingUnrecorded}',
                               style: theme.textTheme.bodySmall?.copyWith(
                                 color: theme.colorScheme.onSurfaceVariant,
                               ),
