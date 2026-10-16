@@ -118,7 +118,66 @@ void main() {
     expect(decoded['metadata']['export_timestamp'], isA<String>());
     expect(decoded['data']['qaza_records'], hasLength(1));
     expect(decoded['data']['local_accounts'], isA<List<dynamic>>());
+    expect(decoded['data']['daily_salah_logs'], isA<List<dynamic>>());
     expect(decoded['data']['meta_store']['is_onboarding_completed'], false);
+    expect(
+      decoded['data']['meta_store']['daily_salah_tracking_enabled'],
+      false,
+    );
+  });
+
+  test('backup preserves daily Salah logs and the tracking preference', () async {
+    await database.customInsert(
+      '''INSERT INTO daily_salah_logs
+         (user_id, prayer_date, prayer_type, status,
+          tracker_created_qaza_id, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)''',
+      variables: [
+        const Variable.withString('guest'),
+        const Variable.withString('2026-10-16'),
+        const Variable.withString('fajr'),
+        const Variable.withString('prayed'),
+        const Variable<String>(null),
+        Variable.withString(DateTime.utc(2026, 10, 16).toIso8601String()),
+      ],
+    );
+    await database.setDailySalahTrackingEnabled(true);
+    final backup = await service.exportJson();
+
+    await database.customStatement('DELETE FROM daily_salah_logs');
+    await database.setDailySalahTrackingEnabled(false);
+    expect(await database.isDailySalahTrackingEnabled(), isFalse);
+
+    await service.importJson(backup);
+
+    expect(await database.isDailySalahTrackingEnabled(), isTrue);
+    final logs = await database.customSelect(
+      'SELECT user_id, prayer_date, prayer_type, status '
+      'FROM daily_salah_logs',
+    ).get();
+    expect(logs, hasLength(1));
+    expect(logs.single.read<String>('prayer_date'), '2026-10-16');
+    expect(logs.single.read<String>('status'), 'prayed');
+  });
+
+  test('schema 19 backups without daily tracking fields remain importable',
+      () async {
+    final decoded =
+        jsonDecode(await service.exportJson()) as Map<String, dynamic>;
+    final metadata = decoded['metadata'] as Map<String, dynamic>;
+    final data = decoded['data'] as Map<String, dynamic>;
+    metadata['database_schema_version'] = 19;
+    data.remove('daily_salah_logs');
+    (data['meta_store'] as Map<String, dynamic>)
+        .remove('daily_salah_tracking_enabled');
+
+    await service.importJson(jsonEncode(decoded));
+
+    expect(await database.isDailySalahTrackingEnabled(), isFalse);
+    final logs = await database.customSelect(
+      'SELECT user_id FROM daily_salah_logs',
+    ).get();
+    expect(logs, isEmpty);
   });
 
   test('malformed import leaves existing local database untouched', () async {
