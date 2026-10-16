@@ -185,7 +185,8 @@ class DailySalahTrackingService {
     );
     if (alreadyById.isNotEmpty) {
       if (!_matches(alreadyById.first, userId, prayerType, normalizedDate)) {
-        throw StateError('A tracker Qaza ID is already used by another record.');
+        throw StateError(
+            'A tracker Qaza ID is already used by another record.');
       }
     } else {
       final now = DateTime.now();

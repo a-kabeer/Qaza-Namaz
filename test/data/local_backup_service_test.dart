@@ -126,7 +126,8 @@ void main() {
     );
   });
 
-  test('backup preserves daily Salah logs and the tracking preference', () async {
+  test('backup preserves daily Salah logs and the tracking preference',
+      () async {
     await database.customInsert(
       '''INSERT INTO daily_salah_logs
          (user_id, prayer_date, prayer_type, status,
@@ -150,10 +151,12 @@ void main() {
     await service.importJson(backup);
 
     expect(await database.isDailySalahTrackingEnabled(), isTrue);
-    final logs = await database.customSelect(
-      'SELECT user_id, prayer_date, prayer_type, status '
-      'FROM daily_salah_logs',
-    ).get();
+    final logs = await database
+        .customSelect(
+          'SELECT user_id, prayer_date, prayer_type, status '
+          'FROM daily_salah_logs',
+        )
+        .get();
     expect(logs, hasLength(1));
     expect(logs.single.read<String>('prayer_date'), '2026-10-16');
     expect(logs.single.read<String>('status'), 'prayed');
@@ -173,9 +176,11 @@ void main() {
     await service.importJson(jsonEncode(decoded));
 
     expect(await database.isDailySalahTrackingEnabled(), isFalse);
-    final logs = await database.customSelect(
-      'SELECT user_id FROM daily_salah_logs',
-    ).get();
+    final logs = await database
+        .customSelect(
+          'SELECT user_id FROM daily_salah_logs',
+        )
+        .get();
     expect(logs, isEmpty);
   });
 

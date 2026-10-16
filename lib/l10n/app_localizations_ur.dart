@@ -2599,6 +2599,56 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get cloudConnectionFailed =>
       'گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔';
+
+  @override
+  String get dailySalahTrackingTitle => 'روزانہ نماز کا ریکارڈ';
+
+  @override
+  String get dailySalahTrackingEnableTitle => 'روزانہ نماز کا ریکارڈ فعال کریں';
+
+  @override
+  String get dailySalahTrackingEnableSubtitle =>
+      'اپنی ادا کی گئی یا رہ جانے والی نمازیں درج کریں۔ غیر درج نماز کو خودکار طور پر قضا نہیں سمجھا جائے گا۔';
+
+  @override
+  String get dailySalahTrackingEnableAction => 'فعال کریں';
+
+  @override
+  String get dailySalahTrackingPrayed => 'ادا کی';
+
+  @override
+  String get dailySalahTrackingMissed => 'رہ گئی';
+
+  @override
+  String get dailySalahTrackingUnrecorded => 'درج نہیں';
+
+  @override
+  String get dailySalahTrackingConfirmMissedTitle =>
+      'نماز رہ جانے کے طور پر درج کریں؟';
+
+  @override
+  String get dailySalahTrackingConfirmMissedMessage =>
+      'اس نماز اور تاریخ کے لیے صرف اسی صورت میں قضا ریکارڈ بنے گا جب پہلے سے موجود نہ ہو۔';
+
+  @override
+  String get dailySalahTrackingUndoQaza => 'ٹریکنگ سے بنا قضا ریکارڈ واپس کریں';
+
+  @override
+  String get dailySalahTrackingUndoTitle => 'یہ قضا ریکارڈ حذف کریں؟';
+
+  @override
+  String get dailySalahTrackingUndoMessage =>
+      'صرف Daily Salah Tracking کا بنایا ہوا یہی قضا ریکارڈ حذف ہوگا، اور صرف اس وقت جب ابھی زیرِ التوا ہو۔';
+
+  @override
+  String get dailySalahTrackingPreviousDay => 'پچھلا دن';
+
+  @override
+  String get dailySalahTrackingNextDay => 'اگلا دن';
+
+  @override
+  String get dailySalahTrackingUndoUnavailable =>
+      'یہ قضا ریکارڈ اب زیرِ التوا نہیں، اس لیے اسے حذف نہیں کیا گیا۔';
 }
 
 /// The translations for Urdu, using the Latin script (`ur_Latn`).
@@ -5220,47 +5270,53 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       'Google se rabta mukammal nahi ho ska dobara koshish karein ya mqami tor par jari rkhin';
 
   @override
-  String get dailySalahTrackingTitle => "روزانہ نماز کا ریکارڈ";
+  String get dailySalahTrackingTitle => 'Rozana Namaz ka Record';
 
   @override
-  String get dailySalahTrackingEnableTitle => "روزانہ نماز کا ریکارڈ فعال کریں";
+  String get dailySalahTrackingEnableTitle => 'Rozana Namaz Tracking On Karein';
 
   @override
-  String get dailySalahTrackingEnableSubtitle => "اپنی ادا کی گئی یا رہ جانے والی نمازیں درج کریں۔ غیر درج نماز کو خودکار طور پر قضا نہیں سمجھا جائے گا۔";
+  String get dailySalahTrackingEnableSubtitle =>
+      'Parhi hui ya reh jane wali namazen record karein. Jo namaz record na ho, use khud-ba-khud missed mark nahi kiya jata.';
 
   @override
-  String get dailySalahTrackingEnableAction => "فعال کریں";
+  String get dailySalahTrackingEnableAction => 'On Karein';
 
   @override
-  String get dailySalahTrackingPrayed => "ادا کی";
+  String get dailySalahTrackingPrayed => 'Parhi';
 
   @override
-  String get dailySalahTrackingMissed => "رہ گئی";
+  String get dailySalahTrackingMissed => 'Reh gayi';
 
   @override
-  String get dailySalahTrackingUnrecorded => "درج نہیں";
+  String get dailySalahTrackingUnrecorded => 'Record nahi';
 
   @override
-  String get dailySalahTrackingConfirmMissedTitle => "نماز رہ جانے کے طور پر درج کریں؟";
+  String get dailySalahTrackingConfirmMissedTitle =>
+      'Namaz ko missed record karein?';
 
   @override
-  String get dailySalahTrackingConfirmMissedMessage => "اس نماز اور تاریخ کے لیے صرف اسی صورت میں قضا ریکارڈ بنے گا جب پہلے سے موجود نہ ہو۔";
+  String get dailySalahTrackingConfirmMissedMessage =>
+      'Is namaz aur tareekh ka Qaza record sirf tab banega jab pehle se mojood na ho.';
 
   @override
-  String get dailySalahTrackingUndoQaza => "ٹریکنگ سے بنا قضا ریکارڈ واپس کریں";
+  String get dailySalahTrackingUndoQaza =>
+      'Tracker ka banaya Qaza wapas karein';
 
   @override
-  String get dailySalahTrackingUndoTitle => "یہ قضا ریکارڈ حذف کریں؟";
+  String get dailySalahTrackingUndoTitle => 'Yeh Qaza record hatayein?';
 
   @override
-  String get dailySalahTrackingUndoMessage => "صرف Daily Salah Tracking کا بنایا ہوا یہی قضا ریکارڈ حذف ہوگا، اور صرف اس وقت جب ابھی زیرِ التوا ہو۔";
+  String get dailySalahTrackingUndoMessage =>
+      'Sirf Daily Salah Tracking ka banaya hua yahi Qaza record hataya jayega, aur sirf jab woh pending ho.';
 
   @override
-  String get dailySalahTrackingPreviousDay => "پچھلا دن";
+  String get dailySalahTrackingPreviousDay => 'Pichla din';
 
   @override
-  String get dailySalahTrackingNextDay => "اگلا دن";
+  String get dailySalahTrackingNextDay => 'Agla din';
 
   @override
-  String get dailySalahTrackingUndoUnavailable => "یہ قضا ریکارڈ اب زیرِ التوا نہیں، اس لیے اسے حذف نہیں کیا گیا۔";
+  String get dailySalahTrackingUndoUnavailable =>
+      'Yeh Qaza record ab pending nahi, is liye hataya nahi gaya.';
 }

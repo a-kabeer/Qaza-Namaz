@@ -33,9 +33,11 @@ void main() {
   });
 
   test('daily Salah schema is created with a unique date/prayer key', () async {
-    final columns = await database.customSelect(
-      'PRAGMA table_info(daily_salah_logs)',
-    ).get();
+    final columns = await database
+        .customSelect(
+          'PRAGMA table_info(daily_salah_logs)',
+        )
+        .get();
     expect(
       columns.map((row) => row.read<String>('name')).toSet(),
       containsAll(<String>[
@@ -47,10 +49,12 @@ void main() {
         'updated_at',
       ]),
     );
-    final indexes = await database.customSelect(
-      "SELECT name FROM sqlite_master WHERE type = 'index' "
-      "AND name = 'daily_salah_logs_user_date_idx'",
-    ).get();
+    final indexes = await database
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'index' "
+          "AND name = 'daily_salah_logs_user_date_idx'",
+        )
+        .get();
     expect(indexes, hasLength(1));
     expect(await tracking.isEnabled(), isFalse);
   });

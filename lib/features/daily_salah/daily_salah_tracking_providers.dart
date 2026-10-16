@@ -16,8 +16,9 @@ final dailySalahTrackingEnabledProvider = FutureProvider<bool>((ref) {
   return ref.watch(dailySalahTrackingServiceProvider).isEnabled();
 });
 
-final dailySalahTrackingLogsProvider = FutureProvider.family<
-    Map<PrayerType, DailySalahLog>, DateTime>((ref, date) async {
+final dailySalahTrackingLogsProvider =
+    FutureProvider.family<Map<PrayerType, DailySalahLog>, DateTime>(
+        (ref, date) async {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) return const <PrayerType, DailySalahLog>{};
   return ref.watch(dailySalahTrackingServiceProvider).logsForDate(
