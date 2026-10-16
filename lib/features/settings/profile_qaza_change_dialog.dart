@@ -2,9 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/calendar/hijri_date_service.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/utils/date_formatters.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_rules.dart';
@@ -26,6 +24,7 @@ Future<ProfileQazaChangeDialogResult?> showProfileQazaChangeDialog({
   required FutureOr<ProfileQazaPlanPreview> preview,
   UserProfile? previousProfile,
   UserProfile? newProfile,
+  int hijriOffsetDays = 0,
 }) {
   return showDialog<ProfileQazaChangeDialogResult>(
     context: context,
@@ -34,27 +33,30 @@ Future<ProfileQazaChangeDialogResult?> showProfileQazaChangeDialog({
       preview: preview,
       previousProfile: previousProfile,
       newProfile: newProfile,
+      hijriOffsetDays: hijriOffsetDays,
     ),
   );
 }
 
-class _ProfileQazaChangeDialog extends ConsumerStatefulWidget {
+class _ProfileQazaChangeDialog extends StatefulWidget {
   const _ProfileQazaChangeDialog({
     required this.preview,
     this.previousProfile,
     this.newProfile,
+    required this.hijriOffsetDays,
   });
 
   final FutureOr<ProfileQazaPlanPreview> preview;
   final UserProfile? previousProfile;
   final UserProfile? newProfile;
+  final int hijriOffsetDays;
 
   @override
   State<_ProfileQazaChangeDialog> createState() =>
       _ProfileQazaChangeDialogState();
 }
 
-class _ProfileQazaChangeDialogState extends ConsumerState<_ProfileQazaChangeDialog> {
+class _ProfileQazaChangeDialogState extends State<_ProfileQazaChangeDialog> {
   ProfileQazaPlanPreview? _resolvedPreview;
   Object? _error;
   bool _loading = true;
@@ -389,8 +391,7 @@ class _PlanSummary extends StatelessWidget {
                 l10n,
                 start!,
                 end,
-                offsetDays:
-                    ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+                offsetDays: widget.hijriOffsetDays,
               ),
             style: theme.textTheme.bodyMedium?.copyWith(
               color: colors.onSurfaceVariant,
