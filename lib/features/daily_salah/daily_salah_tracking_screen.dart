@@ -105,7 +105,7 @@ class _DailySalahTrackingScreenState
     final theme = Theme.of(context);
 
     return Card(
-      key: Key('daily_salah_prayer_\${prayer.name}'),
+      key: Key('daily_salah_prayer_${prayer.name}'),
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -123,12 +123,12 @@ class _DailySalahTrackingScreenState
                 Expanded(
                   child: prayedSelected
                       ? FilledButton(
-                          key: Key('daily_salah_prayed_\${prayer.name}'),
+                          key: Key('daily_salah_prayed_${prayer.name}'),
                           onPressed: () => _setPrayed(prayer, status),
                           child: Text(l10n.dailySalahTrackingPrayed),
                         )
                       : OutlinedButton(
-                          key: Key('daily_salah_prayed_' + prayer.name),
+                          key: Key('daily_salah_prayed_${prayer.name}'),
                           onPressed: () => _setPrayed(prayer, status),
                           child: Text(l10n.dailySalahTrackingPrayed),
                         ),
@@ -137,12 +137,12 @@ class _DailySalahTrackingScreenState
                 Expanded(
                   child: missedSelected
                       ? FilledButton(
-                          key: Key('daily_salah_missed_\${prayer.name}'),
+                          key: Key('daily_salah_missed_${prayer.name}'),
                           onPressed: () => _confirmMissed(prayer),
                           child: Text(l10n.dailySalahTrackingMissed),
                         )
                       : OutlinedButton(
-                          key: Key('daily_salah_missed_' + prayer.name),
+                          key: Key('daily_salah_missed_${prayer.name}'),
                           onPressed: () => _confirmMissed(prayer),
                           child: Text(l10n.dailySalahTrackingMissed),
                         ),
@@ -163,7 +163,7 @@ class _DailySalahTrackingScreenState
                   return Align(
                     alignment: AlignmentDirectional.centerEnd,
                     child: TextButton(
-                      key: Key('daily_salah_undo_\${prayer.name}'),
+                      key: Key('daily_salah_undo_${prayer.name}'),
                       onPressed: () => _confirmUndo(prayer),
                       child: Text(l10n.dailySalahTrackingUndoQaza),
                     ),
