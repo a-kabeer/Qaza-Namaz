@@ -361,21 +361,21 @@ class DailySalahTrackingService {
         : trackerCreatedQazaId ?? existing?.trackerCreatedQazaId;
     await _database.transactionWithRevision<void>(() async {
       await _database.customUpdate(
-      'INSERT INTO daily_salah_logs '
-      '(user_id, prayer_date, prayer_type, status, tracker_created_qaza_id, updated_at) '
-      'VALUES (?, ?, ?, ?, ?, ?) '
-      'ON CONFLICT(user_id, prayer_date, prayer_type) DO UPDATE SET '
-      'status = excluded.status, '
-      'tracker_created_qaza_id = excluded.tracker_created_qaza_id, '
-      'updated_at = excluded.updated_at',
-      variables: [
-        Variable(userId),
-        Variable(_dayKey(date)),
-        Variable(prayerType.name),
-        Variable(status.name),
-        Variable(trackerId),
-        Variable(DateTime.now().toUtc().toIso8601String()),
-      ],
+        'INSERT INTO daily_salah_logs '
+        '(user_id, prayer_date, prayer_type, status, tracker_created_qaza_id, updated_at) '
+        'VALUES (?, ?, ?, ?, ?, ?) '
+        'ON CONFLICT(user_id, prayer_date, prayer_type) DO UPDATE SET '
+        'status = excluded.status, '
+        'tracker_created_qaza_id = excluded.tracker_created_qaza_id, '
+        'updated_at = excluded.updated_at',
+        variables: [
+          Variable(userId),
+          Variable(_dayKey(date)),
+          Variable(prayerType.name),
+          Variable(status.name),
+          Variable(trackerId),
+          Variable(DateTime.now().toUtc().toIso8601String()),
+        ],
       );
     }, mutationPredicate: (_) => true);
   }
@@ -403,6 +403,11 @@ class DailySalahTrackingService {
   ) {
     final encodedUser =
         base64Url.encode(utf8.encode(userId)).replaceAll('=', '');
-    return 'daily-salah-' + encodedUser + '-' + _dayKey(date) + '-' + prayerType.name;
+    return 'daily-salah-' +
+        encodedUser +
+        '-' +
+        _dayKey(date) +
+        '-' +
+        prayerType.name;
   }
 }
