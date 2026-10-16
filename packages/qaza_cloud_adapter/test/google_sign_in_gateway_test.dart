@@ -170,6 +170,60 @@ void main() {
   );
 
   test(
+    'pinned Android account restores when authorization omits profile identity',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            expect(call.method, 'authorizeDriveSilently');
+            return <String, Object?>{
+              'status': 'authorized',
+              // Native code fills these with the saved, previously verified
+              // account binding because AuthorizationClient may omit profile data.
+              'accountId': 'google-id-A',
+              'accountEmail': 'a@example.com',
+              'identitySource': 'pinnedAndroidAccount',
+              'accessToken': 'test-access-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      final client = await gateway.authorizeDrive(allowInteractive: false);
+      client?.close();
+
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
+    'pinned Android account cannot override contradictory identity evidence',
+    () async {
+      TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+          .setMockMethodCallHandler(_authorizationChannel, (call) async {
+            return <String, Object?>{
+              'status': 'authorized',
+              'accountId': 'google-id-B',
+              'accountEmail': 'b@example.com',
+              'identitySource': 'pinnedAndroidAccount',
+              'accessToken': 'wrong-account-token',
+              'grantedScopes': <String>[_driveScope],
+            };
+          });
+
+      final googleSignIn = _FakeGoogleSignIn();
+      final gateway = GoogleSignInGateway(googleSignIn: googleSignIn);
+
+      await expectLater(
+        gateway.authorizeDrive(allowInteractive: false),
+        throwsA(isA<CloudAccountIdentityMismatch>()),
+      );
+      expect(googleSignIn.authenticateCalls, 0);
+    },
+  );
+
+  test(
     'rejects a native authorization response without identity provenance',
     () async {
       TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger

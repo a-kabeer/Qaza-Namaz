@@ -262,6 +262,11 @@ class GoogleSignInGateway {
     final identityVerified = switch (identitySource) {
       'googleId' => idMatches && emailMatches,
       'targetAccountEmail' => idMatches && emailMatches,
+      // The native Android request pins AuthorizationClient to the previously
+      // verified Account(email). A successful token response may not contain
+      // profile identity fields, so accept the native pinned-account provenance
+      // only when its echoed binding still matches both saved identity values.
+      'pinnedAndroidAccount' => idMatches && emailMatches,
       _ => false,
     };
     if (!identityVerified) {
