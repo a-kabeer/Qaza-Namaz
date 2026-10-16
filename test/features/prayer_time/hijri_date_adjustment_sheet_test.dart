@@ -58,7 +58,6 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-
   testWidgets('Hijri chip keeps its date and action on one narrow row',
       (tester) async {
     tester.view.physicalSize = const Size(320, 720);
@@ -100,7 +99,10 @@ void main() {
       ),
     );
 
-    expect(find.byKey(const Key('prayer_time_hijri_adjustment')), findsOneWidget);
+    expect(
+      find.byKey(const Key('prayer_time_hijri_adjustment')),
+      findsOneWidget,
+    );
     expect(find.text('Friday, 16 October 2026'), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
@@ -141,7 +143,9 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byKey(const Key('open_hijri_adjustment_result_test')));
+    await tester.tap(
+      find.byKey(const Key('open_hijri_adjustment_result_test')),
+    );
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('hijri_adjustment_option_2')));
     await tester.pumpAndSettle();
