@@ -354,8 +354,7 @@ class _SummaryDatesState extends ConsumerState<_SummaryDates> {
   Widget build(BuildContext context) {
     final summary = QazaAdditionDateSummary(
       widget.snapshot,
-      hijriOffsetDays:
-          ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+      hijriOffsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
     );
     if (summary.selectedDates.isEmpty) {
       return Text(

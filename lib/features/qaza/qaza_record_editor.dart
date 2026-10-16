@@ -51,8 +51,7 @@ class _QazaRecordEditorState extends ConsumerState<_QazaRecordEditor> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final hijriOffset =
-        ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
+    final hijriOffset = ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     final theme = Theme.of(context);
     final enabledPrayers = ref.watch(enabledPrayerTypesProvider);
 

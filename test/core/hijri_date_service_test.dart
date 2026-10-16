@@ -245,11 +245,9 @@ void main() {
     DateTime? monthBoundary;
     DateTime? yearBoundary;
 
-    for (
-      var candidate = DateTime(2024, 1, 1);
-      candidate.isBefore(DateTime(2032, 1, 1));
-      candidate = candidate.add(const Duration(days: 1))
-    ) {
+    for (var candidate = DateTime(2024, 1, 1);
+        candidate.isBefore(DateTime(2032, 1, 1));
+        candidate = candidate.add(const Duration(days: 1))) {
       final current = HijriDateService.fromGregorian(candidate);
       final nextDate = DateTime(
         candidate.year,

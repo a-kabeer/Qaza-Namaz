@@ -499,8 +499,7 @@ class _SelectionSummary extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final summary = QazaAdditionDateSummary(
       _snapshot,
-      hijriOffsetDays:
-          ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+      hijriOffsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
     );
 
     return Card(

@@ -503,8 +503,7 @@ String _formatHijriPlanRange(
   final last = _lastPlanDate(start, end);
   final startText =
       HijriDateService.format(start, l10n, offsetDays: offsetDays);
-  final lastText =
-      HijriDateService.format(last, l10n, offsetDays: offsetDays);
+  final lastText = HijriDateService.format(last, l10n, offsetDays: offsetDays);
 
   return start == last ? startText : '$startText – $lastText';
 }

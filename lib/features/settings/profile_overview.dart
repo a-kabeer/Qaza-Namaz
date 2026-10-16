@@ -21,8 +21,7 @@ class ProfileOverview extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hijriOffset =
-        ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
+    final hijriOffset = ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final dateOfBirth = profile.dateOfBirth;
