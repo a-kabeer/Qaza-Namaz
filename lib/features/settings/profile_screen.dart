@@ -48,8 +48,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
   @override
   Widget build(BuildContext context) {
     final profileAsync = ref.watch(userProfileProvider);
-    final hijriOffset =
-        ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
+    final hijriOffset = ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     final l10n = AppLocalizations.of(context);
 
     return PopScope<void>(
