@@ -1724,10 +1724,6 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get profileSelectDate => 'تاریخ منتخب کریں';
-  @override
-  String get profileRememberDate => 'مجھے تاریخ یاد ہے';
-  @override
-  String get profileEstimateUsingAge => 'عمر کے اندازے سے';
 
   @override
   String get profileSelectDobHelp => 'اپنی تاریخ پیدائش منتخب کریں';
@@ -2724,6 +2720,12 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       'یہ قضا ریکارڈ اب زیرِ التوا نہیں، اس لیے اسے حذف نہیں کیا گیا۔';
+
+  @override
+  String get profileRememberDate => 'مجھے تاریخ یاد ہے';
+
+  @override
+  String get profileEstimateUsingAge => 'عمر کے اندازے سے';
 }
 
 /// The translations for Urdu, using the Latin script (`ur_Latn`).
@@ -5468,4 +5470,10 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       'Yeh Qaza record ab pending nahi, is liye hataya nahi gaya.';
+
+  @override
+  String get profileRememberDate => 'Mujhe tareekh yaad hai';
+
+  @override
+  String get profileEstimateUsingAge => 'Umar ke andazay se';
 }

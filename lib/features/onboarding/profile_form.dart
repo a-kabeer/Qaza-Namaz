@@ -309,8 +309,8 @@ class _ProfileFormState extends State<ProfileForm> {
                     pubertyDateMax != null &&
                     !pubertyDateMin.isAfter(pubertyDateMax)
                 ? () => setState(
-                    () => _pubertyDateExpanded = !_pubertyDateExpanded,
-                  )
+                      () => _pubertyDateExpanded = !_pubertyDateExpanded,
+                    )
                 : null,
             icon: const Icon(Icons.event_outlined),
             label: Text(
@@ -389,9 +389,8 @@ class _ProfileFormState extends State<ProfileForm> {
             options: startOptions,
             enabled: startOptions.isNotEmpty,
             labelText: l10n.profileStartPrayingAge,
-            helperText: profile.dateOfBirth == null
-                ? l10n.profileSelectDobFirst
-                : null,
+            helperText:
+                profile.dateOfBirth == null ? l10n.profileSelectDobFirst : null,
             onChanged: (value) {
               _update(_profile.copyWith(startPrayingAge: value));
             },
@@ -402,9 +401,9 @@ class _ProfileFormState extends State<ProfileForm> {
             onPressed: startPrayingDateMin != null &&
                     !startPrayingDateMin.isAfter(today)
                 ? () => setState(
-                    () => _startPrayingDateExpanded =
-                        !_startPrayingDateExpanded,
-                  )
+                      () => _startPrayingDateExpanded =
+                          !_startPrayingDateExpanded,
+                    )
                 : null,
             icon: const Icon(Icons.event_outlined),
             label: Text(
@@ -428,11 +427,10 @@ class _ProfileFormState extends State<ProfileForm> {
               today: today,
               minimumDate: startPrayingDateMin,
               maximumDate: today,
-              initialDateIsSelected:
-                  profile.startPrayingDateOverride != null &&
-                      !profile.startPrayingDateOverride!
-                          .isBefore(startPrayingDateMin) &&
-                      !profile.startPrayingDateOverride!.isAfter(today),
+              initialDateIsSelected: profile.startPrayingDateOverride != null &&
+                  !profile.startPrayingDateOverride!
+                      .isBefore(startPrayingDateMin) &&
+                  !profile.startPrayingDateOverride!.isAfter(today),
               title: l10n.profileStartPrayingAge,
               helpText: l10n.profileSelectDate,
               dayLabel: l10n.profileDobDay,

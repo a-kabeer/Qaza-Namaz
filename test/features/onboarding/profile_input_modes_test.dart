@@ -5,7 +5,8 @@ import 'package:qaza_namaz/features/onboarding/profile_form.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
-  testWidgets('each profile field can switch modes independently without losing values',
+  testWidgets(
+      'each profile field can switch modes independently without losing values',
       (tester) async {
     UserProfile? changed;
     await tester.pumpWidget(

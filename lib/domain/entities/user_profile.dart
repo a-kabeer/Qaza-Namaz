@@ -145,9 +145,8 @@ class UserProfile {
         Gender.values.where((item) => item.name == value).firstOrNull;
     Madhab? parseMadhab(String? value) =>
         Madhab.values.where((item) => item.name == value).firstOrNull;
-    ProfileInputMode? parseInputMode(String? value) => ProfileInputMode.values
-        .where((item) => item.name == value)
-        .firstOrNull;
+    ProfileInputMode? parseInputMode(String? value) =>
+        ProfileInputMode.values.where((item) => item.name == value).firstOrNull;
     DateTime? parseDate(Object? value) =>
         value is String ? DateTime.tryParse(value) : null;
 

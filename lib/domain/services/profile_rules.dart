@@ -204,14 +204,17 @@ class ProfileRules {
     required DateTime today,
   }) {
     if (profile.languageCode.trim().isEmpty) {
-      return const ProfileValidation(error: ProfileValidationError.languageMissing);
+      return const ProfileValidation(
+          error: ProfileValidationError.languageMissing);
     }
     final gender = profile.gender;
     if (gender == null) {
-      return const ProfileValidation(error: ProfileValidationError.genderMissing);
+      return const ProfileValidation(
+          error: ProfileValidationError.genderMissing);
     }
     if (profile.madhab == null) {
-      return const ProfileValidation(error: ProfileValidationError.madhabMissing);
+      return const ProfileValidation(
+          error: ProfileValidationError.madhabMissing);
     }
     final dob = profile.dateOfBirth;
     if (dob == null) {
@@ -224,40 +227,50 @@ class ProfileRules {
     if (profile.pubertyInputMode == ProfileInputMode.ageEstimate) {
       final age = profile.pubertyAge;
       if (age == null) {
-        return const ProfileValidation(error: ProfileValidationError.pubertyMissing);
+        return const ProfileValidation(
+            error: ProfileValidationError.pubertyMissing);
       }
       if (!isPubertyAgeAllowed(gender, age) ||
           !_milestoneReachedAndMaterialized(dob: dob, age: age, today: today)) {
-        return const ProfileValidation(error: ProfileValidationError.pubertyInvalid);
+        return const ProfileValidation(
+            error: ProfileValidationError.pubertyInvalid);
       }
     } else {
       final date = profile.pubertyDateOverride;
       final min = minimumPubertyDate(profile);
       final max = maximumPubertyDate(profile, today: today);
-      if (date == null || min == null || max == null ||
+      if (date == null ||
+          min == null ||
+          max == null ||
           _compareCalendarDates(min, max) > 0 ||
           _compareCalendarDates(date, min) < 0 ||
           _compareCalendarDates(date, max) > 0) {
-        return const ProfileValidation(error: ProfileValidationError.pubertyInvalid);
+        return const ProfileValidation(
+            error: ProfileValidationError.pubertyInvalid);
       }
     }
 
     if (profile.startPrayingInputMode == ProfileInputMode.ageEstimate) {
       final age = profile.startPrayingAge;
       if (age == null) {
-        return const ProfileValidation(error: ProfileValidationError.startPrayingAgeMissing);
+        return const ProfileValidation(
+            error: ProfileValidationError.startPrayingAgeMissing);
       }
-      if (age < 7 || age > currentAge(dob, today) ||
+      if (age < 7 ||
+          age > currentAge(dob, today) ||
           !_milestoneReachedAndMaterialized(dob: dob, age: age, today: today)) {
-        return const ProfileValidation(error: ProfileValidationError.startPrayingAgeInvalid);
+        return const ProfileValidation(
+            error: ProfileValidationError.startPrayingAgeInvalid);
       }
     } else {
       final date = profile.startPrayingDateOverride;
       final min = minimumStartPrayingDate(profile);
-      if (date == null || min == null ||
+      if (date == null ||
+          min == null ||
           _compareCalendarDates(date, min) < 0 ||
           _compareCalendarDates(date, today) > 0) {
-        return const ProfileValidation(error: ProfileValidationError.startPrayingAgeInvalid);
+        return const ProfileValidation(
+            error: ProfileValidationError.startPrayingAgeInvalid);
       }
     }
 

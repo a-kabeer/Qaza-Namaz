@@ -1712,10 +1712,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get profileSelectDate => 'اختر التاريخ';
-  @override
-  String get profileRememberDate => 'أتذكر التاريخ';
-  @override
-  String get profileEstimateUsingAge => 'تقدير باستخدام العمر';
 
   @override
   String get profileSelectDobHelp => 'حدد تاريخ ميلادك';
@@ -2710,4 +2706,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       'لم تعد هذه الصلاة قيد الانتظار، لذلك لم تتم إزالتها.';
+
+  @override
+  String get profileRememberDate => 'أتذكر التاريخ';
+
+  @override
+  String get profileEstimateUsingAge => 'تقدير باستخدام العمر';
 }

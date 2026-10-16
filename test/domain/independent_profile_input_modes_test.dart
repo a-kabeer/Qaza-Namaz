@@ -27,7 +27,8 @@ UserProfile makeProfile({
     );
 
 void main() {
-  test('all four independent input mode combinations resolve effective dates', () {
+  test('all four independent input mode combinations resolve effective dates',
+      () {
     final cases = [
       makeProfile(),
       makeProfile(

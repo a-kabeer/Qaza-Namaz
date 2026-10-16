@@ -2993,12 +2993,6 @@ abstract class AppLocalizations {
   /// **'Select date'**
   String get profileSelectDate;
 
-  /// Label for entering a remembered exact date.
-  String get profileRememberDate;
-
-  /// Label for using an age estimate.
-  String get profileEstimateUsingAge;
-
   /// No description provided for @profileSelectDobHelp.
   ///
   /// In en, this message translates to:
@@ -4715,6 +4709,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This Qaza entry is no longer pending, so it was not removed.'**
   String get dailySalahTrackingUndoUnavailable;
+
+  /// No description provided for @profileRememberDate.
+  ///
+  /// In en, this message translates to:
+  /// **'I remember the date'**
+  String get profileRememberDate;
+
+  /// No description provided for @profileEstimateUsingAge.
+  ///
+  /// In en, this message translates to:
+  /// **'Estimate using age'**
+  String get profileEstimateUsingAge;
 }
 
 class _AppLocalizationsDelegate
