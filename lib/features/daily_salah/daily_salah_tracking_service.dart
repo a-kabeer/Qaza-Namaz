@@ -398,6 +398,6 @@ class DailySalahTrackingService {
   ) {
     final encodedUser =
         base64Url.encode(utf8.encode(userId)).replaceAll('=', '');
-    return 'daily-salah-$encodedUser-\${_dayKey(date)}-\${prayerType.name}';
+    return 'daily-salah-$encodedUser-${_dayKey(date)}-${prayerType.name}';
   }
 }
