@@ -1308,5 +1308,7 @@
   "dailySalahTrackingUndoMessage": "ستتم إزالة سجل القضاء الذي أنشأته متابعة الصلوات اليومية فقط، وفقط إذا كان لا يزال غير مكتمل.",
   "dailySalahTrackingPreviousDay": "اليوم السابق",
   "dailySalahTrackingNextDay": "اليوم التالي",
-  "dailySalahTrackingUndoUnavailable": "لم تعد هذه الصلاة قيد الانتظار، لذلك لم تتم إزالتها."
+  "dailySalahTrackingUndoUnavailable": "لم تعد هذه الصلاة قيد الانتظار، لذلك لم تتم إزالتها.",
+  "profileRememberDate": "أتذكر التاريخ",
+  "profileEstimateUsingAge": "تقدير باستخدام العمر"
 }

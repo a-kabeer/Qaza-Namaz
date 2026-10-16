@@ -1084,5 +1084,7 @@
   "dailySalahTrackingUndoMessage": "Sirf Daily Salah Tracking ka banaya hua yahi Qaza record hataya jayega, aur sirf jab woh pending ho.",
   "dailySalahTrackingPreviousDay": "Pichla din",
   "dailySalahTrackingNextDay": "Agla din",
-  "dailySalahTrackingUndoUnavailable": "Yeh Qaza record ab pending nahi, is liye hataya nahi gaya."
+  "dailySalahTrackingUndoUnavailable": "Yeh Qaza record ab pending nahi, is liye hataya nahi gaya.",
+  "profileRememberDate": "Mujhe tareekh yaad hai",
+  "profileEstimateUsingAge": "Umar ke andazay se"
 }

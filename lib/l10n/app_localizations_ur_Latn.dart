@@ -1735,6 +1735,10 @@ class AppLocalizationsUrLatn extends AppLocalizations {
 
   @override
   String get profileSelectDate => 'tareekh muntakhab karein';
+  @override
+  String get profileRememberDate => 'Mujhe tareekh yaad hai';
+  @override
+  String get profileEstimateUsingAge => 'Umar ke andazay se';
 
   @override
   String get profileSelectDobHelp => 'apni tareekh paidaish muntakhab karein';

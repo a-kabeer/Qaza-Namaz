@@ -1724,6 +1724,10 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get profileSelectDate => 'تاریخ منتخب کریں';
+  @override
+  String get profileRememberDate => 'مجھے تاریخ یاد ہے';
+  @override
+  String get profileEstimateUsingAge => 'عمر کے اندازے سے';
 
   @override
   String get profileSelectDobHelp => 'اپنی تاریخ پیدائش منتخب کریں';
