@@ -306,8 +306,7 @@ class _RecentAdditionCardState extends ConsumerState<_RecentAdditionCard> {
     final snapshot = item.addition.currentInputSnapshot;
     final summary = QazaAdditionDateSummary(
       snapshot,
-      hijriOffsetDays:
-          ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+      hijriOffsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
     );
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
