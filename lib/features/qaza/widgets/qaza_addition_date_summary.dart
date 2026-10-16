@@ -17,9 +17,13 @@ class QazaAdditionDateLine {
 }
 
 class QazaAdditionDateSummary {
-  const QazaAdditionDateSummary(this.snapshot);
+  const QazaAdditionDateSummary(
+    this.snapshot, {
+    this.hijriOffsetDays = 0,
+  });
 
   final QazaAdditionInputSnapshot snapshot;
+  final int hijriOffsetDays;
 
   int get dayCount {
     if (snapshot.mode == QazaAdditionMode.range) {
@@ -105,7 +109,7 @@ class QazaAdditionDateSummary {
       MaterialLocalizations.of(context).formatMediumDate(date);
 
   String formatHijri(AppLocalizations l10n, DateTime date) =>
-      HijriDateService.format(date, l10n);
+      HijriDateService.format(date, l10n, offsetDays: hijriOffsetDays);
 
   String formatConsecutiveRange(
     BuildContext context,
