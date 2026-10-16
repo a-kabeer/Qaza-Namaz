@@ -954,6 +954,7 @@ class LocalBackupService {
       'deletion_action_id' ||
       'record_id' ||
       'prayer_type' ||
+      'prayer_date' ||
       'original_date' ||
       'completed_at' ||
       'completion_id' ||
