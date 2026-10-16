@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/calendar/hijri_date_service.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../domain/entities/user_profile.dart';
@@ -10,23 +9,25 @@ enum QazaReviewAction { edit, add }
 
 typedef QazaReviewConfirm = Future<bool> Function();
 
-class QazaReviewDialog extends ConsumerStatefulWidget {
+class QazaReviewDialog extends StatefulWidget {
   const QazaReviewDialog({
     super.key,
     required this.profile,
     required this.plan,
     required this.onConfirm,
+    this.hijriOffsetDays = 0,
   });
 
   final UserProfile profile;
   final QazaPlan plan;
   final QazaReviewConfirm onConfirm;
+  final int hijriOffsetDays;
 
   @override
   State<QazaReviewDialog> createState() => _QazaReviewDialogState();
 }
 
-class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
+class _QazaReviewDialogState extends State<QazaReviewDialog> {
   bool _starting = false;
   String? _error;
 
@@ -244,6 +245,6 @@ class _QazaReviewDialogState extends ConsumerState<QazaReviewDialog> {
   String _formatHijri(AppLocalizations l10n, DateTime date) =>
       l10n.formatHijriDate(
         date,
-        offsetDays: ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+        offsetDays: widget.hijriOffsetDays,
       );
 }
