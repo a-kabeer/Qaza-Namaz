@@ -179,8 +179,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final hijriOffset =
-        ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
+    final hijriOffset = ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
     return Scaffold(
       appBar: AppBar(
         title: Text(l10n.profileSetupTitle),
