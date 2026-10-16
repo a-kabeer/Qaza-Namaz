@@ -1049,5 +1049,20 @@
   "cloudSetupChoiceDescription": "Apni chhoti hui Namazon ka hisaab rakhein aur Qaza ki progress ko apni sahulat ke mutabiq munazzam krin aap ka record isi device par mehfooz rehta he mukhtalif dioaisz par backup app aur bahali ke liye aap ikhtiyari tor par Google istemal kar sakte hin",
   "cloudSetupUseGoogle": "Google ke saath jari rakhein",
   "cloudSetupContinueLocal": "Isi device par jari rakhein",
-  "cloudConnectionFailed": "Google se rabta mukammal nahi ho ska dobara koshish karein ya mqami tor par jari rkhin"
+  "cloudConnectionFailed": "Google se rabta mukammal nahi ho ska dobara koshish karein ya mqami tor par jari rkhin",
+  "dailySalahTrackingTitle": "Rozana Namaz ka Record",
+  "dailySalahTrackingEnableTitle": "Rozana Namaz Tracking On Karein",
+  "dailySalahTrackingEnableSubtitle": "Parhi hui ya reh jane wali namazen record karein. Jo namaz record na ho, use khud-ba-khud missed mark nahi kiya jata.",
+  "dailySalahTrackingEnableAction": "On Karein",
+  "dailySalahTrackingPrayed": "Parhi",
+  "dailySalahTrackingMissed": "Reh gayi",
+  "dailySalahTrackingUnrecorded": "Record nahi",
+  "dailySalahTrackingConfirmMissedTitle": "Namaz ko missed record karein?",
+  "dailySalahTrackingConfirmMissedMessage": "Is namaz aur tareekh ka Qaza record sirf tab banega jab pehle se mojood na ho.",
+  "dailySalahTrackingUndoQaza": "Tracker ka banaya Qaza wapas karein",
+  "dailySalahTrackingUndoTitle": "Yeh Qaza record hatayein?",
+  "dailySalahTrackingUndoMessage": "Sirf Daily Salah Tracking ka banaya hua yahi Qaza record hataya jayega, aur sirf jab woh pending ho.",
+  "dailySalahTrackingPreviousDay": "Pichla din",
+  "dailySalahTrackingNextDay": "Agla din",
+  "dailySalahTrackingUndoUnavailable": "Yeh Qaza record ab pending nahi, is liye hataya nahi gaya."
 }
