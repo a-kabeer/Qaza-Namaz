@@ -2672,4 +2672,79 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       "Yeh Qaza record ab pending nahi, is liye hataya nahi gaya.";
+
+
+  @override
+  String get cloudRestoreProgressTitle =>
+      'Google Drive backup restore ho raha hai';
+
+  @override
+  String get cloudRestoreProgressBody =>
+      'Aap ka data download, verify aur mehfooz tareeqe se restore ho raha hai. App khuli rakhein.';
+
+  @override
+  String get cloudRestoreConnectingTitle =>
+      'Google Drive se connection ho raha hai';
+
+  @override
+  String get cloudRestoreConnectingBody =>
+      'Google account check ho raha hai aur mojooda backup talash kiya ja raha hai.';
+
+  @override
+  String get cloudRestoreStageChecking =>
+      'Backup check aur verify ho raha hai…';
+
+  @override
+  String get cloudRestoreStageRestoring =>
+      'Verified backup restore ho raha hai…';
+
+  @override
+  String get cloudRestoreStageTransferring =>
+      'Backup data transfer ho raha hai…';
+
+  @override
+  String get cloudRestoreStageFinishing => 'Restore mukammal ho raha hai…';
+
+  @override
+  String get initialCloudBackupAppBarTitle => 'Apni progress mehfooz karein';
+
+  @override
+  String get initialCloudBackupTitle =>
+      'Pehla Google Drive backup ban raha hai';
+
+  @override
+  String get initialCloudBackupBody =>
+      'Aap ka profile aur Qaza Namaz data device par save hai. Initial backup banne tak app khuli rakhein.';
+
+  @override
+  String get initialCloudBackupFailedTitle =>
+      'Aap ka data is device par mehfooz hai';
+
+  @override
+  String get initialCloudBackupFailedBody =>
+      'Cloud backup mukammal nahi ho saka. Aap ka local profile aur Qaza data mehfooz hai.';
+
+  @override
+  String get initialCloudBackupStageChecking =>
+      'Google Drive check ho raha hai…';
+
+  @override
+  String get initialCloudBackupStagePreparing => 'Backup tayyar ho raha hai…';
+
+  @override
+  String get initialCloudBackupStageUploading => 'Backup upload ho raha hai…';
+
+  @override
+  String get initialCloudBackupStageCompleted =>
+      'Backup kamyabi se save ho gaya';
+
+  @override
+  String get initialCloudBackupRetry => 'Backup dobara try karein';
+
+  @override
+  String get initialCloudBackupContinueHome => 'Home par jayein';
+
+  @override
+  String get initialCloudBackupStageDownloading =>
+      'Backup download ho raha hai…';
 }

@@ -8,6 +8,7 @@ import '../../domain/services/profile_rules.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
 import 'cloud_setup_choice_screen.dart';
+import 'initial_cloud_backup_screen.dart';
 import 'language_selection_screen.dart';
 import 'profile_setup_screen.dart';
 import 'splash_screen.dart';
@@ -113,6 +114,25 @@ class StartupGate extends ConsumerWidget {
               return ProfileSetupScreen(
                 languageCode: ref.read(localeProvider).languageCode,
                 initialProfile: profile,
+              );
+            }
+
+            // Only the cloud-enabled host can own a pending initial upload.
+            // The offline host continues directly to Home without cloud work.
+            if (cloudEnabled &&
+                !ref.watch(skipPendingInitialCloudBackupForSessionProvider)) {
+              final pendingBackup =
+                  ref.watch(initialCloudBackupPendingProvider);
+              return pendingBackup.when(
+                loading: () => const SplashScreen(),
+                error: (_, __) => StartupProfileLoadErrorBoundary(
+                  key: const Key('startup_initial_backup_error'),
+                  onRetry: () =>
+                      ref.invalidate(initialCloudBackupPendingProvider),
+                ),
+                data: (pending) => pending
+                    ? const InitialCloudBackupScreen()
+                    : const WorkspaceShell(),
               );
             }
 

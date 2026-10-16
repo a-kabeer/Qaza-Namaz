@@ -2635,4 +2635,76 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       'لم تعد هذه الصلاة قيد الانتظار، لذلك لم تتم إزالتها.';
+
+
+  @override
+  String get cloudRestoreProgressTitle =>
+      'جارٍ استعادة النسخة الاحتياطية من Google Drive';
+
+  @override
+  String get cloudRestoreProgressBody =>
+      'يجري تنزيل بياناتك والتحقق منها واستعادتها بأمان. أبقِ التطبيق مفتوحًا.';
+
+  @override
+  String get cloudRestoreConnectingTitle => 'جارٍ الاتصال بـ Google Drive';
+
+  @override
+  String get cloudRestoreConnectingBody =>
+      'يجري التحقق من حساب Google والبحث عن نسخة احتياطية موجودة.';
+
+  @override
+  String get cloudRestoreStageChecking => 'جارٍ التحقق من النسخة الاحتياطية…';
+
+  @override
+  String get cloudRestoreStageRestoring =>
+      'جارٍ استعادة النسخة التي تم التحقق منها…';
+
+  @override
+  String get cloudRestoreStageTransferring =>
+      'جارٍ نقل بيانات النسخة الاحتياطية…';
+
+  @override
+  String get cloudRestoreStageFinishing => 'جارٍ إنهاء الاستعادة…';
+
+  @override
+  String get initialCloudBackupAppBarTitle => 'احفظ تقدمك';
+
+  @override
+  String get initialCloudBackupTitle =>
+      'جارٍ إنشاء أول نسخة احتياطية على Google Drive';
+
+  @override
+  String get initialCloudBackupBody =>
+      'تم حفظ ملفك الشخصي وتقدم قضاء الصلاة محليًا. أبقِ التطبيق مفتوحًا أثناء إنشاء النسخة الاحتياطية.';
+
+  @override
+  String get initialCloudBackupFailedTitle => 'بياناتك محفوظة على هذا الجهاز';
+
+  @override
+  String get initialCloudBackupFailedBody =>
+      'تعذر إكمال النسخ الاحتياطي السحابي. لم يتم حذف ملفك الشخصي أو بيانات قضاء الصلاة المحلية.';
+
+  @override
+  String get initialCloudBackupStageChecking => 'جارٍ التحقق من Google Drive…';
+
+  @override
+  String get initialCloudBackupStagePreparing =>
+      'جارٍ تجهيز النسخة الاحتياطية…';
+
+  @override
+  String get initialCloudBackupStageUploading => 'جارٍ رفع النسخة الاحتياطية…';
+
+  @override
+  String get initialCloudBackupStageCompleted =>
+      'تم حفظ النسخة الاحتياطية بنجاح';
+
+  @override
+  String get initialCloudBackupRetry => 'إعادة محاولة النسخ الاحتياطي';
+
+  @override
+  String get initialCloudBackupContinueHome => 'المتابعة إلى الرئيسية';
+
+  @override
+  String get initialCloudBackupStageDownloading =>
+      'جارٍ تنزيل النسخة الاحتياطية…';
 }

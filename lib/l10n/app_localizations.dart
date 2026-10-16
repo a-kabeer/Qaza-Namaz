@@ -4589,6 +4589,46 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This Qaza entry is no longer pending, so it was not removed.'**
   String get dailySalahTrackingUndoUnavailable;
+
+  String get cloudRestoreProgressTitle;
+
+  String get cloudRestoreProgressBody;
+
+  String get cloudRestoreConnectingTitle;
+
+  String get cloudRestoreConnectingBody;
+
+  String get cloudRestoreStageChecking;
+
+  String get cloudRestoreStageRestoring;
+
+  String get cloudRestoreStageTransferring;
+
+  String get cloudRestoreStageFinishing;
+
+  String get initialCloudBackupAppBarTitle;
+
+  String get initialCloudBackupTitle;
+
+  String get initialCloudBackupBody;
+
+  String get initialCloudBackupFailedTitle;
+
+  String get initialCloudBackupFailedBody;
+
+  String get initialCloudBackupStageChecking;
+
+  String get initialCloudBackupStagePreparing;
+
+  String get initialCloudBackupStageUploading;
+
+  String get initialCloudBackupStageCompleted;
+
+  String get initialCloudBackupRetry;
+
+  String get initialCloudBackupContinueHome;
+
+  String get initialCloudBackupStageDownloading;
 }
 
 class _AppLocalizationsDelegate

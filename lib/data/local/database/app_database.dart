@@ -316,6 +316,61 @@ class AppDatabase extends _$AppDatabase {
     return revision;
   }
 
+  /// Durable marker for an initial cloud backup that must be retried if the
+  /// process exits after local onboarding commits.
+  Future<bool> hasPendingInitialCloudBackup() async {
+    final rows = await customSelect(
+      "SELECT value FROM meta_store "
+      "WHERE key = 'initial_cloud_backup_pending' LIMIT 1",
+    ).get();
+    return rows.isNotEmpty && rows.first.read<String>('value') == '1';
+  }
+
+  Future<void> markInitialCloudBackupPending() async {
+    await customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('initial_cloud_backup_pending', '1')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+    );
+  }
+
+  Future<void> clearPendingInitialCloudBackup() async {
+    await customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('initial_cloud_backup_pending', '0')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+    );
+  }
+
+  /// Returns true only when the database is still a genuinely fresh install.
+  /// The local account/session bootstrap rows are expected and are excluded;
+  /// any profile, Qaza ledger, plan-revision, or mutation data blocks an
+  /// automatic destructive restore.
+  Future<bool> isFreshInstallationForCloudRestore() async {
+    return transaction(() async {
+      if (await isOnboardingCompleted() || await readDbRevision() != 1) {
+        return false;
+      }
+
+      const businessTables = <String>[
+        'qaza_records',
+        'qaza_additions',
+        'qaza_deletion_actions',
+        'qaza_deletion_action_record_snapshots',
+        'qaza_profile_plan_provenance',
+        'account_profiles',
+        'account_plan_revisions',
+      ];
+      for (final table in businessTables) {
+        final row = await customSelect(
+          'SELECT COUNT(*) AS row_count FROM $table',
+        ).getSingle();
+        if (row.read<int>('row_count') != 0) return false;
+      }
+      return true;
+    });
+  }
+
   Future<void> setOnboardingCompletedInTransaction(bool completed) {
     return customUpdate(
       '''INSERT INTO meta_store (key, value)

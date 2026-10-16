@@ -162,6 +162,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     // the process restarts. Re-read the persisted completion flag before
     // building the destination route.
     ref.invalidate(appRouteProvider);
+    ref.invalidate(initialCloudBackupPendingProvider);
 
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(

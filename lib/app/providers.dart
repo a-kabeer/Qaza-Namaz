@@ -192,6 +192,17 @@ final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
   return false;
 });
 
+/// Durable initial-backup marker, invalidated whenever onboarding or cloud
+/// backup completes. It survives process death between local commit and upload.
+final initialCloudBackupPendingProvider = FutureProvider<bool>((ref) {
+  return ref.watch(appDatabaseProvider).hasPendingInitialCloudBackup();
+});
+
+/// Lets the user continue to Home after an initial backup failure in the
+/// current process while retaining the durable marker for a retry next launch.
+final skipPendingInitialCloudBackupForSessionProvider =
+    StateProvider<bool>((ref) => false);
+
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
   return DriftQazaLocalStore(database: ref.watch(appDatabaseProvider));
 });

@@ -25,6 +25,7 @@ abstract interface class CloudRemoteMetadataStore {
   Future<CloudRemoteSnapshot> download(
     CloudRemoteMetadata metadata, {
     required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
   });
 }
 
@@ -63,7 +64,10 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
 }
 
 abstract interface class CloudRemoteStore {
-  Future<CloudRemoteSnapshot?> latest({required bool allowInteractive});
+  Future<CloudRemoteSnapshot?> latest({
+    required bool allowInteractive,
+    CloudBackupProgressCallback? onProgress,
+  });
 
   Future<CloudRemoteSnapshot> write(
     CloudBackup backup, {

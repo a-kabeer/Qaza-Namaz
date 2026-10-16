@@ -2647,4 +2647,72 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dailySalahTrackingUndoUnavailable =>
       'This Qaza entry is no longer pending, so it was not removed.';
+
+
+  @override
+  String get cloudRestoreProgressTitle => 'Restoring your Google Drive backup';
+
+  @override
+  String get cloudRestoreProgressBody =>
+      'Downloading, validating, and safely restoring your data. Keep the app open.';
+
+  @override
+  String get cloudRestoreConnectingTitle => 'Connecting to Google Drive';
+
+  @override
+  String get cloudRestoreConnectingBody =>
+      'Checking your Google account and looking for an existing backup.';
+
+  @override
+  String get cloudRestoreStageChecking =>
+      'Checking and validating your backup…';
+
+  @override
+  String get cloudRestoreStageRestoring => 'Restoring your verified backup…';
+
+  @override
+  String get cloudRestoreStageTransferring => 'Transferring backup data…';
+
+  @override
+  String get cloudRestoreStageFinishing => 'Finishing restore…';
+
+  @override
+  String get initialCloudBackupAppBarTitle => 'Protect your progress';
+
+  @override
+  String get initialCloudBackupTitle =>
+      'Creating your first Google Drive backup';
+
+  @override
+  String get initialCloudBackupBody =>
+      'Your profile and Qaza progress are saved locally. Keep the app open while the initial backup is created.';
+
+  @override
+  String get initialCloudBackupFailedTitle =>
+      'Your data is saved on this device';
+
+  @override
+  String get initialCloudBackupFailedBody =>
+      'The initial cloud backup could not be completed. Your local profile and Qaza progress have not been discarded.';
+
+  @override
+  String get initialCloudBackupStageChecking => 'Checking Google Drive…';
+
+  @override
+  String get initialCloudBackupStagePreparing => 'Preparing your backup…';
+
+  @override
+  String get initialCloudBackupStageUploading => 'Uploading your backup…';
+
+  @override
+  String get initialCloudBackupStageCompleted => 'Backup saved successfully';
+
+  @override
+  String get initialCloudBackupRetry => 'Retry backup';
+
+  @override
+  String get initialCloudBackupContinueHome => 'Continue to Home';
+
+  @override
+  String get initialCloudBackupStageDownloading => 'Downloading your backup…';
 }

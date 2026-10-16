@@ -104,17 +104,16 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                     val emailMatches = hasAuthorizedEmail &&
                         authorizedEmail.equals(accountEmail, ignoreCase = true)
 
-                    // AuthorizationResult's deprecated GoogleSignInAccount can
-                    // omit the stable ID because this is an authorization-only
-                    // request, not a Google Sign-In ID request. The Android
-                    // AuthorizationRequest is explicitly pinned to Account(email).
-                    // If a native ID is present, require an exact ID match; if it
-                    // is absent, require the returned email to match the pinned
-                    // account. Never accept a result with no identity data or
-                    // contradictory identity claims.
+                    // AuthorizationClient intentionally returns an authorization
+                    // result rather than an authenticated profile. Its account
+                    // projection may therefore contain neither the stable Google
+                    // ID nor an email even when authorization succeeded. This
+                    // request was explicitly pinned to Account(accountEmail), so
+                    // a successful token for the requested Drive scope is bound
+                    // to that target account. Still reject any identity claim
+                    // that is present but contradicts the saved account binding.
                     if ((hasAuthorizedAccountId && authorizedAccountId != accountId) ||
-                        (hasAuthorizedEmail && !emailMatches) ||
-                        (!hasAuthorizedAccountId && !hasAuthorizedEmail)
+                        (hasAuthorizedEmail && !emailMatches)
                     ) {
                         result.success(
                             mapOf(
@@ -125,17 +124,19 @@ class QazaCloudAdapterPlugin : FlutterPlugin, MethodChannel.MethodCallHandler {
                         return@addOnSuccessListener
                     }
 
-                    val identitySource = if (hasAuthorizedAccountId) {
-                        "googleId"
-                    } else {
-                        "targetAccountEmail"
+                    val identitySource = when {
+                        hasAuthorizedAccountId -> "googleId"
+                        hasAuthorizedEmail -> "targetAccountEmail"
+                        else -> "pinnedAndroidAccount"
                     }
                     result.success(
                         mapOf(
                             "status" to "authorized",
-                            // For the email-only fallback, the stable ID is the
-                            // previously verified ID bound to this exact target
-                            // email, not a newly inferred native ID.
+                            // The token and scope are newly verified. If the
+                            // SDK omits profile identity, these values are the
+                            // previously verified account binding used to pin
+                            // AuthorizationRequest.setAccount(), not inferred
+                            // identity claims from the token response.
                             "accountId" to (authorizedAccountId ?: accountId),
                             "accountEmail" to (authorizedEmail ?: accountEmail),
                             "identitySource" to identitySource,
