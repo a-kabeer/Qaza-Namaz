@@ -290,7 +290,8 @@ class DailySalahTrackingService {
 
     final repository = _qazaService.repository;
     if (repository is! PendingQazaRecordDeletionRepository) return false;
-    final deleted = await repository.deletePendingRecord(
+    final pendingRepository = repository as PendingQazaRecordDeletionRepository;
+    final deleted = await pendingRepository.deletePendingRecord(
       userId: userId,
       recordId: id,
     );
@@ -397,11 +398,6 @@ class DailySalahTrackingService {
   ) {
     final encodedUser =
         base64Url.encode(utf8.encode(userId)).replaceAll('=', '');
-    return 'daily-salah-' +
-        encodedUser +
-        '-' +
-        _dayKey(date) +
-        '-' +
-        prayerType.name;
+    return 'daily-salah-$encodedUser-\${_dayKey(date)}-\${prayerType.name}';
   }
 }
