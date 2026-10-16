@@ -59,41 +59,41 @@ class HijriDateAdjustmentSheet extends StatelessWidget {
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: scheme.onSurfaceVariant.withValues(alpha: .45),
-                  borderRadius: BorderRadius.circular(2),
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: scheme.onSurfaceVariant.withValues(alpha: .45),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              l10n.hijriAdjustmentTitle,
-              style: textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 12),
-            for (final offset in offsets) ...[
-              _AdjustmentOption(
-                key: Key('hijri_adjustment_option_$offset'),
-                dateLabel: HijriDateService.formatShort(
-                  date,
-                  l10n,
-                  offsetDays: offset,
+              const SizedBox(height: 16),
+              Text(
+                l10n.hijriAdjustmentTitle,
+                style: textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
                 ),
-                subtitle: _subtitle(l10n, offset),
-                selected: offset == selectedOffset,
-                onTap: () => Navigator.of(context).pop(offset),
               ),
-              if (offset != offsets.last) const SizedBox(height: 6),
+              const SizedBox(height: 12),
+              for (final offset in offsets) ...[
+                _AdjustmentOption(
+                  key: Key('hijri_adjustment_option_$offset'),
+                  dateLabel: HijriDateService.formatShort(
+                    date,
+                    l10n,
+                    offsetDays: offset,
+                  ),
+                  subtitle: _subtitle(l10n, offset),
+                  selected: offset == selectedOffset,
+                  onTap: () => Navigator.of(context).pop(offset),
+                ),
+                if (offset != offsets.last) const SizedBox(height: 6),
+              ],
             ],
-          ],
         ),
       ),
     );
