@@ -1933,7 +1933,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileErrorStartPraying =>
-      'Please select a valid praying start age.';
+      'Please select a valid prayer-start age or date.';
 
   @override
   String get profileErrorWitr => 'Please select a valid Witr setting.';
@@ -2739,7 +2739,36 @@ class AppLocalizationsEn extends AppLocalizations {
       'This Qaza entry is no longer pending, so it was not removed.';
 
   @override
+  String get profileIslamicBackground => 'Islamic background';
+
+  @override
+  String get profileMuslimFromChildhood => 'I was Muslim from childhood';
+
+  @override
+  String get profileAcceptedIslamLater => 'I accepted Islam later in life';
+
+  @override
+  String get profileIslamAcceptanceDate => 'Date I accepted Islam';
+
+  @override
+  String get profileStartPrayingDate => 'Date I started praying';
+
+  @override
+  String get profileNewMuslimQazaHelp =>
+      'Qaza is counted only after accepting Islam and once Salah became obligatory. Prayers missed before accepting Islam are excluded.';
+
+  @override
+  String get profileErrorIslamAcceptanceDate =>
+      'Please enter a valid Islam acceptance date on or after your date of birth.';
+
+  @override
   String get profileRememberDate => 'I remember the date';
+
+  @override
+  String get profileNotSure => 'I\'m not sure';
+
+  @override
+  String get profilePubertyDate => 'Puberty Date';
 
   @override
   String get profileEstimateUsingAge => 'Estimate using age';

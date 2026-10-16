@@ -38,12 +38,13 @@ void main() {
       300,
       scrollable: find.byType(Scrollable),
     );
-    await tester.tap(
-      find.descendant(
-        of: pubertyMode,
-        matching: find.text('I remember the date'),
-      ),
+    final pubertyRememberDate = find.descendant(
+      of: pubertyMode,
+      matching: find.text('I remember the date'),
     );
+    await tester.ensureVisible(pubertyRememberDate);
+    await tester.pumpAndSettle();
+    await tester.tap(pubertyRememberDate);
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('profile_puberty_date')), findsOneWidget);
@@ -56,12 +57,13 @@ void main() {
       300,
       scrollable: find.byType(Scrollable),
     );
-    await tester.tap(
-      find.descendant(
-        of: startMode,
-        matching: find.text('I remember the date'),
-      ),
+    final startRememberDate = find.descendant(
+      of: startMode,
+      matching: find.text('I remember the date'),
     );
+    await tester.ensureVisible(startRememberDate);
+    await tester.pumpAndSettle();
+    await tester.tap(startRememberDate);
     await tester.pumpAndSettle();
 
     expect(
@@ -76,12 +78,13 @@ void main() {
       300,
       scrollable: find.byType(Scrollable),
     );
-    await tester.tap(
-      find.descendant(
-        of: pubertyMode,
-        matching: find.text('Estimate using age'),
-      ),
+    final pubertyEstimateAge = find.descendant(
+      of: pubertyMode,
+      matching: find.text('Estimate using age'),
     );
+    await tester.ensureVisible(pubertyEstimateAge);
+    await tester.pumpAndSettle();
+    await tester.tap(pubertyEstimateAge);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('profile_puberty_age')), findsOneWidget);
     expect(changed?.pubertyAge, 12);

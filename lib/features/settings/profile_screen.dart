@@ -39,8 +39,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         original.gender != draft.gender ||
         original.madhab != draft.madhab ||
         !_sameDate(original.dateOfBirth, draft.dateOfBirth) ||
+        original.isNewMuslim != draft.isNewMuslim ||
+        !_sameDate(original.islamAcceptanceDate, draft.islamAcceptanceDate) ||
         original.pubertyAge != draft.pubertyAge ||
+        !_sameDate(original.pubertyDate, draft.pubertyDate) ||
+        original.pubertyInputMode != draft.pubertyInputMode ||
         original.startPrayingAge != draft.startPrayingAge ||
+        original.startPrayingInputMode != draft.startPrayingInputMode ||
+        !_sameDate(original.startPrayingDate, draft.startPrayingDate) ||
         ProfileRules.effectiveWitr(original) !=
             ProfileRules.effectiveWitr(draft);
   }

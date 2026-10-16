@@ -3362,7 +3362,7 @@ abstract class AppLocalizations {
   /// No description provided for @profileErrorStartPraying.
   ///
   /// In en, this message translates to:
-  /// **'Please select a valid praying start age.'**
+  /// **'Please select a valid prayer-start age or date.'**
   String get profileErrorStartPraying;
 
   /// No description provided for @profileErrorWitr.
@@ -4752,11 +4752,65 @@ abstract class AppLocalizations {
   /// **'This Qaza entry is no longer pending, so it was not removed.'**
   String get dailySalahTrackingUndoUnavailable;
 
+  /// No description provided for @profileIslamicBackground.
+  ///
+  /// In en, this message translates to:
+  /// **'Islamic background'**
+  String get profileIslamicBackground;
+
+  /// No description provided for @profileMuslimFromChildhood.
+  ///
+  /// In en, this message translates to:
+  /// **'I was Muslim from childhood'**
+  String get profileMuslimFromChildhood;
+
+  /// No description provided for @profileAcceptedIslamLater.
+  ///
+  /// In en, this message translates to:
+  /// **'I accepted Islam later in life'**
+  String get profileAcceptedIslamLater;
+
+  /// No description provided for @profileIslamAcceptanceDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date I accepted Islam'**
+  String get profileIslamAcceptanceDate;
+
+  /// No description provided for @profileStartPrayingDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date I started praying'**
+  String get profileStartPrayingDate;
+
+  /// No description provided for @profileNewMuslimQazaHelp.
+  ///
+  /// In en, this message translates to:
+  /// **'Qaza is counted only after accepting Islam and once Salah became obligatory. Prayers missed before accepting Islam are excluded.'**
+  String get profileNewMuslimQazaHelp;
+
+  /// No description provided for @profileErrorIslamAcceptanceDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid Islam acceptance date on or after your date of birth.'**
+  String get profileErrorIslamAcceptanceDate;
+
   /// No description provided for @profileRememberDate.
   ///
   /// In en, this message translates to:
   /// **'I remember the date'**
   String get profileRememberDate;
+
+  /// No description provided for @profileNotSure.
+  ///
+  /// In en, this message translates to:
+  /// **'I\'m not sure'**
+  String get profileNotSure;
+
+  /// No description provided for @profilePubertyDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Puberty Date'**
+  String get profilePubertyDate;
 
   /// No description provided for @profileEstimateUsingAge.
   ///

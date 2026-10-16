@@ -1917,7 +1917,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profileErrorPuberty => 'يرجى تحديد سن بلوغ صحيح للجنس المحدد.';
 
   @override
-  String get profileErrorStartPraying => 'يرجى تحديد عمر صحيح لبدء الصلاة.';
+  String get profileErrorStartPraying =>
+      'يرجى تحديد عمر أو تاريخ صحيح لبدء الصلاة.';
 
   @override
   String get profileErrorWitr => 'يرجى تحديد إعداد صحيح للوتر.';
@@ -2731,7 +2732,36 @@ class AppLocalizationsAr extends AppLocalizations {
       'لم تعد هذه الصلاة قيد الانتظار، لذلك لم تتم إزالتها.';
 
   @override
+  String get profileIslamicBackground => 'الخلفية الإسلامية';
+
+  @override
+  String get profileMuslimFromChildhood => 'كنت على الإسلام منذ الطفولة';
+
+  @override
+  String get profileAcceptedIslamLater => 'اعتنقت الإسلام لاحقًا';
+
+  @override
+  String get profileIslamAcceptanceDate => 'تاريخ اعتناق الإسلام';
+
+  @override
+  String get profileStartPrayingDate => 'تاريخ بدء الصلاة';
+
+  @override
+  String get profileNewMuslimQazaHelp =>
+      'يُحتسب القضاء فقط بعد اعتناق الإسلام ومنذ وجوب الصلاة. لا تُحتسب الصلوات الفائتة قبل اعتناق الإسلام.';
+
+  @override
+  String get profileErrorIslamAcceptanceDate =>
+      'يرجى إدخال تاريخ صحيح لاعتناق الإسلام، لا يسبق تاريخ الميلاد.';
+
+  @override
   String get profileRememberDate => 'أتذكر التاريخ';
+
+  @override
+  String get profileNotSure => 'لست متأكدًا';
+
+  @override
+  String get profilePubertyDate => 'تاريخ البلوغ';
 
   @override
   String get profileEstimateUsingAge => 'تقدير باستخدام العمر';

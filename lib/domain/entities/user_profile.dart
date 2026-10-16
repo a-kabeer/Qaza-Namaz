@@ -1,3 +1,6 @@
+import '../../core/calendar/fixed_hijri_arithmetic_service.dart';
+import '../../core/time/local_date_service.dart';
+
 class UserProfile {
   const UserProfile({
     this.languageCode = 'en',
@@ -6,17 +9,31 @@ class UserProfile {
     this.madhab,
     this.dateOfBirth,
     this.pubertyAge,
+    DateTime? pubertyDateOverride,
+    DateTime? pubertyDate,
+    ProfileInputMode? pubertyInputMode,
     this.startPrayingAge,
-    this.pubertyInputMode = ProfileInputMode.ageEstimate,
-    this.pubertyDateOverride,
-    this.startPrayingInputMode = ProfileInputMode.ageEstimate,
-    this.startPrayingDateOverride,
+    DateTime? startPrayingDateOverride,
+    DateTime? startPrayingDate,
+    ProfileInputMode? startPrayingInputMode,
+    this.isNewMuslim = false,
+    this.islamAcceptanceDate,
     this.witrIncluded,
     this.onboardingCompleted = false,
     this.schemaVersion = currentSchemaVersion,
-  });
+  })  : pubertyDateOverride = pubertyDateOverride ?? pubertyDate,
+        pubertyInputMode = pubertyInputMode ??
+            ((pubertyDateOverride ?? pubertyDate) == null
+                ? ProfileInputMode.ageEstimate
+                : ProfileInputMode.rememberedDate),
+        startPrayingDateOverride = startPrayingDateOverride ?? startPrayingDate,
+        startPrayingInputMode = startPrayingInputMode ??
+            ((startPrayingDateOverride ?? startPrayingDate) == null
+                ? ProfileInputMode.ageEstimate
+                : ProfileInputMode.rememberedDate);
 
-  static const int currentSchemaVersion = 3;
+  /// Schema 4 includes both independent input modes and new-Muslim eligibility.
+  static const int currentSchemaVersion = 4;
   static const String localLedgerUserId = 'guest';
   static const int defaultDailyQazaTarget = 5;
   static const int minDailyQazaTarget = 1;
@@ -47,27 +64,53 @@ class UserProfile {
   final Madhab? madhab;
   final DateTime? dateOfBirth;
   final int? pubertyAge;
-  final int? startPrayingAge;
-  final ProfileInputMode pubertyInputMode;
   final DateTime? pubertyDateOverride;
-  final ProfileInputMode startPrayingInputMode;
+  final ProfileInputMode pubertyInputMode;
+  final int? startPrayingAge;
   final DateTime? startPrayingDateOverride;
+  final ProfileInputMode startPrayingInputMode;
+  final bool isNewMuslim;
+  final DateTime? islamAcceptanceDate;
   final bool? witrIncluded;
   final bool onboardingCompleted;
   final int schemaVersion;
 
-  bool get isComplete =>
-      onboardingCompleted &&
-      gender != null &&
-      madhab != null &&
-      dateOfBirth != null &&
-      (pubertyInputMode == ProfileInputMode.ageEstimate
-          ? pubertyAge != null
-          : pubertyDateOverride != null) &&
-      (startPrayingInputMode == ProfileInputMode.ageEstimate
-          ? startPrayingAge != null
-          : startPrayingDateOverride != null) &&
-      witrIncluded != null;
+  /// Compatibility aliases for data written by the new-Muslim feature branch.
+  DateTime? get pubertyDate => pubertyDateOverride;
+  DateTime? get startPrayingDate => startPrayingDateOverride;
+
+  bool get isComplete {
+    final pubertyRequired = _requiresPubertyInputForCompletion();
+    return onboardingCompleted &&
+        gender != null &&
+        madhab != null &&
+        dateOfBirth != null &&
+        (!isNewMuslim || islamAcceptanceDate != null) &&
+        (!pubertyRequired ||
+            (pubertyInputMode == ProfileInputMode.ageEstimate
+                ? pubertyAge != null
+                : pubertyDateOverride != null)) &&
+        (startPrayingInputMode == ProfileInputMode.ageEstimate
+            ? startPrayingAge != null
+            : startPrayingDateOverride != null) &&
+        witrIncluded != null;
+  }
+
+  bool _requiresPubertyInputForCompletion() {
+    if (!isNewMuslim) return true;
+    final dob = dateOfBirth;
+    final acceptedDate = islamAcceptanceDate;
+    if (dob == null || acceptedDate == null || gender == null) return true;
+
+    // Both configured gender rules currently use age 15 as the cutoff.
+    // This only decides whether to ask for puberty information; it does not
+    // assume that puberty occurred at the cutoff age.
+    final cutoff = FixedHijriArithmeticService.projectFromBirth(
+      dob: dob,
+      fixedDayOffset: 15 * FixedHijriArithmeticService.daysPerYear,
+    );
+    return LocalDateService.compareCalendarDates(acceptedDate, cutoff) < 0;
+  }
 
   UserProfile copyWith({
     String? languageCode,
@@ -80,14 +123,21 @@ class UserProfile {
     bool clearDateOfBirth = false,
     int? pubertyAge,
     bool clearPubertyAge = false,
+    DateTime? pubertyDateOverride,
+    DateTime? pubertyDate,
+    bool clearPubertyDateOverride = false,
+    bool clearPubertyDate = false,
+    ProfileInputMode? pubertyInputMode,
     int? startPrayingAge,
     bool clearStartPrayingAge = false,
-    ProfileInputMode? pubertyInputMode,
-    DateTime? pubertyDateOverride,
-    bool clearPubertyDateOverride = false,
-    ProfileInputMode? startPrayingInputMode,
     DateTime? startPrayingDateOverride,
+    DateTime? startPrayingDate,
     bool clearStartPrayingDateOverride = false,
+    bool clearStartPrayingDate = false,
+    ProfileInputMode? startPrayingInputMode,
+    bool? isNewMuslim,
+    DateTime? islamAcceptanceDate,
+    bool clearIslamAcceptanceDate = false,
     bool? witrIncluded,
     bool clearWitrIncluded = false,
     bool? onboardingCompleted,
@@ -102,18 +152,25 @@ class UserProfile {
         madhab: clearMadhab ? null : madhab ?? this.madhab,
         dateOfBirth: clearDateOfBirth ? null : dateOfBirth ?? this.dateOfBirth,
         pubertyAge: clearPubertyAge ? null : pubertyAge ?? this.pubertyAge,
+        pubertyDateOverride: clearPubertyDateOverride || clearPubertyDate
+            ? null
+            : pubertyDateOverride ?? pubertyDate ?? this.pubertyDateOverride,
+        pubertyInputMode: pubertyInputMode ?? this.pubertyInputMode,
         startPrayingAge: clearStartPrayingAge
             ? null
             : startPrayingAge ?? this.startPrayingAge,
-        pubertyInputMode: pubertyInputMode ?? this.pubertyInputMode,
-        pubertyDateOverride: clearPubertyDateOverride
-            ? null
-            : pubertyDateOverride ?? this.pubertyDateOverride,
+        startPrayingDateOverride:
+            clearStartPrayingDateOverride || clearStartPrayingDate
+                ? null
+                : startPrayingDateOverride ??
+                    startPrayingDate ??
+                    this.startPrayingDateOverride,
         startPrayingInputMode:
             startPrayingInputMode ?? this.startPrayingInputMode,
-        startPrayingDateOverride: clearStartPrayingDateOverride
+        isNewMuslim: isNewMuslim ?? this.isNewMuslim,
+        islamAcceptanceDate: clearIslamAcceptanceDate
             ? null
-            : startPrayingDateOverride ?? this.startPrayingDateOverride,
+            : islamAcceptanceDate ?? this.islamAcceptanceDate,
         witrIncluded:
             clearWitrIncluded ? null : witrIncluded ?? this.witrIncluded,
         onboardingCompleted: onboardingCompleted ?? this.onboardingCompleted,
@@ -131,11 +188,16 @@ class UserProfile {
         'madhab': madhab?.name,
         'dateOfBirth': dateOfBirth?.toIso8601String(),
         'pubertyAge': pubertyAge,
-        'startPrayingAge': startPrayingAge,
         'pubertyInputMode': pubertyInputMode.name,
         'pubertyDateOverride': pubertyDateOverride?.toIso8601String(),
+        // Keep the legacy aliases in serialized data for safe migration.
+        'pubertyDate': pubertyDateOverride?.toIso8601String(),
+        'startPrayingAge': startPrayingAge,
         'startPrayingInputMode': startPrayingInputMode.name,
         'startPrayingDateOverride': startPrayingDateOverride?.toIso8601String(),
+        'startPrayingDate': startPrayingDateOverride?.toIso8601String(),
+        'isNewMuslim': isNewMuslim,
+        'islamAcceptanceDate': islamAcceptanceDate?.toIso8601String(),
         'witrIncluded': witrIncluded,
         'onboardingCompleted': onboardingCompleted,
       };
@@ -145,8 +207,16 @@ class UserProfile {
         Gender.values.where((item) => item.name == value).firstOrNull;
     Madhab? parseMadhab(String? value) =>
         Madhab.values.where((item) => item.name == value).firstOrNull;
-    ProfileInputMode? parseInputMode(String? value) =>
-        ProfileInputMode.values.where((item) => item.name == value).firstOrNull;
+    ProfileInputMode? parseInputMode(String? value) {
+      if (value == 'rememberedDate' || value == 'rememberDate') {
+        return ProfileInputMode.rememberedDate;
+      }
+      if (value == 'ageEstimate' || value == 'estimateAge') {
+        return ProfileInputMode.ageEstimate;
+      }
+      return null;
+    }
+
     DateTime? parseDate(Object? value) =>
         value is String ? DateTime.tryParse(value) : null;
 
@@ -161,14 +231,17 @@ class UserProfile {
       madhab: parseMadhab(json['madhab'] as String?),
       dateOfBirth: parseDate(json['dateOfBirth']),
       pubertyAge: (json['pubertyAge'] as num?)?.toInt(),
+      pubertyInputMode: parseInputMode(json['pubertyInputMode'] as String?),
+      pubertyDateOverride:
+          parseDate(json['pubertyDateOverride'] ?? json['pubertyDate']),
       startPrayingAge: (json['startPrayingAge'] as num?)?.toInt(),
-      pubertyInputMode: parseInputMode(json['pubertyInputMode'] as String?) ??
-          ProfileInputMode.ageEstimate,
-      pubertyDateOverride: parseDate(json['pubertyDateOverride']),
       startPrayingInputMode:
-          parseInputMode(json['startPrayingInputMode'] as String?) ??
-              ProfileInputMode.ageEstimate,
-      startPrayingDateOverride: parseDate(json['startPrayingDateOverride']),
+          parseInputMode(json['startPrayingInputMode'] as String?),
+      startPrayingDateOverride: parseDate(
+        json['startPrayingDateOverride'] ?? json['startPrayingDate'],
+      ),
+      isNewMuslim: json['isNewMuslim'] as bool? ?? false,
+      islamAcceptanceDate: parseDate(json['islamAcceptanceDate']),
       witrIncluded: json['witrIncluded'] as bool?,
       onboardingCompleted: json['onboardingCompleted'] as bool? ?? false,
       schemaVersion:
@@ -179,6 +252,6 @@ class UserProfile {
 
 enum Gender { male, female }
 
-enum Madhab { hanafi, shafi, maliki, hanbali, other }
-
 enum ProfileInputMode { ageEstimate, rememberedDate }
+
+enum Madhab { hanafi, shafi, maliki, hanbali, other }

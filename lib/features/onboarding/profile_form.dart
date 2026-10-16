@@ -38,6 +38,7 @@ class _ProfileFormState extends State<ProfileForm> {
   ProfileValidationError? _error;
   bool _saving = false;
   bool _dobExpanded = false;
+  bool _islamAcceptanceExpanded = false;
   bool _pubertyDateExpanded = false;
   bool _startPrayingDateExpanded = false;
 
@@ -93,6 +94,21 @@ class _ProfileFormState extends State<ProfileForm> {
     setState(() => _dobExpanded = !_dobExpanded);
   }
 
+  DateTime _initialIslamAcceptanceDate(DateTime today) {
+    var initial = LocalDateService.dateOnly(
+      _profile.islamAcceptanceDate ?? today,
+    );
+    final dob = _profile.dateOfBirth;
+    if (dob != null &&
+        LocalDateService.compareCalendarDates(initial, dob) < 0) {
+      initial = LocalDateService.dateOnly(dob);
+    }
+    if (LocalDateService.compareCalendarDates(initial, today) > 0) {
+      initial = LocalDateService.dateOnly(today);
+    }
+    return initial;
+  }
+
   Future<void> _submit() async {
     final validation = ProfileRules.validate(
       _profile,
@@ -132,17 +148,40 @@ class _ProfileFormState extends State<ProfileForm> {
             profile.dateOfBirth!,
             today,
           );
-    final startOptions = ProfileRules.startPrayingAgeOptions(
+    final availableStartOptions = ProfileRules.startPrayingAgeOptions(
       profile,
       today: today,
     );
+    final startOptions = profile.isNewMuslim &&
+            profile.islamAcceptanceDate != null &&
+            profile.dateOfBirth != null
+        ? [
+            for (final age in availableStartOptions)
+              if (LocalDateService.compareCalendarDates(
+                    ProfileRules.fixedMilestoneDate(profile.dateOfBirth!, age),
+                    profile.islamAcceptanceDate!,
+                  ) >=
+                  0)
+                age,
+          ]
+        : availableStartOptions;
+    final showPubertyInput = ProfileRules.requiresPubertyInput(profile);
     final canEditWitr = ProfileRules.isWitrEditable(madhab);
     final pubertyDateMin = ProfileRules.minimumPubertyDate(profile);
     final pubertyDateMax = ProfileRules.maximumPubertyDate(
       profile,
       today: today,
     );
-    final startPrayingDateMin = ProfileRules.minimumStartPrayingDate(profile);
+    var startPrayingDateMin = ProfileRules.minimumStartPrayingDate(profile);
+    final acceptedDate =
+        profile.isNewMuslim ? profile.islamAcceptanceDate : null;
+    if (acceptedDate != null &&
+        (startPrayingDateMin == null ||
+            LocalDateService.compareCalendarDates(
+                    acceptedDate, startPrayingDateMin) >
+                0)) {
+      startPrayingDateMin = LocalDateService.dateOnly(acceptedDate);
+    }
     final errorText = _errorText(l10n, _error);
 
     return ListView(
@@ -267,95 +306,204 @@ class _ProfileFormState extends State<ProfileForm> {
           ),
         ],
         const SizedBox(height: 20),
+        const SizedBox(height: 20),
         Text(
-          l10n.profilePubertyAge,
+          l10n.profileIslamicBackground,
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        const SizedBox(height: 8),
-        SegmentedButton<ProfileInputMode>(
-          key: const Key('profile_puberty_input_mode'),
-          segments: [
-            ButtonSegment(
-              value: ProfileInputMode.rememberedDate,
-              label: Text(l10n.profileRememberDate),
-            ),
-            ButtonSegment(
-              value: ProfileInputMode.ageEstimate,
-              label: Text(l10n.profileEstimateUsingAge),
-            ),
-          ],
-          selected: {profile.pubertyInputMode},
-          onSelectionChanged: (values) {
-            if (values.isNotEmpty) {
-              setState(() => _pubertyDateExpanded = false);
-              _update(_profile.copyWith(pubertyInputMode: values.first));
+        RadioListTile<bool>(
+          key: const Key('profile_muslim_from_childhood'),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          value: false,
+          groupValue: profile.isNewMuslim,
+          title: Text(l10n.profileMuslimFromChildhood),
+          onChanged: (value) {
+            if (value == null) return;
+            _update(
+              _profile.copyWith(
+                isNewMuslim: false,
+                clearIslamAcceptanceDate: true,
+              ),
+            );
+            setState(() {
+              _islamAcceptanceExpanded = false;
+              _startPrayingDateExpanded = false;
+            });
+          },
+        ),
+        RadioListTile<bool>(
+          key: const Key('profile_accepted_islam_later'),
+          contentPadding: EdgeInsets.zero,
+          dense: true,
+          value: true,
+          groupValue: profile.isNewMuslim,
+          title: Text(l10n.profileAcceptedIslamLater),
+          onChanged: (value) {
+            if (value != null) {
+              _update(_profile.copyWith(isNewMuslim: true));
             }
           },
         ),
-        const SizedBox(height: 8),
-        if (profile.pubertyInputMode == ProfileInputMode.ageEstimate)
-          _buildAgeSelector(
-            fieldKey: const Key('profile_puberty_age'),
-            decrementKey: const Key('profile_puberty_age_decrement'),
-            incrementKey: const Key('profile_puberty_age_increment'),
-            value: profile.pubertyAge,
-            options: pubertyOptions,
-            enabled: gender != null,
-            labelText: l10n.profilePubertyAge,
-            helperText: gender == null ? l10n.profileSelectGenderFirst : null,
-            onChanged: (value) {
-              _update(_profile.copyWith(pubertyAge: value));
-            },
-          )
-        else ...[
+        if (profile.isNewMuslim) ...[
+          const SizedBox(height: 4),
+          Text(
+            l10n.profileIslamAcceptanceDate,
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
+          const SizedBox(height: 8),
           OutlinedButton.icon(
-            key: const Key('profile_puberty_date'),
-            onPressed: pubertyDateMin != null &&
-                    pubertyDateMax != null &&
-                    !pubertyDateMin.isAfter(pubertyDateMax)
-                ? () => setState(
-                      () => _pubertyDateExpanded = !_pubertyDateExpanded,
-                    )
-                : null,
+            key: const Key('profile_islam_acceptance_date'),
+            onPressed: profile.dateOfBirth == null
+                ? null
+                : () => setState(
+                      () =>
+                          _islamAcceptanceExpanded = !_islamAcceptanceExpanded,
+                    ),
             icon: const Icon(Icons.event_outlined),
             label: Text(
-              profile.pubertyDateOverride == null
+              profile.islamAcceptanceDate == null
                   ? l10n.profileSelectDate
-                  : _formatDate(profile.pubertyDateOverride!),
+                  : _formatDate(profile.islamAcceptanceDate!),
             ),
           ),
-          if (_pubertyDateExpanded &&
-              pubertyDateMin != null &&
-              pubertyDateMax != null &&
-              !pubertyDateMin.isAfter(pubertyDateMax)) ...[
+          if (_islamAcceptanceExpanded) ...[
             const SizedBox(height: 12),
             _DateOfBirthPickerInline(
-              key: const Key('profile_puberty_date_picker'),
-              keyPrefix: 'profile_puberty_date',
-              initialDate: _boundedInitialDate(
-                profile.pubertyDateOverride,
-                pubertyDateMin,
-                pubertyDateMax,
-              ),
+              key: const Key('profile_islam_acceptance_picker_panel'),
+              keyPrefix: 'profile_islam_acceptance',
+              initialDate: _initialIslamAcceptanceDate(today),
               today: today,
-              minimumDate: pubertyDateMin,
-              maximumDate: pubertyDateMax,
-              initialDateIsSelected: profile.pubertyDateOverride != null &&
-                  !profile.pubertyDateOverride!.isBefore(pubertyDateMin) &&
-                  !profile.pubertyDateOverride!.isAfter(pubertyDateMax),
-              title: l10n.profilePubertyAge,
-              helpText: l10n.profileSelectDate,
+              minimumDate: profile.dateOfBirth,
+              maximumDate: today,
+              initialDateIsSelected: profile.islamAcceptanceDate != null &&
+                  profile.dateOfBirth != null &&
+                  !profile.islamAcceptanceDate!
+                      .isBefore(profile.dateOfBirth!) &&
+                  !profile.islamAcceptanceDate!.isAfter(today),
+              title: l10n.profileIslamAcceptanceDate,
+              helpText: l10n.profileNewMuslimQazaHelp,
               dayLabel: l10n.profileDobDay,
               monthLabel: l10n.profileDobMonth,
               yearLabel: l10n.profileDobYear,
               cancelLabel: l10n.commonCancel,
               confirmLabel: l10n.commonDone,
-              onCancel: () => setState(() => _pubertyDateExpanded = false),
+              onCancel: () => setState(() => _islamAcceptanceExpanded = false),
               onConfirm: (picked) {
-                _update(_profile.copyWith(pubertyDateOverride: picked));
-                setState(() => _pubertyDateExpanded = false);
+                _update(
+                  _profile.copyWith(
+                    islamAcceptanceDate:
+                        DateTime(picked.year, picked.month, picked.day),
+                  ),
+                );
+                setState(() => _islamAcceptanceExpanded = false);
               },
             ),
+          ],
+          if (profile.islamAcceptanceDate != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              l10n.formatHijriDate(profile.islamAcceptanceDate!),
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+          const SizedBox(height: 8),
+          Text(
+            l10n.profileNewMuslimQazaHelp,
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ],
+        if (showPubertyInput) ...[
+          Text(
+            l10n.profilePubertyAge,
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 8),
+          SegmentedButton<ProfileInputMode>(
+            key: const Key('profile_puberty_input_mode'),
+            segments: [
+              ButtonSegment(
+                value: ProfileInputMode.rememberedDate,
+                label: Text(l10n.profileRememberDate),
+              ),
+              ButtonSegment(
+                value: ProfileInputMode.ageEstimate,
+                label: Text(l10n.profileEstimateUsingAge),
+              ),
+            ],
+            selected: {profile.pubertyInputMode},
+            onSelectionChanged: (values) {
+              if (values.isNotEmpty) {
+                setState(() => _pubertyDateExpanded = false);
+                _update(_profile.copyWith(pubertyInputMode: values.first));
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+          if (profile.pubertyInputMode == ProfileInputMode.ageEstimate)
+            _buildAgeSelector(
+              fieldKey: const Key('profile_puberty_age'),
+              decrementKey: const Key('profile_puberty_age_decrement'),
+              incrementKey: const Key('profile_puberty_age_increment'),
+              value: profile.pubertyAge,
+              options: pubertyOptions,
+              enabled: gender != null,
+              labelText: l10n.profilePubertyAge,
+              helperText: gender == null ? l10n.profileSelectGenderFirst : null,
+              onChanged: (value) {
+                _update(_profile.copyWith(pubertyAge: value));
+              },
+            )
+          else ...[
+            OutlinedButton.icon(
+              key: const Key('profile_puberty_date'),
+              onPressed: pubertyDateMin != null &&
+                      pubertyDateMax != null &&
+                      !pubertyDateMin.isAfter(pubertyDateMax)
+                  ? () => setState(
+                        () => _pubertyDateExpanded = !_pubertyDateExpanded,
+                      )
+                  : null,
+              icon: const Icon(Icons.event_outlined),
+              label: Text(
+                profile.pubertyDateOverride == null
+                    ? l10n.profileSelectDate
+                    : _formatDate(profile.pubertyDateOverride!),
+              ),
+            ),
+            if (_pubertyDateExpanded &&
+                pubertyDateMin != null &&
+                pubertyDateMax != null &&
+                !pubertyDateMin.isAfter(pubertyDateMax)) ...[
+              const SizedBox(height: 12),
+              _DateOfBirthPickerInline(
+                key: const Key('profile_puberty_date_picker'),
+                keyPrefix: 'profile_puberty_date',
+                initialDate: _boundedInitialDate(
+                  profile.pubertyDateOverride,
+                  pubertyDateMin,
+                  pubertyDateMax,
+                ),
+                today: today,
+                minimumDate: pubertyDateMin,
+                maximumDate: pubertyDateMax,
+                initialDateIsSelected: profile.pubertyDateOverride != null &&
+                    !profile.pubertyDateOverride!.isBefore(pubertyDateMin) &&
+                    !profile.pubertyDateOverride!.isAfter(pubertyDateMax),
+                title: l10n.profilePubertyAge,
+                helpText: l10n.profileSelectDate,
+                dayLabel: l10n.profileDobDay,
+                monthLabel: l10n.profileDobMonth,
+                yearLabel: l10n.profileDobYear,
+                cancelLabel: l10n.commonCancel,
+                confirmLabel: l10n.commonDone,
+                onCancel: () => setState(() => _pubertyDateExpanded = false),
+                onConfirm: (picked) {
+                  _update(_profile.copyWith(pubertyDateOverride: picked));
+                  setState(() => _pubertyDateExpanded = false);
+                },
+              ),
+            ],
           ],
         ],
         const SizedBox(height: 20),
@@ -620,6 +768,9 @@ class _ProfileFormState extends State<ProfileForm> {
         ProfileValidationError.dobMissing ||
         ProfileValidationError.dobFuture =>
           l10n.profileErrorDob,
+        ProfileValidationError.islamAcceptanceDateMissing ||
+        ProfileValidationError.islamAcceptanceDateInvalid =>
+          l10n.profileErrorIslamAcceptanceDate,
         ProfileValidationError.pubertyMissing ||
         ProfileValidationError.pubertyInvalid =>
           l10n.profileErrorPuberty,

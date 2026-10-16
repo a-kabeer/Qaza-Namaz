@@ -35,34 +35,61 @@ class QazaPlanService {
   QazaPlan? planFor(UserProfile profile) {
     final dob = profile.dateOfBirth;
     if (dob == null) return null;
-    final currentAge = ProfileRules.currentAge(dob, LocalDateService.today());
+    final today = LocalDateService.today();
+    final currentAge = ProfileRules.currentAge(dob, today);
+    final gender = profile.gender;
+    if (gender == null) return null;
 
-    if (profile.pubertyInputMode == ProfileInputMode.ageEstimate) {
-      final age = profile.pubertyAge;
-      if (profile.gender == null ||
-          age == null ||
-          !ProfileRules.isPubertyAgeAllowed(profile.gender!, age) ||
-          age > currentAge) {
+    if (profile.isNewMuslim) {
+      final acceptedDate = profile.islamAcceptanceDate;
+      if (acceptedDate == null ||
+          LocalDateService.compareCalendarDates(acceptedDate, dob) < 0 ||
+          LocalDateService.compareCalendarDates(acceptedDate, today) > 0) {
         return null;
       }
     }
+
+    if (ProfileRules.requiresPubertyInput(profile)) {
+      if (profile.pubertyInputMode == ProfileInputMode.ageEstimate) {
+        final age = profile.pubertyAge;
+        if (age == null ||
+            !ProfileRules.isPubertyAgeAllowed(gender, age) ||
+            age > currentAge) {
+          return null;
+        }
+      } else {
+        final puberty = ProfileRules.pubertyDate(profile);
+        if (puberty == null) return null;
+      }
+    }
+
     if (profile.startPrayingInputMode == ProfileInputMode.ageEstimate) {
       final age = profile.startPrayingAge;
       if (age == null || age < 7 || age > currentAge) return null;
     }
 
-    final pubertyDate = ProfileRules.pubertyDate(profile);
+    final eligibilityStart = ProfileRules.qazaEligibilityStartDate(profile);
     final startPrayingDate = ProfileRules.startPrayingDate(profile);
-    if (pubertyDate == null || startPrayingDate == null) return null;
+    if (eligibilityStart == null || startPrayingDate == null) return null;
 
-    // The Qaza interval is [puberty date, Namaz Start date). If Namaz Start
-    // is on or before puberty, a zero-day plan is valid rather than missing.
+    if (profile.isNewMuslim) {
+      final acceptedDate = profile.islamAcceptanceDate!;
+      if (LocalDateService.compareCalendarDates(
+                  startPrayingDate, acceptedDate) <
+              0 ||
+          LocalDateService.compareCalendarDates(startPrayingDate, today) > 0) {
+        return null;
+      }
+    }
+
+    // A prayer-start date on or before the eligibility date is a valid
+    // zero-Qaza plan. This also permits independent date/age input modes.
     final difference = LocalDateService.calendarDayDifference(
-      pubertyDate,
+      eligibilityStart,
       startPrayingDate,
     );
     final totalDays = difference > 0 ? difference : 0;
-    final end = totalDays == 0 ? pubertyDate : startPrayingDate;
+    final end = totalDays == 0 ? eligibilityStart : startPrayingDate;
     final includeWitr = ProfileRules.effectiveWitr(profile);
     final prayerBreakdown = <PrayerType, int>{
       for (final prayer in PrayerType.values)
@@ -70,7 +97,7 @@ class QazaPlanService {
     };
 
     return QazaPlan(
-      startDate: pubertyDate,
+      startDate: eligibilityStart,
       endDate: end,
       totalDays: totalDays,
       includeWitr: includeWitr,
