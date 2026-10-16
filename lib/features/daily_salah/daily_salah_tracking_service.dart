@@ -43,6 +43,7 @@ class DailySalahTrackingService {
   final AppDatabase _database;
   final QazaService _qazaService;
 
+  /// Reads the persisted user preference.
   Future<bool> isEnabled() => _database.isDailySalahTrackingEnabled();
 
   Future<void> setEnabled(bool enabled) =>
