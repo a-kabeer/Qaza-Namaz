@@ -357,11 +357,12 @@ void main() {
         findsNothing,
       );
 
-      // Reopen the inline selector to verify Cancel retained the original DOB.
+      // Cancel leaves the list scrolled to the picker’s lower edge, so
+      // scroll upward to rebuild the DOB button before reopening it.
       final dobButton = find.byKey(const Key('profile_dob'));
       await tester.scrollUntilVisible(
         dobButton,
-        300,
+        -300,
         scrollable: find.byType(Scrollable),
       );
       await tester.tap(dobButton);
