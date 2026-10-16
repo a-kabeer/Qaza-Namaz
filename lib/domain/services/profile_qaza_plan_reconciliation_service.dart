@@ -382,6 +382,10 @@ class ProfileQazaPlanReconciliationService {
       'dateOfBirth',
       'pubertyAge',
       'startPrayingAge',
+      'pubertyInputMode',
+      'pubertyDateOverride',
+      'startPrayingInputMode',
+      'startPrayingDateOverride',
       'effectiveWitr',
     ];
     return [
@@ -396,6 +400,11 @@ class ProfileQazaPlanReconciliationService {
         'dateOfBirth': profile.dateOfBirth?.toIso8601String(),
         'pubertyAge': profile.pubertyAge,
         'startPrayingAge': profile.startPrayingAge,
+        'pubertyInputMode': profile.pubertyInputMode.name,
+        'pubertyDateOverride': profile.pubertyDateOverride?.toIso8601String(),
+        'startPrayingInputMode': profile.startPrayingInputMode.name,
+        'startPrayingDateOverride':
+            profile.startPrayingDateOverride?.toIso8601String(),
         'effectiveWitr': ProfileRules.effectiveWitr(profile),
       };
 }
