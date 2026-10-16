@@ -1,4 +1,3 @@
-
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as timezone_data;
 

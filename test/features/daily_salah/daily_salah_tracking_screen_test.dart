@@ -48,7 +48,8 @@ void main() {
           qazaServiceProvider.overrideWithValue(qazaService),
           activeUserIdProvider.overrideWithValue(userId),
           effectiveWitrProvider.overrideWithValue(true),
-          dailySalahPrayerAvailableProvider.overrideWith((ref, request) => true),
+          dailySalahPrayerAvailableProvider
+              .overrideWith((ref, request) => true),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -104,7 +105,8 @@ void main() {
           qazaServiceProvider.overrideWithValue(qazaService),
           activeUserIdProvider.overrideWithValue(userId),
           effectiveWitrProvider.overrideWithValue(true),
-          dailySalahPrayerAvailableProvider.overrideWith((ref, request) => true),
+          dailySalahPrayerAvailableProvider
+              .overrideWith((ref, request) => true),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -170,7 +172,8 @@ void main() {
         userId: userId,
         date: normalizedToday,
         prayerType: PrayerType.fajr,
-      ))?.status,
+      ))
+          ?.status,
       DailySalahStatus.unrecorded,
     );
   });
@@ -183,7 +186,8 @@ void main() {
           qazaServiceProvider.overrideWithValue(qazaService),
           activeUserIdProvider.overrideWithValue(userId),
           effectiveWitrProvider.overrideWithValue(true),
-          dailySalahPrayerAvailableProvider.overrideWith((ref, request) => true),
+          dailySalahPrayerAvailableProvider
+              .overrideWith((ref, request) => true),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,

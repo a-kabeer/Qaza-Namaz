@@ -42,7 +42,8 @@ void main() {
     expect(await tracking.isEnabled(), isFalse);
   });
 
-  test('setup dismissal persists independently of the tracking toggle', () async {
+  test('setup dismissal persists independently of the tracking toggle',
+      () async {
     expect(await tracking.isSetupDismissed(), isFalse);
     await tracking.setSetupDismissed(true);
     expect(await tracking.isSetupDismissed(), isTrue);

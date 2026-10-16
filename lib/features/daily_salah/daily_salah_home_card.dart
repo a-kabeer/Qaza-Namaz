@@ -76,17 +76,14 @@ class DailySalahHomeCard extends ConsumerWidget {
                                   dailySalahTrackingSetupDismissedProvider,
                                 );
                                 if (!context.mounted) return;
-                                ref
-                                    .read(appSnackbarServiceProvider)
-                                    .info(
+                                ref.read(appSnackbarServiceProvider).info(
                                       AppLocalizations.of(context)
                                           .dailySalahTrackingSkippedMessage,
                                     );
                               } catch (_) {
                                 if (!context.mounted) return;
-                                ref
-                                    .read(appSnackbarServiceProvider)
-                                    .error(AppLocalizations.of(context).errorStorage);
+                                ref.read(appSnackbarServiceProvider).error(
+                                    AppLocalizations.of(context).errorStorage);
                               }
                             },
                             child: Text(l10n.dailySalahTrackingSkipForNow),
@@ -99,12 +96,12 @@ class DailySalahHomeCard extends ConsumerWidget {
                                 await ref
                                     .read(dailySalahTrackingServiceProvider)
                                     .setEnabled(true);
-                                ref.invalidate(dailySalahTrackingEnabledProvider);
+                                ref.invalidate(
+                                    dailySalahTrackingEnabledProvider);
                               } catch (_) {
                                 if (!context.mounted) return;
-                                ref
-                                    .read(appSnackbarServiceProvider)
-                                    .error(AppLocalizations.of(context).errorStorage);
+                                ref.read(appSnackbarServiceProvider).error(
+                                    AppLocalizations.of(context).errorStorage);
                               }
                             },
                             child: Text(l10n.dailySalahTrackingEnableAction),

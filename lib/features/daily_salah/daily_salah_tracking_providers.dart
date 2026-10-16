@@ -24,8 +24,7 @@ final dailySalahTrackingSetupDismissedProvider = FutureProvider<bool>((ref) {
   return ref.watch(dailySalahTrackingServiceProvider).isSetupDismissed();
 });
 
-DateTime _dayOnly(DateTime date) =>
-    DateTime(date.year, date.month, date.day);
+DateTime _dayOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
 PrayerSchedule? _scheduleForDate(
   PrayerTimeSnapshot snapshot,
@@ -59,8 +58,7 @@ DateTime dailySalahTrackingDateForInstant({
 
 final dailySalahTrackingDateProvider = Provider<DateTime>((ref) {
   final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
-  final now =
-      ref.watch(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
+  final now = ref.watch(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
 
   // Like the Prayer Time page, refresh a cached schedule once it no longer
   // covers both the current location-local day and the following day.
@@ -129,8 +127,7 @@ bool dailySalahPrayerTimeHasPassed({
 final dailySalahPrayerAvailableProvider =
     Provider.family<bool, DailySalahPrayerAvailabilityRequest>((ref, request) {
   final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
-  final now =
-      ref.watch(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
+  final now = ref.watch(prayerTimeClockProvider).valueOrNull ?? DateTime.now();
   return dailySalahPrayerTimeHasPassed(
     date: request.date,
     trackingDate: request.trackingDate,

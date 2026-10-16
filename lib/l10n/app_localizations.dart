@@ -4686,19 +4686,34 @@ abstract class AppLocalizations {
   /// **'Enable'**
   String get dailySalahTrackingEnableAction;
 
-  /// Skip enabling Daily Namaz Tracking for now.
+  /// No description provided for @dailySalahTrackingSkipForNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip for now'**
   String get dailySalahTrackingSkipForNow;
 
-  /// Confirmation that tracking setup was skipped.
+  /// No description provided for @dailySalahTrackingSkippedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily Namaz Tracking skipped. You can enable it anytime from Profile.'**
   String get dailySalahTrackingSkippedMessage;
 
-  /// Dialog title for clearing a recorded prayer status.
+  /// No description provided for @dailySalahTrackingRemoveStatusTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove prayer status?'**
   String get dailySalahTrackingRemoveStatusTitle;
 
-  /// Explains that clearing a status does not change an existing Qaza entry.
+  /// No description provided for @dailySalahTrackingRemoveStatusMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will mark the prayer as unrecorded. Any existing Qaza entry will remain unchanged.'**
   String get dailySalahTrackingRemoveStatusMessage;
 
-  /// Confirmation action for clearing a recorded prayer status.
+  /// No description provided for @dailySalahTrackingRemoveStatusAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove status'**
   String get dailySalahTrackingRemoveStatusAction;
 
   /// No description provided for @dailySalahTrackingPrayed.

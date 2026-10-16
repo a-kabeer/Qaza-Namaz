@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -80,7 +79,8 @@ class _DailySalahTrackingScreenState
                       Expanded(
                         child: TextButton.icon(
                           key: const Key('daily_salah_select_date'),
-                          onPressed: () => _pickDate(selectedDate, trackingDate),
+                          onPressed: () =>
+                              _pickDate(selectedDate, trackingDate),
                           icon: const Icon(Icons.calendar_month_outlined),
                           label: Text(
                             DateFormat.yMMMd(locale).format(selectedDate),
@@ -308,9 +308,8 @@ class _DailySalahTrackingScreenState
   ) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: selectedDate.isAfter(trackingDate)
-          ? trackingDate
-          : selectedDate,
+      initialDate:
+          selectedDate.isAfter(trackingDate) ? trackingDate : selectedDate,
       firstDate: DateTime(1900),
       lastDate: trackingDate,
     );
@@ -328,9 +327,7 @@ class _DailySalahTrackingScreenState
   void _selectDate(DateTime date, DateTime trackingDate) {
     final selected = _dayOnly(date);
     setState(() {
-      _selectedDate = _isTrackingDate(selected, trackingDate)
-          ? null
-          : selected;
+      _selectedDate = _isTrackingDate(selected, trackingDate) ? null : selected;
     });
   }
 
