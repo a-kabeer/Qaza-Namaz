@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/calendar/hijri_date_adjustment_provider.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/prayer_selection_grid.dart';
@@ -474,7 +475,7 @@ class _PrayerSelection extends StatelessWidget {
   }
 }
 
-class _SelectionSummary extends StatelessWidget {
+class _SelectionSummary extends ConsumerWidget {
   const _SelectionSummary({
     required this.mode,
     required this.dates,
@@ -495,9 +496,13 @@ class _SelectionSummary extends StatelessWidget {
       );
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
-    final summary = QazaAdditionDateSummary(_snapshot);
+    final summary = QazaAdditionDateSummary(
+      _snapshot,
+      hijriOffsetDays:
+          ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+    );
 
     return Card(
       child: Padding(
