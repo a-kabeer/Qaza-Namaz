@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
-import '../../core/calendar/hijri_date_adjustment_provider.dart';
+import '../prayer_time/presentation/hijri_date_adjustment_provider.dart';
 import '../../domain/entities/user_profile.dart';
 import '../../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../../domain/services/profile_rules.dart';
