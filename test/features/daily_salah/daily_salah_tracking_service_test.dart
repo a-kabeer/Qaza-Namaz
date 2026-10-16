@@ -42,6 +42,15 @@ void main() {
     expect(await tracking.isEnabled(), isFalse);
   });
 
+  test('setup dismissal persists independently of the tracking toggle', () async {
+    expect(await tracking.isSetupDismissed(), isFalse);
+    await tracking.setSetupDismissed(true);
+    expect(await tracking.isSetupDismissed(), isTrue);
+    expect(await tracking.isEnabled(), isFalse);
+    await tracking.setEnabled(true);
+    expect(await tracking.isSetupDismissed(), isTrue);
+  });
+
   test('confirmed missed is idempotent and creates one linked Qaza', () async {
     await tracking.setEnabled(true);
 

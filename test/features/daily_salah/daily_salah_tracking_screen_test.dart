@@ -9,6 +9,7 @@ import 'package:qaza_namaz/data/local/drift_qaza_local_store.dart';
 import 'package:qaza_namaz/data/repositories/offline_first_qaza_repository.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/features/daily_salah/daily_salah_tracking_screen.dart';
+import 'package:qaza_namaz/features/daily_salah/daily_salah_tracking_providers.dart';
 import 'package:qaza_namaz/features/daily_salah/daily_salah_tracking_service.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
@@ -47,6 +48,7 @@ void main() {
           qazaServiceProvider.overrideWithValue(qazaService),
           activeUserIdProvider.overrideWithValue(userId),
           effectiveWitrProvider.overrideWithValue(true),
+          dailySalahPrayerAvailableProvider.overrideWith((ref, request) => true),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -75,6 +77,14 @@ void main() {
     await tester.tap(prayedButton);
     await tester.pumpAndSettle();
     expect(
+      find.byKey(const Key('daily_salah_confirm_remove_status')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const Key('daily_salah_confirm_remove_status')),
+    );
+    await tester.pumpAndSettle();
+    expect(
       (await tracking.logForDate(
         userId: userId,
         date: DateTime.now(),
@@ -94,6 +104,7 @@ void main() {
           qazaServiceProvider.overrideWithValue(qazaService),
           activeUserIdProvider.overrideWithValue(userId),
           effectiveWitrProvider.overrideWithValue(true),
+          dailySalahPrayerAvailableProvider.overrideWith((ref, request) => true),
         ],
         child: const MaterialApp(
           localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -134,5 +145,69 @@ void main() {
       status: null,
     );
     expect(page.records, hasLength(1));
+
+    // Removing the tracking status must not delete the Qaza record.
+    await tester.tap(find.byKey(const Key('daily_salah_missed_fajr')));
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('daily_salah_confirm_remove_status')),
+      findsOneWidget,
+    );
+    await tester.tap(
+      find.byKey(const Key('daily_salah_confirm_remove_status')),
+    );
+    await tester.pumpAndSettle();
+    final stillExists = await qazaService.getPage(
+      userId: userId,
+      prayerType: PrayerType.fajr,
+      from: normalizedToday,
+      to: normalizedToday,
+      status: null,
+    );
+    expect(stillExists.records, hasLength(1));
+    expect(
+      (await tracking.logForDate(
+        userId: userId,
+        date: normalizedToday,
+        prayerType: PrayerType.fajr,
+      ))?.status,
+      DailySalahStatus.unrecorded,
+    );
+  });
+
+  testWidgets('calendar moves dates with horizontal swipes', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          qazaServiceProvider.overrideWithValue(qazaService),
+          activeUserIdProvider.overrideWithValue(userId),
+          effectiveWitrProvider.overrideWithValue(true),
+          dailySalahPrayerAvailableProvider.overrideWith((ref, request) => true),
+        ],
+        child: const MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: DailySalahTrackingScreen(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final label = find.byKey(const Key('daily_salah_selected_date'));
+    final currentDate = tester.widget<Text>(label).data;
+    await tester.drag(
+      find.byKey(const Key('daily_salah_calendar_swipe')),
+      const Offset(180, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(label).data, isNot(currentDate));
+
+    await tester.drag(
+      find.byKey(const Key('daily_salah_calendar_swipe')),
+      const Offset(-180, 0),
+    );
+    await tester.pumpAndSettle();
+    expect(tester.widget<Text>(label).data, currentDate);
   });
 }
