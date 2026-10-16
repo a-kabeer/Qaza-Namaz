@@ -10,18 +10,18 @@ import 'daily_salah_tracking_service.dart';
 class DailySalahHomeCard extends ConsumerWidget {
   const DailySalahHomeCard({
     super.key,
-    required this.date,
     required this.onOpen,
   });
 
-  final DateTime date;
   final VoidCallback onOpen;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final enabled = ref.watch(dailySalahTrackingEnabledProvider);
-    final logs = ref.watch(dailySalahTrackingLogsProvider(date));
+    final trackingDate = ref.watch(dailySalahTrackingDateProvider);
+    final setupDismissed = ref.watch(dailySalahTrackingSetupDismissedProvider);
+    final logs = ref.watch(dailySalahTrackingLogsProvider(trackingDate));
     final includeWitr = ref.watch(effectiveWitrProvider);
 
     return enabled.when(
@@ -29,57 +29,93 @@ class DailySalahHomeCard extends ConsumerWidget {
       error: (_, __) => const SizedBox.shrink(),
       data: (isEnabled) {
         if (!isEnabled) {
-          return Card(
-            key: const Key('daily_salah_home_card'),
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          return setupDismissed.when(
+            loading: () => const SizedBox.shrink(),
+            error: (_, __) => const SizedBox.shrink(),
+            data: (dismissed) {
+              if (dismissed) return const SizedBox.shrink();
+              return Card(
+                key: const Key('daily_salah_home_card'),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
-                        Icons.checklist_rounded,
-                        color: Theme.of(context).colorScheme.primary,
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.checklist_rounded,
+                            color: Theme.of(context).colorScheme.primary,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              l10n.dailySalahTrackingEnableTitle,
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          l10n.dailySalahTrackingEnableTitle,
-                          style: Theme.of(context).textTheme.titleMedium,
-                        ),
+                      const SizedBox(height: 8),
+                      Text(
+                        l10n.dailySalahTrackingEnableSubtitle,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          TextButton(
+                            key: const Key('daily_salah_skip_tracking'),
+                            onPressed: () async {
+                              try {
+                                await ref
+                                    .read(dailySalahTrackingServiceProvider)
+                                    .setSetupDismissed(true);
+                                ref.invalidate(
+                                  dailySalahTrackingSetupDismissedProvider,
+                                );
+                                if (!context.mounted) return;
+                                ref
+                                    .read(appSnackbarServiceProvider)
+                                    .info(
+                                      AppLocalizations.of(context)
+                                          .dailySalahTrackingSkippedMessage,
+                                    );
+                              } catch (_) {
+                                if (!context.mounted) return;
+                                ref
+                                    .read(appSnackbarServiceProvider)
+                                    .error(AppLocalizations.of(context).errorStorage);
+                              }
+                            },
+                            child: Text(l10n.dailySalahTrackingSkipForNow),
+                          ),
+                          const SizedBox(width: 8),
+                          FilledButton(
+                            key: const Key('daily_salah_enable_tracking'),
+                            onPressed: () async {
+                              try {
+                                await ref
+                                    .read(dailySalahTrackingServiceProvider)
+                                    .setEnabled(true);
+                                ref.invalidate(dailySalahTrackingEnabledProvider);
+                              } catch (_) {
+                                if (!context.mounted) return;
+                                ref
+                                    .read(appSnackbarServiceProvider)
+                                    .error(AppLocalizations.of(context).errorStorage);
+                              }
+                            },
+                            child: Text(l10n.dailySalahTrackingEnableAction),
+                          ),
+                        ],
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    l10n.dailySalahTrackingEnableSubtitle,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 12),
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: FilledButton(
-                      key: const Key('daily_salah_enable_tracking'),
-                      onPressed: () async {
-                        try {
-                          await ref
-                              .read(dailySalahTrackingServiceProvider)
-                              .setEnabled(true);
-                          ref.invalidate(dailySalahTrackingEnabledProvider);
-                        } catch (_) {
-                          if (!context.mounted) return;
-                          ref
-                              .read(appSnackbarServiceProvider)
-                              .error(AppLocalizations.of(context).errorStorage);
-                        }
-                      },
-                      child: Text(l10n.dailySalahTrackingEnableAction),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+                ),
+              );
+            },
           );
         }
 

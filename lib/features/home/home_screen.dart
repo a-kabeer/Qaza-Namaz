@@ -241,7 +241,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
       return HomeEmptyState(
         onAddQaza: () => openAddQaza(context),
         leadingContent: DailySalahHomeCard(
-          date: ref.watch(homeLocalDateProvider),
           onOpen: () => _open(
             context,
             ref,
@@ -270,7 +269,6 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 DailySalahHomeCard(
-                  date: ref.watch(homeLocalDateProvider),
                   onOpen: () => _open(
                     context,
                     ref,
