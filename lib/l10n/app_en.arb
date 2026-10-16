@@ -1436,5 +1436,20 @@
   "cloudSetupChoiceDescription": "Track your missed prayers and organize your Qaza progress at your own pace. Your records stay on this device. You can optionally use Google to back up and restore progress across devices.",
   "cloudSetupUseGoogle": "Continue with Google",
   "cloudSetupContinueLocal": "Continue on this device",
-  "cloudConnectionFailed": "Google connection could not be completed. Try again or continue locally."
+  "cloudConnectionFailed": "Google connection could not be completed. Try again or continue locally.",
+  "dailySalahTrackingTitle": "Daily Salah Tracking",
+  "dailySalahTrackingEnableTitle": "Enable Daily Salah Tracking",
+  "dailySalahTrackingEnableSubtitle": "Record prayers you prayed or missed. Unrecorded prayers are never marked missed automatically.",
+  "dailySalahTrackingEnableAction": "Enable",
+  "dailySalahTrackingPrayed": "Prayed",
+  "dailySalahTrackingMissed": "Missed",
+  "dailySalahTrackingUnrecorded": "Unrecorded",
+  "dailySalahTrackingConfirmMissedTitle": "Record prayer as missed?",
+  "dailySalahTrackingConfirmMissedMessage": "This creates a Qaza entry for this prayer and date only if one does not already exist.",
+  "dailySalahTrackingUndoQaza": "Undo tracker-created Qaza",
+  "dailySalahTrackingUndoTitle": "Remove this Qaza entry?",
+  "dailySalahTrackingUndoMessage": "Only the exact Qaza entry created by Daily Salah Tracking will be removed, and only if it is still pending.",
+  "dailySalahTrackingPreviousDay": "Previous day",
+  "dailySalahTrackingNextDay": "Next day",
+  "dailySalahTrackingUndoUnavailable": "This Qaza entry is no longer pending, so it was not removed."
 }
