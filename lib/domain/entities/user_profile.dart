@@ -1,3 +1,6 @@
+import '../../core/calendar/fixed_hijri_arithmetic_service.dart';
+import '../../core/time/local_date_service.dart';
+
 class UserProfile {
   const UserProfile({
     this.languageCode = 'en',
@@ -76,20 +79,38 @@ class UserProfile {
   DateTime? get pubertyDate => pubertyDateOverride;
   DateTime? get startPrayingDate => startPrayingDateOverride;
 
-  bool get isComplete =>
-      onboardingCompleted &&
-      gender != null &&
-      madhab != null &&
-      dateOfBirth != null &&
-      (!isNewMuslim || islamAcceptanceDate != null) &&
-      ((isNewMuslim && islamAcceptanceDate != null) ||
-          (pubertyInputMode == ProfileInputMode.ageEstimate
-              ? pubertyAge != null
-              : pubertyDateOverride != null)) &&
-      (startPrayingInputMode == ProfileInputMode.ageEstimate
-          ? startPrayingAge != null
-          : startPrayingDateOverride != null) &&
-      witrIncluded != null;
+  bool get isComplete {
+    final pubertyRequired = _requiresPubertyInputForCompletion();
+    return onboardingCompleted &&
+        gender != null &&
+        madhab != null &&
+        dateOfBirth != null &&
+        (!isNewMuslim || islamAcceptanceDate != null) &&
+        (!pubertyRequired ||
+            (pubertyInputMode == ProfileInputMode.ageEstimate
+                ? pubertyAge != null
+                : pubertyDateOverride != null)) &&
+        (startPrayingInputMode == ProfileInputMode.ageEstimate
+            ? startPrayingAge != null
+            : startPrayingDateOverride != null) &&
+        witrIncluded != null;
+  }
+
+  bool _requiresPubertyInputForCompletion() {
+    if (!isNewMuslim) return true;
+    final dob = dateOfBirth;
+    final acceptedDate = islamAcceptanceDate;
+    if (dob == null || acceptedDate == null || gender == null) return true;
+
+    // Both configured gender rules currently use age 15 as the cutoff.
+    // This only decides whether to ask for puberty information; it does not
+    // assume that puberty occurred at the cutoff age.
+    final cutoff = FixedHijriArithmeticService.projectFromBirth(
+      dob: dob,
+      fixedDayOffset: 15 * FixedHijriArithmeticService.daysPerYear,
+    );
+    return LocalDateService.compareCalendarDates(acceptedDate, cutoff) < 0;
+  }
 
   UserProfile copyWith({
     String? languageCode,
