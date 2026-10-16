@@ -34,6 +34,7 @@ class HijriDateAdjustmentSheet extends StatelessWidget {
       builder: (_) => HijriDateAdjustmentSheet(
         date: date,
         selectedOffset: selectedOffset,
+      ),
     );
   }
 
@@ -161,7 +162,6 @@ class _AdjustmentOption extends StatelessWidget {
               ),
             ],
           ),
-        ),
         ),
       ),
     );
