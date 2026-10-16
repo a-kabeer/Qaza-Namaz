@@ -913,6 +913,23 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
             ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
           .go();
 
+  /// Atomically deletes a Qaza row only while it remains pending.
+  ///
+  /// Daily Salah tracking relies on this conditional DELETE so a concurrent
+  /// completion cannot be undone by a stale confirmation dialog.
+  Future<int> deletePendingById({
+    required String userId,
+    required String id,
+  }) =>
+      (delete(qazaRecords)
+            ..where(
+              (row) =>
+                  row.userId.equals(userId) &
+                  row.id.equals(id) &
+                  row.status.equals(QazaStatus.pending.name),
+            ))
+          .go();
+
   int _qazaPrayerRankForName(String name) {
     final index =
         PrayerTypeX.qazaSequence.indexWhere((prayer) => prayer.name == name);
