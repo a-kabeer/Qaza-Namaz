@@ -35,6 +35,11 @@ class HijriDateService {
     );
   }
 
+  /// Shifts only a derived display date; the original Gregorian value is never changed.
+  static DateTime _displayDateWithOffset(DateTime date, int offsetDays) {
+    return DateTime(date.year, date.month, date.day + offsetDays);
+  }
+
   /// Converts a Hijri date to a date-only Gregorian [DateTime].
   static DateTime toGregorian({
     required int year,
@@ -116,10 +121,15 @@ class HijriDateService {
   /// day's Hijri date as the month header.
   static String monthYearLabel(
     DateTime date,
-    AppLocalizations l10n,
-  ) {
-    final first = fromGregorian(DateTime(date.year, date.month, 1));
-    final last = fromGregorian(DateTime(date.year, date.month + 1, 0));
+    AppLocalizations l10n, {
+    int offsetDays = 0,
+  }) {
+    final first = fromGregorian(
+      _displayDateWithOffset(DateTime(date.year, date.month, 1), offsetDays),
+    );
+    final last = fromGregorian(
+      _displayDateWithOffset(DateTime(date.year, date.month + 1, 0), offsetDays),
+    );
 
     final firstLabel = l10n.hijriMonthYear(
       monthNameFor(first.month, l10n),
@@ -143,13 +153,27 @@ class HijriDateService {
   /// Formats a Gregorian date as the app's standard secondary Hijri label.
   static String format(
     DateTime date,
-    AppLocalizations l10n,
-  ) {
-    final hijri = fromGregorian(date);
+    AppLocalizations l10n, {
+    int offsetDays = 0,
+  }) {
+    final hijri = fromGregorian(_displayDateWithOffset(date, offsetDays));
     return l10n.hijriDate(
       hijri.day,
       monthNameFor(hijri.month, l10n),
       hijri.year,
+    );
+  }
+
+  /// Formats only the Hijri day and localized month for adjustment previews.
+  static String formatShort(
+    DateTime date,
+    AppLocalizations l10n, {
+    int offsetDays = 0,
+  }) {
+    final hijri = fromGregorian(_displayDateWithOffset(date, offsetDays));
+    return l10n.hijriDateShort(
+      hijri.day,
+      monthNameFor(hijri.month, l10n),
     );
   }
 }
@@ -159,5 +183,9 @@ class HijriDateService {
 /// Feature code supplies only its Gregorian [DateTime]; localization remains
 /// attached to the already-available AppLocalizations instance.
 extension AppLocalizationsHijriDateFormatting on AppLocalizations {
-  String formatHijriDate(DateTime date) => HijriDateService.format(date, this);
+  String formatHijriDate(DateTime date, {int offsetDays = 0}) =>
+      HijriDateService.format(date, this, offsetDays: offsetDays);
+
+  String formatShortHijriDate(DateTime date, {int offsetDays = 0}) =>
+      HijriDateService.formatShort(date, this, offsetDays: offsetDays);
 }
