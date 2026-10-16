@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -19,12 +20,15 @@ class DailySalahTrackingScreen extends ConsumerStatefulWidget {
 
 class _DailySalahTrackingScreenState
     extends ConsumerState<DailySalahTrackingScreen> {
-  late DateTime _selectedDate = _dayOnly(DateTime.now());
+  /// Null means the screen follows the active Fajr-based tracking date.
+  DateTime? _selectedDate;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final logs = ref.watch(dailySalahTrackingLogsProvider(_selectedDate));
+    final trackingDate = ref.watch(dailySalahTrackingDateProvider);
+    final selectedDate = _selectedDate ?? trackingDate;
+    final logs = ref.watch(dailySalahTrackingLogsProvider(selectedDate));
     final includeWitr = ref.watch(effectiveWitrProvider);
     final prayers = PrayerType.values
         .where((prayer) => includeWitr || prayer != PrayerType.witr)
@@ -47,35 +51,54 @@ class _DailySalahTrackingScreenState
         data: (dailyLogs) => ListView(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
           children: [
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                child: Row(
-                  children: [
-                    IconButton(
-                      key: const Key('daily_salah_previous_day'),
-                      tooltip: l10n.dailySalahTrackingPreviousDay,
-                      onPressed: () => _changeDay(-1),
-                      icon: const Icon(Icons.chevron_left_rounded),
-                    ),
-                    Expanded(
-                      child: TextButton.icon(
-                        key: const Key('daily_salah_select_date'),
-                        onPressed: _pickDate,
-                        icon: const Icon(Icons.calendar_month_outlined),
-                        label: Text(
-                          DateFormat.yMMMd(locale).format(_selectedDate),
-                          textAlign: TextAlign.center,
+            GestureDetector(
+              key: const Key('daily_salah_calendar_swipe'),
+              behavior: HitTestBehavior.opaque,
+              onHorizontalDragEnd: (details) {
+                final velocity = details.primaryVelocity ?? 0;
+                if (velocity < -100) {
+                  _changeDay(1, trackingDate);
+                } else if (velocity > 100) {
+                  _changeDay(-1, trackingDate);
+                }
+              },
+              child: Card(
+                key: const Key('daily_salah_calendar'),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        key: const Key('daily_salah_previous_day'),
+                        tooltip: l10n.dailySalahTrackingPreviousDay,
+                        onPressed: () => _changeDay(-1, trackingDate),
+                        icon: const Icon(Icons.chevron_left_rounded),
+                      ),
+                      Expanded(
+                        child: TextButton.icon(
+                          key: const Key('daily_salah_select_date'),
+                          onPressed: () => _pickDate(selectedDate, trackingDate),
+                          icon: const Icon(Icons.calendar_month_outlined),
+                          label: Text(
+                            DateFormat.yMMMd(locale).format(selectedDate),
+                            key: const Key('daily_salah_selected_date'),
+                            textAlign: TextAlign.center,
+                          ),
                         ),
                       ),
-                    ),
-                    IconButton(
-                      key: const Key('daily_salah_next_day'),
-                      tooltip: l10n.dailySalahTrackingNextDay,
-                      onPressed: _isToday ? null : () => _changeDay(1),
-                      icon: const Icon(Icons.chevron_right_rounded),
-                    ),
-                  ],
+                      IconButton(
+                        key: const Key('daily_salah_next_day'),
+                        tooltip: l10n.dailySalahTrackingNextDay,
+                        onPressed: _isTrackingDate(selectedDate, trackingDate)
+                            ? null
+                            : () => _changeDay(1, trackingDate),
+                        icon: const Icon(Icons.chevron_right_rounded),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -86,6 +109,14 @@ class _DailySalahTrackingScreenState
                 l10n: l10n,
                 prayer: prayer,
                 log: dailyLogs[prayer],
+                selectedDate: selectedDate,
+                isAvailable: ref.watch(
+                  dailySalahPrayerAvailableProvider((
+                    date: selectedDate,
+                    trackingDate: trackingDate,
+                    prayerType: prayer,
+                  )),
+                ),
               ),
           ],
         ),
@@ -98,6 +129,8 @@ class _DailySalahTrackingScreenState
     required AppLocalizations l10n,
     required PrayerType prayer,
     required DailySalahLog? log,
+    required DateTime selectedDate,
+    required bool isAvailable,
   }) {
     final status = log?.status ?? DailySalahStatus.unrecorded;
     final prayedSelected = status == DailySalahStatus.prayed;
@@ -105,7 +138,7 @@ class _DailySalahTrackingScreenState
     final theme = Theme.of(context);
 
     return Card(
-      key: Key('daily_salah_prayer_${prayer.name}'),
+      key: Key('daily_salah_prayer_' + prayer.name),
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -123,13 +156,21 @@ class _DailySalahTrackingScreenState
                 Expanded(
                   child: prayedSelected
                       ? FilledButton(
-                          key: Key('daily_salah_prayed_${prayer.name}'),
-                          onPressed: () => _setPrayed(prayer, status),
+                          key: Key('daily_salah_prayed_' + prayer.name),
+                          onPressed: isAvailable
+                              ? () => _confirmRemoveStatus(prayer, selectedDate)
+                              : null,
                           child: Text(l10n.dailySalahTrackingPrayed),
                         )
                       : OutlinedButton(
-                          key: Key('daily_salah_prayed_${prayer.name}'),
-                          onPressed: () => _setPrayed(prayer, status),
+                          key: Key('daily_salah_prayed_' + prayer.name),
+                          onPressed: isAvailable
+                              ? () => _setPrayed(
+                                    prayer,
+                                    status,
+                                    selectedDate,
+                                  )
+                              : null,
                           child: Text(l10n.dailySalahTrackingPrayed),
                         ),
                 ),
@@ -137,39 +178,22 @@ class _DailySalahTrackingScreenState
                 Expanded(
                   child: missedSelected
                       ? FilledButton(
-                          key: Key('daily_salah_missed_${prayer.name}'),
-                          onPressed: () => _confirmMissed(prayer),
+                          key: Key('daily_salah_missed_' + prayer.name),
+                          onPressed: isAvailable
+                              ? () => _confirmRemoveStatus(prayer, selectedDate)
+                              : null,
                           child: Text(l10n.dailySalahTrackingMissed),
                         )
                       : OutlinedButton(
-                          key: Key('daily_salah_missed_${prayer.name}'),
-                          onPressed: () => _confirmMissed(prayer),
+                          key: Key('daily_salah_missed_' + prayer.name),
+                          onPressed: isAvailable
+                              ? () => _confirmMissed(prayer, selectedDate)
+                              : null,
                           child: Text(l10n.dailySalahTrackingMissed),
                         ),
                 ),
               ],
             ),
-            if (log?.trackerCreatedQazaId != null)
-              FutureBuilder<bool>(
-                future: ref
-                    .read(dailySalahTrackingServiceProvider)
-                    .canUndoTrackerCreatedQaza(
-                      userId: log!.userId,
-                      prayerType: prayer,
-                      date: _selectedDate,
-                    ),
-                builder: (context, snapshot) {
-                  if (snapshot.data != true) return const SizedBox.shrink();
-                  return Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: TextButton(
-                      key: Key('daily_salah_undo_${prayer.name}'),
-                      onPressed: () => _confirmUndo(prayer),
-                      child: Text(l10n.dailySalahTrackingUndoQaza),
-                    ),
-                  );
-                },
-              ),
           ],
         ),
       ),
@@ -179,20 +203,57 @@ class _DailySalahTrackingScreenState
   Future<void> _setPrayed(
     PrayerType prayer,
     DailySalahStatus currentStatus,
+    DateTime date,
+  ) async {
+    if (currentStatus == DailySalahStatus.prayed) {
+      await _confirmRemoveStatus(prayer, date);
+      return;
+    }
+    await _saveStatus(prayer, date, DailySalahStatus.prayed);
+  }
+
+  Future<void> _confirmRemoveStatus(
+    PrayerType prayer,
+    DateTime date,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.dailySalahTrackingRemoveStatusTitle),
+        content: Text(l10n.dailySalahTrackingRemoveStatusMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            key: const Key('daily_salah_confirm_remove_status'),
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.dailySalahTrackingRemoveStatusAction),
+          ),
+        ],
+      ),
+    );
+    if (!mounted || confirmed != true) return;
+    await _saveStatus(prayer, date, DailySalahStatus.unrecorded);
+  }
+
+  Future<void> _saveStatus(
+    PrayerType prayer,
+    DateTime date,
+    DailySalahStatus status,
   ) async {
     final userId = ref.read(activeUserIdProvider);
     if (userId == null) return;
-    final nextStatus = currentStatus == DailySalahStatus.prayed
-        ? DailySalahStatus.unrecorded
-        : DailySalahStatus.prayed;
     try {
       await ref.read(dailySalahTrackingServiceProvider).setStatus(
             userId: userId,
             prayerType: prayer,
-            date: _selectedDate,
-            status: nextStatus,
+            date: date,
+            status: status,
           );
-      ref.invalidate(dailySalahTrackingLogsProvider(_selectedDate));
+      ref.invalidate(dailySalahTrackingLogsProvider(date));
     } catch (_) {
       if (!mounted) return;
       ref
@@ -201,7 +262,7 @@ class _DailySalahTrackingScreenState
     }
   }
 
-  Future<void> _confirmMissed(PrayerType prayer) async {
+  Future<void> _confirmMissed(PrayerType prayer, DateTime date) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
@@ -228,11 +289,11 @@ class _DailySalahTrackingScreenState
       await ref.read(dailySalahTrackingServiceProvider).recordMissed(
             userId: userId,
             prayerType: prayer,
-            date: _selectedDate,
+            date: date,
           );
-      ref.invalidate(dailySalahTrackingLogsProvider(_selectedDate));
+      ref.invalidate(dailySalahTrackingLogsProvider(date));
+      ref.invalidate(progressSummaryProvider);
       ref.invalidate(dailySalahTrackingEnabledProvider);
-      ref.invalidate(progressSummaryProvider);
     } catch (_) {
       if (!mounted) return;
       ref
@@ -241,71 +302,40 @@ class _DailySalahTrackingScreenState
     }
   }
 
-  Future<void> _confirmUndo(PrayerType prayer) async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.dailySalahTrackingUndoTitle),
-        content: Text(l10n.dailySalahTrackingUndoMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.dailySalahTrackingUndoQaza),
-          ),
-        ],
-      ),
-    );
-    if (!mounted || confirmed != true) return;
-    final userId = ref.read(activeUserIdProvider);
-    if (userId == null) return;
-    try {
-      final deleted = await ref
-          .read(dailySalahTrackingServiceProvider)
-          .undoTrackerCreatedQaza(
-            userId: userId,
-            prayerType: prayer,
-            date: _selectedDate,
-          );
-      if (!mounted) return;
-      ref.invalidate(dailySalahTrackingLogsProvider(_selectedDate));
-      ref.invalidate(progressSummaryProvider);
-      if (!deleted) {
-        ref
-            .read(appSnackbarServiceProvider)
-            .error(l10n.dailySalahTrackingUndoUnavailable);
-      }
-    } catch (_) {
-      if (!mounted) return;
-      ref
-          .read(appSnackbarServiceProvider)
-          .error(AppLocalizations.of(context).errorStorage);
-    }
-  }
-
-  Future<void> _pickDate() async {
-    final today = _dayOnly(DateTime.now());
+  Future<void> _pickDate(
+    DateTime selectedDate,
+    DateTime trackingDate,
+  ) async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate.isAfter(today) ? today : _selectedDate,
+      initialDate: selectedDate.isAfter(trackingDate)
+          ? trackingDate
+          : selectedDate,
       firstDate: DateTime(1900),
-      lastDate: today,
+      lastDate: trackingDate,
     );
     if (picked == null || !mounted) return;
-    setState(() => _selectedDate = _dayOnly(picked));
+    _selectDate(picked, trackingDate);
   }
 
-  void _changeDay(int amount) {
-    final next = _dayOnly(_selectedDate.add(Duration(days: amount)));
-    if (next.isAfter(_dayOnly(DateTime.now()))) return;
-    setState(() => _selectedDate = next);
+  void _changeDay(int amount, DateTime trackingDate) {
+    final current = _selectedDate ?? trackingDate;
+    final next = _dayOnly(current.add(Duration(days: amount)));
+    if (next.isAfter(_dayOnly(trackingDate))) return;
+    _selectDate(next, trackingDate);
   }
 
-  bool get _isToday => _selectedDate == _dayOnly(DateTime.now());
+  void _selectDate(DateTime date, DateTime trackingDate) {
+    final selected = _dayOnly(date);
+    setState(() {
+      _selectedDate = _isTrackingDate(selected, trackingDate)
+          ? null
+          : selected;
+    });
+  }
+
+  bool _isTrackingDate(DateTime date, DateTime trackingDate) =>
+      _dayOnly(date) == _dayOnly(trackingDate);
 
   static DateTime _dayOnly(DateTime date) =>
       DateTime(date.year, date.month, date.day);
