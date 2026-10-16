@@ -4499,6 +4499,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Google connection could not be completed. Try again or continue locally.'**
   String get cloudConnectionFailed;
+
+  String get dailySalahTrackingTitle;
+
+  String get dailySalahTrackingEnableTitle;
+
+  String get dailySalahTrackingEnableSubtitle;
+
+  String get dailySalahTrackingEnableAction;
+
+  String get dailySalahTrackingPrayed;
+
+  String get dailySalahTrackingMissed;
+
+  String get dailySalahTrackingUnrecorded;
+
+  String get dailySalahTrackingConfirmMissedTitle;
+
+  String get dailySalahTrackingConfirmMissedMessage;
+
+  String get dailySalahTrackingUndoQaza;
+
+  String get dailySalahTrackingUndoTitle;
+
+  String get dailySalahTrackingUndoMessage;
+
+  String get dailySalahTrackingPreviousDay;
+
+  String get dailySalahTrackingNextDay;
+
+  String get dailySalahTrackingUndoUnavailable;
 }
 
 class _AppLocalizationsDelegate
