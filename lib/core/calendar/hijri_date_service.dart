@@ -35,7 +35,8 @@ class HijriDateService {
     );
   }
 
-  /// Shifts only a derived display date; the original Gregorian value is never changed.
+  /// Shifts only a derived display date; the original Gregorian value is never
+  /// changed.
   static DateTime _displayDateWithOffset(DateTime date, int offsetDays) {
     return DateTime(date.year, date.month, date.day + offsetDays);
   }
@@ -128,7 +129,10 @@ class HijriDateService {
       _displayDateWithOffset(DateTime(date.year, date.month, 1), offsetDays),
     );
     final last = fromGregorian(
-      _displayDateWithOffset(DateTime(date.year, date.month + 1, 0), offsetDays),
+      _displayDateWithOffset(
+        DateTime(date.year, date.month + 1, 0),
+        offsetDays,
+      ),
     );
 
     final firstLabel = l10n.hijriMonthYear(
