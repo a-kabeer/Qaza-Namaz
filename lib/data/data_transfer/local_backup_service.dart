@@ -377,7 +377,10 @@ class LocalBackupService {
         'Backup database schema version is invalid.',
       );
     }
-    if (databaseSchema != database.schemaVersion) {
+    // Schema 19 backups predate the optional daily Salah table. They remain
+    // importable because the Qaza ledger shape is unchanged and missing logs
+    // safely default to an empty history with tracking disabled.
+    if (databaseSchema != database.schemaVersion && databaseSchema != 19) {
       throw LocalBackupException(
         'Backup database schema $databaseSchema is not supported by this release '
         '(current schema: ${database.schemaVersion}).',
