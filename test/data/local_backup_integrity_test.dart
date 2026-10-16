@@ -272,7 +272,7 @@ void main() {
     final decoded =
         jsonDecode(await service.exportJson()) as Map<String, dynamic>;
     (decoded['metadata'] as Map<String, dynamic>)['database_schema_version'] =
-        database.schemaVersion - 1;
+        18; // Schema 19 is intentionally supported.
 
     expect(
       () => service.importJson(jsonEncode(decoded)),
