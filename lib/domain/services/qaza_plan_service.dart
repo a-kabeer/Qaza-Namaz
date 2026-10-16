@@ -33,6 +33,24 @@ class QazaPlanService {
   const QazaPlanService();
 
   QazaPlan? planFor(UserProfile profile) {
+    final dob = profile.dateOfBirth;
+    if (dob == null) return null;
+    final currentAge = ProfileRules.currentAge(dob, LocalDateService.today());
+
+    if (profile.pubertyInputMode == ProfileInputMode.ageEstimate) {
+      final age = profile.pubertyAge;
+      if (profile.gender == null ||
+          age == null ||
+          !ProfileRules.isPubertyAgeAllowed(profile.gender!, age) ||
+          age > currentAge) {
+        return null;
+      }
+    }
+    if (profile.startPrayingInputMode == ProfileInputMode.ageEstimate) {
+      final age = profile.startPrayingAge;
+      if (age == null || age < 7 || age > currentAge) return null;
+    }
+
     final pubertyDate = ProfileRules.pubertyDate(profile);
     final startPrayingDate = ProfileRules.startPrayingDate(profile);
     if (pubertyDate == null || startPrayingDate == null) return null;
