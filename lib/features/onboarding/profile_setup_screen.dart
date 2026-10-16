@@ -104,6 +104,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
     await ref.read(userProfileProvider.future);
 
     if (!mounted) return;
+    final hijriOffset = await ref.read(hijriDateAdjustmentProvider.future);
+    if (!mounted) return;
 
     final action = await showDialog<QazaReviewAction>(
       context: context,
@@ -111,8 +113,7 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       builder: (_) => QazaReviewDialog(
         profile: finalizedProfile,
         plan: plan,
-        hijriOffsetDays:
-            ref.read(hijriDateAdjustmentProvider).valueOrNull ?? 0,
+        hijriOffsetDays: hijriOffset,
         onConfirm: () => _startQazaPlanImport(
           plan,
           finalizedProfile,
