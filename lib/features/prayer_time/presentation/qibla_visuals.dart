@@ -135,7 +135,6 @@ class QiblaDialPainter extends CustomPainter {
     canvas.restore();
   }
 
-
   void _drawCardinal(
     Canvas canvas,
     TextPainter painter,
