@@ -12,29 +12,26 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
-  test(
-    'interactive Google sign-in cancellation is a normal outcome',
-    () async {
-      final preferences = await SharedPreferences.getInstance();
-      final state = SharedPreferencesCloudSyncStateStore(
-        preferences: preferences,
-      );
-      final gateway = _CancellingGateway();
-      final scheduler = _CountingScheduler(state: state);
-      final provider = GoogleCloudAccountProvider(
-        gateway: gateway,
-        state: state,
-        scheduler: scheduler,
-      );
+  test('interactive Google sign-in cancellation is a normal outcome', () async {
+    final preferences = await SharedPreferences.getInstance();
+    final state = SharedPreferencesCloudSyncStateStore(
+      preferences: preferences,
+    );
+    final gateway = _CancellingGateway();
+    final scheduler = _CountingScheduler(state: state);
+    final provider = GoogleCloudAccountProvider(
+      gateway: gateway,
+      state: state,
+      scheduler: scheduler,
+    );
 
-      final result = await provider.signIn();
+    final result = await provider.signIn();
 
-      expect(result.wasCancelled, isTrue);
-      expect(result.status, CloudAccountStatus.disconnected);
-      expect(await state.isCloudSyncEnabled(), isFalse);
-      expect(scheduler.initializeCalls, 0);
-    },
-  );
+    expect(result.wasCancelled, isTrue);
+    expect(result.status, CloudAccountStatus.disconnected);
+    expect(await state.isCloudSyncEnabled(), isFalse);
+    expect(scheduler.initializeCalls, 0);
+  });
 
   test(
     'restore verifies native Drive authorization after process recreation',
