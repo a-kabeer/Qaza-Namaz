@@ -203,12 +203,41 @@ void main() {
 
     final logs = await tracking.logsForDate(userId: userId, date: date);
     expect(logs[PrayerType.isha]?.status, DailySalahStatus.prayed);
-    expect(logs[PrayerType.isha]?.completionSyncId, isNotNull);
+    final completionId = logs[PrayerType.isha]?.completionSyncId;
+    expect(completionId, isNotNull);
     final records = await qazaService.getRecordsByIds(
       userId: userId,
       recordIds: [recordId],
     );
     expect(records.single.status, QazaStatus.completed);
+
+    expect(
+      await qazaService.markCompletedAsPending(
+        userId: userId,
+        recordId: recordId,
+      ),
+      isTrue,
+    );
+    await tracking.syncQazaReopened(
+      userId: userId,
+      recordId: recordId,
+      prayerType: PrayerType.isha,
+      originalDate: date,
+      expectedCompletionId: completionId!,
+    );
+    expect(
+      (await tracking.logForDate(
+        userId: userId,
+        date: date,
+        prayerType: PrayerType.isha,
+      ))?.status,
+      DailySalahStatus.missed,
+    );
+    final reopened = await qazaService.getRecordsByIds(
+      userId: userId,
+      recordIds: [recordId],
+    );
+    expect(reopened.single.status, QazaStatus.pending);
   });
 
   test('existing manual Qaza is never claimed or duplicated', () async {
