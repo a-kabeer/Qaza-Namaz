@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/errors/app_error.dart';
+import '../../core/errors/app_error_messages.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
 import '../../l10n/app_localizations.dart';
@@ -24,8 +27,9 @@ class _CloudSetupChoiceScreenState
   bool _working = false;
   bool _accountConnected = false;
   bool _cloudAttempted = false;
-  String? _error;
-  bool _retryAvailable = true;
+  final List<_QueuedCloudErrorDialog> _queuedErrorDialogs = [];
+  bool _errorDialogShowing = false;
+  bool _errorDialogScheduled = false;
   CloudBackupDiscoverySnapshot? _discovery;
   bool _restoring = false;
   CloudBackupProgress? _restoreProgress;
@@ -43,8 +47,6 @@ class _CloudSetupChoiceScreenState
     }
     setState(() {
       _selectedLocale = locale;
-      _error = null;
-      _retryAvailable = true;
     });
     // Update MaterialApp immediately; serialize writes so rapid language
     // changes cannot complete out of order in SharedPreferences.
@@ -52,7 +54,10 @@ class _CloudSetupChoiceScreenState
     _languagePersistence = _languagePersistence
         .then((_) => ref.read(localeProvider.notifier).persist(locale))
         .catchError((Object error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (!mounted) return;
+      _showErrorDialog(
+        message: AppError.from(error).message(context),
+      );
     });
   }
 
@@ -77,12 +82,20 @@ class _CloudSetupChoiceScreenState
         _cloudAttempted = true;
       } else if (account.status == CloudAccountStatus.failed) {
         _cloudAttempted = true;
-        setState(() => _error = account.message ??
-            AppLocalizations.of(context).cloudConnectionFailed);
+        _showFailure(
+          error: account.message,
+          fallbackMessage:
+              AppLocalizations.of(context).cloudConnectionFailed,
+          onRetry: _restoreExistingAccount,
+        );
       }
     } catch (error) {
       _cloudAttempted = true;
-      if (mounted) setState(() => _error = error.toString());
+      _showFailure(
+        error: error,
+        fallbackMessage: AppLocalizations.of(context).cloudConnectionFailed,
+        onRetry: _restoreExistingAccount,
+      );
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -105,29 +118,26 @@ class _CloudSetupChoiceScreenState
     switch (result.status) {
       case CloudBackupDiscoveryStatus.unavailable:
       case CloudBackupDiscoveryStatus.failed:
-        setState(() {
-          _discovery = null;
-          _error = result.message ??
-              AppLocalizations.of(context).cloudConnectionFailed;
-          _retryAvailable = true;
-        });
+        setState(() => _discovery = null);
+        _showFailure(
+          error: result.message,
+          fallbackMessage:
+              AppLocalizations.of(context).cloudConnectionFailed,
+          onRetry: _retry,
+        );
         return;
       case CloudBackupDiscoveryStatus.invalidBackup:
-        setState(() {
-          _discovery = null;
-          _error = result.message ??
-              AppLocalizations.of(context).cloudConnectionFailed;
-          // Invalid or unsupported payloads will not change by retrying the
-          // same account. The Google button lets users pick another account,
-          // and Continue Local remains available as a safe exit.
-          _retryAvailable = false;
-        });
+        setState(() => _discovery = null);
+        _showFailure(
+          error: result.message,
+          fallbackMessage:
+              AppLocalizations.of(context).cloudSetupBackupUnreadableMessage,
+          onRetry: _retry,
+          invalidBackup: true,
+        );
         return;
       case CloudBackupDiscoveryStatus.noBackup:
-        setState(() {
-          _discovery = result;
-          _error = null;
-        });
+        setState(() => _discovery = result);
         // Persist the intent before onboarding starts. StartupGate can retry
         // the initial upload after a process death without asking the user to
         // repeat profile/Qaza setup.
@@ -140,7 +150,6 @@ class _CloudSetupChoiceScreenState
       case CloudBackupDiscoveryStatus.backupFound:
         setState(() {
           _discovery = result;
-          _error = null;
         });
         final conflict = result.conflict;
         if (conflict != null &&
@@ -161,8 +170,6 @@ class _CloudSetupChoiceScreenState
     if (_working) return;
     setState(() {
       _working = true;
-      _error = null;
-      _retryAvailable = true;
       _discovery = null;
     });
     try {
@@ -177,13 +184,15 @@ class _CloudSetupChoiceScreenState
           : await accountProvider.signInWithRememberedAccount(
               selectedAccountId,
             );
-      if (!mounted) return;
+      if (!mounted || account.wasCancelled) return;
       if (!account.isConnected) {
-        setState(() {
-          _accountConnected = false;
-          _error = account.message ??
-              AppLocalizations.of(context).cloudConnectionFailed;
-        });
+        _accountConnected = false;
+        _showFailure(
+          error: account.message,
+          fallbackMessage:
+              AppLocalizations.of(context).cloudConnectionFailed,
+          onRetry: _connectGoogle,
+        );
         return;
       }
       _accountConnected = true;
@@ -191,7 +200,14 @@ class _CloudSetupChoiceScreenState
       // never requests Drive consent.
       await _discoverBackup(allowInteractive: true);
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) {
+        _showFailure(
+          error: error,
+          fallbackMessage:
+              AppLocalizations.of(context).cloudConnectionFailed,
+          onRetry: _connectGoogle,
+        );
+      }
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -199,10 +215,7 @@ class _CloudSetupChoiceScreenState
 
   Future<void> _continueLocally() async {
     if (_working) return;
-    setState(() {
-      _working = true;
-      _error = null;
-    });
+    setState(() => _working = true);
     try {
       await _persistSelectedLanguage();
       // If Google was connected but discovery failed or the user declines a
@@ -220,7 +233,13 @@ class _CloudSetupChoiceScreenState
       }
       await _completeChoice();
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) {
+        _showFailure(
+          error: error,
+          fallbackMessage: AppLocalizations.of(context).errorUnknown,
+          onRetry: _continueLocally,
+        );
+      }
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -233,7 +252,6 @@ class _CloudSetupChoiceScreenState
     setState(() {
       _restoring = true;
       _restoreProgress = const CloudBackupProgress.checking();
-      _error = null;
     });
     try {
       final result = await ref.read(cloudSyncProvider).resolveConflict(
@@ -249,10 +267,13 @@ class _CloudSetupChoiceScreenState
       if (!mounted) return;
       if (result.status != CloudSyncStatus.synced ||
           !result.restoredRemoteBackup) {
-        setState(() {
-          _error = result.message ??
-              AppLocalizations.of(context).cloudConnectionFailed;
-        });
+        _showFailure(
+          error: result.message,
+          fallbackMessage:
+              AppLocalizations.of(context).cloudRestoreFailedMessage,
+          onRetry: _retry,
+          restoreFailure: true,
+        );
         return;
       }
 
@@ -268,7 +289,15 @@ class _CloudSetupChoiceScreenState
       ref.invalidate(qazaPlanRevisionRepositoryProvider);
       await _completeChoice();
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) {
+        _showFailure(
+          error: error,
+          fallbackMessage:
+              AppLocalizations.of(context).cloudRestoreFailedMessage,
+          onRetry: _retry,
+          restoreFailure: true,
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -307,7 +336,6 @@ class _CloudSetupChoiceScreenState
       _working = true;
       _restoring = true;
       _restoreProgress = const CloudBackupProgress.checking();
-      _error = null;
     });
     try {
       final result = await ref.read(cloudSyncProvider).resolveConflict(
@@ -327,9 +355,12 @@ class _CloudSetupChoiceScreenState
           // Rediscover instead of treating that as a successful restoration.
           await _discoverBackup();
         } else if (mounted) {
-          setState(() {
-            _error = result.message ?? l10n.cloudConnectionFailed;
-          });
+          _showFailure(
+            error: result.message,
+            fallbackMessage: l10n.cloudRestoreFailedMessage,
+            onRetry: _restoreBackup,
+            restoreFailure: true,
+          );
         }
         return;
       }
@@ -347,7 +378,14 @@ class _CloudSetupChoiceScreenState
       ref.invalidate(qazaPlanRevisionRepositoryProvider);
       await _completeChoice();
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) {
+        _showFailure(
+          error: error,
+          fallbackMessage: l10n.cloudRestoreFailedMessage,
+          onRetry: _restoreBackup,
+          restoreFailure: true,
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -368,16 +406,175 @@ class _CloudSetupChoiceScreenState
 
     setState(() {
       _working = true;
-      _error = null;
     });
     try {
       await _persistSelectedLanguage();
       await _discoverBackup(allowInteractive: true);
     } catch (error) {
-      if (mounted) setState(() => _error = error.toString());
+      if (mounted) {
+        _showFailure(
+          error: error,
+          fallbackMessage:
+              AppLocalizations.of(context).cloudConnectionFailed,
+          onRetry: _retry,
+        );
+      }
     } finally {
       if (mounted) setState(() => _working = false);
     }
+  }
+
+  Future<void> _chooseAnotherGoogleAccount() async {
+    if (_working) return;
+
+    if (_accountConnected) {
+      setState(() => _working = true);
+      try {
+        await ref.read(cloudAccountProvider).disconnect();
+        _accountConnected = false;
+        _cloudAttempted = false;
+        _discovery = null;
+      } catch (error) {
+        if (mounted) {
+          _showFailure(
+            error: error,
+            fallbackMessage:
+                AppLocalizations.of(context).cloudConnectionFailed,
+            onRetry: _chooseAnotherGoogleAccount,
+          );
+        }
+        return;
+      } finally {
+        if (mounted) setState(() => _working = false);
+      }
+    }
+
+    if (mounted) await _connectGoogle();
+  }
+
+  void _showFailure({
+    required Object? error,
+    required String fallbackMessage,
+    required Future<void> Function() onRetry,
+    bool invalidBackup = false,
+    bool restoreFailure = false,
+  }) {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final detail = error?.toString() ?? '';
+    final normalized = detail.toLowerCase();
+    final incompatibleBackup = invalidBackup ||
+        normalized.contains('schema') ||
+        normalized.contains('unsupported backup') ||
+        normalized.contains('invalid backup') ||
+        normalized.contains('backup is corrupt') ||
+        normalized.contains('malformed backup') ||
+        normalized.contains('corrupt backup');
+
+    if (incompatibleBackup) {
+      _showErrorDialog(
+        message: l10n.cloudSetupBackupUnreadableMessage,
+        actionLabel: l10n.cloudSetupChooseAnotherAccount,
+        onAction: _chooseAnotherGoogleAccount,
+      );
+      return;
+    }
+
+    final accountMismatch = normalized.contains('did not match') ||
+        normalized.contains('does not match') ||
+        normalized.contains('no longer available');
+    if (accountMismatch) {
+      _showErrorDialog(
+        message: l10n.cloudConnectionFailed,
+        actionLabel: l10n.cloudSetupChooseAnotherAccount,
+        onAction: _chooseAnotherGoogleAccount,
+      );
+      return;
+    }
+
+    final classified = AppError.from(error ?? Exception(fallbackMessage));
+    final message = restoreFailure
+        ? l10n.cloudRestoreFailedMessage
+        : classified.kind == AppErrorKind.unknown
+            ? fallbackMessage
+            : classified.message(context);
+    _showErrorDialog(
+      message: message,
+      actionLabel: classified.isRetryable ? l10n.commonRetry : null,
+      onAction: classified.isRetryable ? onRetry : null,
+    );
+  }
+
+  void _showErrorDialog({
+    required String message,
+    String? actionLabel,
+    Future<void> Function()? onAction,
+  }) {
+    if (!mounted) return;
+    _queuedErrorDialogs.add(
+      _QueuedCloudErrorDialog(
+        message: message,
+        actionLabel: actionLabel,
+        onAction: onAction,
+      ),
+    );
+    _scheduleNextErrorDialog();
+  }
+
+  void _scheduleNextErrorDialog() {
+    if (!mounted ||
+        _errorDialogScheduled ||
+        _errorDialogShowing ||
+        _queuedErrorDialogs.isEmpty) {
+      return;
+    }
+    _errorDialogScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _errorDialogScheduled = false;
+      if (!mounted || _errorDialogShowing || _queuedErrorDialogs.isEmpty) {
+        return;
+      }
+      final next = _queuedErrorDialogs.removeAt(0);
+      unawaited(_presentErrorDialog(next));
+    });
+  }
+
+  Future<void> _presentErrorDialog(_QueuedCloudErrorDialog request) async {
+    if (!mounted) return;
+    _errorDialogShowing = true;
+    var invokeAction = false;
+    final l10n = AppLocalizations.of(context);
+    try {
+      invokeAction =
+          await showDialog<bool>(
+            context: context,
+            barrierDismissible: true,
+            builder: (dialogContext) => AlertDialog(
+              title: Text(l10n.stateErrorTitle),
+              content: Text(request.message),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: Text(l10n.commonCancel),
+                ),
+                if (request.actionLabel != null && request.onAction != null)
+                  FilledButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(true),
+                    child: Text(request.actionLabel!),
+                  ),
+              ],
+            ),
+          ) ??
+          false;
+    } finally {
+      _errorDialogShowing = false;
+    }
+
+    if (!mounted) return;
+    if (invokeAction && request.onAction != null) {
+      await request.onAction!();
+    }
+    _scheduleNextErrorDialog();
   }
 
   @override
@@ -556,8 +753,7 @@ class _CloudSetupChoiceScreenState
                   width: double.infinity,
                   child: OutlinedButton(
                     key: const Key('cloud_setup_connect_google'),
-                    onPressed:
-                        _working || _accountConnected ? null : _connectGoogle,
+                    onPressed: _working ? null : _connectGoogle,
                     style: OutlinedButton.styleFrom(
                       backgroundColor: scheme.surface,
                       foregroundColor: scheme.onSurface,
@@ -606,21 +802,6 @@ class _CloudSetupChoiceScreenState
                     ),
                   ),
                 ),
-                if (_error != null) ...[
-                  const SizedBox(height: 16),
-                  Text(
-                    _error!,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(color: scheme.error),
-                  ),
-                  if (_retryAvailable) ...[
-                    const SizedBox(height: 8),
-                    TextButton(
-                      onPressed: _working ? null : _retry,
-                      child: Text(l10n.commonRetry),
-                    ),
-                  ],
-                ],
               ],
             ),
           ),
@@ -683,4 +864,17 @@ class _GoogleGMarkPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant _GoogleGMarkPainter oldDelegate) => false;
+}
+
+
+class _QueuedCloudErrorDialog {
+  const _QueuedCloudErrorDialog({
+    required this.message,
+    this.actionLabel,
+    this.onAction,
+  });
+
+  final String message;
+  final String? actionLabel;
+  final Future<void> Function()? onAction;
 }
