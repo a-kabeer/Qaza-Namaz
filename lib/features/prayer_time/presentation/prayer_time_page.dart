@@ -645,8 +645,7 @@ class _PrayerTimeHeader extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           PrayerTimeDateHeader(
-            gregorianDate:
-                DateFormatters.formatGregorianWeekdayShortFull(date),
+            gregorianDate: DateFormatters.formatGregorianWeekdayShortFull(date),
             hijriDate: hijri,
             onAdjust: onAdjustHijriDate,
           ),
