@@ -1095,6 +1095,8 @@
   "dailySalahTrackingUnrecorded": "درج نہیں",
   "dailySalahTrackingConfirmMissedTitle": "نماز رہ جانے کے طور پر درج کریں؟",
   "dailySalahTrackingConfirmMissedMessage": "اس نماز اور تاریخ کے لیے صرف اسی صورت میں قضا ریکارڈ بنے گا جب پہلے سے موجود نہ ہو۔",
+  "dailySalahTrackingConfirmPrayedTitle": "نماز کو ادا شدہ قرار دیں؟",
+  "dailySalahTrackingConfirmPrayedMessage": "اس سے نماز کی کیفیت ادا شدہ ہو جائے گی اور اس سے منسلک قضا ریکارڈ مکمل ہو جائے گا۔",
   "dailySalahTrackingUndoQaza": "ٹریکنگ سے بنا قضا ریکارڈ واپس کریں",
   "dailySalahTrackingUndoTitle": "یہ قضا ریکارڈ حذف کریں؟",
   "dailySalahTrackingUndoMessage": "صرف Daily Salah Tracking کا بنایا ہوا یہی قضا ریکارڈ حذف ہوگا، اور صرف اس وقت جب ابھی زیرِ التوا ہو۔",
