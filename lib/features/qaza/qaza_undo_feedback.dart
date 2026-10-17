@@ -51,10 +51,10 @@ Future<void> _syncDailySalahAfterUndo({
   required QazaUndoResult result,
 }) async {
   final remainingIds = result.remainingBatch?.recordIds.toSet() ?? <String>{};
-  final tracking = ref.read(dailySalahTrackingServiceProvider);
   for (final entry in result.batch.entries) {
     if (remainingIds.contains(entry.recordId)) continue;
     try {
+      final tracking = ref.read(dailySalahTrackingServiceProvider);
       await tracking.syncQazaReopened(
         userId: userId,
         recordId: entry.recordId,
