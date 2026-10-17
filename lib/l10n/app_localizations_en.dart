@@ -2658,6 +2658,9 @@ class AppLocalizationsEn extends AppLocalizations {
       'Google connection could not be completed. Try again or continue locally.';
 
   @override
+  String get cloudSetupGoogleConfigurationMessage => "Google sign-in isn't configured correctly in this app. Your local progress is safe; continue as a guest or contact support.";
+
+  @override
   String get cloudSetupBackupUnreadableMessage => "This saved backup can't be restored by this app version. Your local progress is unchanged. Choose another Google account or continue as a guest.";
 
   @override
