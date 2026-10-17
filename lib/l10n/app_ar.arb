@@ -1032,6 +1032,14 @@
     }
   },
   "prayerTimeNextRestricted": "وقت النهي التالي: {name}",
+  "prayerTimeUpcomingPrayer": "الصلاة القادمة: {name}",
+  "@prayerTimeUpcomingPrayer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeUsingSavedLocation": "استخدام الموقع المحفوظ: {location}",
   "prayerTimeAngleHint": "تُستخدم الزوايا لتحديد مواقيت الفجر والعشاء.",
   "prayerTimeAdjustmentMinutes": "التعديل بالدقائق",

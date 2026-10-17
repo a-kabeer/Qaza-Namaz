@@ -2109,6 +2109,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String prayerTimeUpcomingPrayer(String name) {
+    return 'Upcoming $name';
+  }
+
+  @override
   String prayerTimeUsingSavedLocation(String location) {
     return 'Using your saved location: $location';
   }

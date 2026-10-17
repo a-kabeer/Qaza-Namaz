@@ -770,6 +770,14 @@
       }
     }
   },
+  "prayerTimeUpcomingPrayer": "Agli namaz: {name}",
+  "@prayerTimeUpcomingPrayer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeUsingSavedLocation": "Aap ka mehfooz maqam istemal ho raha hai: {location}",
   "@prayerTimeUsingSavedLocation": {
     "placeholders": {

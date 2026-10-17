@@ -1157,6 +1157,14 @@
       }
     }
   },
+  "prayerTimeUpcomingPrayer": "Upcoming {name}",
+  "@prayerTimeUpcomingPrayer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeUsingSavedLocation": "Using your saved location: {location}",
   "@prayerTimeUsingSavedLocation": {
     "placeholders": {

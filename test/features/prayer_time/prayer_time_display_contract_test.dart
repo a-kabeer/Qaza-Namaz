@@ -109,7 +109,9 @@ void main() {
     expect(source, contains('scheme.tertiary'));
   });
 
-  test('overnight focus shows Isha while countdown boundary remains Fajr', () {
+  test(
+      'Prayer Time focus keeps the current prayer and shows the upcoming prayer time',
+      () {
     final source =
         File('lib/features/prayer_time/presentation/prayer_time_page.dart')
             .readAsStringSync();
@@ -120,14 +122,20 @@ void main() {
         'final focusPrayer = current?.focusPrayer ?? currentPrayer ?? nextPrayer;',
       ),
     );
+    expect(source, contains('final countdownPrayer = focusPrayer;'));
+    expect(source, contains('focusLabel = l10n.homeRemaining;'));
+    expect(source, contains('l10n.prayerTimeUpcomingPrayer('));
+    expect(source, contains('_prayerLabel(l10n, nextPrayer)'));
     expect(
       source,
-      contains('final isOvernightFocus = currentPrayer == null &&'),
+      contains(
+        'nextAt == null ? null : _formatTime(context, nextAt, snapshot)',
+      ),
     );
-    expect(source, contains('prayer == focusPrayer'));
-    expect(source, contains('_prayerLabel(l10n, nextPrayer!)'));
     expect(source, contains('_formatTime(context, nextAt, snapshot)'));
-    expect(source, contains('final countdownPrayer = focusPrayer;'));
+    expect(source, contains('label: focusLabel'));
+    expect(
+        source, contains('DateFormatters.formatDurationHhMmSs(nextRemaining)'));
   });
 
   test('Home reuses the shared active restricted-time row', () {

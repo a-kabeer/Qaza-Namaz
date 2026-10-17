@@ -2093,6 +2093,11 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String prayerTimeUpcomingPrayer(String name) {
+    return 'الصلاة القادمة: $name';
+  }
+
+  @override
   String prayerTimeUsingSavedLocation(String location) {
     return 'استخدام الموقع المحفوظ: $location';
   }

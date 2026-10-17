@@ -3683,6 +3683,12 @@ abstract class AppLocalizations {
   /// **'Next: {name}'**
   String prayerTimeNextRestricted(String name);
 
+  /// No description provided for @prayerTimeUpcomingPrayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming {name}'**
+  String prayerTimeUpcomingPrayer(String name);
+
   /// No description provided for @prayerTimeUsingSavedLocation.
   ///
   /// In en, this message translates to:

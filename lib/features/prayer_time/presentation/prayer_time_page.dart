@@ -338,17 +338,7 @@ class _PrayerTimeContent extends ConsumerWidget {
     final nextAt = current?.nextAt;
     final nextRemaining = nextAt?.difference(localNow);
     final focusPrayer = current?.focusPrayer ?? currentPrayer ?? nextPrayer;
-    final isOvernightFocus = currentPrayer == null &&
-        focusPrayer == PrayerSlot.isha &&
-        nextPrayer == PrayerSlot.fajr &&
-        nextAt != null;
     final countdownPrayer = focusPrayer;
-    String? overnightTimeLabel;
-    if (isOvernightFocus) {
-      final upcomingName = _prayerLabel(l10n, nextPrayer!);
-      final upcomingTime = _formatTime(context, nextAt, snapshot);
-      overnightTimeLabel = '$upcomingName · $upcomingTime';
-    }
     tz.TZDateTime restrictedTimelineDisplayAt(RestrictedTimeWindow window) =>
         window.timelineDisplayAt;
 
@@ -445,6 +435,7 @@ class _PrayerTimeContent extends ConsumerWidget {
 
     String? focusName;
     String? focusTime;
+    String? focusLabel;
     IconData? focusIcon;
     String? focusCountdown;
 
@@ -455,16 +446,20 @@ class _PrayerTimeContent extends ConsumerWidget {
         activeRestriction,
         snapshot,
       );
+      focusLabel = l10n.homeRemaining;
       focusIcon = _restrictedIcon(activeRestriction.type);
       focusCountdown = DateFormatters.formatDurationHhMmSs(restrictedRemaining);
     } else if (countdownPrayer != null) {
       for (final item in timeline) {
         if (!item.isRestricted && item.prayer == countdownPrayer) {
           focusName = item.name;
-          // During the overnight Isha phase, the countdown ends at Fajr.
-          // Label that boundary explicitly rather than showing tonight's
-          // future Isha time as though it were the current overnight interval.
-          focusTime = overnightTimeLabel ?? item.time;
+          focusLabel = nextPrayer == null
+              ? null
+              : l10n.prayerTimeUpcomingPrayer(
+                  _prayerLabel(l10n, nextPrayer),
+                );
+          focusTime =
+              nextAt == null ? null : _formatTime(context, nextAt, snapshot);
           focusIcon = item.icon;
           focusCountdown = nextRemaining == null
               ? null
@@ -530,6 +525,7 @@ class _PrayerTimeContent extends ConsumerWidget {
           ),
           if (focusName != null &&
               focusTime != null &&
+              focusLabel != null &&
               focusIcon != null &&
               focusCountdown != null) ...[
             const SizedBox(height: 12),
@@ -540,6 +536,7 @@ class _PrayerTimeContent extends ConsumerWidget {
                   Expanded(
                     child: _PrayerTimeFocusCard(
                       name: focusName,
+                      label: focusLabel,
                       time: focusTime,
                       icon: focusIcon,
                       countdown: focusCountdown,
@@ -658,12 +655,14 @@ class _PrayerTimeHeader extends StatelessWidget {
 class _PrayerTimeFocusCard extends StatelessWidget {
   const _PrayerTimeFocusCard({
     required this.name,
+    required this.label,
     required this.time,
     required this.icon,
     required this.countdown,
   });
 
   final String name;
+  final String label;
   final String time;
   final IconData icon;
   final String countdown;
@@ -735,7 +734,7 @@ class _PrayerTimeFocusCard extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            AppLocalizations.of(context).homeRemaining,
+            label,
             style: textTheme.bodySmall?.copyWith(
               color: scheme.onPrimaryContainer,
               fontWeight: FontWeight.w600,
