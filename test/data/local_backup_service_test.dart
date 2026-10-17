@@ -167,10 +167,7 @@ void main() {
     expect(logs, hasLength(1));
     expect(logs.single.read<String>('prayer_date'), '2026-10-16');
     expect(logs.single.read<String>('status'), 'prayed');
-    expect(
-      logs.single.read<String?>('linked_qaza_id'),
-      'guest_fajr_linked',
-    );
+    expect(logs.single.read<String?>('linked_qaza_id'), 'guest_fajr_linked');
     expect(
       logs.single.read<String?>('completion_sync_id'),
       'completion-sync-1',
@@ -249,14 +246,8 @@ void main() {
         )
         .get();
     expect(logs, hasLength(1));
-    expect(
-      logs.single.read<String?>('linked_qaza_id'),
-      'guest_fajr_linked',
-    );
-    expect(
-      logs.single.read<String?>('completion_sync_id'),
-      equals(null),
-    );
+    expect(logs.single.read<String?>('linked_qaza_id'), 'guest_fajr_linked');
+    expect(logs.single.read<String?>('completion_sync_id'), equals(null));
   });
 
   test('malformed import leaves existing local database untouched', () async {
