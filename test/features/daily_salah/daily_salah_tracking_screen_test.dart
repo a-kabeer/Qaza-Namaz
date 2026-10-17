@@ -47,6 +47,7 @@ void main() {
           appDatabaseProvider.overrideWithValue(database),
           qazaServiceProvider.overrideWithValue(qazaService),
           activeUserIdProvider.overrideWithValue(userId),
+          dailySalahTrackingDateProvider.overrideWith((ref) => _today()),
           effectiveWitrProvider.overrideWithValue(true),
           dailySalahPrayerAvailableProvider
               .overrideWith((ref, request) => true),
@@ -104,6 +105,7 @@ void main() {
           appDatabaseProvider.overrideWithValue(database),
           qazaServiceProvider.overrideWithValue(qazaService),
           activeUserIdProvider.overrideWithValue(userId),
+          dailySalahTrackingDateProvider.overrideWith((ref) => _today()),
           effectiveWitrProvider.overrideWithValue(true),
           dailySalahPrayerAvailableProvider
               .overrideWith((ref, request) => true),
@@ -185,6 +187,7 @@ void main() {
           appDatabaseProvider.overrideWithValue(database),
           qazaServiceProvider.overrideWithValue(qazaService),
           activeUserIdProvider.overrideWithValue(userId),
+          dailySalahTrackingDateProvider.overrideWith((ref) => _today()),
           effectiveWitrProvider.overrideWithValue(true),
           dailySalahPrayerAvailableProvider
               .overrideWith((ref, request) => true),
@@ -214,4 +217,10 @@ void main() {
     await tester.pumpAndSettle();
     expect(tester.widget<Text>(label).data, currentDate);
   });
+}
+
+
+DateTime _today() {
+  final now = DateTime.now();
+  return DateTime(now.year, now.month, now.day);
 }
