@@ -22,6 +22,25 @@ void main() {
     expect(card, contains('softWrap: false'));
   });
 
+  test('Prayer Time focus card renders a separate upcoming label and time', () {
+    final source =
+        File('lib/features/prayer_time/presentation/prayer_time_page.dart')
+            .readAsStringSync();
+    final start =
+        source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
+    final end = source.indexOf(
+      'class _PrayerSchedule extends StatelessWidget {',
+      start,
+    );
+
+    expect(start, greaterThanOrEqualTo(0));
+    expect(end, greaterThan(start));
+    final card = source.substring(start, end);
+    expect(card, contains('required this.label'));
+    expect(card, contains('Text(\n            label,'));
+    expect(card, contains('Text(\n                time,'));
+  });
+
   test('Prayer Time focus restricted range cannot wrap', () {
     final source =
         File('lib/features/prayer_time/presentation/prayer_time_page.dart')
