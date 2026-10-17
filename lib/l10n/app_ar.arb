@@ -1319,6 +1319,8 @@
   "dailySalahTrackingUnrecorded": "غير مسجلة",
   "dailySalahTrackingConfirmMissedTitle": "تسجيل الصلاة كفائتة؟",
   "dailySalahTrackingConfirmMissedMessage": "سيُضاف سجل قضاء لهذه الصلاة والتاريخ فقط إذا لم يكن موجودًا بالفعل.",
+  "dailySalahTrackingConfirmPrayedTitle": "تغيير حالة الصلاة إلى أُدّيت؟",
+  "dailySalahTrackingConfirmPrayedMessage": "سيتم تسجيل الصلاة على أنها أُدّيت وإكمال سجل القضاء المرتبط بها.",
   "dailySalahTrackingUndoQaza": "التراجع عن سجل القضاء الذي أنشأه المتتبع",
   "dailySalahTrackingUndoTitle": "إزالة سجل القضاء هذا؟",
   "dailySalahTrackingUndoMessage": "ستتم إزالة سجل القضاء الذي أنشأته متابعة الصلوات اليومية فقط، وفقط إذا كان لا يزال غير مكتمل.",
