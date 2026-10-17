@@ -8,7 +8,11 @@ import 'package:qaza_namaz/features/prayer_time/presentation/qibla_summary_card.
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
-  Widget buildHarness({required VoidCallback onTap}) {
+  Widget buildHarness({
+    required VoidCallback onTap,
+    double width = 160,
+    double height = 190,
+  }) {
     return ProviderScope(
       overrides: [
         compassSensorAvailableProvider.overrideWith((ref) async => false),
@@ -22,8 +26,8 @@ void main() {
         locale: const Locale('en'),
         home: Scaffold(
           body: SizedBox(
-            width: 160,
-            height: 190,
+            width: width,
+            height: height,
             child: QiblaSummaryCard(
               bearing: 267.741,
               onTap: onTap,
@@ -45,6 +49,10 @@ void main() {
     expect(find.text('268°'), findsNothing);
     expect(find.text('Qibla Direction'), findsOneWidget);
     expect(find.byKey(const Key('qibla_summary_compass')), findsOneWidget);
+    expect(
+      tester.getSize(find.byKey(const Key('qibla_summary_compass'))),
+      const Size(110, 110),
+    );
 
     await tester.tap(find.byType(QiblaSummaryCard));
     expect(tapped, isTrue);
@@ -52,10 +60,15 @@ void main() {
 
   testWidgets('keeps a narrow card free of overflow', (tester) async {
     await tester.pumpWidget(
-      buildHarness(onTap: () {}),
+      buildHarness(onTap: () {}, width: 120),
     );
 
     await tester.pump();
+    final compassSize =
+        tester.getSize(find.byKey(const Key('qibla_summary_compass')));
+    expect(compassSize.width, lessThan(110));
+    expect(compassSize.width, greaterThan(0));
+    expect(compassSize.height, compassSize.width);
     expect(tester.takeException(), isNull);
   });
 }
