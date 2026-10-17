@@ -2613,35 +2613,35 @@ class AppLocalizationsUr extends AppLocalizations {
   String get cloudSetupChoiceDescription =>
       'اپنی چھوٹی ہوئی نمازوں کا حساب رکھیں اور قضا کی پیش رفت کو اپنی سہولت کے مطابق منظم کریں۔ آپ کا ریکارڈ اسی ڈیوائس پر محفوظ رہتا ہے۔ مختلف ڈیوائسز پر بیک اپ اور بحالی کے لیے آپ اختیاری طور پر گوگل استعمال کر سکتے ہیں۔';
 
-
   @override
-  String get cloudAccountChoiceTitle => "گوگل اکاؤنٹ منتخب کریں";
+  String get cloudAccountChoiceTitle => 'گوگل اکاؤنٹ منتخب کریں';
 
   @override
   String get cloudAccountChoiceDescription =>
-      "پہلے استعمال کردہ اکاؤنٹ منتخب کریں یا نئے گوگل اکاؤنٹ کے ساتھ جاری رکھیں۔";
+      'پہلے استعمال کردہ اکاؤنٹ منتخب کریں یا نئے گوگل اکاؤنٹ کے ساتھ جاری رکھیں۔';
 
   @override
-  String get cloudContinueNewAccount => "نئے اکاؤنٹ کے ساتھ جاری رکھیں";
+  String get cloudContinueNewAccount => 'نئے اکاؤنٹ کے ساتھ جاری رکھیں';
 
   @override
-  String get cloudSignOutPendingTitle => "تبدیلیوں کا بیک اپ نہیں ہوا";
+  String get cloudSignOutPendingTitle => 'تبدیلیوں کا بیک اپ نہیں ہوا';
 
   @override
   String get cloudSignOutPendingMessage =>
-      "حالیہ تبدیلیوں کا Google Drive پر بیک اپ نہیں ہوا۔ ابھی سائن آؤٹ کرنے پر یہ اسی ڈیوائس پر رہیں گی، لیکن گوگل بیک اپ میں محفوظ نہیں ہوں گی۔";
+      'حالیہ تبدیلیوں کا Google Drive پر بیک اپ نہیں ہوا۔ ابھی سائن آؤٹ کرنے پر یہ اسی ڈیوائس پر رہیں گی، لیکن گوگل بیک اپ میں محفوظ نہیں ہوں گی۔';
 
   @override
-  String get cloudSignOutAnyway => "پھر بھی سائن آؤٹ کریں";
+  String get cloudSignOutAnyway => 'پھر بھی سائن آؤٹ کریں';
 
   @override
-  String get cloudBackupAndSignOut => "بیک اپ لے کر سائن آؤٹ کریں";
+  String get cloudBackupAndSignOut => 'بیک اپ لے کر سائن آؤٹ کریں';
 
   @override
-  String get guestGooglePromptTitle => "اپنی قضا کی پیش رفت محفوظ رکھیں";
+  String get guestGooglePromptTitle => 'اپنی قضا کی پیش رفت محفوظ رکھیں';
 
   @override
-  String get guestGooglePromptMessage => "اپنی قضا کا بیک اپ بنانے اور ڈیوائس تبدیل کرنے پر اسے بحال کرنے کے لیے گوگل اکاؤنٹ منسلک کریں۔";
+  String get guestGooglePromptMessage =>
+      'اپنی قضا کا بیک اپ بنانے اور ڈیوائس تبدیل کرنے پر اسے بحال کرنے کے لیے گوگل اکاؤنٹ منسلک کریں۔';
 
   @override
   String get cloudSetupUseGoogle => 'گوگل کے ساتھ جاری رکھیں';
@@ -5366,10 +5366,10 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       'Apni Qaza ki progress ka Google Drive app Data mein alg backup app mehfooz rkhin';
 
   @override
-  String get cloudConnect => 'Google se munsalik karein';
+  String get cloudConnect => 'Google se sign in karein';
 
   @override
-  String get cloudDisconnect => 'Account munqati karein';
+  String get cloudDisconnect => 'Sign out';
 
   @override
   String get cloudConnected => 'Munsalik';
@@ -5459,10 +5459,40 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       'Apni chhoti hui Namazon ka hisaab rakhein aur Qaza ki progress ko apni sahulat ke mutabiq munazzam krin aap ka record isi device par mehfooz rehta he mukhtalif dioaisz par backup app aur bahali ke liye aap ikhtiyari tor par Google istemal kar sakte hin';
 
   @override
+  String get cloudAccountChoiceTitle => 'Google account muntakhib karein';
+
+  @override
+  String get cloudAccountChoiceDescription =>
+      'Pehle istemal shuda account muntakhib karein, ya naye Google account ke sath jari rakhein.';
+
+  @override
+  String get cloudContinueNewAccount => 'Naye account ke sath jari rakhein';
+
+  @override
+  String get cloudSignOutPendingTitle => 'Tabdeeliyon ka backup nahi hua';
+
+  @override
+  String get cloudSignOutPendingMessage =>
+      'Haliya tabdeeliyon ka Google Drive par backup nahi hua. Ab sign out karne par yeh isi device par rahengi, lekin Google backup mein mehfooz nahi hongi.';
+
+  @override
+  String get cloudSignOutAnyway => 'Phir bhi sign out karein';
+
+  @override
+  String get cloudBackupAndSignOut => 'Backup le kar sign out karein';
+
+  @override
+  String get guestGooglePromptTitle => 'Apni Qaza progress mehfooz rakhein';
+
+  @override
+  String get guestGooglePromptMessage =>
+      'Apni Qaza ka backup banane aur device badalne par bahal karne ke liye Google account connect karein.';
+
+  @override
   String get cloudSetupUseGoogle => 'Google ke saath jari rakhein';
 
   @override
-  String get cloudSetupContinueLocal => 'Isi device par jari rakhein';
+  String get cloudSetupContinueLocal => 'Guest ke tor par jari rakhein';
 
   @override
   String get cloudConnectionFailed =>

@@ -340,7 +340,8 @@ class UnsupportedCloudAccountProvider implements CloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> signInWithRememberedAccount(
     String accountId,
-  ) async => const CloudAccountSnapshot.unavailable();
+  ) async =>
+      const CloudAccountSnapshot.unavailable();
 
   @override
   Future<void> disconnect() async {}

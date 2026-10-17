@@ -431,8 +431,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 await _refreshAfterRestore();
               }
             } else {
-              result = await _resolveConflict(conflict) ??
-                  await cloudSync.status();
+              result =
+                  await _resolveConflict(conflict) ?? await cloudSync.status();
             }
           }
           break;
@@ -490,7 +490,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       if (!mounted) return;
       final canCheckRemote =
           discovery.status == CloudBackupDiscoveryStatus.noBackup ||
-          discovery.status == CloudBackupDiscoveryStatus.backupFound;
+              discovery.status == CloudBackupDiscoveryStatus.backupFound;
 
       if (!canCheckRemote) {
         final signOutAnyway = await _confirmSignOutWithoutBackup();
@@ -501,7 +501,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       final backUpFirst = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: Text(AppLocalizations.of(dialogContext).cloudSignOutPendingTitle),
+          title:
+              Text(AppLocalizations.of(dialogContext).cloudSignOutPendingTitle),
           content: Text(
             AppLocalizations.of(dialogContext).cloudSignOutPendingMessage,
           ),
@@ -632,6 +633,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       (_) => false,
     );
   }
+
   Future<void> _backupNow() async {
     if (_busy || _settingsBusy || _backupBusy) return;
     setState(() {
@@ -676,7 +678,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     }
   }
 
-  Future<CloudSyncSnapshot?> _resolveConflict(CloudConflictInfo conflict) async {
+  Future<CloudSyncSnapshot?> _resolveConflict(
+      CloudConflictInfo conflict) async {
     final l10n = AppLocalizations.of(context);
     final choice = await showDialog<CloudConflictChoice>(
       context: context,

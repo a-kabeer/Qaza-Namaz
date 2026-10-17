@@ -2612,35 +2612,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudSetupChoiceDescription =>
       'Track your missed prayers and organize your Qaza progress at your own pace. Your records stay on this device. You can optionally use Google to back up and restore progress across devices.';
 
-
   @override
-  String get cloudAccountChoiceTitle => "Choose a Google account";
+  String get cloudAccountChoiceTitle => 'Choose a Google account';
 
   @override
   String get cloudAccountChoiceDescription =>
-      "Select a previously used account, or continue with a new Google account.";
+      'Select a previously used account, or continue with a new Google account.';
 
   @override
-  String get cloudContinueNewAccount => "Continue with a new account";
+  String get cloudContinueNewAccount => 'Continue with a new account';
 
   @override
-  String get cloudSignOutPendingTitle => "Changes not backed up";
+  String get cloudSignOutPendingTitle => 'Changes not backed up';
 
   @override
   String get cloudSignOutPendingMessage =>
-      "Recent changes haven't been backed up to Google Drive. If you sign out now, they will remain on this device but won't be saved in your Google backup.";
+      'Recent changes haven\'t been backed up to Google Drive. If you sign out now, they will remain on this device but won\'t be saved in your Google backup.';
 
   @override
-  String get cloudSignOutAnyway => "Sign Out Anyway";
+  String get cloudSignOutAnyway => 'Sign Out Anyway';
 
   @override
-  String get cloudBackupAndSignOut => "Back Up & Sign Out";
+  String get cloudBackupAndSignOut => 'Back Up & Sign Out';
 
   @override
-  String get guestGooglePromptTitle => "Keep your Qaza progress safe";
+  String get guestGooglePromptTitle => 'Keep your Qaza progress safe';
 
   @override
-  String get guestGooglePromptMessage => "Connect a Google account to back up your Qaza progress and restore it if you change devices.";
+  String get guestGooglePromptMessage =>
+      'Connect a Google account to back up your Qaza progress and restore it if you change devices.';
 
   @override
   String get cloudSetupUseGoogle => 'Continue with Google';

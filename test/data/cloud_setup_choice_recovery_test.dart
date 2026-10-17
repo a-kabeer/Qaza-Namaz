@@ -16,7 +16,8 @@ void main() {
     expect(await database.isCloudSetupChoiceComplete(), isTrue);
   });
 
-  test('returning account choice and guest prompt markers are durable', () async {
+  test('returning account choice and guest prompt markers are durable',
+      () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 

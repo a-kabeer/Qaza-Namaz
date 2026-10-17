@@ -70,7 +70,6 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
   }
 }
 
-
 class _GuestGooglePromptHost extends ConsumerStatefulWidget {
   const _GuestGooglePromptHost({required this.child});
 
@@ -121,7 +120,8 @@ class _GuestGooglePromptHostState
     _showingPrompt = false;
     if (connect == true && mounted) {
       await Navigator.of(context).push<void>(
-        MaterialPageRoute<void>(builder: (_) => const AccountScreen(autoConnect: true)),
+        MaterialPageRoute<void>(
+            builder: (_) => const AccountScreen(autoConnect: true)),
       );
     }
   }

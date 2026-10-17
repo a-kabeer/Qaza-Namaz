@@ -2666,7 +2666,6 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get cloudSetupChoiceDescription =>
       'apni chhoti hui Namazon ka hisaab rakhein aur Qaza ki progress ko apni sahulat ke mutabiq munazzam krin aap ka record isi device par mehfooz rehta he mukhtalif dioaisz par backup app aur bahali ke liye aap ikhtiyari tor par Google istemal kar sakte hin';
 
-
   @override
   String get cloudAccountChoiceTitle => "Google account muntakhib karein";
 
@@ -2694,7 +2693,8 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get guestGooglePromptTitle => "Apni Qaza progress mehfooz rakhein";
 
   @override
-  String get guestGooglePromptMessage => "Apni Qaza ka backup banane aur device badalne par bahal karne ke liye Google account connect karein.";
+  String get guestGooglePromptMessage =>
+      "Apni Qaza ka backup banane aur device badalne par bahal karne ke liye Google account connect karein.";
 
   @override
   String get cloudSetupUseGoogle => 'Google ke saath jari rakhein';

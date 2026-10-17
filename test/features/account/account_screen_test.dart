@@ -61,7 +61,8 @@ class _FakeCloudAccountProvider extends UnsupportedCloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> signInWithRememberedAccount(
     String accountId,
-  ) async => snapshot;
+  ) async =>
+      snapshot;
 
   @override
   Future<void> disconnect() async {

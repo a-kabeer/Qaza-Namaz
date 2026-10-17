@@ -51,7 +51,8 @@ class GoogleAccountChoiceScreen extends StatelessWidget {
                       final email = account.email?.trim();
                       final label = account.label;
                       return ListTile(
-                        key: ValueKey('remembered_google_account_${account.accountId}'),
+                        key: ValueKey(
+                            'remembered_google_account_${account.accountId}'),
                         contentPadding: const EdgeInsets.symmetric(vertical: 4),
                         leading: CircleAvatar(
                           backgroundImage: _safePhoto(account.photoUrl) == null
@@ -66,11 +67,15 @@ class GoogleAccountChoiceScreen extends StatelessWidget {
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        subtitle: email == null || email.isEmpty || email == label
-                            ? null
-                            : Text(email, maxLines: 1, overflow: TextOverflow.ellipsis),
+                        subtitle:
+                            email == null || email.isEmpty || email == label
+                                ? null
+                                : Text(email,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis),
                         trailing: const Icon(Icons.chevron_right_rounded),
-                        onTap: () => Navigator.of(context).pop(account.accountId),
+                        onTap: () =>
+                            Navigator.of(context).pop(account.accountId),
                       );
                     },
                   ),
@@ -95,7 +100,9 @@ class GoogleAccountChoiceScreen extends StatelessWidget {
     final raw = value?.trim();
     if (raw == null || raw.isEmpty) return null;
     final uri = Uri.tryParse(raw);
-    if (uri == null || uri.scheme.toLowerCase() != 'https' || uri.host.isEmpty) {
+    if (uri == null ||
+        uri.scheme.toLowerCase() != 'https' ||
+        uri.host.isEmpty) {
       return null;
     }
     return raw;

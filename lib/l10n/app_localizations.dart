@@ -1238,7 +1238,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountConnectGoogle.
   ///
   /// In en, this message translates to:
-  /// **'Sign in with Google'**
+  /// **'Connect Google'**
   String get accountConnectGoogle;
 
   /// No description provided for @accountSignInMethod.
@@ -4359,7 +4359,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudConnect.
   ///
   /// In en, this message translates to:
-  /// **'Connect Google'**
+  /// **'Sign in with Google'**
   String get cloudConnect;
 
   /// No description provided for @cloudDisconnect.
@@ -4524,28 +4524,70 @@ abstract class AppLocalizations {
   /// **'Track your missed prayers and organize your Qaza progress at your own pace. Your records stay on this device. You can optionally use Google to back up and restore progress across devices.'**
   String get cloudSetupChoiceDescription;
 
+  /// No description provided for @cloudAccountChoiceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a Google account'**
+  String get cloudAccountChoiceTitle;
+
+  /// No description provided for @cloudAccountChoiceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a previously used account, or continue with a new Google account.'**
+  String get cloudAccountChoiceDescription;
+
+  /// No description provided for @cloudContinueNewAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with a new account'**
+  String get cloudContinueNewAccount;
+
+  /// No description provided for @cloudSignOutPendingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes not backed up'**
+  String get cloudSignOutPendingTitle;
+
+  /// No description provided for @cloudSignOutPendingMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent changes haven\'t been backed up to Google Drive. If you sign out now, they will remain on this device but won\'t be saved in your Google backup.'**
+  String get cloudSignOutPendingMessage;
+
+  /// No description provided for @cloudSignOutAnyway.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out Anyway'**
+  String get cloudSignOutAnyway;
+
+  /// No description provided for @cloudBackupAndSignOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Back Up & Sign Out'**
+  String get cloudBackupAndSignOut;
+
+  /// No description provided for @guestGooglePromptTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep your Qaza progress safe'**
+  String get guestGooglePromptTitle;
+
+  /// No description provided for @guestGooglePromptMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect a Google account to back up your Qaza progress and restore it if you change devices.'**
+  String get guestGooglePromptMessage;
+
   /// No description provided for @cloudSetupUseGoogle.
   ///
   /// In en, this message translates to:
   /// **'Continue with Google'**
-  /// Account choices for previously used Google accounts.
-  String get cloudAccountChoiceTitle;
-  String get cloudAccountChoiceDescription;
-  String get cloudContinueNewAccount;
-  String get cloudSignOutPendingTitle;
-  String get cloudSignOutPendingMessage;
-  String get cloudSignOutAnyway;
-  String get cloudBackupAndSignOut;
-
-  String get guestGooglePromptTitle;
-  String get guestGooglePromptMessage;
-
   String get cloudSetupUseGoogle;
 
   /// No description provided for @cloudSetupContinueLocal.
   ///
   /// In en, this message translates to:
-  /// **'Continue on this device'**
+  /// **'Continue as Guest'**
   String get cloudSetupContinueLocal;
 
   /// No description provided for @cloudConnectionFailed.
