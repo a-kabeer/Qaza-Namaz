@@ -1481,7 +1481,7 @@
   "dailySalahTrackingMissed": "Missed",
   "dailySalahTrackingUnrecorded": "Unrecorded",
   "dailySalahTrackingConfirmMissedTitle": "Record prayer as missed?",
-  "dailySalahTrackingConfirmMissedMessage": "This creates a Qaza entry for this prayer and date only if one does not already exist.",
+  "dailySalahTrackingConfirmMissedMessage": "This marks the prayer as Missed and ensures its Qaza is Pending. If a matching Qaza is already Completed, it will be reopened.",
   "dailySalahTrackingConfirmPrayedTitle": "Change prayer to Prayed?",
   "dailySalahTrackingConfirmPrayedMessage": "This will mark the prayer as prayed and complete its linked Qaza record.",
   "dailySalahTrackingUndoQaza": "Undo tracker-created Qaza",
