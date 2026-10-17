@@ -2759,14 +2759,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'سيتم تسجيل الصلاة على أنها فائتة وضمان أن يكون سجل قضائها معلّقًا. إذا كان سجل القضاء مكتملًا بالفعل، فسيُعاد إلى الحالة المعلّقة.';
 
   @override
-  String get dailySalahTrackingConfirmPrayedTitle =>
-      'تغيير حالة الصلاة إلى أُدّيت؟';
-
-  @override
-  String get dailySalahTrackingConfirmPrayedMessage =>
-      'سيتم تسجيل الصلاة على أنها أُدّيت وإكمال سجل القضاء المرتبط بها.';
-
-  @override
   String get dailySalahTrackingUndoQaza =>
       'التراجع عن سجل القضاء الذي أنشأه المتتبع';
 
@@ -2821,4 +2813,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get profileEstimateUsingAge => 'تقدير باستخدام العمر';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedTitle =>
+      'تغيير حالة الصلاة إلى أُدّيت؟';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedMessage =>
+      'سيتم تسجيل الصلاة على أنها أُدّيت وإكمال سجل القضاء المرتبط بها.';
 }
