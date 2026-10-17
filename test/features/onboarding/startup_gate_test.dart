@@ -60,10 +60,15 @@ class _FakeCloudSyncProvider implements CloudSyncProvider {
   bool get isSupported => true;
 
   @override
+  int discoverBackupCalls = 0;
+
+  @override
   Future<CloudBackupDiscoverySnapshot> discoverBackup({
     bool allowInteractive = false,
-  }) async =>
-      discoveryResult;
+  }) async {
+    discoverBackupCalls++;
+    return discoveryResult;
+  }
 
   @override
   Future<CloudSyncSnapshot> status() async =>
@@ -259,7 +264,7 @@ void main() {
     expect(await database.hasPendingInitialCloudBackup(), isTrue);
   });
 
-  testWidgets('sign-in failure keeps local continuation available',
+  testWidgets('sign-in failure shows a localized dialog without raw errors',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final container = await _container(
@@ -276,7 +281,6 @@ void main() {
     await tester.pumpWidget(_app(container));
     await tester.pumpAndSettle();
     await _chooseLanguage(tester, 'ur');
-    await tester.pumpAndSettle();
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
@@ -287,13 +291,18 @@ void main() {
     );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
-    expect(find.text('simulated sign-in failure'), findsOneWidget);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('simulated sign-in failure'), findsNothing);
+    expect(find.text('دوبارہ کوشش کریں'), findsOneWidget);
+    expect(find.text('منسوخ کریں'), findsOneWidget);
     expect(
       (await SharedPreferences.getInstance())
           .getString(LocaleNotifier.storageKey),
       'ur',
     );
 
+    await _tapVisible(tester, find.text('منسوخ کریں'));
+    expect(find.byType(AlertDialog), findsNothing);
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_continue_local')),
@@ -304,7 +313,7 @@ void main() {
   });
 
   testWidgets(
-      'backup discovery failure is recoverable without forcing onboarding',
+      'backup discovery failure retries only discovery from a dialog',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final container = await _container(
@@ -328,20 +337,114 @@ void main() {
       find.byKey(const Key('continue_with_new_google_account')),
     );
 
+    final fakeSync = container.read(cloudSyncProvider) as _FakeCloudSyncProvider;
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
-    expect(find.text('simulated backup discovery failure'), findsOneWidget);
-    // Retry is conditionally appended at the end of the lazy ListView,
-    // so it may not be built yet for ensureVisible to find it.
-    await tester.drag(find.byType(ListView), const Offset(0, -400));
-    await tester.pumpAndSettle();
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('simulated backup discovery failure'), findsNothing);
     expect(find.text('Retry'), findsOneWidget);
+    expect(find.text('Cancel'), findsOneWidget);
+    expect(fakeSync.discoverBackupCalls, 1);
 
+    await _tapVisible(tester, find.text('Retry'));
+    expect(fakeSync.discoverBackupCalls, 2);
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text('simulated backup discovery failure'), findsNothing);
+
+    await _tapVisible(tester, find.text('Cancel'));
+    expect(find.byType(AlertDialog), findsNothing);
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_continue_local')),
     );
     expect(find.byType(ProfileSetupScreen), findsOneWidget);
     expect(await database.isOnboardingCompleted(), isFalse);
+  });
+
+  testWidgets('Google sign-in cancellation is silent and leaves choices usable',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final container = await _container(
+      database: database,
+      cloudEnabled: true,
+      signInResult: const CloudAccountSnapshot.cancelled(),
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_connect_google')),
+    );
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('continue_with_new_google_account')),
+    );
+
+    expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.text('Retry'), findsNothing);
+    expect(
+      tester.widget<OutlinedButton>(
+        find.byKey(const Key('cloud_setup_connect_google')),
+      ).onPressed,
+      isNotNull,
+    );
+    expect(
+      tester.widget<FilledButton>(
+        find.byKey(const Key('cloud_setup_continue_local')),
+      ).onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets('incompatible backup gets a non-retryable friendly dialog',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    const rawSchemaError =
+        'Backup database schema 22 is not supported by this release.';
+    final container = await _container(
+      database: database,
+      cloudEnabled: true,
+      discoveryResult:
+          const CloudBackupDiscoverySnapshot.invalidBackup(rawSchemaError),
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_connect_google')),
+    );
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('continue_with_new_google_account')),
+    );
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(find.text(rawSchemaError), findsNothing);
+    expect(find.text('schema 22'), findsNothing);
+    expect(
+      find.text(
+        "This saved backup can't be restored by this app version. "
+        "Your local progress is unchanged. Choose another Google account "
+        "or continue as a guest.",
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Choose another Google account'), findsOneWidget);
+    expect(find.text('Retry'), findsNothing);
+
+    await _tapVisible(tester, find.text('Cancel'));
+    expect(find.byType(AlertDialog), findsNothing);
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_continue_local')),
+    );
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
   });
 
   testWidgets('a discovered backup offers explicit restore before onboarding',
