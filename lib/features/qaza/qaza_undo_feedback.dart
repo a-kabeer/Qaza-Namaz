@@ -53,7 +53,8 @@ void _scheduleDailySalahAfterUndo({
 }) {
   final container = ProviderScope.containerOf(context, listen: false);
   // This sync is a secondary projection of an already-committed Qaza undo.
-  // Do not keep the success UI open while database reconciliation runs.
+  // Use the persistent container so reconciliation can finish after the modal
+  // sheet closes, without holding the undo success UI open.
   unawaited(
     _syncDailySalahAfterUndo(
       container: container,
