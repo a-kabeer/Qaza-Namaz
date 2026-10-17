@@ -162,6 +162,7 @@ class _CloudSetupChoiceScreenState
     setState(() {
       _working = true;
       _error = null;
+      _retryAvailable = true;
       _discovery = null;
     });
     try {
