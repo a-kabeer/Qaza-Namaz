@@ -18,6 +18,7 @@ class CloudAccountSnapshot {
     this.email,
     this.photoUrl,
     this.message,
+    this.wasCancelled = false,
   });
 
   const CloudAccountSnapshot.unavailable()
@@ -25,14 +26,16 @@ class CloudAccountSnapshot {
         displayName = null,
         email = null,
         photoUrl = null,
-        message = null;
+        message = null,
+        wasCancelled = false;
 
   const CloudAccountSnapshot.disconnected()
       : status = CloudAccountStatus.disconnected,
         displayName = null,
         email = null,
         photoUrl = null,
-        message = null;
+        message = null,
+        wasCancelled = false;
 
   /// A locally cached identity is display-only until the user reconnects.
   /// It must never be treated as proof that Drive authorization is available.
@@ -41,20 +44,35 @@ class CloudAccountSnapshot {
     this.email,
     this.photoUrl,
   })  : status = CloudAccountStatus.reconnectRequired,
-        message = null;
+        message = null,
+        wasCancelled = false;
 
   const CloudAccountSnapshot.failed(String value)
       : status = CloudAccountStatus.failed,
         displayName = null,
         email = null,
         photoUrl = null,
-        message = value;
+        message = value,
+        wasCancelled = false;
+
+  /// Sign-in was intentionally dismissed by the user. This is not a failure
+  /// and must not trigger an error dialog.
+  const CloudAccountSnapshot.cancelled()
+      : status = CloudAccountStatus.disconnected,
+        displayName = null,
+        email = null,
+        photoUrl = null,
+        message = null,
+        wasCancelled = true;
 
   final CloudAccountStatus status;
   final String? displayName;
   final String? email;
   final String? photoUrl;
   final String? message;
+
+  /// True only when the user intentionally cancelled the interactive flow.
+  final bool wasCancelled;
 
   bool get isConnected => status == CloudAccountStatus.connected;
 }

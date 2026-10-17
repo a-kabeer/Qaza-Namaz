@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -384,6 +385,11 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         photoUrl: account.photoUrl,
       );
     } catch (error) {
+      if (error is GoogleSignInException &&
+          error.code == GoogleSignInExceptionCode.canceled) {
+        return const CloudAccountSnapshot.cancelled();
+      }
+
       final scopedState = _state is CloudAccountScopedSyncStateStore
           ? _state as CloudAccountScopedSyncStateStore
           : null;

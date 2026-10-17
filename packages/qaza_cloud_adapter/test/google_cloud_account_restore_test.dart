@@ -12,6 +12,27 @@ void main() {
     SharedPreferences.setMockInitialValues(<String, Object>{});
   });
 
+  test('interactive Google sign-in cancellation is a normal outcome', () async {
+    final preferences = await SharedPreferences.getInstance();
+    final state = SharedPreferencesCloudSyncStateStore(
+      preferences: preferences,
+    );
+    final gateway = _CancellingGateway();
+    final scheduler = _CountingScheduler(state: state);
+    final provider = GoogleCloudAccountProvider(
+      gateway: gateway,
+      state: state,
+      scheduler: scheduler,
+    );
+
+    final result = await provider.signIn();
+
+    expect(result.wasCancelled, isTrue);
+    expect(result.status, CloudAccountStatus.disconnected);
+    expect(await state.isCloudSyncEnabled(), isFalse);
+    expect(scheduler.initializeCalls, 0);
+  });
+
   test(
     'restore verifies native Drive authorization after process recreation',
     () async {
@@ -235,6 +256,16 @@ void main() {
     expect(scheduler.disconnectCalls, 0);
     expect(scheduler.initializeCalls, 0);
   });
+}
+
+class _CancellingGateway extends GoogleSignInGateway {
+  @override
+  Future<GoogleSignInAccount> authenticate() async {
+    throw GoogleSignInException(
+      code: GoogleSignInExceptionCode.canceled,
+      description: 'The user canceled the sign-in flow.',
+    );
+  }
 }
 
 class _CountingGateway extends GoogleSignInGateway {

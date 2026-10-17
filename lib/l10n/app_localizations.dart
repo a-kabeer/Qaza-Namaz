@@ -4602,6 +4602,30 @@ abstract class AppLocalizations {
   /// **'Google connection could not be completed. Try again or continue locally.'**
   String get cloudConnectionFailed;
 
+  /// No description provided for @cloudSetupGoogleConfigurationMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in isn\'t configured correctly in this app. Your local progress is safe; continue as a guest or contact support.'**
+  String get cloudSetupGoogleConfigurationMessage;
+
+  /// No description provided for @cloudSetupBackupUnreadableMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This saved backup can\'t be restored by this app version. Your local progress is unchanged. Choose another Google account or continue as a guest.'**
+  String get cloudSetupBackupUnreadableMessage;
+
+  /// No description provided for @cloudSetupChooseAnotherAccount.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose another Google account'**
+  String get cloudSetupChooseAnotherAccount;
+
+  /// No description provided for @cloudRestoreFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'The backup couldn\'t be restored. Your progress on this device and the saved cloud backup have been kept. Check your connection and try again, or continue as a guest.'**
+  String get cloudRestoreFailedMessage;
+
   /// No description provided for @cloudRestoreProgressTitle.
   ///
   /// In en, this message translates to:

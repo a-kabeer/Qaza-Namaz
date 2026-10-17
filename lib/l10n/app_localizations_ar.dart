@@ -2647,6 +2647,21 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذر إكمال الاتصال بـ Google. حاول مرة أخرى أو تابع محليًا.';
 
   @override
+  String get cloudSetupGoogleConfigurationMessage =>
+      'لم يتم إعداد تسجيل الدخول إلى Google بشكل صحيح في هذا التطبيق. بياناتك المحلية آمنة؛ تابع كضيف أو تواصل مع الدعم.';
+
+  @override
+  String get cloudSetupBackupUnreadableMessage =>
+      'لا يمكن استعادة هذه النسخة الاحتياطية بهذا الإصدار من التطبيق. لم تتغير بياناتك المحلية. اختر حساب Google آخر أو تابع كضيف.';
+
+  @override
+  String get cloudSetupChooseAnotherAccount => 'اختر حساب Google آخر';
+
+  @override
+  String get cloudRestoreFailedMessage =>
+      'تعذرت استعادة النسخة الاحتياطية. تم الاحتفاظ ببياناتك على هذا الجهاز وبالنسخة السحابية المحفوظة. تحقق من اتصالك وحاول مجددًا، أو تابع كضيف.';
+
+  @override
   String get cloudRestoreProgressTitle =>
       'جارٍ استعادة النسخة الاحتياطية من Google Drive';
 
