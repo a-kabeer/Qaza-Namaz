@@ -109,7 +109,9 @@ void main() {
     expect(source, contains('scheme.tertiary'));
   });
 
-  test('Prayer Time focus keeps the current prayer and shows the upcoming prayer time', () {
+  test(
+      'Prayer Time focus keeps the current prayer and shows the upcoming prayer time',
+      () {
     final source =
         File('lib/features/prayer_time/presentation/prayer_time_page.dart')
             .readAsStringSync();
@@ -127,7 +129,8 @@ void main() {
     expect(source, contains('focusTime = nextAt == null'));
     expect(source, contains('_formatTime(context, nextAt, snapshot)'));
     expect(source, contains('label: focusLabel'));
-    expect(source, contains('DateFormatters.formatDurationHhMmSs(nextRemaining)'));
+    expect(
+        source, contains('DateFormatters.formatDurationHhMmSs(nextRemaining)'));
   });
 
   test('Home reuses the shared active restricted-time row', () {

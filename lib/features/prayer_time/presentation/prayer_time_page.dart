@@ -339,7 +339,7 @@ class _PrayerTimeContent extends ConsumerWidget {
     final nextRemaining = nextAt?.difference(localNow);
     final focusPrayer = current?.focusPrayer ?? currentPrayer ?? nextPrayer;
     final countdownPrayer = focusPrayer;
-        tz.TZDateTime restrictedTimelineDisplayAt(RestrictedTimeWindow window) =>
+    tz.TZDateTime restrictedTimelineDisplayAt(RestrictedTimeWindow window) =>
         window.timelineDisplayAt;
 
     final activeRestriction = restricted?.active;
@@ -458,9 +458,8 @@ class _PrayerTimeContent extends ConsumerWidget {
               : l10n.prayerTimeUpcomingPrayer(
                   _prayerLabel(l10n, nextPrayer),
                 );
-          focusTime = nextAt == null
-              ? null
-              : _formatTime(context, nextAt, snapshot);
+          focusTime =
+              nextAt == null ? null : _formatTime(context, nextAt, snapshot);
           focusIcon = item.icon;
           focusCountdown = nextRemaining == null
               ? null
