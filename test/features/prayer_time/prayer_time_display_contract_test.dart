@@ -126,7 +126,7 @@ void main() {
     expect(source, contains('focusLabel = l10n.homeRemaining;'));
     expect(source, contains('l10n.prayerTimeUpcomingPrayer('));
     expect(source, contains('_prayerLabel(l10n, nextPrayer)'));
-    expect(source, contains('focusTime = nextAt == null'));
+    expect(source, contains('nextAt == null ? null : _formatTime(context, nextAt, snapshot)'));
     expect(source, contains('_formatTime(context, nextAt, snapshot)'));
     expect(source, contains('label: focusLabel'));
     expect(
