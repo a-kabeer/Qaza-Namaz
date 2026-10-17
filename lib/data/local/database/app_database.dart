@@ -281,17 +281,17 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> markReturningAccountChoicePending() async {
     await customUpdate(
-      `INSERT INTO meta_store (key, value)
-       VALUES ('returning_account_choice_pending', '1')
-       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('returning_account_choice_pending', '1')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
     );
   }
 
   Future<void> clearReturningAccountChoicePending() async {
     await customUpdate(
-      `INSERT INTO meta_store (key, value)
-       VALUES ('returning_account_choice_pending', '0')
-       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('returning_account_choice_pending', '0')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
     );
   }
 
@@ -307,9 +307,9 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> markGuestGooglePromptShown() async {
     await customUpdate(
-      `INSERT INTO meta_store (key, value)
-       VALUES ('guest_google_prompt_shown', '1')
-       ON CONFLICT(key) DO UPDATE SET value = excluded.value`,
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('guest_google_prompt_shown', '1')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
     );
   }
 
