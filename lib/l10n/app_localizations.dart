@@ -4797,7 +4797,7 @@ abstract class AppLocalizations {
   /// No description provided for @dailySalahTrackingConfirmMissedMessage.
   ///
   /// In en, this message translates to:
-  /// **'This creates a Qaza entry for this prayer and date only if one does not already exist.'**
+  /// **'This marks the prayer as Missed and ensures its Qaza is Pending. If a matching Qaza is already Completed, it will be reopened.'**
   String get dailySalahTrackingConfirmMissedMessage;
 
   /// No description provided for @dailySalahTrackingUndoQaza.
@@ -4901,6 +4901,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Estimate using age'**
   String get profileEstimateUsingAge;
+
+  /// No description provided for @dailySalahTrackingConfirmPrayedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change prayer to Prayed?'**
+  String get dailySalahTrackingConfirmPrayedTitle;
+
+  /// No description provided for @dailySalahTrackingConfirmPrayedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will mark the prayer as prayed and complete its linked Qaza record.'**
+  String get dailySalahTrackingConfirmPrayedMessage;
 }
 
 class _AppLocalizationsDelegate

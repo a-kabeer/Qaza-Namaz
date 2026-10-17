@@ -2769,7 +2769,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get dailySalahTrackingConfirmMissedMessage =>
-      'اس نماز اور تاریخ کے لیے صرف اسی صورت میں قضا ریکارڈ بنے گا جب پہلے سے موجود نہ ہو۔';
+      'اس سے نماز کی کیفیت رہ گئی ہو جائے گی اور اس کی قضا باقی حالت میں ہوگی۔ اگر اس کا قضا ریکارڈ پہلے ہی مکمل ہے تو اسے دوبارہ باقی کر دیا جائے گا۔';
 
   @override
   String get dailySalahTrackingUndoQaza => 'ٹریکنگ سے بنا قضا ریکارڈ واپس کریں';
@@ -2825,6 +2825,14 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get profileEstimateUsingAge => 'عمر کے اندازے سے';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedTitle =>
+      'نماز کو ادا شدہ قرار دیں؟';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedMessage =>
+      'اس سے نماز کی کیفیت ادا شدہ ہو جائے گی اور اس سے منسلک قضا ریکارڈ مکمل ہو جائے گا۔';
 }
 
 /// The translations for Urdu, using the Latin script (`ur_Latn`).
@@ -5617,7 +5625,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get dailySalahTrackingConfirmMissedMessage =>
-      'Is namaz aur tareekh ka Qaza record sirf tab banega jab pehle se mojood na ho.';
+      'Is se namaz ka status Missed ho jayega aur Qaza Pending hogi. Agar matching Qaza pehle hi Completed hai, to use dobara Pending kar diya jayega.';
 
   @override
   String get dailySalahTrackingUndoQaza =>
@@ -5674,4 +5682,12 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get profileEstimateUsingAge => 'Umar ke andazay se';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedTitle =>
+      'Namaz ko parhi hui mark karein?';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedMessage =>
+      'Is se namaz ka status Parhi ho jayega aur is se linked Qaza record mukammal ho jayega.';
 }

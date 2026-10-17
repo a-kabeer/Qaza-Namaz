@@ -51,9 +51,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 20 adds optional daily Salah logs to the encrypted database.
+  /// Schema version 21 adds explicit Qaza links and completion markers to Daily Salah logs.
   @override
-  int get schemaVersion => 20;
+  int get schemaVersion => 21;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -128,6 +128,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 20) {
             await _ensureDailySalahTrackingSchema();
           }
+          if (from < 21) {
+            await _ensureDailySalahTrackingLinkSchema();
+          }
         },
       );
 
@@ -170,12 +173,15 @@ class AppDatabase extends _$AppDatabase {
         prayer_type TEXT NOT NULL,
         status TEXT NOT NULL,
         tracker_created_qaza_id TEXT,
+        linked_qaza_id TEXT,
+        completion_sync_id TEXT,
         updated_at TEXT NOT NULL,
         PRIMARY KEY (user_id, prayer_date, prayer_type),
         CHECK (prayer_type IN ('fajr', 'zuhr', 'asr', 'maghrib', 'isha', 'witr')),
         CHECK (status IN ('prayed', 'missed', 'unrecorded'))
       )
     ''');
+    await _ensureDailySalahTrackingLinkSchema();
     await customStatement(
       'CREATE INDEX IF NOT EXISTS daily_salah_logs_user_date_idx '
       'ON daily_salah_logs (user_id, prayer_date)',
@@ -183,6 +189,28 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       "INSERT OR IGNORE INTO meta_store (key, value) "
       "VALUES ('daily_salah_tracking_enabled', '0')",
+    );
+  }
+
+  Future<void> _ensureDailySalahTrackingLinkSchema() async {
+    final columns =
+        await customSelect('PRAGMA table_info(daily_salah_logs)').get();
+    final names = columns.map((row) => row.read<String>('name')).toSet();
+    if (!names.contains('linked_qaza_id')) {
+      await customStatement(
+        'ALTER TABLE daily_salah_logs ADD COLUMN linked_qaza_id TEXT',
+      );
+    }
+    if (!names.contains('completion_sync_id')) {
+      await customStatement(
+        'ALTER TABLE daily_salah_logs ADD COLUMN completion_sync_id TEXT',
+      );
+    }
+
+    // Preserve known associations for older tracker-created records.
+    await customStatement(
+      'UPDATE daily_salah_logs SET linked_qaza_id = tracker_created_qaza_id '
+      'WHERE linked_qaza_id IS NULL AND tracker_created_qaza_id IS NOT NULL',
     );
   }
 

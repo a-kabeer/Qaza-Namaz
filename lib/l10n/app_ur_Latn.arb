@@ -70,7 +70,10 @@
   "hijriDateShort": "{day} {month}",
   "@hijriDateShort": {
     "description": "Short Hijri date for adjustment choices",
-    "placeholders": { "day": {}, "month": {} }
+    "placeholders": {
+      "day": {},
+      "month": {}
+    }
   },
   "hijriAdjustmentTitle": "Hijri tareekh adjust karein",
   "hijriAdjustmentEarlierTwo": "2 din pehle",
@@ -1103,7 +1106,7 @@
   "dailySalahTrackingMissed": "Reh gayi",
   "dailySalahTrackingUnrecorded": "Record nahi",
   "dailySalahTrackingConfirmMissedTitle": "Namaz ko missed record karein?",
-  "dailySalahTrackingConfirmMissedMessage": "Is namaz aur tareekh ka Qaza record sirf tab banega jab pehle se mojood na ho.",
+  "dailySalahTrackingConfirmMissedMessage": "Is se namaz ka status Missed ho jayega aur Qaza Pending hogi. Agar matching Qaza pehle hi Completed hai, to use dobara Pending kar diya jayega.",
   "dailySalahTrackingUndoQaza": "Tracker ka banaya Qaza wapas karein",
   "dailySalahTrackingUndoTitle": "Yeh Qaza record hatayein?",
   "dailySalahTrackingUndoMessage": "Sirf Daily Salah Tracking ka banaya hua yahi Qaza record hataya jayega, aur sirf jab woh pending ho.",
@@ -1120,5 +1123,7 @@
   "profileRememberDate": "Mujhe tareekh yaad hai",
   "profileNotSure": "Mujhe yaqeen nahi",
   "profilePubertyDate": "Puberty ki tareekh",
-  "profileEstimateUsingAge": "Umar ke andazay se"
+  "profileEstimateUsingAge": "Umar ke andazay se",
+  "dailySalahTrackingConfirmPrayedTitle": "Namaz ko parhi hui mark karein?",
+  "dailySalahTrackingConfirmPrayedMessage": "Is se namaz ka status Parhi ho jayega aur is se linked Qaza record mukammal ho jayega."
 }

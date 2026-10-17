@@ -2750,7 +2750,15 @@ class AppLocalizationsUrLatn extends AppLocalizations {
 
   @override
   String get dailySalahTrackingConfirmMissedMessage =>
-      "Is namaz aur tareekh ka Qaza record sirf tab banega jab pehle se mojood na ho.";
+      "Is se namaz ka status Missed ho jayega aur Qaza Pending hogi. Agar matching Qaza pehle hi Completed hai, to use dobara Pending kar diya jayega.";
+
+  @override
+  String get dailySalahTrackingConfirmPrayedTitle =>
+      'Namaz ko parhi hui mark karein?';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedMessage =>
+      'Is se namaz ka status Parhi ho jayega aur is se linked Qaza record mukammal ho jayega.';
 
   @override
   String get dailySalahTrackingUndoQaza =>

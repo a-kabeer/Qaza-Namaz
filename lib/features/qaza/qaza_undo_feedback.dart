@@ -11,6 +11,8 @@ import '../../domain/services/qaza_undo_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import '../home/home_controller.dart';
+import '../daily_salah/daily_salah_tracking_providers.dart';
+import '../daily_salah/daily_salah_tracking_service.dart';
 import 'qaza_completion_feedback.dart';
 
 Future<void> showQazaUndoFeedback({
@@ -42,6 +44,94 @@ Future<void> showQazaUndoFeedback({
           );
         },
       );
+}
+
+void _scheduleDailySalahAfterUndo({
+  required BuildContext context,
+  required String userId,
+  required QazaUndoResult result,
+}) {
+  final container = ProviderScope.containerOf(context, listen: false);
+  // This sync is a secondary projection of an already-committed Qaza undo.
+  // Use the persistent container so reconciliation can finish after the modal
+  // sheet closes, without holding the undo success UI open.
+  unawaited(
+    _syncDailySalahAfterUndo(
+      container: container,
+      userId: userId,
+      result: result,
+    ),
+  );
+}
+
+Future<void> _syncDailySalahAfterUndo({
+  required ProviderContainer container,
+  required String userId,
+  required QazaUndoResult result,
+}) async {
+  final remainingIds = result.remainingBatch?.recordIds.toSet() ?? <String>{};
+  DailySalahTrackingService? tracking;
+  try {
+    tracking = container.read(dailySalahTrackingServiceProvider);
+  } catch (error, stack) {
+    _recordDailySalahUndoSyncFailure(
+      container: container,
+      code: 'daily_salah_undo_sync_failed',
+      error: error,
+      stack: stack,
+    );
+  }
+
+  for (final entry in result.batch.entries) {
+    try {
+      if (tracking != null && !remainingIds.contains(entry.recordId)) {
+        await tracking.syncQazaReopened(
+          userId: userId,
+          recordId: entry.recordId,
+          prayerType: entry.prayerType,
+          originalDate: entry.originalDate,
+          expectedCompletionId: entry.completionId,
+        );
+      }
+    } catch (error, stack) {
+      _recordDailySalahUndoSyncFailure(
+        container: container,
+        code: 'daily_salah_undo_sync_failed',
+        error: error,
+        stack: stack,
+      );
+    } finally {
+      try {
+        container
+            .invalidate(dailySalahTrackingLogsProvider(entry.originalDate));
+      } catch (error, stack) {
+        _recordDailySalahUndoSyncFailure(
+          container: container,
+          code: 'daily_salah_undo_invalidation_failed',
+          error: error,
+          stack: stack,
+        );
+      }
+    }
+  }
+}
+
+void _recordDailySalahUndoSyncFailure({
+  required ProviderContainer container,
+  required String code,
+  required Object error,
+  required StackTrace stack,
+}) {
+  try {
+    container.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.qazaCompletion,
+          code,
+          error,
+          stack: stack,
+        );
+  } catch (_) {
+    // Diagnostics are best-effort and must never affect the undo flow.
+  }
 }
 
 Future<void> _undoFromSnack({
@@ -139,6 +229,8 @@ Future<void> _undoAll({
           service: ref.read(qazaServiceProvider),
           expectedBatch: batch,
         );
+    _scheduleDailySalahAfterUndo(
+        context: context, userId: userId, result: result);
     try {
       ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(progressSummaryProvider);
@@ -229,6 +321,11 @@ class _QazaUndoSelectionSheetState
             expectedBatch: _batch,
             selectedIds: Set<String>.of(_selected),
           );
+      _scheduleDailySalahAfterUndo(
+        context: context,
+        userId: widget.userId,
+        result: result,
+      );
       _selected.clear();
 
       // End this sheet's temporary selection session before running refresh
@@ -280,6 +377,11 @@ class _QazaUndoSelectionSheetState
             service: ref.read(qazaServiceProvider),
             expectedBatch: _batch,
           );
+      _scheduleDailySalahAfterUndo(
+        context: context,
+        userId: widget.userId,
+        result: result,
+      );
       await _refreshAfterUndo();
       if (!mounted) return;
 

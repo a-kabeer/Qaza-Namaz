@@ -2763,7 +2763,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dailySalahTrackingConfirmMissedMessage =>
-      'This creates a Qaza entry for this prayer and date only if one does not already exist.';
+      'This marks the prayer as Missed and ensures its Qaza is Pending. If a matching Qaza is already Completed, it will be reopened.';
 
   @override
   String get dailySalahTrackingUndoQaza => 'Undo tracker-created Qaza';
@@ -2819,4 +2819,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profileEstimateUsingAge => 'Estimate using age';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedTitle => 'Change prayer to Prayed?';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedMessage =>
+      'This will mark the prayer as prayed and complete its linked Qaza record.';
 }

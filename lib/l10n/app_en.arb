@@ -109,7 +109,10 @@
   "hijriDateShort": "{day} {month}",
   "@hijriDateShort": {
     "description": "Short Hijri date for adjustment choices",
-    "placeholders": { "day": {}, "month": {} }
+    "placeholders": {
+      "day": {},
+      "month": {}
+    }
   },
   "hijriAdjustmentTitle": "Adjust Hijri Date",
   "hijriAdjustmentEarlierTwo": "2 days earlier",
@@ -1490,7 +1493,7 @@
   "dailySalahTrackingMissed": "Missed",
   "dailySalahTrackingUnrecorded": "Unrecorded",
   "dailySalahTrackingConfirmMissedTitle": "Record prayer as missed?",
-  "dailySalahTrackingConfirmMissedMessage": "This creates a Qaza entry for this prayer and date only if one does not already exist.",
+  "dailySalahTrackingConfirmMissedMessage": "This marks the prayer as Missed and ensures its Qaza is Pending. If a matching Qaza is already Completed, it will be reopened.",
   "dailySalahTrackingUndoQaza": "Undo tracker-created Qaza",
   "dailySalahTrackingUndoTitle": "Remove this Qaza entry?",
   "dailySalahTrackingUndoMessage": "Only the exact Qaza entry created by Daily Salah Tracking will be removed, and only if it is still pending.",
@@ -1507,5 +1510,7 @@
   "profileRememberDate": "I remember the date",
   "profileNotSure": "I'm not sure",
   "profilePubertyDate": "Puberty Date",
-  "profileEstimateUsingAge": "Estimate using age"
+  "profileEstimateUsingAge": "Estimate using age",
+  "dailySalahTrackingConfirmPrayedTitle": "Change prayer to Prayed?",
+  "dailySalahTrackingConfirmPrayedMessage": "This will mark the prayer as prayed and complete its linked Qaza record."
 }

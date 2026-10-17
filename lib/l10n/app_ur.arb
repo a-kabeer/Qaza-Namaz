@@ -70,7 +70,10 @@
   "hijriDateShort": "{day} {month}",
   "@hijriDateShort": {
     "description": "Short Hijri date for adjustment choices",
-    "placeholders": { "day": {}, "month": {} }
+    "placeholders": {
+      "day": {},
+      "month": {}
+    }
   },
   "hijriAdjustmentTitle": "ہجری تاریخ میں ترمیم",
   "hijriAdjustmentEarlierTwo": "2 دن پہلے",
@@ -1103,7 +1106,7 @@
   "dailySalahTrackingMissed": "رہ گئی",
   "dailySalahTrackingUnrecorded": "درج نہیں",
   "dailySalahTrackingConfirmMissedTitle": "نماز رہ جانے کے طور پر درج کریں؟",
-  "dailySalahTrackingConfirmMissedMessage": "اس نماز اور تاریخ کے لیے صرف اسی صورت میں قضا ریکارڈ بنے گا جب پہلے سے موجود نہ ہو۔",
+  "dailySalahTrackingConfirmMissedMessage": "اس سے نماز کی کیفیت رہ گئی ہو جائے گی اور اس کی قضا باقی حالت میں ہوگی۔ اگر اس کا قضا ریکارڈ پہلے ہی مکمل ہے تو اسے دوبارہ باقی کر دیا جائے گا۔",
   "dailySalahTrackingUndoQaza": "ٹریکنگ سے بنا قضا ریکارڈ واپس کریں",
   "dailySalahTrackingUndoTitle": "یہ قضا ریکارڈ حذف کریں؟",
   "dailySalahTrackingUndoMessage": "صرف Daily Salah Tracking کا بنایا ہوا یہی قضا ریکارڈ حذف ہوگا، اور صرف اس وقت جب ابھی زیرِ التوا ہو۔",
@@ -1120,5 +1123,7 @@
   "profileRememberDate": "مجھے تاریخ یاد ہے",
   "profileNotSure": "مجھے یقین نہیں",
   "profilePubertyDate": "بلوغت کی تاریخ",
-  "profileEstimateUsingAge": "عمر کے اندازے سے"
+  "profileEstimateUsingAge": "عمر کے اندازے سے",
+  "dailySalahTrackingConfirmPrayedTitle": "نماز کو ادا شدہ قرار دیں؟",
+  "dailySalahTrackingConfirmPrayedMessage": "اس سے نماز کی کیفیت ادا شدہ ہو جائے گی اور اس سے منسلک قضا ریکارڈ مکمل ہو جائے گا۔"
 }

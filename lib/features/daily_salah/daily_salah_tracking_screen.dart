@@ -8,6 +8,8 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../l10n/app_localizations.dart';
 import 'daily_salah_tracking_providers.dart';
 import 'daily_salah_tracking_service.dart';
+import '../home/home_controller.dart';
+import '../qaza/qaza_tracker_controller.dart';
 
 class DailySalahTrackingScreen extends ConsumerStatefulWidget {
   const DailySalahTrackingScreen({super.key});
@@ -168,9 +170,7 @@ class _DailySalahTrackingScreenState
                   child: prayedSelected
                       ? FilledButton(
                           key: Key('daily_salah_prayed_' + prayer.name),
-                          onPressed: isAvailable
-                              ? () => _confirmRemoveStatus(prayer, selectedDate)
-                              : null,
+                          onPressed: isAvailable ? () {} : null,
                           child: Text(l10n.dailySalahTrackingPrayed),
                         )
                       : OutlinedButton(
@@ -190,9 +190,7 @@ class _DailySalahTrackingScreenState
                   child: missedSelected
                       ? FilledButton(
                           key: Key('daily_salah_missed_' + prayer.name),
-                          onPressed: isAvailable
-                              ? () => _confirmRemoveStatus(prayer, selectedDate)
-                              : null,
+                          onPressed: isAvailable ? () {} : null,
                           child: Text(l10n.dailySalahTrackingMissed),
                         )
                       : OutlinedButton(
@@ -216,14 +214,15 @@ class _DailySalahTrackingScreenState
     DailySalahStatus currentStatus,
     DateTime date,
   ) async {
-    if (currentStatus == DailySalahStatus.prayed) {
-      await _confirmRemoveStatus(prayer, date);
+    if (currentStatus == DailySalahStatus.prayed) return;
+    if (currentStatus == DailySalahStatus.missed) {
+      await _confirmPrayed(prayer, date);
       return;
     }
     await _saveStatus(prayer, date, DailySalahStatus.prayed);
   }
 
-  Future<void> _confirmRemoveStatus(
+  Future<void> _confirmPrayed(
     PrayerType prayer,
     DateTime date,
   ) async {
@@ -231,23 +230,23 @@ class _DailySalahTrackingScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(l10n.dailySalahTrackingRemoveStatusTitle),
-        content: Text(l10n.dailySalahTrackingRemoveStatusMessage),
+        title: Text(l10n.dailySalahTrackingConfirmPrayedTitle),
+        content: Text(l10n.dailySalahTrackingConfirmPrayedMessage),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(l10n.commonCancel),
           ),
           FilledButton(
-            key: const Key('daily_salah_confirm_remove_status'),
+            key: const Key('daily_salah_confirm_change_to_prayed'),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(l10n.dailySalahTrackingRemoveStatusAction),
+            child: Text(l10n.commonContinue),
           ),
         ],
       ),
     );
     if (!mounted || confirmed != true) return;
-    await _saveStatus(prayer, date, DailySalahStatus.unrecorded);
+    await _saveStatus(prayer, date, DailySalahStatus.prayed);
   }
 
   Future<void> _saveStatus(
@@ -265,6 +264,9 @@ class _DailySalahTrackingScreenState
             status: status,
           );
       ref.invalidate(dailySalahTrackingLogsProvider(date));
+      ref.invalidate(progressSummaryProvider);
+      ref.invalidate(qazaTrackerControllerProvider(null));
+      ref.read(homeControllerProvider).invalidateDashboard();
     } catch (_) {
       if (!mounted) return;
       ref
@@ -305,6 +307,8 @@ class _DailySalahTrackingScreenState
       ref.invalidate(dailySalahTrackingLogsProvider(date));
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(dailySalahTrackingEnabledProvider);
+      ref.invalidate(qazaTrackerControllerProvider(null));
+      ref.read(homeControllerProvider).invalidateDashboard();
     } catch (_) {
       if (!mounted) return;
       ref
@@ -317,12 +321,17 @@ class _DailySalahTrackingScreenState
     DateTime selectedDate,
     DateTime trackingDate,
   ) async {
-    final picked = await showDatePicker(
+    final picked = await showDialog<DateTime>(
       context: context,
-      initialDate:
-          selectedDate.isAfter(trackingDate) ? trackingDate : selectedDate,
-      firstDate: DateTime(1900),
-      lastDate: trackingDate,
+      builder: (dialogContext) => Dialog(
+        child: CalendarDatePicker(
+          initialDate:
+              selectedDate.isAfter(trackingDate) ? trackingDate : selectedDate,
+          firstDate: DateTime(1900),
+          lastDate: trackingDate,
+          onDateChanged: (date) => Navigator.of(dialogContext).pop(date),
+        ),
+      ),
     );
     if (picked == null || !mounted) return;
     _selectDate(picked, trackingDate);
