@@ -10,6 +10,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/services/qaza_service.dart';
 import 'completion/qaza_completion_controller.dart';
 import '../home/home_controller.dart';
+import '../daily_salah/daily_salah_tracking_providers.dart';
 import '../prayer_time/application/prayer_time_providers.dart';
 
 /// Status filter for the Qaza workspace. [all] leaves the status unconstrained
@@ -698,6 +699,31 @@ class QazaTrackerController
     }
   }
 
+  Future<void> _syncDailySalahAfterReopen({
+    required QazaRecord record,
+    required String? expectedCompletionId,
+  }) async {
+    if (expectedCompletionId == null || expectedCompletionId.isEmpty) return;
+    try {
+      await ref.read(dailySalahTrackingServiceProvider).syncQazaReopened(
+            userId: record.userId,
+            recordId: record.id,
+            prayerType: record.prayerType,
+            originalDate: record.originalDate,
+            expectedCompletionId: expectedCompletionId,
+          );
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.qazaCompletion,
+            'daily_salah_reopen_sync_failed',
+            error,
+            stack: stack,
+          );
+    } finally {
+      ref.invalidate(dailySalahTrackingLogsProvider(record.originalDate));
+    }
+  }
+
   Future<int> markSelectedCompletedAsPending() async {
     if (state.statusFilter != QazaStatusFilter.completed ||
         state.selectionScope != QazaSelectionScope.completed ||
@@ -733,6 +759,12 @@ class QazaTrackerController
       if (generation != _queryGeneration) return 0;
 
       final changedIds = changed.map((record) => record.id).toSet();
+      for (final record in changed) {
+        await _syncDailySalahAfterReopen(
+          record: record,
+          expectedCompletionId: expected[record.id],
+        );
+      }
       state = state.copyWith(
         records: state.records
             .where((record) => !changedIds.contains(record.id))
@@ -781,6 +813,10 @@ class QazaTrackerController
                 recordId: recordId,
               );
       if (changed) {
+        await _syncDailySalahAfterReopen(
+          record: state.records[index],
+          expectedCompletionId: state.records[index].completionId,
+        );
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
         ref.invalidate(oldestPendingProvider(state.records[index].prayerType));
