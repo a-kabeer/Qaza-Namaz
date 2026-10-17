@@ -21,6 +21,7 @@ class _DailySalahTrackingScreenState
     extends ConsumerState<DailySalahTrackingScreen> {
   /// Null means the screen follows the active Fajr-based tracking date.
   DateTime? _selectedDate;
+  double _horizontalDragDistance = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -53,13 +54,23 @@ class _DailySalahTrackingScreenState
             GestureDetector(
               key: const Key('daily_salah_calendar_swipe'),
               behavior: HitTestBehavior.opaque,
-              onHorizontalDragEnd: (details) {
-                final velocity = details.primaryVelocity ?? 0;
-                if (velocity < -100) {
+              onHorizontalDragStart: (_) {
+                _horizontalDragDistance = 0;
+              },
+              onHorizontalDragUpdate: (details) {
+                _horizontalDragDistance += details.delta.dx;
+              },
+              onHorizontalDragEnd: (_) {
+                final distance = _horizontalDragDistance;
+                _horizontalDragDistance = 0;
+                if (distance < -40) {
                   _changeDay(1, trackingDate);
-                } else if (velocity > 100) {
+                } else if (distance > 40) {
                   _changeDay(-1, trackingDate);
                 }
+              },
+              onHorizontalDragCancel: () {
+                _horizontalDragDistance = 0;
               },
               child: Card(
                 key: const Key('daily_salah_calendar'),
