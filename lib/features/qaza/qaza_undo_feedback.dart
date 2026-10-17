@@ -45,16 +45,44 @@ Future<void> showQazaUndoFeedback({
       );
 }
 
+void _scheduleDailySalahAfterUndo({
+  required BuildContext context,
+  required String userId,
+  required QazaUndoResult result,
+}) {
+  final container = ProviderScope.containerOf(context, listen: false);
+  // This sync is a secondary projection of an already-committed Qaza undo.
+  // Do not keep the success UI open while database reconciliation runs.
+  unawaited(
+    _syncDailySalahAfterUndo(
+      container: container,
+      userId: userId,
+      result: result,
+    ),
+  );
+}
+
 Future<void> _syncDailySalahAfterUndo({
-  required WidgetRef ref,
+  required ProviderContainer container,
   required String userId,
   required QazaUndoResult result,
 }) async {
   final remainingIds = result.remainingBatch?.recordIds.toSet() ?? <String>{};
+  DailySalahTrackingService? tracking;
+  try {
+    tracking = container.read(dailySalahTrackingServiceProvider);
+  } catch (error, stack) {
+    _recordDailySalahUndoSyncFailure(
+      container: container,
+      code: 'daily_salah_undo_sync_failed',
+      error: error,
+      stack: stack,
+    );
+  }
+
   for (final entry in result.batch.entries) {
     try {
-      if (!remainingIds.contains(entry.recordId)) {
-        final tracking = ref.read(dailySalahTrackingServiceProvider);
+      if (tracking != null && !remainingIds.contains(entry.recordId)) {
         await tracking.syncQazaReopened(
           userId: userId,
           recordId: entry.recordId,
@@ -64,34 +92,42 @@ Future<void> _syncDailySalahAfterUndo({
         );
       }
     } catch (error, stack) {
-      // The Qaza undo is already committed. Daily Salah sync must never turn
-      // that successful undo into a failed action or keep its sheet open.
+      _recordDailySalahUndoSyncFailure(
+        container: container,
+        code: 'daily_salah_undo_sync_failed',
+        error: error,
+        stack: stack,
+      );
+    } finally {
       try {
-        ref.read(diagnosticsProvider).recordFailure(
-              DiagnosticArea.qazaCompletion,
-              'daily_salah_undo_sync_failed',
-              error,
-              stack: stack,
-            );
-      } catch (_) {
-        // Diagnostics are best-effort too; they cannot block the undo flow.
+        container.invalidate(dailySalahTrackingLogsProvider(entry.originalDate));
+      } catch (error, stack) {
+        _recordDailySalahUndoSyncFailure(
+          container: container,
+          code: 'daily_salah_undo_invalidation_failed',
+          error: error,
+          stack: stack,
+        );
       }
     }
+  }
+}
 
-    try {
-      ref.invalidate(dailySalahTrackingLogsProvider(entry.originalDate));
-    } catch (error, stack) {
-      try {
-        ref.read(diagnosticsProvider).recordFailure(
-              DiagnosticArea.qazaCompletion,
-              'daily_salah_undo_invalidation_failed',
-              error,
-              stack: stack,
-            );
-      } catch (_) {
-        // Provider invalidation and diagnostics are both best-effort here.
-      }
-    }
+void _recordDailySalahUndoSyncFailure({
+  required ProviderContainer container,
+  required String code,
+  required Object error,
+  required StackTrace stack,
+}) {
+  try {
+    container.read(diagnosticsProvider).recordFailure(
+          DiagnosticArea.qazaCompletion,
+          code,
+          error,
+          stack: stack,
+        );
+  } catch (_) {
+    // Diagnostics are best-effort and must never affect the undo flow.
   }
 }
 
@@ -190,7 +226,7 @@ Future<void> _undoAll({
           service: ref.read(qazaServiceProvider),
           expectedBatch: batch,
         );
-    await _syncDailySalahAfterUndo(ref: ref, userId: userId, result: result);
+    _scheduleDailySalahAfterUndo(context: context, userId: userId, result: result);
     try {
       ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(progressSummaryProvider);
@@ -281,8 +317,8 @@ class _QazaUndoSelectionSheetState
             expectedBatch: _batch,
             selectedIds: Set<String>.of(_selected),
           );
-      await _syncDailySalahAfterUndo(
-        ref: ref,
+      _scheduleDailySalahAfterUndo(
+        context: context,
         userId: widget.userId,
         result: result,
       );
@@ -337,8 +373,8 @@ class _QazaUndoSelectionSheetState
             service: ref.read(qazaServiceProvider),
             expectedBatch: _batch,
           );
-      await _syncDailySalahAfterUndo(
-        ref: ref,
+      _scheduleDailySalahAfterUndo(
+        context: context,
         userId: widget.userId,
         result: result,
       );
