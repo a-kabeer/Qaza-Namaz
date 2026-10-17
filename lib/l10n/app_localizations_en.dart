@@ -2520,10 +2520,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Keep a separate backup of your Qaza progress in your Google Drive app data.';
 
   @override
-  String get cloudConnect => 'Connect Google';
+  String get cloudConnect => 'Sign in with Google';
 
   @override
-  String get cloudDisconnect => 'Disconnect account';
+  String get cloudDisconnect => 'Sign out';
 
   @override
   String get cloudConnected => 'Connected';
@@ -2613,10 +2613,40 @@ class AppLocalizationsEn extends AppLocalizations {
       'Track your missed prayers and organize your Qaza progress at your own pace. Your records stay on this device. You can optionally use Google to back up and restore progress across devices.';
 
   @override
+  String get cloudAccountChoiceTitle => 'Choose a Google account';
+
+  @override
+  String get cloudAccountChoiceDescription =>
+      'Select a previously used account, or continue with a new Google account.';
+
+  @override
+  String get cloudContinueNewAccount => 'Continue with a new account';
+
+  @override
+  String get cloudSignOutPendingTitle => 'Changes not backed up';
+
+  @override
+  String get cloudSignOutPendingMessage =>
+      'Recent changes haven\'t been backed up to Google Drive. If you sign out now, they will remain on this device but won\'t be saved in your Google backup.';
+
+  @override
+  String get cloudSignOutAnyway => 'Sign Out Anyway';
+
+  @override
+  String get cloudBackupAndSignOut => 'Back Up & Sign Out';
+
+  @override
+  String get guestGooglePromptTitle => 'Keep your Qaza progress safe';
+
+  @override
+  String get guestGooglePromptMessage =>
+      'Connect a Google account to back up your Qaza progress and restore it if you change devices.';
+
+  @override
   String get cloudSetupUseGoogle => 'Continue with Google';
 
   @override
-  String get cloudSetupContinueLocal => 'Continue on this device';
+  String get cloudSetupContinueLocal => 'Continue as Guest';
 
   @override
   String get cloudConnectionFailed =>

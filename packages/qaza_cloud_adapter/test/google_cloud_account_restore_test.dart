@@ -60,6 +60,11 @@ void main() {
       expect(await state.isCloudSyncEnabled(), isTrue);
       expect(await state.isAutomaticSyncEnabled(), isTrue);
       expect(await state.isReconnectRequired(), isFalse);
+      final remembered = await provider.rememberedAccounts();
+      expect(remembered, hasLength(1));
+      expect(remembered.single.accountId, 'google-account-A');
+      expect(remembered.single.email, 'saved@example.com');
+      expect(remembered.single.displayName, 'Saved Google User');
     },
   );
 

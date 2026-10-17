@@ -7,10 +7,14 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
 import '../data_management/qaza_data_management_screen.dart';
+import '../onboarding/startup_gate.dart';
+import 'google_account_choice_screen.dart';
 import '../settings/qaza_reset_controller.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
-  const AccountScreen({super.key});
+  const AccountScreen({super.key, this.autoConnect = false});
+
+  final bool autoConnect;
 
   @override
   ConsumerState<AccountScreen> createState() => _AccountScreenState();
@@ -83,6 +87,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               key: const Key('account_cloud_backup'),
               accountSnapshot: account,
               accountLoading: _accountSnapshot.isLoading,
+              autoConnect: widget.autoConnect && !_accountSnapshot.isLoading,
               onAccountChanged: _setAccountSnapshot,
             ),
             const SizedBox(height: 16),
@@ -277,11 +282,13 @@ class _CloudBackupCard extends ConsumerStatefulWidget {
     super.key,
     required this.accountSnapshot,
     required this.accountLoading,
+    required this.autoConnect,
     required this.onAccountChanged,
   });
 
   final CloudAccountSnapshot accountSnapshot;
   final bool accountLoading;
+  final bool autoConnect;
   final ValueChanged<CloudAccountSnapshot> onAccountChanged;
 
   @override
@@ -323,7 +330,20 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(_refresh);
+    Future<void>.microtask(() async {
+      await _refresh();
+      if (mounted && widget.autoConnect) await _connect();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _CloudBackupCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.autoConnect && widget.autoConnect) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Future<void>.microtask(_connect);
+      });
+    }
   }
 
   Future<void> _refresh() async {
@@ -340,59 +360,278 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   }
 
   Future<void> _connect() async {
-    setState(() {
-      _busy = true;
-      _message = null;
-    });
-    final account = await ref.read(cloudAccountProvider).signIn();
-    final sync = await ref.read(cloudSyncProvider).status();
-    if (!mounted) return;
-    widget.onAccountChanged(account);
-    setState(() {
-      _sync = sync;
-      _message = account.message ?? sync.message;
-      _busy = false;
-    });
-  }
+    if (_busy || _settingsBusy || _backupBusy) return;
+    final accountProvider = ref.read(cloudAccountProvider);
+    final selectedAccountId =
+        await showGoogleAccountChoiceScreen(context, accountProvider);
+    if (!mounted || selectedAccountId == null) return;
 
-  Future<void> _disconnect() async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.cloudDisconnectConfirmTitle),
-        content: Text(l10n.cloudDisconnectConfirmMessage),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: Text(l10n.commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.cloudDisconnect),
-          ),
-        ],
-      ),
-    );
-    if (confirmed != true || !mounted) return;
     setState(() {
       _busy = true;
       _message = null;
     });
     try {
-      await ref.read(cloudAccountProvider).disconnect();
-      widget.onAccountChanged(const CloudAccountSnapshot.disconnected());
-      final sync = await ref.read(cloudSyncProvider).status();
+      final account = selectedAccountId.isEmpty
+          ? await accountProvider.signIn()
+          : await accountProvider.signInWithRememberedAccount(
+              selectedAccountId,
+            );
+      if (!mounted) return;
+      widget.onAccountChanged(account);
+      if (!account.isConnected) {
+        setState(() {
+          _message = account.message ??
+              AppLocalizations.of(context).cloudConnectionFailed;
+          _sync = const CloudSyncSnapshot(
+            status: CloudSyncStatus.failed,
+            message: 'Google sign-in could not be completed.',
+          );
+        });
+        return;
+      }
+
+      final cloudSync = ref.read(cloudSyncProvider);
+      final discovery = await cloudSync.discoverBackup(
+        allowInteractive: false,
+      );
+      if (!mounted) return;
+      CloudSyncSnapshot result;
+      switch (discovery.status) {
+        case CloudBackupDiscoveryStatus.noBackup:
+          result = await cloudSync.backupNow(
+            onProgress: _publishBackupProgress,
+          );
+          if (result.status == CloudSyncStatus.conflict &&
+              result.conflict != null) {
+            result = await _resolveConflict(result.conflict!) ??
+                await cloudSync.status();
+          }
+          break;
+        case CloudBackupDiscoveryStatus.backupFound:
+          final conflict = discovery.conflict;
+          if (conflict == null) {
+            result = CloudSyncSnapshot(
+              status: CloudSyncStatus.failed,
+              message: discovery.message ??
+                  AppLocalizations.of(context).cloudConnectionFailed,
+            );
+          } else {
+            final database = ref.read(appDatabaseProvider);
+            final fresh = await database.isFreshInstallationForCloudRestore();
+            final revision = await database.readDbRevision();
+            if (fresh && conflict.localRevision == revision) {
+              result = await cloudSync.resolveConflict(
+                conflict: conflict,
+                choice: CloudConflictChoice.useRemote,
+                confirmed: true,
+                onProgress: _publishBackupProgress,
+              );
+              if (result.status == CloudSyncStatus.synced &&
+                  result.restoredRemoteBackup) {
+                await _refreshAfterRestore();
+              }
+            } else {
+              result =
+                  await _resolveConflict(conflict) ?? await cloudSync.status();
+            }
+          }
+          break;
+        case CloudBackupDiscoveryStatus.unavailable:
+        case CloudBackupDiscoveryStatus.invalidBackup:
+        case CloudBackupDiscoveryStatus.failed:
+          result = CloudSyncSnapshot(
+            status: CloudSyncStatus.failed,
+            message: discovery.message ??
+                AppLocalizations.of(context).cloudConnectionFailed,
+          );
+          break;
+      }
       if (!mounted) return;
       setState(() {
-        _sync = sync;
-        _message = sync.message;
+        _sync = result;
+        _message = result.message ??
+            (result.status == CloudSyncStatus.synced
+                ? AppLocalizations.of(context).cloudBackupSucceeded
+                : account.message);
       });
-    } catch (error) {
-      if (mounted) setState(() => _message = error.toString());
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _message = AppLocalizations.of(context).cloudConnectionFailed;
+        });
+      }
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<void> _disconnect() async {
+    if (_busy || _settingsBusy || _backupBusy) return;
+    setState(() {
+      _busy = true;
+      _message = null;
+    });
+    try {
+      final cloudSync = ref.read(cloudSyncProvider);
+      final status = await cloudSync.status();
+      if (!mounted) return;
+      setState(() => _sync = status);
+
+      if (!status.hasPendingChanges) {
+        await _finishSignOut();
+        return;
+      }
+
+      // A read-only remote discovery differentiates a usable online Drive
+      // session from a connection/authorization failure without uploading.
+      final discovery = await cloudSync.discoverBackup(
+        allowInteractive: false,
+      );
+      if (!mounted) return;
+      final canCheckRemote =
+          discovery.status == CloudBackupDiscoveryStatus.noBackup ||
+              discovery.status == CloudBackupDiscoveryStatus.backupFound;
+
+      if (!canCheckRemote) {
+        final signOutAnyway = await _confirmSignOutWithoutBackup();
+        if (signOutAnyway == true && mounted) await _finishSignOut();
+        return;
+      }
+
+      final backUpFirst = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title:
+              Text(AppLocalizations.of(dialogContext).cloudSignOutPendingTitle),
+          content: Text(
+            AppLocalizations.of(dialogContext).cloudSignOutPendingMessage,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: Text(AppLocalizations.of(dialogContext).commonCancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: Text(
+                AppLocalizations.of(dialogContext).cloudBackupAndSignOut,
+              ),
+            ),
+          ],
+        ),
+      );
+      if (backUpFirst != true || !mounted) return;
+
+      while (mounted) {
+        setState(() {
+          _backupProgress = const CloudBackupProgress.checking();
+          _message = null;
+        });
+        var result = await cloudSync.backupNow(
+          onProgress: _publishBackupProgress,
+        );
+        if (!mounted) return;
+        if (result.status == CloudSyncStatus.conflict &&
+            result.conflict != null) {
+          result = await _resolveConflict(result.conflict!) ??
+              await cloudSync.status();
+        }
+        if (!mounted) return;
+        setState(() {
+          _sync = result;
+          _backupProgress = null;
+          _message = result.message;
+        });
+
+        if (result.status == CloudSyncStatus.synced &&
+            !result.hasPendingChanges) {
+          await _finishSignOut();
+          return;
+        }
+
+        final next = await showDialog<String>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            title: Text(
+              AppLocalizations.of(dialogContext).cloudSignOutPendingTitle,
+            ),
+            content: Text(
+              result.message ??
+                  AppLocalizations.of(dialogContext).cloudSignOutPendingMessage,
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop('cancel'),
+                child: Text(AppLocalizations.of(dialogContext).commonCancel),
+              ),
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop('sign_out'),
+                child: Text(
+                  AppLocalizations.of(dialogContext).cloudSignOutAnyway,
+                ),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.of(dialogContext).pop('retry'),
+                child: Text(AppLocalizations.of(dialogContext).commonRetry),
+              ),
+            ],
+          ),
+        );
+        if (!mounted || next == 'cancel' || next == null) return;
+        if (next == 'sign_out') {
+          await _finishSignOut();
+          return;
+        }
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _message = AppLocalizations.of(context).cloudConnectionFailed;
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _backupProgress = null;
+        });
+      }
+    }
+  }
+
+  Future<bool?> _confirmSignOutWithoutBackup() {
+    final l10n = AppLocalizations.of(context);
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.cloudSignOutPendingTitle),
+        content: Text(l10n.cloudSignOutPendingMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.cloudSignOutAnyway),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _finishSignOut() async {
+    await ref.read(cloudAccountProvider).disconnect();
+    await ref.read(appDatabaseProvider).markReturningAccountChoicePending();
+    widget.onAccountChanged(const CloudAccountSnapshot.disconnected());
+    ref.invalidate(cloudAccountStartupRestoreProvider);
+    ref.invalidate(returningAccountChoicePendingProvider);
+    ref.invalidate(cloudSetupChoiceCompleteProvider);
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const StartupGate()),
+      (_) => false,
+    );
   }
 
   Future<void> _backupNow() async {
@@ -439,7 +678,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     }
   }
 
-  Future<void> _resolveConflict(CloudConflictInfo conflict) async {
+  Future<CloudSyncSnapshot?> _resolveConflict(
+      CloudConflictInfo conflict) async {
     final l10n = AppLocalizations.of(context);
     final choice = await showDialog<CloudConflictChoice>(
       context: context,
@@ -464,7 +704,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         ],
       ),
     );
-    if (choice == null || !mounted) return;
+    if (choice == null || !mounted) return null;
 
     final useRemote = choice == CloudConflictChoice.useRemote;
     final confirmed = await showDialog<bool>(
@@ -492,17 +732,17 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         ],
       ),
     );
-    if (confirmed != true || !mounted) return;
+    if (confirmed != true || !mounted) return null;
     final result = await ref.read(cloudSyncProvider).resolveConflict(
           conflict: conflict,
           choice: choice,
           confirmed: true,
           onProgress: _publishBackupProgress,
         );
-    if (!mounted) return;
+    if (!mounted) return null;
     if (useRemote && result.status == CloudSyncStatus.synced) {
       await _refreshAfterRestore();
-      if (!mounted) return;
+      if (!mounted) return null;
     }
     setState(() {
       _sync = result;
@@ -510,6 +750,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           ? l10n.cloudBackupSucceeded
           : result.message;
     });
+    return result;
   }
 
   Future<void> _refreshAfterRestore() async {

@@ -35,6 +35,16 @@ class _FakeCloudAccountProvider implements CloudAccountProvider {
   Future<CloudAccountSnapshot> signIn() async => signInResult;
 
   @override
+  Future<List<RememberedCloudAccount>> rememberedAccounts() async =>
+      const <RememberedCloudAccount>[];
+
+  @override
+  Future<CloudAccountSnapshot> signInWithRememberedAccount(
+    String accountId,
+  ) async =>
+      signInResult;
+
+  @override
   Future<void> disconnect() async {}
 }
 
@@ -237,6 +247,10 @@ void main() {
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
     );
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('continue_with_new_google_account')),
+    );
 
     expect(find.byType(CloudSetupChoiceScreen), findsNothing);
     expect(find.byType(LanguageSelectionScreen), findsNothing);
@@ -266,6 +280,10 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
+    );
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
@@ -304,6 +322,10 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
+    );
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
@@ -352,6 +374,10 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
+    );
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(
@@ -422,7 +448,7 @@ void main() {
 
     expect(find.text('Welcome to Qaza Namaz'), findsOneWidget);
     expect(find.text('Continue with Google'), findsOneWidget);
-    expect(find.text('Continue on this device'), findsOneWidget);
+    expect(find.text('Continue as Guest'), findsOneWidget);
     expect(
         find.byKey(const Key('cloud_setup_language_selector')), findsOneWidget);
     expect(find.byKey(const Key('google_g_mark')), findsOneWidget);
