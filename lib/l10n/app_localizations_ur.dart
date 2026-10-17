@@ -2108,6 +2108,11 @@ class AppLocalizationsUr extends AppLocalizations {
   }
 
   @override
+  String prayerTimeUpcomingPrayer(String name) {
+    return 'اگلی نماز: $name';
+  }
+
+  @override
   String prayerTimeUsingSavedLocation(String location) {
     return 'آپ کا محفوظ مقام استعمال ہو رہا ہے: $location';
   }
@@ -4915,6 +4920,11 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String prayerTimeNextRestricted(String name) {
     return 'Agla: $name';
+  }
+
+  @override
+  String prayerTimeUpcomingPrayer(String name) {
+    return 'Agli namaz: $name';
   }
 
   @override
