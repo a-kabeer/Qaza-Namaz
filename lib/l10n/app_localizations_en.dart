@@ -2658,6 +2658,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Google connection could not be completed. Try again or continue locally.';
 
   @override
+  String get cloudSetupBackupUnreadableMessage => "This saved backup can't be restored by this app version. Your local progress is unchanged. Choose another Google account or continue as a guest.";
+
+  @override
+  String get cloudSetupChooseAnotherAccount => "Choose another Google account";
+
+  @override
+  String get cloudRestoreFailedMessage => "The backup couldn't be restored. Your progress on this device and the saved cloud backup have been kept. Check your connection and try again, or continue as a guest.";
+
+  @override
   String get cloudRestoreProgressTitle => 'Restoring your Google Drive backup';
 
   @override
