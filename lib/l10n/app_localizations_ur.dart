@@ -2739,7 +2739,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get dailySalahTrackingConfirmMissedMessage =>
-      'اس نماز اور تاریخ کے لیے صرف اسی صورت میں قضا ریکارڈ بنے گا جب پہلے سے موجود نہ ہو۔';
+      'اس سے نماز کی کیفیت رہ گئی ہو جائے گی اور اس کی قضا باقی حالت میں ہوگی۔ اگر اس کا قضا ریکارڈ پہلے ہی مکمل ہے تو اسے دوبارہ باقی کر دیا جائے گا۔';
 
   @override
   String get dailySalahTrackingConfirmPrayedTitle => 'نماز کو ادا شدہ قرار دیں؟';
