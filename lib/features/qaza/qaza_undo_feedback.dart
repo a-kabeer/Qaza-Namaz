@@ -11,6 +11,7 @@ import '../../domain/services/qaza_undo_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../../l10n/prayer_type_l10n.dart';
 import '../home/home_controller.dart';
+import '../daily_salah/daily_salah_tracking_providers.dart';
 import 'qaza_completion_feedback.dart';
 
 Future<void> showQazaUndoFeedback({
@@ -42,6 +43,36 @@ Future<void> showQazaUndoFeedback({
           );
         },
       );
+}
+
+Future<void> _syncDailySalahAfterUndo({
+  required WidgetRef ref,
+  required String userId,
+  required QazaUndoResult result,
+}) async {
+  final remainingIds = result.remainingBatch?.recordIds.toSet() ?? <String>{};
+  final tracking = ref.read(dailySalahTrackingServiceProvider);
+  for (final entry in result.batch.entries) {
+    if (remainingIds.contains(entry.recordId)) continue;
+    try {
+      await tracking.syncQazaReopened(
+        userId: userId,
+        recordId: entry.recordId,
+        prayerType: entry.prayerType,
+        originalDate: entry.originalDate,
+        expectedCompletionId: entry.completionId,
+      );
+    } catch (error, stack) {
+      ref.read(diagnosticsProvider).recordFailure(
+            DiagnosticArea.qazaCompletion,
+            'daily_salah_undo_sync_failed',
+            error,
+            stack: stack,
+          );
+    } finally {
+      ref.invalidate(dailySalahTrackingLogsProvider(entry.originalDate));
+    }
+  }
 }
 
 Future<void> _undoFromSnack({
@@ -139,6 +170,7 @@ Future<void> _undoAll({
           service: ref.read(qazaServiceProvider),
           expectedBatch: batch,
         );
+    await _syncDailySalahAfterUndo(ref: ref, userId: userId, result: result);
     try {
       ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(progressSummaryProvider);
@@ -229,6 +261,11 @@ class _QazaUndoSelectionSheetState
             expectedBatch: _batch,
             selectedIds: Set<String>.of(_selected),
           );
+      await _syncDailySalahAfterUndo(
+        ref: ref,
+        userId: widget.userId,
+        result: result,
+      );
       _selected.clear();
 
       // End this sheet's temporary selection session before running refresh
@@ -280,6 +317,11 @@ class _QazaUndoSelectionSheetState
             service: ref.read(qazaServiceProvider),
             expectedBatch: _batch,
           );
+      await _syncDailySalahAfterUndo(
+        ref: ref,
+        userId: widget.userId,
+        result: result,
+      );
       await _refreshAfterUndo();
       if (!mounted) return;
 
