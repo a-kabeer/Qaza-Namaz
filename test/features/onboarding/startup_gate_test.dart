@@ -349,6 +349,11 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text('simulated backup discovery failure'), findsNothing);
 
+    // Repeated failures must replace the prior dialog, not stack another one.
+    await _tapVisible(tester, find.text('Retry'));
+    expect(fakeSync.discoverBackupCalls, 3);
+    expect(find.byType(AlertDialog), findsOneWidget);
+
     await _tapVisible(tester, find.text('Cancel'));
     expect(find.byType(AlertDialog), findsNothing);
     await _tapVisible(
