@@ -76,33 +76,40 @@ class QiblaSummaryCard extends ConsumerWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                SizedBox(
-                  height: 86,
-                  child: Center(
-                    child: value == null || !value.isFinite
-                        ? Icon(
-                            Icons.explore_off_rounded,
-                            size: 40,
-                            color: scheme.onSurfaceVariant,
-                          )
-                        : SizedBox.square(
-                            key: const Key('qibla_summary_compass'),
-                            dimension: 86,
-                            child: CustomPaint(
-                              painter: QiblaDialPainter(
-                                qiblaBearing: value,
-                                heading: trueHeading ?? 0,
-                                showRelativeQibla: live,
-                                showCardinals: live,
-                                surfaceColor: scheme.surfaceContainerLow,
-                                outlineColor: scheme.outlineVariant,
-                                onSurfaceColor: scheme.onSurface,
-                                onSurfaceVariantColor: scheme.onSurfaceVariant,
-                                primaryColor: scheme.primary,
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final compassSize =
+                        constraints.maxWidth.clamp(0.0, 110.0).toDouble();
+                    return SizedBox(
+                      height: compassSize,
+                      child: Center(
+                        child: value == null || !value.isFinite
+                            ? Icon(
+                                Icons.explore_off_rounded,
+                                size: 40,
+                                color: scheme.onSurfaceVariant,
+                              )
+                            : SizedBox.square(
+                                key: const Key('qibla_summary_compass'),
+                                dimension: compassSize,
+                                child: CustomPaint(
+                                  painter: QiblaDialPainter(
+                                    qiblaBearing: value,
+                                    heading: trueHeading ?? 0,
+                                    showRelativeQibla: live,
+                                    showCardinals: live,
+                                    surfaceColor: scheme.surfaceContainerLow,
+                                    outlineColor: scheme.outlineVariant,
+                                    onSurfaceColor: scheme.onSurface,
+                                    onSurfaceVariantColor:
+                                        scheme.onSurfaceVariant,
+                                    primaryColor: scheme.primary,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ),
-                  ),
+                      ),
+                    );
+                  },
                 ),
                 const SizedBox(height: 2),
                 Row(
