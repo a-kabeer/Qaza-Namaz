@@ -106,7 +106,15 @@ class DailySalahTrackingService {
     // between the ledger mutation and its corresponding tracking update.
     for (final item in result.entries.toList(growable: false)) {
       final log = item.value;
-      final recordId = log.linkedQazaId ?? log.trackerCreatedQazaId;
+      var recordId = log.linkedQazaId ?? log.trackerCreatedQazaId;
+      if (recordId == null && log.status == DailySalahStatus.missed) {
+        final matching = await _matchingQaza(
+          userId: userId,
+          prayerType: log.prayerType,
+          date: date,
+        );
+        if (matching.length == 1) recordId = matching.single.id;
+      }
       if (recordId == null) continue;
       final records = await _qazaService.repository.getRecordsByIds(
         userId: userId,
