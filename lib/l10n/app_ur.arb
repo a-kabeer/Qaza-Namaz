@@ -767,6 +767,14 @@
       }
     }
   },
+  "prayerTimeUpcomingPrayer": "اگلی نماز: {name}",
+  "@prayerTimeUpcomingPrayer": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
   "prayerTimeUsingSavedLocation": "آپ کا محفوظ مقام استعمال ہو رہا ہے: {location}",
   "@prayerTimeUsingSavedLocation": {
     "placeholders": {
