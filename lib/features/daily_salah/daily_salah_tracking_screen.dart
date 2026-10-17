@@ -9,6 +9,7 @@ import '../../l10n/app_localizations.dart';
 import 'daily_salah_tracking_providers.dart';
 import 'daily_salah_tracking_service.dart';
 import '../home/home_controller.dart';
+import '../qaza/qaza_tracker_controller.dart';
 
 class DailySalahTrackingScreen extends ConsumerStatefulWidget {
   const DailySalahTrackingScreen({super.key});
@@ -264,6 +265,7 @@ class _DailySalahTrackingScreenState
           );
       ref.invalidate(dailySalahTrackingLogsProvider(date));
       ref.invalidate(progressSummaryProvider);
+      ref.invalidate(qazaTrackerControllerProvider(null));
       ref.read(homeControllerProvider).invalidateDashboard();
     } catch (_) {
       if (!mounted) return;
@@ -305,6 +307,7 @@ class _DailySalahTrackingScreenState
       ref.invalidate(dailySalahTrackingLogsProvider(date));
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(dailySalahTrackingEnabledProvider);
+      ref.invalidate(qazaTrackerControllerProvider(null));
       ref.read(homeControllerProvider).invalidateDashboard();
     } catch (_) {
       if (!mounted) return;
