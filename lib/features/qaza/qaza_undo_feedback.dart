@@ -52,25 +52,45 @@ Future<void> _syncDailySalahAfterUndo({
 }) async {
   final remainingIds = result.remainingBatch?.recordIds.toSet() ?? <String>{};
   for (final entry in result.batch.entries) {
-    if (remainingIds.contains(entry.recordId)) continue;
     try {
-      final tracking = ref.read(dailySalahTrackingServiceProvider);
-      await tracking.syncQazaReopened(
-        userId: userId,
-        recordId: entry.recordId,
-        prayerType: entry.prayerType,
-        originalDate: entry.originalDate,
-        expectedCompletionId: entry.completionId,
-      );
+      if (!remainingIds.contains(entry.recordId)) {
+        final tracking = ref.read(dailySalahTrackingServiceProvider);
+        await tracking.syncQazaReopened(
+          userId: userId,
+          recordId: entry.recordId,
+          prayerType: entry.prayerType,
+          originalDate: entry.originalDate,
+          expectedCompletionId: entry.completionId,
+        );
+      }
     } catch (error, stack) {
-      ref.read(diagnosticsProvider).recordFailure(
-            DiagnosticArea.qazaCompletion,
-            'daily_salah_undo_sync_failed',
-            error,
-            stack: stack,
-          );
-    } finally {
+      // The Qaza undo is already committed. Daily Salah sync must never turn
+      // that successful undo into a failed action or keep its sheet open.
+      try {
+        ref.read(diagnosticsProvider).recordFailure(
+              DiagnosticArea.qazaCompletion,
+              'daily_salah_undo_sync_failed',
+              error,
+              stack: stack,
+            );
+      } catch (_) {
+        // Diagnostics are best-effort too; they cannot block the undo flow.
+      }
+    }
+
+    try {
       ref.invalidate(dailySalahTrackingLogsProvider(entry.originalDate));
+    } catch (error, stack) {
+      try {
+        ref.read(diagnosticsProvider).recordFailure(
+              DiagnosticArea.qazaCompletion,
+              'daily_salah_undo_invalidation_failed',
+              error,
+              stack: stack,
+            );
+      } catch (_) {
+        // Provider invalidation and diagnostics are both best-effort here.
+      }
     }
   }
 }
