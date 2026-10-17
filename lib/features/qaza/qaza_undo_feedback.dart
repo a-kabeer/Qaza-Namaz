@@ -101,7 +101,8 @@ Future<void> _syncDailySalahAfterUndo({
       );
     } finally {
       try {
-        container.invalidate(dailySalahTrackingLogsProvider(entry.originalDate));
+        container
+            .invalidate(dailySalahTrackingLogsProvider(entry.originalDate));
       } catch (error, stack) {
         _recordDailySalahUndoSyncFailure(
           container: container,
@@ -227,7 +228,8 @@ Future<void> _undoAll({
           service: ref.read(qazaServiceProvider),
           expectedBatch: batch,
         );
-    _scheduleDailySalahAfterUndo(context: context, userId: userId, result: result);
+    _scheduleDailySalahAfterUndo(
+        context: context, userId: userId, result: result);
     try {
       ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(progressSummaryProvider);
