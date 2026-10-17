@@ -70,17 +70,19 @@ void main() {
     expect(source, contains('showCardinals: live'));
   });
 
-  test('Qibla dial contains a Kaaba marker and supports static and live modes',
+  test('Qibla dial uses a clean directional needle in static and live modes',
       () {
     final source =
         File('lib/features/prayer_time/presentation/qibla_visuals.dart')
             .readAsStringSync();
 
     expect(source, contains('class QiblaDialPainter extends CustomPainter {'));
-    expect(source, contains('_drawKaaba('));
+    expect(source, isNot(contains('_drawKaaba(')));
+    expect(source, contains('qiblaNeedle'));
+    expect(source, contains('pointerTipDistance'));
+    expect(source, contains('pointerTailDistance'));
     expect(source, contains('showRelativeQibla'));
     expect(source, contains('showCardinals'));
     expect(source, contains('canvas.rotate(-heading * math.pi / 180)'));
-    expect(source, contains('markerCenter'));
   });
 }
