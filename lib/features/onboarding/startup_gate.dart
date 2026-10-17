@@ -38,7 +38,7 @@ class StartupGate extends ConsumerWidget {
 
     if (session.state.phase == AccountSessionPhase.error) {
       return StartupSessionErrorBoundary(
-        message: session.state.message,
+        message: AppLocalizations.of(context).startupProfileLoadErrorMessage,
         onRetry: () =>
             ref.read(accountSessionManagerProvider.notifier).initialize(),
       );
