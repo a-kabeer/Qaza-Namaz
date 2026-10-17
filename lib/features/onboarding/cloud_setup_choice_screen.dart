@@ -91,11 +91,14 @@ class _CloudSetupChoiceScreenState
       }
     } catch (error) {
       _cloudAttempted = true;
-      _showFailure(
-        error: error,
-        fallbackMessage: AppLocalizations.of(context).cloudConnectionFailed,
-        onRetry: _restoreExistingAccount,
-      );
+      if (mounted) {
+        _showFailure(
+          error: error,
+          fallbackMessage:
+              AppLocalizations.of(context).cloudConnectionFailed,
+          onRetry: _restoreExistingAccount,
+        );
+      }
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -174,6 +177,7 @@ class _CloudSetupChoiceScreenState
     });
     try {
       await _persistSelectedLanguage();
+      if (!mounted) return;
       final accountProvider = ref.read(cloudAccountProvider);
       final selectedAccountId =
           await showGoogleAccountChoiceScreen(context, accountProvider);
