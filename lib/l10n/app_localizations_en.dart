@@ -2736,6 +2736,13 @@ class AppLocalizationsEn extends AppLocalizations {
       'This creates a Qaza entry for this prayer and date only if one does not already exist.';
 
   @override
+  String get dailySalahTrackingConfirmPrayedTitle => 'Change prayer to Prayed?';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedMessage =>
+      'This will mark the prayer as prayed and complete its linked Qaza record.';
+
+  @override
   String get dailySalahTrackingUndoQaza => 'Undo tracker-created Qaza';
 
   @override
