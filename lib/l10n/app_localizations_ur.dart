@@ -2659,6 +2659,9 @@ class AppLocalizationsUr extends AppLocalizations {
       'گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔';
 
   @override
+  String get cloudSetupGoogleConfigurationMessage => "اس ایپ میں Google سائن اِن کی ترتیب درست نہیں ہے۔ آپ کا مقامی ریکارڈ محفوظ ہے؛ مہمان کے طور پر جاری رکھیں یا سپورٹ سے رابطہ کریں۔";
+
+  @override
   String get cloudSetupBackupUnreadableMessage => "اس محفوظ بیک اپ کو ایپ کے اس ورژن میں بحال نہیں کیا جا سکتا۔ اس ڈیوائس کا مقامی ریکارڈ تبدیل نہیں ہوا۔ دوسرا Google اکاؤنٹ منتخب کریں یا مہمان کے طور پر جاری رکھیں۔";
 
   @override
@@ -5524,6 +5527,9 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get cloudConnectionFailed =>
       'Google se rabta mukammal nahi ho ska dobara koshish karein ya mqami tor par jari rkhin';
+
+  @override
+  String get cloudSetupGoogleConfigurationMessage => "Is app mein Google sign-in ki configuration durust nahi hai. Aap ka local record mehfooz hai; guest ke taur par jari rahen ya support se rabta karein.";
 
   @override
   String get cloudSetupBackupUnreadableMessage => "Is mehfooz backup ko app ke is version mein bahal nahi kiya ja sakta. Is device ka local record tabdeel nahi hua. Doosra Google account muntakhib karein ya guest ke taur par jari rahen.";
