@@ -739,7 +739,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     if (!mounted) return null;
     if (useRemote && result.status == CloudSyncStatus.synced) {
       await _refreshAfterRestore();
-      if (!mounted) return;
+      if (!mounted) return null;
     }
     setState(() {
       _sync = result;
