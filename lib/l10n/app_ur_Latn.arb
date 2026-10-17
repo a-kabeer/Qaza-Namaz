@@ -1095,6 +1095,8 @@
   "dailySalahTrackingUnrecorded": "Record nahi",
   "dailySalahTrackingConfirmMissedTitle": "Namaz ko missed record karein?",
   "dailySalahTrackingConfirmMissedMessage": "Is namaz aur tareekh ka Qaza record sirf tab banega jab pehle se mojood na ho.",
+  "dailySalahTrackingConfirmPrayedTitle": "Namaz ko parhi hui mark karein?",
+  "dailySalahTrackingConfirmPrayedMessage": "Is se namaz ka status Parhi ho jayega aur is se linked Qaza record mukammal ho jayega.",
   "dailySalahTrackingUndoQaza": "Tracker ka banaya Qaza wapas karein",
   "dailySalahTrackingUndoTitle": "Yeh Qaza record hatayein?",
   "dailySalahTrackingUndoMessage": "Sirf Daily Salah Tracking ka banaya hua yahi Qaza record hataya jayega, aur sirf jab woh pending ho.",
