@@ -338,113 +338,11 @@ class _PrayerTimeContent extends ConsumerWidget {
     final nextAt = current?.nextAt;
     final nextRemaining = nextAt?.difference(localNow);
     final focusPrayer = current?.focusPrayer ?? currentPrayer ?? nextPrayer;
-    final isOvernightFocus = currentPrayer == null &&
-        focusPrayer == PrayerSlot.isha &&
-        nextPrayer == PrayerSlot.fajr &&
-        nextAt != null;
     final countdownPrayer = focusPrayer;
-    String? overnightTimeLabel;
-    if (isOvernightFocus) {
-      final upcomingName = _prayerLabel(l10n, nextPrayer!);
-      final upcomingTime = _formatTime(context, nextAt, snapshot);
-      overnightTimeLabel = '$upcomingName · $upcomingTime';
-    }
-    tz.TZDateTime restrictedTimelineDisplayAt(RestrictedTimeWindow window) =>
-        window.timelineDisplayAt;
-
-    final activeRestriction = restricted?.active;
-    final restrictedRemaining =
-        activeRestriction == null ? null : restricted?.remainingAt(localNow);
-    final visibleRestrictions = restrictedCalculator.timelineWindowsForSchedule(
-      schedule: contentSchedule,
-      location: location,
-      now: localNow,
-      showAll: showAllRestrictedTimes,
-    );
-    final visibleSunrise = visibleRestrictions
-        .where((window) => window.type == RestrictedTimeType.sunrise)
-        .firstOrNull;
-
-    final timeline = <_PrayerTimelineItem>[];
-
-    for (final prayer in PrayerSlot.values) {
-      if (prayer == PrayerSlot.sunrise) {
-        // Reuse this existing timeline position for the dynamic restricted
-        // row. Outside its applicable window, Sunrise is hidden.
-        if (visibleSunrise != null) {
-          final active = visibleSunrise.contains(localNow);
-          final remaining =
-              active ? visibleSunrise.endsAt.difference(localNow) : null;
-          timeline.add(
-            _PrayerTimelineItem(
-              at: visibleSunrise.displayAt.toUtc(),
-              name: _restrictedLabel(l10n, visibleSunrise.type),
-              time: _formatRestrictedRange(
-                context,
-                visibleSunrise,
-                snapshot,
-              ),
-              icon: _restrictedIcon(visibleSunrise.type),
-              active: active,
-              countdown: remaining == null
-                  ? null
-                  : DateFormatters.formatDurationHhMmSs(remaining),
-              isRestricted: true,
-              prayer: prayer,
-            ),
-          );
-        }
-        continue;
-      }
-
-      final prayerTimeUtc = contentSchedule.utcFor(prayer);
-      timeline.add(
-        _PrayerTimelineItem(
-          at: prayerTimeUtc,
-          name: _prayerLabel(l10n, prayer),
-          time: _formatTime(context, prayerTimeUtc, snapshot),
-          icon: _prayerIcon(prayer),
-          active: activeRestriction != null ? false : prayer == focusPrayer,
-          countdown: null,
-          isRestricted: false,
-          prayer: prayer,
-        ),
-      );
-    }
-
-    for (final restriction in visibleRestrictions) {
-      if (restriction.type == RestrictedTimeType.sunrise) continue;
-      final active = restriction.contains(localNow);
-      final remaining = active ? restriction.endsAt.difference(localNow) : null;
-      final displayAt = restrictedTimelineDisplayAt(restriction);
-      timeline.add(
-        _PrayerTimelineItem(
-          at: displayAt.toUtc(),
-          name: _restrictedLabel(l10n, restriction.type),
-          time: _formatRestrictedRange(
-            context,
-            restriction,
-            snapshot,
-          ),
-          icon: _restrictedIcon(restriction.type),
-          active: active,
-          countdown: remaining == null
-              ? null
-              : DateFormatters.formatDurationHhMmSs(remaining),
-          isRestricted: true,
-        ),
-      );
-    }
-
-    timeline.sort((a, b) {
-      final byTime = a.at.compareTo(b.at);
-      if (byTime != 0) return byTime;
-      if (a.isRestricted == b.isRestricted) return 0;
-      return a.isRestricted ? -1 : 1;
-    });
 
     String? focusName;
     String? focusTime;
+    String? focusLabel;
     IconData? focusIcon;
     String? focusCountdown;
 
@@ -455,16 +353,21 @@ class _PrayerTimeContent extends ConsumerWidget {
         activeRestriction,
         snapshot,
       );
+      focusLabel = l10n.homeRemaining;
       focusIcon = _restrictedIcon(activeRestriction.type);
       focusCountdown = DateFormatters.formatDurationHhMmSs(restrictedRemaining);
     } else if (countdownPrayer != null) {
       for (final item in timeline) {
         if (!item.isRestricted && item.prayer == countdownPrayer) {
           focusName = item.name;
-          // During the overnight Isha phase, the countdown ends at Fajr.
-          // Label that boundary explicitly rather than showing tonight's
-          // future Isha time as though it were the current overnight interval.
-          focusTime = overnightTimeLabel ?? item.time;
+          focusLabel = nextPrayer == null
+              ? null
+              : l10n.prayerTimeUpcomingPrayer(
+                  _prayerLabel(l10n, nextPrayer),
+                );
+          focusTime = nextAt == null
+              ? null
+              : _formatTime(context, nextAt, snapshot);
           focusIcon = item.icon;
           focusCountdown = nextRemaining == null
               ? null
@@ -530,6 +433,7 @@ class _PrayerTimeContent extends ConsumerWidget {
           ),
           if (focusName != null &&
               focusTime != null &&
+              focusLabel != null &&
               focusIcon != null &&
               focusCountdown != null) ...[
             const SizedBox(height: 12),
@@ -540,6 +444,7 @@ class _PrayerTimeContent extends ConsumerWidget {
                   Expanded(
                     child: _PrayerTimeFocusCard(
                       name: focusName,
+                      label: focusLabel,
                       time: focusTime,
                       icon: focusIcon,
                       countdown: focusCountdown,
@@ -658,12 +563,14 @@ class _PrayerTimeHeader extends StatelessWidget {
 class _PrayerTimeFocusCard extends StatelessWidget {
   const _PrayerTimeFocusCard({
     required this.name,
+    required this.label,
     required this.time,
     required this.icon,
     required this.countdown,
   });
 
   final String name;
+  final String label;
   final String time;
   final IconData icon;
   final String countdown;
@@ -735,7 +642,7 @@ class _PrayerTimeFocusCard extends StatelessWidget {
           ),
           const SizedBox(height: 2),
           Text(
-            AppLocalizations.of(context).homeRemaining,
+            label,
             style: textTheme.bodySmall?.copyWith(
               color: scheme.onPrimaryContainer,
               fontWeight: FontWeight.w600,
