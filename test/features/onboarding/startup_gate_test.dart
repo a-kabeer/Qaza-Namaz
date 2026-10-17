@@ -398,6 +398,59 @@ void main() {
     );
   });
 
+  testWidgets('permanent Google configuration error offers guest action, not retry',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final container = await _container(
+      database: database,
+      cloudEnabled: true,
+      signInResult: const CloudAccountSnapshot.failed(
+        'GoogleSignInException(code: clientConfigurationError)',
+      ),
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('cloud_setup_connect_google')),
+    );
+    await _tapVisible(
+      tester,
+      find.byKey(const Key('continue_with_new_google_account')),
+    );
+
+    expect(find.byType(AlertDialog), findsOneWidget);
+    expect(
+      find.text(
+        "Google sign-in isn't configured correctly in this app. "
+        "Your local progress is safe; continue as a guest or contact support.",
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('clientConfigurationError'), findsNothing);
+    expect(find.text('Retry'), findsNothing);
+    expect(
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Continue as Guest'),
+      ),
+      findsOneWidget,
+    );
+
+    await _tapVisible(
+      tester,
+      find.descendant(
+        of: find.byType(AlertDialog),
+        matching: find.text('Continue as Guest'),
+      ),
+    );
+    expect(find.byType(AlertDialog), findsNothing);
+    expect(find.byType(ProfileSetupScreen), findsOneWidget);
+  });
+
   testWidgets('incompatible backup gets a non-retryable friendly dialog',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
