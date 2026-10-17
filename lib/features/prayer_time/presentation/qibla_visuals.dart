@@ -95,92 +95,46 @@ class QiblaDialPainter extends CustomPainter {
     }
 
     final qiblaAngle = qiblaBearing * math.pi / 180 - math.pi / 2;
-    final markerDistance = radius - (size.shortestSide >= 160 ? 42 : 8);
-    final markerCenter = Offset(
-      center.dx + math.cos(qiblaAngle) * markerDistance,
-      center.dy + math.sin(qiblaAngle) * markerDistance,
+    final direction = Offset(math.cos(qiblaAngle), math.sin(qiblaAngle));
+    final perpendicular = Offset(-direction.dy, direction.dx);
+    final largeDial = size.shortestSide >= 160;
+    final pointerTipDistance = radius - (largeDial ? 30.0 : 18.0);
+    final pointerTailDistance = largeDial ? 30.0 : 15.0;
+    final pointerHalfWidth = largeDial ? 7.0 : 4.0;
+    final tip = center + direction * pointerTipDistance;
+    final tail = center - direction * pointerTailDistance;
+    final left = center + perpendicular * pointerHalfWidth;
+    final right = center - perpendicular * pointerHalfWidth;
+
+    // A restrained two-tone compass needle replaces the custom arrow and
+    // Kaaba drawing. Its primary tip always points along the Qibla bearing.
+    final qiblaNeedle = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(left.dx, left.dy)
+      ..lineTo(tail.dx, tail.dy)
+      ..lineTo(right.dx, right.dy)
+      ..close();
+    canvas.drawPath(
+      qiblaNeedle,
+      Paint()..color = onSurfaceVariantColor.withValues(alpha: .24),
     );
 
-    final direction = markerCenter - center;
-    final length = direction.distance;
-    if (length > 0) {
-      final unit = direction / length;
-      final arrowTip =
-          markerCenter - unit * (size.shortestSide >= 160 ? 11 : 7);
-      final perpendicular = Offset(-unit.dy, unit.dx);
-
-      final arrowPaint = Paint()
-        ..color = primaryColor
-        ..strokeWidth = size.shortestSide >= 160 ? 6 : 3
-        ..strokeCap = StrokeCap.round;
-      canvas.drawLine(center, arrowTip, arrowPaint);
-
-      final headLength = size.shortestSide >= 160 ? 22.0 : 10.0;
-      final headWidth = size.shortestSide >= 160 ? 11.0 : 6.0;
-      final left = arrowTip - unit * headLength + perpendicular * headWidth;
-      final right = arrowTip - unit * headLength - perpendicular * headWidth;
-      final path = Path()
-        ..moveTo(arrowTip.dx, arrowTip.dy)
-        ..lineTo(left.dx, left.dy)
-        ..lineTo(right.dx, right.dy)
-        ..close();
-      canvas.drawPath(path, Paint()..color = primaryColor);
-    }
+    final qiblaTip = Path()
+      ..moveTo(tip.dx, tip.dy)
+      ..lineTo(left.dx, left.dy)
+      ..lineTo(right.dx, right.dy)
+      ..close();
+    canvas.drawPath(qiblaTip, Paint()..color = primaryColor);
 
     canvas.drawCircle(
       center,
-      size.shortestSide >= 160 ? 7 : 4,
+      largeDial ? 5 : 3,
       Paint()..color = primaryColor,
-    );
-
-    _drawKaaba(
-      canvas,
-      markerCenter,
-      size.shortestSide >= 160 ? 18 : 11,
     );
 
     canvas.restore();
   }
 
-  void _drawKaaba(
-    Canvas canvas,
-    Offset center,
-    double size,
-  ) {
-    final bodyRect = Rect.fromCenter(
-      center: center,
-      width: size,
-      height: size * .86,
-    );
-    final body = RRect.fromRectAndRadius(
-      bodyRect,
-      Radius.circular(size * .12),
-    );
-    canvas.drawRRect(
-      body,
-      Paint()..color = onSurfaceColor,
-    );
-
-    final band = Rect.fromCenter(
-      center: Offset(center.dx, center.dy - size * .08),
-      width: size,
-      height: size * .16,
-    );
-    canvas.drawRect(
-      band,
-      Paint()..color = primaryColor,
-    );
-
-    final door = Rect.fromCenter(
-      center: Offset(center.dx, center.dy + size * .22),
-      width: size * .22,
-      height: size * .32,
-    );
-    canvas.drawRect(
-      door,
-      Paint()..color = primaryColor,
-    );
-  }
 
   void _drawCardinal(
     Canvas canvas,
