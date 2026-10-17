@@ -16,7 +16,6 @@ import '../qaza/qaza_import_controller.dart';
 import '../qaza/qaza_navigation.dart';
 import 'home_controller.dart';
 import 'providers/home_providers.dart';
-import 'widgets/home_all_completed_state.dart';
 import 'widgets/home_daily_goals.dart';
 import 'widgets/home_empty_state.dart';
 import 'widgets/home_overall_progress.dart';
@@ -285,14 +284,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
                   ),
                 ),
                 const SizedBox(height: 16),
-                if (allCompleted) ...[
-                  const SizedBox(height: 6),
-                  HomeAllCompletedState(
-                    completed: summary.overall.completed,
-                    total: summary.overall.total,
-                  ),
-                  const SizedBox(height: 12),
-                ] else ...[
+                // The Overall Qaza card already communicates full
+                // completion. Hide the action card once there is no pending
+                // Qaza instead of replacing it with a redundant completion card.
+                if (!allCompleted) ...[
                   HomeTodayProgress(summary: summary),
                   const SizedBox(height: 12),
                 ],
