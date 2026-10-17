@@ -2728,6 +2728,13 @@ class AppLocalizationsAr extends AppLocalizations {
       'سيُضاف سجل قضاء لهذه الصلاة والتاريخ فقط إذا لم يكن موجودًا بالفعل.';
 
   @override
+  String get dailySalahTrackingConfirmPrayedTitle => 'تغيير حالة الصلاة إلى أُدّيت؟';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedMessage =>
+      'سيتم تسجيل الصلاة على أنها أُدّيت وإكمال سجل القضاء المرتبط بها.';
+
+  @override
   String get dailySalahTrackingUndoQaza =>
       'التراجع عن سجل القضاء الذي أنشأه المتتبع';
 
