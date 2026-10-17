@@ -189,12 +189,15 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
           if (item is! String || item.trim().isEmpty) return null;
           return item.trim();
         }
-        result.add(RememberedCloudAccount(
-          accountId: accountId,
-          displayName: optionalString('displayName'),
-          email: optionalString('email'),
-          photoUrl: optionalString('photoUrl'),
-        ));
+
+        result.add(
+          RememberedCloudAccount(
+            accountId: accountId,
+            displayName: optionalString('displayName'),
+            email: optionalString('email'),
+            photoUrl: optionalString('photoUrl'),
+          ),
+        );
       }
       return List<RememberedCloudAccount>.unmodifiable(result);
     } catch (_) {
@@ -239,8 +242,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   ) async {
     final normalized = accountId.trim();
     if (normalized.isEmpty ||
-        !(await rememberedAccounts())
-            .any((item) => item.accountId == normalized)) {
+        !(await rememberedAccounts()).any(
+          (item) => item.accountId == normalized,
+        )) {
       return const CloudAccountSnapshot.failed(
         'This saved account is no longer available. Continue with a new account.',
       );
@@ -293,6 +297,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       final value = preferences.getString(key)?.trim();
       return value == null || value.isEmpty ? null : value;
     }
+
     await _rememberAccount(
       accountId: accountId,
       displayName: readValue(_cachedDisplayNameKey),
@@ -547,7 +552,8 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
 
     final reconnectRequired = enabled && await _state.isReconnectRequired();
     final pendingConflict = enabled ? await _state.readPendingConflict() : null;
-    final hasPendingChanges = enabled &&
+    final hasPendingChanges =
+        enabled &&
         ((pendingConflict != null) ||
             await _hasPendingLocalChanges(state: _state));
     return CloudSyncSnapshot(
