@@ -61,7 +61,8 @@ class LocalBackupService {
           'qaza_records': records,
           'daily_salah_logs': await _selectMaps(
             'SELECT user_id, prayer_date, prayer_type, status, '
-            'tracker_created_qaza_id, updated_at FROM daily_salah_logs '
+            'tracker_created_qaza_id, linked_qaza_id, completion_sync_id, '
+            'updated_at FROM daily_salah_logs '
             'ORDER BY user_id, prayer_date, prayer_type',
             [
               'user_id',
@@ -69,6 +70,8 @@ class LocalBackupService {
               'prayer_type',
               'status',
               'tracker_created_qaza_id',
+              'linked_qaza_id',
+              'completion_sync_id',
               'updated_at',
             ],
           ),
@@ -219,6 +222,8 @@ class LocalBackupService {
           'prayer_type',
           'status',
           'tracker_created_qaza_id',
+          'linked_qaza_id',
+          'completion_sync_id',
           'updated_at',
         ],
         (data['daily_salah_logs'] as List<dynamic>?) ?? const <dynamic>[],
@@ -377,13 +382,22 @@ class LocalBackupService {
         'Backup database schema version is invalid.',
       );
     }
-    // Schema 19 backups predate the optional daily Salah table. They remain
-    // importable because the Qaza ledger shape is unchanged and missing logs
-    // safely default to an empty history with tracking disabled.
-    if (databaseSchema != database.schemaVersion && databaseSchema != 19) {
+    // Schema 19 predates daily Salah tracking. Schema 20 has daily logs but
+    // predates their explicit Qaza link and completion-sync columns. Both are
+    // safe predecessors of schema 21 and are normalized below.
+    final compatibleLegacySchema = database.schemaVersion == 21 &&
+        (databaseSchema == 19 || databaseSchema == 20);
+    if (databaseSchema > database.schemaVersion) {
       throw LocalBackupException(
-        'Backup database schema $databaseSchema is not supported by this release '
+        'This backup uses newer database schema $databaseSchema. '
+        'Update Qaza Namaz to restore it '
         '(current schema: ${database.schemaVersion}).',
+      );
+    }
+    if (databaseSchema != database.schemaVersion && !compatibleLegacySchema) {
+      throw LocalBackupException(
+        'Backup database schema $databaseSchema has no safe migration path '
+        'in this release (current schema: ${database.schemaVersion}).',
       );
     }
 
@@ -451,6 +465,82 @@ class LocalBackupService {
         );
       }
       return value;
+    }
+
+    final rawDailySalahLogs = payload['daily_salah_logs'];
+    if (databaseSchema >= 20 && rawDailySalahLogs is! List) {
+      throw const LocalBackupException(
+        'Backup data section is missing or invalid "daily_salah_logs".',
+      );
+    }
+    if (rawDailySalahLogs != null && rawDailySalahLogs is! List) {
+      throw const LocalBackupException(
+        'Backup data section "daily_salah_logs" must be a list.',
+      );
+    }
+    if (rawDailySalahLogs is List) {
+      const validPrayerTypes = {
+        'fajr',
+        'zuhr',
+        'asr',
+        'maghrib',
+        'isha',
+        'witr',
+      };
+      const validStatuses = {'prayed', 'missed', 'unrecorded'};
+      for (var index = 0; index < rawDailySalahLogs.length; index++) {
+        final raw = rawDailySalahLogs[index];
+        if (raw is! Map) {
+          throw LocalBackupException(
+            'Backup daily Salah row ${index + 1} is not an object.',
+          );
+        }
+        requiredString(raw, 'daily_salah_logs', index, 'user_id');
+        requiredString(raw, 'daily_salah_logs', index, 'prayer_date');
+        requiredString(raw, 'daily_salah_logs', index, 'prayer_type');
+        requiredString(raw, 'daily_salah_logs', index, 'status');
+        requiredString(raw, 'daily_salah_logs', index, 'updated_at');
+        if (!raw.containsKey('tracker_created_qaza_id')) {
+          throw LocalBackupException(
+            'Backup daily Salah row ${index + 1} is missing '
+            '"tracker_created_qaza_id".',
+          );
+        }
+        requiredString(
+          raw,
+          'daily_salah_logs',
+          index,
+          'tracker_created_qaza_id',
+          nullable: true,
+        );
+        for (final field in ['linked_qaza_id', 'completion_sync_id']) {
+          if (raw.containsKey(field)) {
+            requiredString(
+              raw,
+              'daily_salah_logs',
+              index,
+              field,
+              nullable: true,
+            );
+          }
+        }
+        if (!validPrayerTypes.contains(raw['prayer_type'])) {
+          throw LocalBackupException(
+            'Backup daily Salah row ${index + 1} has an invalid prayer_type.',
+          );
+        }
+        if (!validStatuses.contains(raw['status'])) {
+          throw LocalBackupException(
+            'Backup daily Salah row ${index + 1} has an invalid status.',
+          );
+        }
+        if (DateTime.tryParse(raw['prayer_date'] as String) == null ||
+            DateTime.tryParse(raw['updated_at'] as String) == null) {
+          throw LocalBackupException(
+            'Backup daily Salah row ${index + 1} has an invalid date.',
+          );
+        }
+      }
     }
 
     void validateRows(
@@ -915,6 +1005,25 @@ class LocalBackupService {
       );
     }
 
+    // Normalize legacy daily Salah rows before either validation consumers
+    // or import see them. Schema 20's migration copied the tracker-created
+    // Qaza ID into linked_qaza_id and left completion_sync_id empty. Schema 21
+    // backups produced before these fields were added to exports are handled
+    // the same way when the fields are absent, while explicit nulls in new
+    // exports remain meaningful.
+    if (rawDailySalahLogs is List) {
+      final migratedLogs = <Map<String, dynamic>>[];
+      for (final raw in rawDailySalahLogs) {
+        final log = Map<String, dynamic>.from(raw as Map);
+        if (databaseSchema == 20 || !log.containsKey('linked_qaza_id')) {
+          log['linked_qaza_id'] = log['tracker_created_qaza_id'];
+        }
+        log.putIfAbsent('completion_sync_id', () => null);
+        migratedLogs.add(log);
+      }
+      payload['daily_salah_logs'] = migratedLogs;
+    }
+    root['data'] = payload;
     return root;
   }
 
@@ -957,6 +1066,8 @@ class LocalBackupService {
       'prayer_date' ||
       'status' ||
       'tracker_created_qaza_id' ||
+      'linked_qaza_id' ||
+      'completion_sync_id' ||
       'original_date' ||
       'completed_at' ||
       'completion_id' ||
