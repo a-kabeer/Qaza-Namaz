@@ -2733,7 +2733,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dailySalahTrackingConfirmMissedMessage =>
-      'This creates a Qaza entry for this prayer and date only if one does not already exist.';
+      'This marks the prayer as Missed and ensures its Qaza is Pending. If a matching Qaza is already Completed, it will be reopened.';
 
   @override
   String get dailySalahTrackingConfirmPrayedTitle => 'Change prayer to Prayed?';
