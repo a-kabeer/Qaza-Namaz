@@ -126,18 +126,25 @@ void main() {
     );
   });
 
-  test('backup preserves daily Salah logs and the tracking preference',
+  test('backup preserves daily Salah links and the tracking preference',
       () async {
+    await database.qazaRecordsDao.insertRecord(
+      _record('guest_fajr_linked', DateTime(2025, 1, 1)),
+    );
     await database.customInsert(
       '''INSERT INTO daily_salah_logs
          (user_id, prayer_date, prayer_type, status,
-          tracker_created_qaza_id, updated_at)
-         VALUES (?, ?, ?, ?, NULL, ?)''',
+          tracker_created_qaza_id, linked_qaza_id, completion_sync_id,
+          updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
       variables: [
         Variable.withString('guest'),
         Variable.withString('2026-10-16'),
         Variable.withString('fajr'),
         Variable.withString('prayed'),
+        Variable.withString('guest_fajr_linked'),
+        Variable.withString('guest_fajr_linked'),
+        Variable.withString('completion-sync-1'),
         Variable.withString(DateTime.utc(2026, 10, 16).toIso8601String()),
       ],
     );
@@ -153,13 +160,18 @@ void main() {
     expect(await database.isDailySalahTrackingEnabled(), isTrue);
     final logs = await database
         .customSelect(
-          'SELECT user_id, prayer_date, prayer_type, status '
-          'FROM daily_salah_logs',
+          'SELECT user_id, prayer_date, prayer_type, status, '
+          'linked_qaza_id, completion_sync_id FROM daily_salah_logs',
         )
         .get();
     expect(logs, hasLength(1));
     expect(logs.single.read<String>('prayer_date'), '2026-10-16');
     expect(logs.single.read<String>('status'), 'prayed');
+    expect(logs.single.read<String?>('linked_qaza_id'), 'guest_fajr_linked');
+    expect(
+      logs.single.read<String?>('completion_sync_id'),
+      'completion-sync-1',
+    );
   });
 
   test('schema 19 backups without daily tracking fields remain importable',
@@ -184,6 +196,60 @@ void main() {
     expect(logs, isEmpty);
   });
 
+  test('schema 20 backups migrate daily Salah links to schema 21', () async {
+    await database.qazaRecordsDao.insertRecord(
+      _record('guest_fajr_linked', DateTime(2025, 1, 1)),
+    );
+    await database.customInsert(
+      '''INSERT INTO daily_salah_logs
+         (user_id, prayer_date, prayer_type, status,
+          tracker_created_qaza_id, linked_qaza_id, completion_sync_id,
+          updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+      variables: [
+        Variable.withString('guest'),
+        Variable.withString('2026-10-16'),
+        Variable.withString('fajr'),
+        Variable.withString('prayed'),
+        Variable.withString('guest_fajr_linked'),
+        Variable.withString('guest_fajr_linked'),
+        Variable.withString('completion-sync-before-v20'),
+        Variable.withString(DateTime.utc(2026, 10, 16).toIso8601String()),
+      ],
+    );
+    await database.setDailySalahTrackingEnabled(true);
+
+    final decoded =
+        jsonDecode(await service.exportJson()) as Map<String, dynamic>;
+    final metadata = decoded['metadata'] as Map<String, dynamic>;
+    final data = decoded['data'] as Map<String, dynamic>;
+    metadata['database_schema_version'] = 20;
+    data['daily_salah_logs'] =
+        (data['daily_salah_logs'] as List<dynamic>).map((raw) {
+      final row = Map<String, dynamic>.from(raw as Map);
+      row.remove('linked_qaza_id');
+      row.remove('completion_sync_id');
+      return row;
+    }).toList();
+    final legacyBackup = jsonEncode(decoded);
+
+    expect((await service.analyzeImport(legacyBackup)).recordCount, 1);
+    await database.customStatement('DELETE FROM daily_salah_logs');
+    await database.setDailySalahTrackingEnabled(false);
+
+    await service.importJson(legacyBackup);
+
+    expect(await database.isDailySalahTrackingEnabled(), isTrue);
+    final logs = await database
+        .customSelect(
+          'SELECT linked_qaza_id, completion_sync_id FROM daily_salah_logs',
+        )
+        .get();
+    expect(logs, hasLength(1));
+    expect(logs.single.read<String?>('linked_qaza_id'), 'guest_fajr_linked');
+    expect(logs.single.read<String?>('completion_sync_id'), equals(null));
+  });
+
   test('malformed import leaves existing local database untouched', () async {
     await database.transactionWithRevision(() async {
       await database.qazaRecordsDao.insertRecord(
@@ -206,6 +272,70 @@ void main() {
       before.map((record) => record.toJson()).toList(),
     );
     expect(await database.readDbRevision(), beforeRevision);
+  });
+
+  test('malformed daily Salah rows are rejected before database mutation',
+      () async {
+    await database.transactionWithRevision(() async {
+      await database.qazaRecordsDao.insertRecord(
+        _record('guest_fajr_existing', DateTime(2025, 1, 1)),
+      );
+      return true;
+    });
+
+    final decoded =
+        jsonDecode(await service.exportJson()) as Map<String, dynamic>;
+    (decoded['data'] as Map<String, dynamic>)['daily_salah_logs'] = [
+      <String, dynamic>{
+        'user_id': 'guest',
+        'prayer_date': '2026-10-16',
+        'prayer_type': 'not-a-prayer',
+        'status': 'prayed',
+        'tracker_created_qaza_id': null,
+        'linked_qaza_id': null,
+        'completion_sync_id': null,
+        'updated_at': DateTime.utc(2026, 10, 16).toIso8601String(),
+      },
+    ];
+
+    expect(
+      () => service.importJson(jsonEncode(decoded)),
+      throwsA(isA<LocalBackupException>()),
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: 'guest'))
+          .map((record) => record.id)
+          .toList(),
+      ['guest_fajr_existing'],
+    );
+    expect(await database.readDbRevision(), 2);
+  });
+
+  test('failed restore transaction preserves existing local data', () async {
+    await database.transactionWithRevision(() async {
+      await database.qazaRecordsDao.insertRecord(
+        _record('guest_fajr_existing', DateTime(2025, 1, 1)),
+      );
+      return true;
+    });
+    final backup = await service.exportJson();
+
+    await database.customStatement('''
+      CREATE TRIGGER fail_qaza_restore_insert
+      BEFORE INSERT ON qaza_records
+      BEGIN
+        SELECT RAISE(ABORT, 'forced restore failure');
+      END
+    ''');
+
+    expect(() => service.importJson(backup), throwsA(anything));
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: 'guest'))
+          .map((record) => record.id)
+          .toList(),
+      ['guest_fajr_existing'],
+    );
+    expect(await database.readDbRevision(), 2);
   });
 
   test('wrong app id is rejected before database mutation', () async {
@@ -252,6 +382,37 @@ void main() {
     expect(
       (await database.qazaRecordsDao.getAll(userId: 'guest')).length,
       1,
+    );
+    expect(await database.readDbRevision(), 2);
+  });
+
+  test('newer database schema requires an app update without data loss',
+      () async {
+    await database.transactionWithRevision(() async {
+      await database.qazaRecordsDao.insertRecord(
+        _record('guest_fajr_existing', DateTime(2025, 1, 1)),
+      );
+      return true;
+    });
+
+    final decoded =
+        jsonDecode(await service.exportJson()) as Map<String, dynamic>;
+    (decoded['metadata'] as Map<String, dynamic>)['database_schema_version'] =
+        22;
+
+    expect(
+      () => service.importJson(jsonEncode(decoded)),
+      throwsA(
+        predicate<LocalBackupException>(
+          (error) => error.message.contains('Update Qaza Namaz'),
+        ),
+      ),
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: 'guest'))
+          .map((record) => record.id)
+          .toList(),
+      ['guest_fajr_existing'],
     );
     expect(await database.readDbRevision(), 2);
   });
