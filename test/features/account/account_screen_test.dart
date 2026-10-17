@@ -258,6 +258,41 @@ void main() {
   );
 
   testWidgets(
+    'auto-connect waits for account restore before opening account choice',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot.disconnected(),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith(
+            (ref) => _FakeCloudSyncProvider(),
+          ),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(
+        _app(container, const AccountScreen(autoConnect: true)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('continue_with_new_google_account')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
     'automatic backup hides the frequency selector and preserves its choice',
     (tester) async {
       final database = AppDatabase(NativeDatabase.memory());
