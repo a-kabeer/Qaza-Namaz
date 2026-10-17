@@ -39,7 +39,7 @@ void main() {
     await database.close();
   });
 
-  testWidgets('Prayed can be selected and toggled back to Unrecorded',
+  testWidgets('Prayed cannot be toggled back to Unrecorded by tapping it again',
       (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -62,10 +62,9 @@ void main() {
     await tester.pumpAndSettle();
 
     final prayedButton = find.byKey(const Key('daily_salah_prayed_fajr'));
-    expect(prayedButton, findsOneWidget);
-
     await tester.tap(prayedButton);
     await tester.pumpAndSettle();
+
     expect(
       (await tracking.logForDate(
         userId: userId,
@@ -78,14 +77,8 @@ void main() {
 
     await tester.tap(prayedButton);
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('daily_salah_confirm_remove_status')),
-      findsOneWidget,
-    );
-    await tester.tap(
-      find.byKey(const Key('daily_salah_confirm_remove_status')),
-    );
-    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('daily_salah_confirm_remove_status')),
+        findsNothing);
     expect(
       (await tracking.logForDate(
         userId: userId,
@@ -93,11 +86,20 @@ void main() {
         prayerType: PrayerType.fajr,
       ))
           ?.status,
-      DailySalahStatus.unrecorded,
+      DailySalahStatus.prayed,
     );
+    final records = await qazaService.getPage(
+      userId: userId,
+      prayerType: PrayerType.fajr,
+      from: _today(),
+      to: _today(),
+      status: null,
+    );
+    expect(records.records, isEmpty);
   });
 
-  testWidgets('Missed asks for confirmation before creating a Qaza entry',
+  testWidgets(
+      'Missed is stable; changing to Prayed completes its linked Qaza',
       (tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -119,24 +121,24 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('daily_salah_missed_fajr')));
+    final missedButton = find.byKey(const Key('daily_salah_missed_fajr'));
+    await tester.tap(missedButton);
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('daily_salah_confirm_missed')), findsOneWidget);
 
     await tester.tap(find.text('Cancel'));
     await tester.pumpAndSettle();
-    final today = DateTime.now();
-    final normalizedToday = DateTime(today.year, today.month, today.day);
+    final today = _today();
     var page = await qazaService.getPage(
       userId: userId,
       prayerType: PrayerType.fajr,
-      from: normalizedToday,
-      to: normalizedToday,
+      from: today,
+      to: today,
       status: null,
     );
     expect(page.records, isEmpty);
 
-    await tester.tap(find.byKey(const Key('daily_salah_missed_fajr')));
+    await tester.tap(missedButton);
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('daily_salah_confirm_missed')));
     await tester.pumpAndSettle();
@@ -144,39 +146,74 @@ void main() {
     page = await qazaService.getPage(
       userId: userId,
       prayerType: PrayerType.fajr,
-      from: normalizedToday,
-      to: normalizedToday,
+      from: today,
+      to: today,
       status: null,
     );
     expect(page.records, hasLength(1));
+    final recordId = page.records.single.id;
+    expect(page.records.single.status, QazaStatus.pending);
 
-    // Removing the tracking status must not delete the Qaza record.
-    await tester.tap(find.byKey(const Key('daily_salah_missed_fajr')));
+    // Tapping the selected Missed option is a no-op, not a request to clear it.
+    await tester.tap(missedButton);
     await tester.pumpAndSettle();
-    expect(
-      find.byKey(const Key('daily_salah_confirm_remove_status')),
-      findsOneWidget,
-    );
-    await tester.tap(
-      find.byKey(const Key('daily_salah_confirm_remove_status')),
-    );
-    await tester.pumpAndSettle();
-    final stillExists = await qazaService.getPage(
-      userId: userId,
-      prayerType: PrayerType.fajr,
-      from: normalizedToday,
-      to: normalizedToday,
-      status: null,
-    );
-    expect(stillExists.records, hasLength(1));
+    expect(find.byKey(const Key('daily_salah_confirm_missed')), findsNothing);
+    expect(find.byKey(const Key('daily_salah_confirm_change_to_prayed')),
+        findsNothing);
     expect(
       (await tracking.logForDate(
         userId: userId,
-        date: normalizedToday,
+        date: today,
         prayerType: PrayerType.fajr,
       ))
           ?.status,
-      DailySalahStatus.unrecorded,
+      DailySalahStatus.missed,
+    );
+
+    final prayedButton = find.byKey(const Key('daily_salah_prayed_fajr'));
+    await tester.tap(prayedButton);
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const Key('daily_salah_confirm_change_to_prayed')),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Cancel'));
+    await tester.pumpAndSettle();
+    expect(
+      (await tracking.logForDate(
+        userId: userId,
+        date: today,
+        prayerType: PrayerType.fajr,
+      ))
+          ?.status,
+      DailySalahStatus.missed,
+    );
+
+    await tester.tap(prayedButton);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const Key('daily_salah_confirm_change_to_prayed')),
+    );
+    await tester.pumpAndSettle();
+
+    page = await qazaService.getPage(
+      userId: userId,
+      prayerType: PrayerType.fajr,
+      from: today,
+      to: today,
+      status: null,
+    );
+    expect(page.records, hasLength(1));
+    expect(page.records.single.id, recordId);
+    expect(page.records.single.status, QazaStatus.completed);
+    expect(
+      (await tracking.logForDate(
+        userId: userId,
+        date: today,
+        prayerType: PrayerType.fajr,
+      ))
+          ?.status,
+      DailySalahStatus.prayed,
     );
   });
 
