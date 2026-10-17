@@ -25,6 +25,7 @@ class _CloudSetupChoiceScreenState
   bool _accountConnected = false;
   bool _cloudAttempted = false;
   String? _error;
+  bool _retryAvailable = true;
   CloudBackupDiscoverySnapshot? _discovery;
   bool _restoring = false;
   CloudBackupProgress? _restoreProgress;
@@ -43,6 +44,7 @@ class _CloudSetupChoiceScreenState
     setState(() {
       _selectedLocale = locale;
       _error = null;
+      _retryAvailable = true;
     });
     // Update MaterialApp immediately; serialize writes so rapid language
     // changes cannot complete out of order in SharedPreferences.
@@ -103,11 +105,22 @@ class _CloudSetupChoiceScreenState
     switch (result.status) {
       case CloudBackupDiscoveryStatus.unavailable:
       case CloudBackupDiscoveryStatus.failed:
+        setState(() {
+          _discovery = null;
+          _error = result.message ??
+              AppLocalizations.of(context).cloudConnectionFailed;
+          _retryAvailable = true;
+        });
+        return;
       case CloudBackupDiscoveryStatus.invalidBackup:
         setState(() {
           _discovery = null;
           _error = result.message ??
               AppLocalizations.of(context).cloudConnectionFailed;
+          // Invalid or unsupported payloads will not change by retrying the
+          // same account. The Google button lets users pick another account,
+          // and Continue Local remains available as a safe exit.
+          _retryAvailable = false;
         });
         return;
       case CloudBackupDiscoveryStatus.noBackup:
@@ -599,11 +612,13 @@ class _CloudSetupChoiceScreenState
                     textAlign: TextAlign.center,
                     style: TextStyle(color: scheme.error),
                   ),
-                  const SizedBox(height: 8),
-                  TextButton(
-                    onPressed: _working ? null : _retry,
-                    child: Text(l10n.commonRetry),
-                  ),
+                  if (_retryAvailable) ...[
+                    const SizedBox(height: 8),
+                    TextButton(
+                      onPressed: _working ? null : _retry,
+                      child: Text(l10n.commonRetry),
+                    ),
+                  ],
                 ],
               ],
             ),
