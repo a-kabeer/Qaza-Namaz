@@ -46,6 +46,8 @@ void main() {
         'prayer_type',
         'status',
         'tracker_created_qaza_id',
+        'linked_qaza_id',
+        'completion_sync_id',
         'updated_at',
       ]),
     );
