@@ -2659,6 +2659,15 @@ class AppLocalizationsUr extends AppLocalizations {
       'گوگل سے رابطہ مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں یا مقامی طور پر جاری رکھیں۔';
 
   @override
+  String get cloudSetupBackupUnreadableMessage => "اس محفوظ بیک اپ کو ایپ کے اس ورژن میں بحال نہیں کیا جا سکتا۔ اس ڈیوائس کا مقامی ریکارڈ تبدیل نہیں ہوا۔ دوسرا Google اکاؤنٹ منتخب کریں یا مہمان کے طور پر جاری رکھیں۔";
+
+  @override
+  String get cloudSetupChooseAnotherAccount => "دوسرا Google اکاؤنٹ منتخب کریں";
+
+  @override
+  String get cloudRestoreFailedMessage => "بیک اپ بحال نہیں ہو سکا۔ اس ڈیوائس پر آپ کا ریکارڈ اور محفوظ کلاؤڈ بیک اپ برقرار ہیں۔ اپنا انٹرنیٹ کنکشن چیک کرکے دوبارہ کوشش کریں، یا مہمان کے طور پر جاری رکھیں۔";
+
+  @override
   String get cloudRestoreProgressTitle =>
       'آپ کے Google Drive بیک اپ کو بحال کیا جا رہا ہے';
 
@@ -5515,6 +5524,15 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get cloudConnectionFailed =>
       'Google se rabta mukammal nahi ho ska dobara koshish karein ya mqami tor par jari rkhin';
+
+  @override
+  String get cloudSetupBackupUnreadableMessage => "Is mehfooz backup ko app ke is version mein bahal nahi kiya ja sakta. Is device ka local record tabdeel nahi hua. Doosra Google account muntakhib karein ya guest ke taur par jari rahen.";
+
+  @override
+  String get cloudSetupChooseAnotherAccount => "Doosra Google account muntakhib karein";
+
+  @override
+  String get cloudRestoreFailedMessage => "Backup bahal nahi ho saka. Is device par aap ka record aur mehfooz cloud backup barqarar hain. Internet connection check karke dobara koshish karein, ya guest ke taur par jari rahen.";
 
   @override
   String get cloudRestoreProgressTitle =>
