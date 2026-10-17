@@ -59,7 +59,6 @@ class _FakeCloudSyncProvider implements CloudSyncProvider {
   @override
   bool get isSupported => true;
 
-  @override
   int discoverBackupCalls = 0;
 
   @override
