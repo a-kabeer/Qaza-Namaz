@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
+import '../../daily_salah/daily_salah_tracking_providers.dart';
 import '../../../core/diagnostics/diagnostics.dart';
 import '../../prayer_time/application/prayer_time_providers.dart';
 import '../../../domain/entities/qaza_completion_result.dart';
@@ -46,6 +47,27 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
           DiagnosticArea.qazaCompletion,
           'completion_batch_succeeded',
         );
+        // All Qaza completion entry points use this controller, so Daily
+        // Salah history is synchronized once at the shared boundary.
+        for (final entry in receipt.entries) {
+          try {
+            await ref.read(dailySalahTrackingServiceProvider).syncQazaCompleted(
+                  userId: userId,
+                  entry: entry,
+                );
+          } catch (error, stack) {
+            // Qaza completion is already committed. Log sync failures; the
+            // tracking service also has a guarded read-time recovery path.
+            diagnostics.recordFailure(
+              DiagnosticArea.qazaCompletion,
+              'daily_salah_completion_sync_failed',
+              error,
+              stack: stack,
+            );
+          } finally {
+            ref.invalidate(dailySalahTrackingLogsProvider(entry.originalDate));
+          }
+        }
       }
       return receipt;
     } finally {
