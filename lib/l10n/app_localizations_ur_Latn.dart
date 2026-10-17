@@ -2156,6 +2156,11 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   }
 
   @override
+  String prayerTimeUpcomingPrayer(String name) {
+    return 'Agli namaz: $name';
+  }
+
+  @override
   String prayerTimeUsingSavedLocation(String location) {
     return 'aap ka mehfooz maqam istemal ho raha hai: $location';
   }
