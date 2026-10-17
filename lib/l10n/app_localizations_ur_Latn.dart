@@ -2723,6 +2723,13 @@ class AppLocalizationsUrLatn extends AppLocalizations {
       "Is namaz aur tareekh ka Qaza record sirf tab banega jab pehle se mojood na ho.";
 
   @override
+  String get dailySalahTrackingConfirmPrayedTitle => 'Namaz ko parhi hui mark karein?';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedMessage =>
+      'Is se namaz ka status Parhi ho jayega aur is se linked Qaza record mukammal ho jayega.';
+
+  @override
   String get dailySalahTrackingUndoQaza =>
       "Tracker ka banaya Qaza wapas karein";
 
