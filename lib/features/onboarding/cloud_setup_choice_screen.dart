@@ -484,9 +484,25 @@ class _CloudSetupChoiceScreenState
       return;
     }
 
+    final googleConfigurationFailure =
+        normalized.contains('clientconfigurationerror') ||
+        normalized.contains('providerconfigurationerror') ||
+        normalized.contains('invalid_client') ||
+        normalized.contains('client configuration') ||
+        normalized.contains('provider configuration');
+    if (googleConfigurationFailure) {
+      _showErrorDialog(
+        message: l10n.cloudSetupGoogleConfigurationMessage,
+        actionLabel: l10n.cloudSetupContinueLocal,
+        onAction: _continueLocally,
+      );
+      return;
+    }
+
     final accountMismatch = normalized.contains('did not match') ||
         normalized.contains('does not match') ||
-        normalized.contains('no longer available');
+        normalized.contains('no longer available') ||
+        normalized.contains('usermismatch');
     if (accountMismatch) {
       _showErrorDialog(
         message: l10n.cloudConnectionFailed,
