@@ -16,6 +16,21 @@ void main() {
     expect(await database.isCloudSetupChoiceComplete(), isTrue);
   });
 
+  test('returning account choice and guest prompt markers are durable', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    expect(await database.hasReturningAccountChoicePending(), isFalse);
+    await database.markReturningAccountChoicePending();
+    expect(await database.hasReturningAccountChoicePending(), isTrue);
+    await database.clearReturningAccountChoicePending();
+    expect(await database.hasReturningAccountChoicePending(), isFalse);
+
+    expect(await database.hasShownGuestGooglePrompt(), isFalse);
+    await database.markGuestGooglePromptShown();
+    expect(await database.hasShownGuestGooglePrompt(), isTrue);
+  });
+
   test('recovery snapshot can be saved, read, and cleared', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);

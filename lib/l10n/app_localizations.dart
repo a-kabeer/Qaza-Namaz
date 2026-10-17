@@ -1238,7 +1238,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountConnectGoogle.
   ///
   /// In en, this message translates to:
-  /// **'Connect Google'**
+  /// **'Sign in with Google'**
   String get accountConnectGoogle;
 
   /// No description provided for @accountSignInMethod.
@@ -4365,7 +4365,7 @@ abstract class AppLocalizations {
   /// No description provided for @cloudDisconnect.
   ///
   /// In en, this message translates to:
-  /// **'Disconnect account'**
+  /// **'Sign out'**
   String get cloudDisconnect;
 
   /// No description provided for @cloudConnected.
@@ -4528,6 +4528,18 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Continue with Google'**
+  /// Account choices for previously used Google accounts.
+  String get cloudAccountChoiceTitle;
+  String get cloudAccountChoiceDescription;
+  String get cloudContinueNewAccount;
+  String get cloudSignOutPendingTitle;
+  String get cloudSignOutPendingMessage;
+  String get cloudSignOutAnyway;
+  String get cloudBackupAndSignOut;
+
+  String get guestGooglePromptTitle;
+  String get guestGooglePromptMessage;
+
   String get cloudSetupUseGoogle;
 
   /// No description provided for @cloudSetupContinueLocal.

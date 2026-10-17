@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
@@ -7,6 +9,7 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import '../core/time/local_date_service.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
+import '../features/account/account_screen.dart';
 import '../features/onboarding/startup_gate.dart';
 import '../l10n/app_localizations.dart';
 import '../l10n/roman_urdu_widgets_localizations.dart';
@@ -64,7 +67,64 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
         key: appScaffoldMessengerKey,
         child: child!,
       ),
-      home: const StartupGate(),
+      home: const _GuestGooglePromptHost(child: StartupGate()),
     );
+  }
+}
+
+
+class _GuestGooglePromptHost extends ConsumerStatefulWidget {
+  const _GuestGooglePromptHost({required this.child});
+
+  final Widget child;
+
+  @override
+  ConsumerState<_GuestGooglePromptHost> createState() =>
+      _GuestGooglePromptHostState();
+}
+
+class _GuestGooglePromptHostState
+    extends ConsumerState<_GuestGooglePromptHost> {
+  bool _showingPrompt = false;
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listen<int>(guestConnectPromptRequestProvider, (previous, next) {
+      if (next > (previous ?? 0)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(_showGuestPrompt());
+        });
+      }
+    });
+    return widget.child;
+  }
+
+  Future<void> _showGuestPrompt() async {
+    if (!mounted || _showingPrompt) return;
+    _showingPrompt = true;
+    final l10n = AppLocalizations.of(context);
+    final connect = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.guestGooglePromptTitle),
+        content: Text(l10n.guestGooglePromptMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: Text(l10n.commonCancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: Text(l10n.cloudSetupUseGoogle),
+          ),
+        ],
+      ),
+    );
+    _showingPrompt = false;
+    if (connect == true && mounted) {
+      await Navigator.of(context).push<void>(
+        MaterialPageRoute<void>(builder: (_) => const AccountScreen(autoConnect: true)),
+      );
+    }
   }
 }

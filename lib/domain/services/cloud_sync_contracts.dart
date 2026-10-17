@@ -59,10 +59,34 @@ class CloudAccountSnapshot {
   bool get isConnected => status == CloudAccountStatus.connected;
 }
 
+class RememberedCloudAccount {
+  const RememberedCloudAccount({
+    required this.accountId,
+    this.displayName,
+    this.email,
+    this.photoUrl,
+  });
+
+  /// Stable Google account ID. Display fields are hints, never credentials.
+  final String accountId;
+  final String? displayName;
+  final String? email;
+  final String? photoUrl;
+
+  String get label {
+    final name = displayName?.trim();
+    if (name != null && name.isNotEmpty) return name;
+    final address = email?.trim();
+    return address == null || address.isEmpty ? 'Google account' : address;
+  }
+}
+
 abstract interface class CloudAccountProvider {
   bool get isSupported;
   Future<CloudAccountSnapshot> restore();
   Future<CloudAccountSnapshot> signIn();
+  Future<List<RememberedCloudAccount>> rememberedAccounts();
+  Future<CloudAccountSnapshot> signInWithRememberedAccount(String accountId);
   Future<void> disconnect();
 }
 
@@ -177,6 +201,7 @@ class CloudSyncSnapshot {
     this.hasLocalRecoverySnapshot = false,
     this.restoredRemoteBackup = false,
     this.backupAlreadyUpToDate = false,
+    this.hasPendingChanges = false,
   });
 
   const CloudSyncSnapshot.unavailable()
@@ -188,7 +213,8 @@ class CloudSyncSnapshot {
         conflict = null,
         hasLocalRecoverySnapshot = false,
         restoredRemoteBackup = false,
-        backupAlreadyUpToDate = false;
+        backupAlreadyUpToDate = false,
+        hasPendingChanges = false;
 
   const CloudSyncSnapshot.disconnected()
       : status = CloudSyncStatus.disconnected,
@@ -199,7 +225,8 @@ class CloudSyncSnapshot {
         conflict = null,
         hasLocalRecoverySnapshot = false,
         restoredRemoteBackup = false,
-        backupAlreadyUpToDate = false;
+        backupAlreadyUpToDate = false,
+        hasPendingChanges = false;
 
   final CloudSyncStatus status;
   final bool automaticSyncEnabled;
@@ -215,6 +242,10 @@ class CloudSyncSnapshot {
 
   /// True when an explicit backup request required no upload or restore.
   final bool backupAlreadyUpToDate;
+
+  /// True when local changes are newer than the verified account sync cursor,
+  /// or a conflict is waiting for a user decision.
+  final bool hasPendingChanges;
 }
 
 enum CloudBackupDiscoveryStatus {
@@ -301,6 +332,15 @@ class UnsupportedCloudAccountProvider implements CloudAccountProvider {
   @override
   Future<CloudAccountSnapshot> signIn() async =>
       const CloudAccountSnapshot.unavailable();
+
+  @override
+  Future<List<RememberedCloudAccount>> rememberedAccounts() async =>
+      const <RememberedCloudAccount>[];
+
+  @override
+  Future<CloudAccountSnapshot> signInWithRememberedAccount(
+    String accountId,
+  ) async => const CloudAccountSnapshot.unavailable();
 
   @override
   Future<void> disconnect() async {}

@@ -198,6 +198,15 @@ final initialCloudBackupPendingProvider = FutureProvider<bool>((ref) {
   return ref.watch(appDatabaseProvider).hasPendingInitialCloudBackup();
 });
 
+/// Explicit sign-out returns to account choice without resetting onboarding.
+final returningAccountChoicePendingProvider = FutureProvider<bool>((ref) {
+  return ref.watch(appDatabaseProvider).hasReturningAccountChoicePending();
+});
+
+/// Incremented after a successful Qaza completion when cloud is available but
+/// no Google account is currently connected.
+final guestConnectPromptRequestProvider = StateProvider<int>((ref) => 0);
+
 /// Lets the user continue to Home after an initial backup failure in the
 /// current process while retaining the durable marker for a retry next launch.
 final skipPendingInitialCloudBackupForSessionProvider =

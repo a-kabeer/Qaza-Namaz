@@ -7,6 +7,7 @@ import '../../app/providers.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
 import '../../l10n/app_localizations.dart';
+import '../account/google_account_choice_screen.dart';
 
 class CloudSetupChoiceScreen extends ConsumerStatefulWidget {
   const CloudSetupChoiceScreen({super.key});
@@ -86,7 +87,10 @@ class _CloudSetupChoiceScreenState
   }
 
   Future<void> _completeChoice() async {
-    await ref.read(appDatabaseProvider).markCloudSetupChoiceComplete();
+    final database = ref.read(appDatabaseProvider);
+    await database.clearReturningAccountChoicePending();
+    await database.markCloudSetupChoiceComplete();
+    ref.invalidate(returningAccountChoicePendingProvider);
     ref.invalidate(cloudSetupChoiceCompleteProvider);
   }
 
@@ -149,8 +153,16 @@ class _CloudSetupChoiceScreenState
     });
     try {
       await _persistSelectedLanguage();
+      final accountProvider = ref.read(cloudAccountProvider);
+      final selectedAccountId =
+          await showGoogleAccountChoiceScreen(context, accountProvider);
+      if (!mounted || selectedAccountId == null) return;
       _cloudAttempted = true;
-      final account = await ref.read(cloudAccountProvider).signIn();
+      final account = selectedAccountId.isEmpty
+          ? await accountProvider.signIn()
+          : await accountProvider.signInWithRememberedAccount(
+              selectedAccountId,
+            );
       if (!mounted) return;
       if (!account.isConnected) {
         setState(() {

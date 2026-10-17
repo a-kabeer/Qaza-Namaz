@@ -2574,10 +2574,10 @@ class AppLocalizationsUrLatn extends AppLocalizations {
       'apni Qaza ki progress ka Google Drive app Data mein alg backup app mehfooz rkhin';
 
   @override
-  String get cloudConnect => 'Google se munsalik karein';
+  String get cloudConnect => 'Google se sign in karein';
 
   @override
-  String get cloudDisconnect => 'account munqati karein';
+  String get cloudDisconnect => 'Sign out';
 
   @override
   String get cloudConnected => 'munsalik';
@@ -2666,11 +2666,41 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get cloudSetupChoiceDescription =>
       'apni chhoti hui Namazon ka hisaab rakhein aur Qaza ki progress ko apni sahulat ke mutabiq munazzam krin aap ka record isi device par mehfooz rehta he mukhtalif dioaisz par backup app aur bahali ke liye aap ikhtiyari tor par Google istemal kar sakte hin';
 
+
+  @override
+  String get cloudAccountChoiceTitle => "Google account muntakhib karein";
+
+  @override
+  String get cloudAccountChoiceDescription =>
+      "Pehle istemal shuda account muntakhib karein, ya naye Google account ke sath jari rakhein.";
+
+  @override
+  String get cloudContinueNewAccount => "Naye account ke sath jari rakhein";
+
+  @override
+  String get cloudSignOutPendingTitle => "Tabdeeliyon ka backup nahi hua";
+
+  @override
+  String get cloudSignOutPendingMessage =>
+      "Haliya tabdeeliyon ka Google Drive par backup nahi hua. Ab sign out karne par yeh isi device par rahengi, lekin Google backup mein mehfooz nahi hongi.";
+
+  @override
+  String get cloudSignOutAnyway => "Phir bhi sign out karein";
+
+  @override
+  String get cloudBackupAndSignOut => "Backup le kar sign out karein";
+
+  @override
+  String get guestGooglePromptTitle => "Apni Qaza progress mehfooz rakhein";
+
+  @override
+  String get guestGooglePromptMessage => "Apni Qaza ka backup banane aur device badalne par bahal karne ke liye Google account connect karein.";
+
   @override
   String get cloudSetupUseGoogle => 'Google ke saath jari rakhein';
 
   @override
-  String get cloudSetupContinueLocal => 'isi device par jari rakhein';
+  String get cloudSetupContinueLocal => 'Guest ke tor par jari rakhein';
 
   @override
   String get cloudConnectionFailed =>

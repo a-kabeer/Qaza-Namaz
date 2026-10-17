@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -31,6 +33,8 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   static const _cachedEmailKey = 'qaza_cloud_adapter.cached_account_email_v1';
   static const _cachedPhotoUrlKey =
       'qaza_cloud_adapter.cached_account_photo_url_v1';
+  static const _rememberedAccountsKey =
+      'qaza_cloud_adapter.remembered_accounts_v1';
 
   @override
   bool get isSupported => true;
@@ -128,6 +132,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         // A new Flutter runtime has no GoogleSignInAccount object. The native
         // authorization path returns the account it actually authorized, and
         // the stable ID/email binding was verified before any sync state read.
+        if (activeAccountId != null) {
+          await _rememberCachedProfile(activeAccountId);
+        }
         return await _cachedProfileSnapshot(reconnectRequired: false);
       } on CloudAuthorizationUnavailable {
         if (scopedState != null &&
@@ -157,6 +164,90 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     }
   }
 
+  @override
+  Future<List<RememberedCloudAccount>> rememberedAccounts() async {
+    final preferences = await SharedPreferences.getInstance();
+    final raw = preferences.getString(_rememberedAccountsKey);
+    if (raw == null || raw.trim().isEmpty) {
+      return const <RememberedCloudAccount>[];
+    }
+    try {
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return const <RememberedCloudAccount>[];
+      final result = <RememberedCloudAccount>[];
+      final seen = <String>{};
+      for (final value in decoded) {
+        if (value is! Map) continue;
+        final accountId = value['accountId'];
+        if (accountId is! String ||
+            accountId.trim().isEmpty ||
+            !seen.add(accountId)) {
+          continue;
+        }
+        String? optionalString(String key) {
+          final item = value[key];
+          if (item is! String || item.trim().isEmpty) return null;
+          return item.trim();
+        }
+        result.add(RememberedCloudAccount(
+          accountId: accountId,
+          displayName: optionalString('displayName'),
+          email: optionalString('email'),
+          photoUrl: optionalString('photoUrl'),
+        ));
+      }
+      return List<RememberedCloudAccount>.unmodifiable(result);
+    } catch (_) {
+      return const <RememberedCloudAccount>[];
+    }
+  }
+
+  Future<void> _rememberAccount({
+    required String accountId,
+    String? displayName,
+    String? email,
+    String? photoUrl,
+  }) async {
+    final preferences = await SharedPreferences.getInstance();
+    final current = await rememberedAccounts();
+    final next = <Map<String, dynamic>>[
+      <String, dynamic>{
+        'accountId': accountId,
+        'displayName': displayName,
+        'email': email,
+        'photoUrl': photoUrl,
+      },
+      for (final item in current)
+        if (item.accountId != accountId)
+          <String, dynamic>{
+            'accountId': item.accountId,
+            'displayName': item.displayName,
+            'email': item.email,
+            'photoUrl': item.photoUrl,
+          },
+    ];
+    // A small, bounded recent-account list is sufficient for account choice.
+    await preferences.setString(
+      _rememberedAccountsKey,
+      jsonEncode(next.take(8).toList(growable: false)),
+    );
+  }
+
+  @override
+  Future<CloudAccountSnapshot> signInWithRememberedAccount(
+    String accountId,
+  ) async {
+    final normalized = accountId.trim();
+    if (normalized.isEmpty ||
+        !(await rememberedAccounts())
+            .any((item) => item.accountId == normalized)) {
+      return const CloudAccountSnapshot.failed(
+        'This saved account is no longer available. Continue with a new account.',
+      );
+    }
+    return _signIn(expectedAccountId: normalized);
+  }
+
   Future<void> _persistAccountProfile({
     required String accountId,
     String? displayName,
@@ -180,6 +271,12 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     await writeValue(_cachedDisplayNameKey, displayName);
     await writeValue(_cachedEmailKey, email);
     await writeValue(_cachedPhotoUrlKey, photoUrl);
+    await _rememberAccount(
+      accountId: accountId,
+      displayName: displayName,
+      email: email,
+      photoUrl: photoUrl,
+    );
   }
 
   Future<void> _clearCachedAccountProfile() async {
@@ -188,6 +285,20 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     await preferences.remove(_cachedDisplayNameKey);
     await preferences.remove(_cachedEmailKey);
     await preferences.remove(_cachedPhotoUrlKey);
+  }
+
+  Future<void> _rememberCachedProfile(String accountId) async {
+    final preferences = await SharedPreferences.getInstance();
+    String? readValue(String key) {
+      final value = preferences.getString(key)?.trim();
+      return value == null || value.isEmpty ? null : value;
+    }
+    await _rememberAccount(
+      accountId: accountId,
+      displayName: readValue(_cachedDisplayNameKey),
+      email: readValue(_cachedEmailKey),
+      photoUrl: readValue(_cachedPhotoUrlKey),
+    );
   }
 
   Future<CloudAccountSnapshot> _cachedProfileSnapshot({
@@ -219,11 +330,19 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
   }
 
   @override
-  Future<CloudAccountSnapshot> signIn() async {
+  Future<CloudAccountSnapshot> signIn() => _signIn();
+
+  Future<CloudAccountSnapshot> _signIn({String? expectedAccountId}) async {
     try {
       final automaticPreferenceConfigured = await _state
           .hasAutomaticSyncPreference();
       final account = await _gateway.authenticate();
+      if (expectedAccountId != null && account.id != expectedAccountId) {
+        await _gateway.signOut();
+        return const CloudAccountSnapshot.failed(
+          'The selected Google account did not match the remembered account. Please choose it again.',
+        );
+      }
 
       // Do not mark cloud backup connected until the specific Drive app-data
       // scope is authorized. This call follows the explicit Connect/Reconnect
@@ -421,12 +540,16 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           message: 'Reconnect the Google account to verify backup ownership.',
           hasLocalRecoverySnapshot:
               (await _phase1.readRecoverySnapshot()) != null,
+          hasPendingChanges: true,
         );
       }
     }
 
     final reconnectRequired = enabled && await _state.isReconnectRequired();
     final pendingConflict = enabled ? await _state.readPendingConflict() : null;
+    final hasPendingChanges = enabled &&
+        ((pendingConflict != null) ||
+            await _hasPendingLocalChanges(state: _state));
     return CloudSyncSnapshot(
       status: !enabled
           ? CloudSyncStatus.disconnected
@@ -442,6 +565,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           ? null
           : _toCoreConflict(pendingConflict),
       hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
+      hasPendingChanges: hasPendingChanges,
     );
   }
 
@@ -716,6 +840,20 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       hasLocalRecoverySnapshot: (await _phase1.readRecoverySnapshot()) != null,
       restoredRemoteBackup: restoredRemoteBackup,
       backupAlreadyUpToDate: backupAlreadyUpToDate,
+      hasPendingChanges: includeAccountState
+          ? await _hasPendingLocalChanges(state: stateStore)
+          : true,
     );
+  }
+
+  Future<bool> _hasPendingLocalChanges({
+    required CloudSyncStateStore state,
+  }) async {
+    final cursor = await state.readCursor();
+    final revision = await _phase1.readDbRevision();
+    final localChanges = cursor.lastSyncedLocalRevision == null
+        ? revision > 1
+        : revision != cursor.lastSyncedLocalRevision;
+    return localChanges || await state.readPendingConflict() != null;
   }
 }
