@@ -254,7 +254,7 @@ void main() {
       logs.single.read<String?>('linked_qaza_id'),
       'guest_fajr_linked',
     );
-    expect(logs.single.read<String?>('completion_sync_id'), isNull);
+    expect(logs.single.read<String?>('completion_sync_id'), equals(null));
   });
 
   test('malformed import leaves existing local database untouched', () async {
