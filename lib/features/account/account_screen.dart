@@ -27,9 +27,6 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
   void initState() {
     super.initState();
     Future<void>.microtask(_restoreCloudAccount);
-    if (widget.autoConnect) {
-      Future<void>.microtask(_connect);
-    }
   }
 
   Future<void> _restoreCloudAccount() async {
@@ -90,6 +87,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               key: const Key('account_cloud_backup'),
               accountSnapshot: account,
               accountLoading: _accountSnapshot.isLoading,
+              autoConnect: widget.autoConnect && !_accountSnapshot.isLoading,
               onAccountChanged: _setAccountSnapshot,
             ),
             const SizedBox(height: 16),
@@ -284,11 +282,13 @@ class _CloudBackupCard extends ConsumerStatefulWidget {
     super.key,
     required this.accountSnapshot,
     required this.accountLoading,
+    required this.autoConnect,
     required this.onAccountChanged,
   });
 
   final CloudAccountSnapshot accountSnapshot;
   final bool accountLoading;
+  final bool autoConnect;
   final ValueChanged<CloudAccountSnapshot> onAccountChanged;
 
   @override
@@ -330,7 +330,20 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   @override
   void initState() {
     super.initState();
-    Future<void>.microtask(_refresh);
+    Future<void>.microtask(() async {
+      await _refresh();
+      if (mounted && widget.autoConnect) await _connect();
+    });
+  }
+
+  @override
+  void didUpdateWidget(covariant _CloudBackupCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.autoConnect && widget.autoConnect) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) Future<void>.microtask(_connect);
+      });
+    }
   }
 
   Future<void> _refresh() async {
@@ -723,7 +736,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           confirmed: true,
           onProgress: _publishBackupProgress,
         );
-    if (!mounted) return;
+    if (!mounted) return null;
     if (useRemote && result.status == CloudSyncStatus.synced) {
       await _refreshAfterRestore();
       if (!mounted) return;

@@ -35,6 +35,16 @@ class _FakeCloudAccountProvider implements CloudAccountProvider {
   Future<CloudAccountSnapshot> signIn() async => signInResult;
 
   @override
+  Future<List<RememberedCloudAccount>> rememberedAccounts() async =>
+      const <RememberedCloudAccount>[];
+
+  @override
+  Future<CloudAccountSnapshot> signInWithRememberedAccount(
+    String accountId,
+  ) async =>
+      signInResult;
+
+  @override
   Future<void> disconnect() async {}
 }
 
