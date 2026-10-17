@@ -2508,10 +2508,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'احتفظ بنسخة احتياطية منفصلة من تقدم القضاء في بيانات تطبيقك على Google Drive.';
 
   @override
-  String get cloudConnect => 'ربط Google';
+  String get cloudConnect => 'تسجيل الدخول باستخدام Google';
 
   @override
-  String get cloudDisconnect => 'فصل الحساب';
+  String get cloudDisconnect => 'تسجيل الخروج';
 
   @override
   String get cloudConnected => 'متصل';
@@ -2601,10 +2601,41 @@ class AppLocalizationsAr extends AppLocalizations {
       'تابع صلواتك الفائتة ونظّم تقدمك في القضاء وفق وتيرتك. تبقى سجلاتك على هذا الجهاز. ويمكنك اختياريًا استخدام Google لنسخ تقدمك احتياطيًا واستعادته عبر الأجهزة.';
 
   @override
+  String get cloudAccountChoiceTitle => 'اختيار حساب Google';
+
+  @override
+  String get cloudAccountChoiceDescription =>
+      'اختر حسابًا استخدمته سابقًا، أو تابع باستخدام حساب Google جديد.';
+
+  @override
+  String get cloudContinueNewAccount => 'المتابعة بحساب جديد';
+
+  @override
+  String get cloudSignOutPendingTitle =>
+      'لم يتم الاحتفاظ بنسخة احتياطية من التغييرات';
+
+  @override
+  String get cloudSignOutPendingMessage =>
+      'لم يتم نسخ التغييرات الأخيرة احتياطيًا إلى Google Drive. إذا سجلت الخروج الآن، فستبقى على هذا الجهاز ولن تُحفظ في نسخة Google الاحتياطية.';
+
+  @override
+  String get cloudSignOutAnyway => 'تسجيل الخروج على أي حال';
+
+  @override
+  String get cloudBackupAndSignOut => 'نسخ احتياطي وتسجيل الخروج';
+
+  @override
+  String get guestGooglePromptTitle => 'احتفظ بتقدم القضاء';
+
+  @override
+  String get guestGooglePromptMessage =>
+      'اربط حساب Google للاحتفاظ بنسخة احتياطية من تقدم القضاء واستعادته عند تغيير الجهاز.';
+
+  @override
   String get cloudSetupUseGoogle => 'المتابعة باستخدام Google';
 
   @override
-  String get cloudSetupContinueLocal => 'المتابعة على هذا الجهاز';
+  String get cloudSetupContinueLocal => 'المتابعة كضيف';
 
   @override
   String get cloudConnectionFailed =>

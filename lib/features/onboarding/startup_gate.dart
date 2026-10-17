@@ -48,16 +48,27 @@ class StartupGate extends ConsumerWidget {
         ref.watch(cloudSyncProvider).isSupported;
 
     if (cloudEnabled) {
-      final choice = ref.watch(cloudSetupChoiceCompleteProvider);
-      return choice.when(
+      final returningChoice = ref.watch(returningAccountChoicePendingProvider);
+      return returningChoice.when(
         loading: () => const SplashScreen(),
         error: (_, __) => StartupProfileLoadErrorBoundary(
-          key: const Key('startup_cloud_setup_choice_error'),
-          onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
+          key: const Key('startup_returning_account_choice_error'),
+          onRetry: () => ref.invalidate(returningAccountChoicePendingProvider),
         ),
-        data: (completed) => completed
-            ? _profileDestination(ref, cloudEnabled: true)
-            : const CloudSetupChoiceScreen(),
+        data: (required) {
+          if (required) return const CloudSetupChoiceScreen();
+          final choice = ref.watch(cloudSetupChoiceCompleteProvider);
+          return choice.when(
+            loading: () => const SplashScreen(),
+            error: (_, __) => StartupProfileLoadErrorBoundary(
+              key: const Key('startup_cloud_setup_choice_error'),
+              onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
+            ),
+            data: (completed) => completed
+                ? _profileDestination(ref, cloudEnabled: true)
+                : const CloudSetupChoiceScreen(),
+          );
+        },
       );
     }
 

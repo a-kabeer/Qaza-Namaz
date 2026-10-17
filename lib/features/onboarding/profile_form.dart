@@ -142,12 +142,6 @@ class _ProfileFormState extends State<ProfileForm> {
       profile,
       today: today,
     );
-    final currentAge = profile.dateOfBirth == null
-        ? null
-        : ProfileRules.currentAge(
-            profile.dateOfBirth!,
-            today,
-          );
     final availableStartOptions = ProfileRules.startPrayingAgeOptions(
       profile,
       today: today,

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../app/providers.dart';
@@ -47,6 +49,7 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
           DiagnosticArea.qazaCompletion,
           'completion_batch_succeeded',
         );
+        unawaited(_maybeRequestGuestConnectPrompt());
         // All Qaza completion entry points use this controller, so Daily
         // Salah history is synchronized once at the shared boundary.
         for (final entry in receipt.entries) {
@@ -72,6 +75,25 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
       return receipt;
     } finally {
       state = state.copyWith(isWorking: false);
+    }
+  }
+
+  Future<void> _maybeRequestGuestConnectPrompt() async {
+    try {
+      final cloudAccount = ref.read(cloudAccountProvider);
+      if (!cloudAccount.isSupported) return;
+      final database = ref.read(appDatabaseProvider);
+      if (await database.hasShownGuestGooglePrompt()) return;
+
+      // This is a non-interactive restore/status check. A saved profile alone
+      // never counts as a verified connected Google account.
+      final account = await cloudAccount.restore();
+      if (account.isConnected) return;
+
+      await database.markGuestGooglePromptShown();
+      ref.read(guestConnectPromptRequestProvider.notifier).state++;
+    } catch (_) {
+      // Prompt failures must never affect the Qaza completion that just saved.
     }
   }
 

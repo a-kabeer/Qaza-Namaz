@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/features/prayer_time/presentation/hijri_date_adjustment_sheet.dart';
-import 'package:qaza_namaz/features/prayer_time/presentation/hijri_date_chip.dart';
+import 'package:qaza_namaz/features/prayer_time/presentation/prayer_time_date_header.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 void main() {
@@ -58,54 +58,57 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Hijri chip keeps its date and action on one narrow row',
-      (tester) async {
-    tester.view.physicalSize = const Size(320, 720);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  testWidgets(
+    'date header shows Hijri below Gregorian and keeps adjustment on the right',
+    (tester) async {
+      tester.view.physicalSize = const Size(320, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: Scaffold(
-          body: Padding(
-            padding: const EdgeInsets.all(12),
-            child: SizedBox(
-              width: 296,
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 24),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Friday, 16 October 2026',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  Flexible(
-                    child: HijriDateChip(
-                      label: '29 Rabi al-Thani 1448 AH',
-                      onAdjust: () {},
-                    ),
-                  ),
-                ],
+      var adjustmentTapped = false;
+      await tester.pumpWidget(
+        MaterialApp(
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: Padding(
+              padding: const EdgeInsets.all(12),
+              child: SizedBox(
+                width: 296,
+                child: PrayerTimeDateHeader(
+                  gregorianDate: 'Friday, 16 October 2026',
+                  hijriDate: '29 Rabi al-Thani 1448 AH',
+                  onAdjust: () => adjustmentTapped = true,
+                ),
               ),
             ),
           ),
         ),
-      ),
-    );
+      );
 
-    expect(
-      find.byKey(const Key('prayer_time_hijri_adjustment')),
-      findsOneWidget,
-    );
-    expect(find.text('Friday, 16 October 2026'), findsOneWidget);
-    expect(tester.takeException(), isNull);
-  });
+      final gregorian = find.text('Friday, 16 October 2026');
+      final hijri = find.text('29 Rabi al-Thani 1448 AH');
+      final adjustment = find.byKey(
+        const Key('prayer_time_hijri_adjustment'),
+      );
+      expect(gregorian, findsOneWidget);
+      expect(hijri, findsOneWidget);
+      expect(adjustment, findsOneWidget);
+      expect(
+        tester.getRect(hijri).top,
+        greaterThan(tester.getRect(gregorian).top),
+      );
+      expect(
+        tester.getRect(adjustment).center.dx,
+        greaterThan(tester.getRect(gregorian).center.dx),
+      );
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(adjustment);
+      expect(adjustmentTapped, isTrue);
+    },
+  );
 
   testWidgets('adjustment labels are localized', (tester) async {
     await openSheet(tester, const Locale('ur'));

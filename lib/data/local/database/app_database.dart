@@ -297,6 +297,50 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
+  /// Marks that an explicit sign-out should return to account choice without
+  /// altering first-run onboarding completion or local Qaza data.
+  Future<bool> hasReturningAccountChoicePending() async {
+    final rows = await customSelect(
+      "SELECT value FROM meta_store "
+      "WHERE key = 'returning_account_choice_pending' LIMIT 1",
+    ).get();
+    return rows.isNotEmpty && rows.first.read<String>('value') == '1';
+  }
+
+  Future<void> markReturningAccountChoicePending() async {
+    await customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('returning_account_choice_pending', '1')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+    );
+  }
+
+  Future<void> clearReturningAccountChoicePending() async {
+    await customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('returning_account_choice_pending', '0')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+    );
+  }
+
+  /// The guest connection prompt is persisted once shown, so it is not
+  /// repeated after rebuilds or application restarts.
+  Future<bool> hasShownGuestGooglePrompt() async {
+    final rows = await customSelect(
+      "SELECT value FROM meta_store "
+      "WHERE key = 'guest_google_prompt_shown' LIMIT 1",
+    ).get();
+    return rows.isNotEmpty && rows.first.read<String>('value') == '1';
+  }
+
+  Future<void> markGuestGooglePromptShown() async {
+    await customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('guest_google_prompt_shown', '1')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+    );
+  }
+
   /// Stores one encrypted, app-private recovery snapshot before a confirmed
   /// destructive restore. The table is excluded from normal export payloads.
   Future<void> _ensureLocalRecoverySnapshotSchema() async {

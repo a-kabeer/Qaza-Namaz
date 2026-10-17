@@ -55,6 +55,16 @@ class _FakeCloudAccountProvider extends UnsupportedCloudAccountProvider {
   Future<CloudAccountSnapshot> signIn() async => snapshot;
 
   @override
+  Future<List<RememberedCloudAccount>> rememberedAccounts() async =>
+      const <RememberedCloudAccount>[];
+
+  @override
+  Future<CloudAccountSnapshot> signInWithRememberedAccount(
+    String accountId,
+  ) async =>
+      snapshot;
+
+  @override
   Future<void> disconnect() async {
     snapshot = const CloudAccountSnapshot.disconnected();
   }
@@ -114,6 +124,7 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
         hasLocalRecoverySnapshot: snapshot.hasLocalRecoverySnapshot,
         restoredRemoteBackup: snapshot.restoredRemoteBackup,
         backupAlreadyUpToDate: snapshot.backupAlreadyUpToDate,
+        hasPendingChanges: snapshot.hasPendingChanges,
       );
 
   @override
@@ -242,7 +253,42 @@ void main() {
           .getTopLeft(find.byKey(const Key('account_cloud_backup_card')))
           .dy;
       expect(profileY, lessThan(backupY));
-      expect(find.text('Connect Google'), findsNothing);
+      expect(find.text('Sign in with Google'), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'auto-connect waits for account restore before opening account choice',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot.disconnected(),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith(
+            (ref) => _FakeCloudSyncProvider(),
+          ),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(
+        _app(container, const AccountScreen(autoConnect: true)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const Key('continue_with_new_google_account')),
+        findsOneWidget,
+      );
     },
   );
 
@@ -675,7 +721,7 @@ void main() {
   );
 
   testWidgets(
-    'profile updates to Guest after Google disconnection',
+    'sign out preserves local session and returns to account choice',
     (tester) async {
       final database = AppDatabase(NativeDatabase.memory());
       final manager = await _createSession(database);
@@ -688,6 +734,7 @@ void main() {
       );
       final container = ProviderContainer(
         overrides: [
+          appDatabaseProvider.overrideWith((ref) => database),
           accountSessionManagerProvider.overrideWith((ref) => manager),
           cloudAccountProvider.overrideWith((ref) => cloudAccount),
           cloudSyncProvider.overrideWith((ref) => _FakeCloudSyncProvider()),
@@ -704,14 +751,15 @@ void main() {
       expect(find.text('Connected User'), findsOneWidget);
       expect(manager.activeAccount, isNotNull);
 
-      await tester.tap(find.text('Disconnect account'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Disconnect account').last);
+      await tester.tap(find.text('Sign out'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Guest'), findsOneWidget);
       expect(find.text('Connected User'), findsNothing);
+      expect(find.text('Welcome to Qaza Namaz'), findsOneWidget);
+      expect(find.text('Continue with Google'), findsOneWidget);
+      expect(find.text('Continue as Guest'), findsOneWidget);
       expect(manager.activeAccount, isNotNull);
+      expect(await database.hasReturningAccountChoicePending(), isTrue);
     },
   );
 
@@ -834,7 +882,7 @@ void main() {
       expect(find.text('Saved User'), findsOneWidget);
       expect(find.text('saved@example.com'), findsOneWidget);
       expect(find.text('Signed in with Google'), findsNothing);
-      expect(find.text('Connect Google'), findsOneWidget);
+      expect(find.text('Sign in with Google'), findsOneWidget);
       expect(find.byKey(const Key('account_daily_cloud_backup')), findsNothing);
     },
   );
