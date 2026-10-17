@@ -199,8 +199,7 @@ void main() {
     expect(logs, isEmpty);
   });
 
-  test('schema 20 backups migrate daily Salah links to schema 21',
-      () async {
+  test('schema 20 backups migrate daily Salah links to schema 21', () async {
     await database.qazaRecordsDao.insertRecord(
       _record('guest_fajr_linked', DateTime(2025, 1, 1)),
     );
