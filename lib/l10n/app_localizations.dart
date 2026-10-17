@@ -4606,6 +4606,7 @@ abstract class AppLocalizations {
   ///
   /// In en, this message translates to:
   /// **'Restoring your Google Drive backup'**
+  String get cloudSetupGoogleConfigurationMessage;
   String get cloudSetupBackupUnreadableMessage;
   String get cloudSetupChooseAnotherAccount;
   String get cloudRestoreFailedMessage;
