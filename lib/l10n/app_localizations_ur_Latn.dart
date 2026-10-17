@@ -2787,6 +2787,15 @@ class AppLocalizationsUrLatn extends AppLocalizations {
       "Yeh Qaza record ab pending nahi, is liye hataya nahi gaya.";
 
   @override
+  String get cloudSetupBackupUnreadableMessage => "Is mehfooz backup ko app ke is version mein bahal nahi kiya ja sakta. Is device ka local record tabdeel nahi hua. Doosra Google account muntakhib karein ya guest ke taur par jari rahen.";
+
+  @override
+  String get cloudSetupChooseAnotherAccount => "Doosra Google account muntakhib karein";
+
+  @override
+  String get cloudRestoreFailedMessage => "Backup bahal nahi ho saka. Is device par aap ka record aur mehfooz cloud backup barqarar hain. Internet connection check karke dobara koshish karein, ya guest ke taur par jari rahen.";
+
+  @override
   String get cloudRestoreProgressTitle =>
       'Google Drive backup restore ho raha hai';
 
