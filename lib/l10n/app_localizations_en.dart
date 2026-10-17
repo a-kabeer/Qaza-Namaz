@@ -2703,6 +2703,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get dailySalahTrackingEnableAction => 'Enable';
 
   @override
+  String get dailySalahTrackingSkipForNow => 'Skip for now';
+
+  @override
+  String get dailySalahTrackingSkippedMessage =>
+      'Daily Namaz Tracking skipped. You can enable it anytime from Profile.';
+
+  @override
+  String get dailySalahTrackingRemoveStatusTitle => 'Remove prayer status?';
+
+  @override
+  String get dailySalahTrackingRemoveStatusMessage =>
+      'This will mark the prayer as unrecorded. Any existing Qaza entry will remain unchanged.';
+
+  @override
+  String get dailySalahTrackingRemoveStatusAction => 'Remove status';
+
+  @override
   String get dailySalahTrackingPrayed => 'Prayed';
 
   @override

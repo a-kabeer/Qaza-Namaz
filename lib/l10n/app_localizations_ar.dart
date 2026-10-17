@@ -2695,6 +2695,23 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dailySalahTrackingEnableAction => 'تفعيل';
 
   @override
+  String get dailySalahTrackingSkipForNow => 'تخطي الآن';
+
+  @override
+  String get dailySalahTrackingSkippedMessage =>
+      'تم تخطي تتبّع الصلاة اليومية. يمكنك تفعيله في أي وقت من الملف الشخصي.';
+
+  @override
+  String get dailySalahTrackingRemoveStatusTitle => 'إزالة حالة الصلاة؟';
+
+  @override
+  String get dailySalahTrackingRemoveStatusMessage =>
+      'سيتم تغيير حالة الصلاة إلى غير مسجلة. سيبقى أي سجل قضاء موجود دون تغيير.';
+
+  @override
+  String get dailySalahTrackingRemoveStatusAction => 'إزالة الحالة';
+
+  @override
   String get dailySalahTrackingPrayed => 'أديت';
 
   @override

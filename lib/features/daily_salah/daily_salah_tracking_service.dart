@@ -49,6 +49,12 @@ class DailySalahTrackingService {
   Future<void> setEnabled(bool enabled) =>
       _database.setDailySalahTrackingEnabled(enabled);
 
+  Future<bool> isSetupDismissed() =>
+      _database.isDailySalahTrackingSetupDismissed();
+
+  Future<void> setSetupDismissed(bool dismissed) =>
+      _database.setDailySalahTrackingSetupDismissed(dismissed);
+
   Future<Map<PrayerType, DailySalahLog>> logsForDate({
     required String userId,
     required DateTime date,

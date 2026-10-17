@@ -156,6 +156,10 @@ class AppDatabase extends _$AppDatabase {
       "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
       "('daily_salah_tracking_enabled', '0')",
     );
+    await customStatement(
+      "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
+      "('daily_salah_tracking_setup_dismissed', '0')",
+    );
   }
 
   Future<void> _ensureDailySalahTrackingSchema() async {
@@ -208,6 +212,36 @@ class AppDatabase extends _$AppDatabase {
          VALUES ('daily_salah_tracking_enabled', ?)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
       variables: [Variable(enabled ? '1' : '0')],
+    );
+    return true;
+  }
+
+  Future<bool> isDailySalahTrackingSetupDismissed() async {
+    await _ensureMetaStoreSchema();
+    final rows = await customSelect(
+      "SELECT value FROM meta_store "
+      "WHERE key = 'daily_salah_tracking_setup_dismissed' LIMIT 1",
+    ).get();
+    return rows.isNotEmpty && rows.first.read<String>('value') == '1';
+  }
+
+  Future<void> setDailySalahTrackingSetupDismissed(bool dismissed) async {
+    await transactionWithRevision<bool>(
+      () => setDailySalahTrackingSetupDismissedInTransaction(dismissed),
+      mutationPredicate: (changed) => changed,
+    );
+  }
+
+  Future<bool> setDailySalahTrackingSetupDismissedInTransaction(
+    bool dismissed,
+  ) async {
+    final current = await isDailySalahTrackingSetupDismissed();
+    if (current == dismissed) return false;
+    await customUpdate(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('daily_salah_tracking_setup_dismissed', ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [Variable(dismissed ? '1' : '0')],
     );
     return true;
   }
