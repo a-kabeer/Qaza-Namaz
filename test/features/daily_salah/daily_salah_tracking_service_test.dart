@@ -52,6 +52,34 @@ void main() {
     expect(await tracking.isSetupDismissed(), isTrue);
   });
 
+  test('initial Prayed does not create a Qaza record', () async {
+    await tracking.setEnabled(true);
+
+    await tracking.setStatus(
+      userId: userId,
+      prayerType: PrayerType.fajr,
+      date: date,
+      status: DailySalahStatus.prayed,
+    );
+
+    final records = await qazaService.getPage(
+      userId: userId,
+      prayerType: PrayerType.fajr,
+      from: date,
+      to: date,
+      status: null,
+    );
+    expect(records.records, isEmpty);
+    expect(
+      (await tracking.logForDate(
+        userId: userId,
+        date: date,
+        prayerType: PrayerType.fajr,
+      ))?.status,
+      DailySalahStatus.prayed,
+    );
+  });
+
   test('confirmed missed is idempotent and creates one linked Qaza', () async {
     await tracking.setEnabled(true);
 
@@ -84,7 +112,7 @@ void main() {
   });
 
   test(
-    'correcting Missed preserves Qaza; confirmed undo removes only its pending entry',
+    'Missed to Prayed completes the linked Qaza; changing back reopens it',
     () async {
       await tracking.setEnabled(true);
       await tracking.recordMissed(
@@ -93,54 +121,95 @@ void main() {
         date: date,
       );
 
+      final missedLog = await tracking.logForDate(
+        userId: userId,
+        date: date,
+        prayerType: PrayerType.zuhr,
+      );
+      final recordId = missedLog!.linkedQazaId!;
+      expect(missedLog.trackerCreatedQazaId, recordId);
+
       await tracking.setStatus(
         userId: userId,
         prayerType: PrayerType.zuhr,
         date: date,
         status: DailySalahStatus.prayed,
       );
-      final afterCorrection = await qazaService.getPage(
+      var records = await qazaService.getPage(
         userId: userId,
         prayerType: PrayerType.zuhr,
         from: date,
         to: date,
         status: null,
       );
-      expect(afterCorrection.records, hasLength(1));
-      expect(
-        await tracking.canUndoTrackerCreatedQaza(
-          userId: userId,
-          prayerType: PrayerType.zuhr,
-          date: date,
-        ),
-        isTrue,
-      );
+      expect(records.records, hasLength(1));
+      expect(records.records.single.id, recordId);
+      expect(records.records.single.status, QazaStatus.completed);
 
-      expect(
-        await tracking.undoTrackerCreatedQaza(
-          userId: userId,
-          prayerType: PrayerType.zuhr,
-          date: date,
-        ),
-        isTrue,
-      );
-      final afterUndo = await qazaService.getPage(
-        userId: userId,
-        prayerType: PrayerType.zuhr,
-        from: date,
-        to: date,
-        status: null,
-      );
-      expect(afterUndo.records, isEmpty);
-      final log = await tracking.logForDate(
+      var log = await tracking.logForDate(
         userId: userId,
         date: date,
         prayerType: PrayerType.zuhr,
       );
       expect(log?.status, DailySalahStatus.prayed);
-      expect(log?.trackerCreatedQazaId, isNull);
+      expect(log?.linkedQazaId, recordId);
+      expect(log?.completionSyncId, isNotNull);
+
+      await tracking.recordMissed(
+        userId: userId,
+        prayerType: PrayerType.zuhr,
+        date: date,
+      );
+      records = await qazaService.getPage(
+        userId: userId,
+        prayerType: PrayerType.zuhr,
+        from: date,
+        to: date,
+        status: null,
+      );
+      expect(records.records, hasLength(1));
+      expect(records.records.single.id, recordId);
+      expect(records.records.single.status, QazaStatus.pending);
+      log = await tracking.logForDate(
+        userId: userId,
+        date: date,
+        prayerType: PrayerType.zuhr,
+      );
+      expect(log?.status, DailySalahStatus.missed);
+      expect(log?.linkedQazaId, recordId);
+      expect(log?.completionSyncId, isNull);
     },
   );
+
+  test('completing a linked Qaza updates its missed Daily Salah log', () async {
+    await tracking.setEnabled(true);
+    await tracking.recordMissed(
+      userId: userId,
+      prayerType: PrayerType.isha,
+      date: date,
+    );
+    final logBefore = await tracking.logForDate(
+      userId: userId,
+      date: date,
+      prayerType: PrayerType.isha,
+    );
+    final recordId = logBefore!.linkedQazaId!;
+
+    await qazaService.completeRecord(
+      userId: userId,
+      recordId: recordId,
+      completedAt: DateTime(2026, 1, 3),
+    );
+
+    final logs = await tracking.logsForDate(userId: userId, date: date);
+    expect(logs[PrayerType.isha]?.status, DailySalahStatus.prayed);
+    expect(logs[PrayerType.isha]?.completionSyncId, isNotNull);
+    final records = await qazaService.getRecordsByIds(
+      userId: userId,
+      recordIds: [recordId],
+    );
+    expect(records.single.status, QazaStatus.completed);
+  });
 
   test('existing manual Qaza is never claimed or duplicated', () async {
     await tracking.setEnabled(true);
@@ -176,6 +245,7 @@ void main() {
       prayerType: PrayerType.asr,
     );
     expect(log?.trackerCreatedQazaId, isNull);
+    expect(log?.linkedQazaId, 'manual-existing');
     expect(
       await tracking.canUndoTrackerCreatedQaza(
         userId: userId,
