@@ -21,7 +21,7 @@ import 'prayer_timeline_row.dart';
 import 'qibla_screen.dart';
 import 'qibla_summary_card.dart';
 import 'hijri_date_adjustment_sheet.dart';
-import 'hijri_date_chip.dart';
+import 'prayer_time_date_header.dart';
 
 class PrayerTimePage extends ConsumerStatefulWidget {
   const PrayerTimePage({super.key});
@@ -605,7 +605,6 @@ class _PrayerTimeHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
     final iconButton = IconButton(
       key: const Key('prayer_time_use_current_location'),
       tooltip: AppLocalizations.of(context).prayerTimeUseCurrentLocation,
@@ -645,40 +644,11 @@ class _PrayerTimeHeader extends StatelessWidget {
             color: scheme.outlineVariant,
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: scheme.secondaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                alignment: Alignment.center,
-                child: Icon(
-                  Icons.calendar_today_rounded,
-                  size: 18,
-                  color: scheme.onSecondaryContainer,
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  DateFormatters.formatGregorianWeekdayShortFull(date),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
-              Flexible(
-                child: HijriDateChip(
-                  label: hijri,
-                  onAdjust: onAdjustHijriDate,
-                ),
-              ),
-            ],
+          PrayerTimeDateHeader(
+            gregorianDate:
+                DateFormatters.formatGregorianWeekdayShortFull(date),
+            hijriDate: hijri,
+            onAdjust: onAdjustHijriDate,
           ),
         ],
       ),
