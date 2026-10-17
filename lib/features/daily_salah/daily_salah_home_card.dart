@@ -19,10 +19,7 @@ class DailySalahHomeCard extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final enabled = ref.watch(dailySalahTrackingEnabledProvider);
-    final trackingDate = ref.watch(dailySalahTrackingDateProvider);
     final setupDismissed = ref.watch(dailySalahTrackingSetupDismissedProvider);
-    final logs = ref.watch(dailySalahTrackingLogsProvider(trackingDate));
-    final includeWitr = ref.watch(effectiveWitrProvider);
 
     return enabled.when(
       loading: () => const SizedBox.shrink(),
@@ -115,6 +112,10 @@ class DailySalahHomeCard extends ConsumerWidget {
             },
           );
         }
+
+        final trackingDate = ref.watch(dailySalahTrackingDateProvider);
+        final logs = ref.watch(dailySalahTrackingLogsProvider(trackingDate));
+        final includeWitr = ref.watch(effectiveWitrProvider);
 
         return logs.when(
           loading: () => Card(
