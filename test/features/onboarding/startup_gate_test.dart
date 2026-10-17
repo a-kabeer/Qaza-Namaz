@@ -311,8 +311,7 @@ void main() {
     expect(await database.isOnboardingCompleted(), isFalse);
   });
 
-  testWidgets(
-      'backup discovery failure retries only discovery from a dialog',
+  testWidgets('backup discovery failure retries only discovery from a dialog',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final container = await _container(
@@ -336,7 +335,8 @@ void main() {
       find.byKey(const Key('continue_with_new_google_account')),
     );
 
-    final fakeSync = container.read(cloudSyncProvider) as _FakeCloudSyncProvider;
+    final fakeSync =
+        container.read(cloudSyncProvider) as _FakeCloudSyncProvider;
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text('simulated backup discovery failure'), findsNothing);
@@ -385,20 +385,25 @@ void main() {
     expect(find.byType(AlertDialog), findsNothing);
     expect(find.text('Retry'), findsNothing);
     expect(
-      tester.widget<OutlinedButton>(
-        find.byKey(const Key('cloud_setup_connect_google')),
-      ).onPressed,
+      tester
+          .widget<OutlinedButton>(
+            find.byKey(const Key('cloud_setup_connect_google')),
+          )
+          .onPressed,
       isNotNull,
     );
     expect(
-      tester.widget<FilledButton>(
-        find.byKey(const Key('cloud_setup_continue_local')),
-      ).onPressed,
+      tester
+          .widget<FilledButton>(
+            find.byKey(const Key('cloud_setup_continue_local')),
+          )
+          .onPressed,
       isNotNull,
     );
   });
 
-  testWidgets('permanent Google configuration error offers guest action, not retry',
+  testWidgets(
+      'permanent Google configuration error offers guest action, not retry',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final container = await _container(

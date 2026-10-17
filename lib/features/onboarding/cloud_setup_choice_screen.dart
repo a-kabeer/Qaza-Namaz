@@ -84,8 +84,7 @@ class _CloudSetupChoiceScreenState
         _cloudAttempted = true;
         _showFailure(
           error: account.message,
-          fallbackMessage:
-              AppLocalizations.of(context).cloudConnectionFailed,
+          fallbackMessage: AppLocalizations.of(context).cloudConnectionFailed,
           onRetry: _restoreExistingAccount,
         );
       }
@@ -94,8 +93,7 @@ class _CloudSetupChoiceScreenState
       if (mounted) {
         _showFailure(
           error: error,
-          fallbackMessage:
-              AppLocalizations.of(context).cloudConnectionFailed,
+          fallbackMessage: AppLocalizations.of(context).cloudConnectionFailed,
           onRetry: _restoreExistingAccount,
         );
       }
@@ -124,8 +122,7 @@ class _CloudSetupChoiceScreenState
         setState(() => _discovery = null);
         _showFailure(
           error: result.message,
-          fallbackMessage:
-              AppLocalizations.of(context).cloudConnectionFailed,
+          fallbackMessage: AppLocalizations.of(context).cloudConnectionFailed,
           onRetry: _retry,
         );
         return;
@@ -193,8 +190,7 @@ class _CloudSetupChoiceScreenState
         _accountConnected = false;
         _showFailure(
           error: account.message,
-          fallbackMessage:
-              AppLocalizations.of(context).cloudConnectionFailed,
+          fallbackMessage: AppLocalizations.of(context).cloudConnectionFailed,
           onRetry: _connectGoogle,
         );
         return;
@@ -207,8 +203,7 @@ class _CloudSetupChoiceScreenState
       if (mounted) {
         _showFailure(
           error: error,
-          fallbackMessage:
-              AppLocalizations.of(context).cloudConnectionFailed,
+          fallbackMessage: AppLocalizations.of(context).cloudConnectionFailed,
           onRetry: _connectGoogle,
         );
       }
@@ -418,8 +413,7 @@ class _CloudSetupChoiceScreenState
       if (mounted) {
         _showFailure(
           error: error,
-          fallbackMessage:
-              AppLocalizations.of(context).cloudConnectionFailed,
+          fallbackMessage: AppLocalizations.of(context).cloudConnectionFailed,
           onRetry: _retry,
         );
       }
@@ -442,8 +436,7 @@ class _CloudSetupChoiceScreenState
         if (mounted) {
           _showFailure(
             error: error,
-            fallbackMessage:
-                AppLocalizations.of(context).cloudConnectionFailed,
+            fallbackMessage: AppLocalizations.of(context).cloudConnectionFailed,
             onRetry: _chooseAnotherGoogleAccount,
           );
         }
@@ -486,10 +479,10 @@ class _CloudSetupChoiceScreenState
 
     final googleConfigurationFailure =
         normalized.contains('clientconfigurationerror') ||
-        normalized.contains('providerconfigurationerror') ||
-        normalized.contains('invalid_client') ||
-        normalized.contains('client configuration') ||
-        normalized.contains('provider configuration');
+            normalized.contains('providerconfigurationerror') ||
+            normalized.contains('invalid_client') ||
+            normalized.contains('client configuration') ||
+            normalized.contains('provider configuration');
     if (googleConfigurationFailure) {
       _showErrorDialog(
         message: l10n.cloudSetupGoogleConfigurationMessage,
@@ -565,8 +558,7 @@ class _CloudSetupChoiceScreenState
     var invokeAction = false;
     final l10n = AppLocalizations.of(context);
     try {
-      invokeAction =
-          await showDialog<bool>(
+      invokeAction = await showDialog<bool>(
             context: context,
             barrierDismissible: true,
             builder: (dialogContext) => AlertDialog(
@@ -885,7 +877,6 @@ class _GoogleGMarkPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant _GoogleGMarkPainter oldDelegate) => false;
 }
-
 
 class _QueuedCloudErrorDialog {
   const _QueuedCloudErrorDialog({
