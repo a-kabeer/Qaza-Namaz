@@ -58,7 +58,7 @@ class QiblaDialPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     );
 
-    final inset = size.shortestSide >= 160 ? 34.0 : 18.0;
+    final inset = size.shortestSide >= 160 ? 20.0 : 12.0;
     if (showCardinals) {
       _drawCardinal(
         canvas,
