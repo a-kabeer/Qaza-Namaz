@@ -4743,13 +4743,19 @@ abstract class AppLocalizations {
   /// No description provided for @dailySalahTrackingConfirmMissedMessage.
   ///
   /// In en, this message translates to:
-  /// **'This creates a Qaza entry for this prayer and date only if one does not already exist.'**
+  /// **'This marks the prayer as Missed and ensures its Qaza is Pending. If a matching Qaza is already Completed, it will be reopened.'**
   String get dailySalahTrackingConfirmMissedMessage;
 
-  /// Confirmation prompt for correcting a missed prayer to Prayed.
+  /// No description provided for @dailySalahTrackingConfirmPrayedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Change prayer to Prayed?'**
   String get dailySalahTrackingConfirmPrayedTitle;
 
-  /// Explains that a linked Qaza record will be completed.
+  /// No description provided for @dailySalahTrackingConfirmPrayedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This will mark the prayer as prayed and complete its linked Qaza record.'**
   String get dailySalahTrackingConfirmPrayedMessage;
 
   /// No description provided for @dailySalahTrackingUndoQaza.

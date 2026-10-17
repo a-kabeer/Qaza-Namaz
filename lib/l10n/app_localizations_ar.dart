@@ -2728,7 +2728,8 @@ class AppLocalizationsAr extends AppLocalizations {
       'سيتم تسجيل الصلاة على أنها فائتة وضمان أن يكون سجل قضائها معلّقًا. إذا كان سجل القضاء مكتملًا بالفعل، فسيُعاد إلى الحالة المعلّقة.';
 
   @override
-  String get dailySalahTrackingConfirmPrayedTitle => 'تغيير حالة الصلاة إلى أُدّيت؟';
+  String get dailySalahTrackingConfirmPrayedTitle =>
+      'تغيير حالة الصلاة إلى أُدّيت؟';
 
   @override
   String get dailySalahTrackingConfirmPrayedMessage =>

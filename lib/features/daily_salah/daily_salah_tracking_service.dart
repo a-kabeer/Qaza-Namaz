@@ -28,6 +28,7 @@ class DailySalahLog {
   final DateTime prayerDate;
   final PrayerType prayerType;
   final DailySalahStatus status;
+
   /// Ownership marker: only non-null when Daily Salah Tracking created it.
   final String? trackerCreatedQazaId;
 
@@ -366,7 +367,8 @@ class DailySalahTrackingService {
           record = (await _qazaService.repository.getRecordsByIds(
             userId: userId,
             recordIds: [record.id],
-          )).single;
+          ))
+              .single;
         }
       }
       if (trackerCreatedId != record.id) trackerCreatedId = null;
@@ -383,7 +385,8 @@ class DailySalahTrackingService {
           prayer: prayerType,
           date: normalizedDate,
         )) {
-          throw StateError('A tracker Qaza ID is already used by another record.');
+          throw StateError(
+              'A tracker Qaza ID is already used by another record.');
         }
         record = byId.first;
       } else {
@@ -418,12 +421,14 @@ class DailySalahTrackingService {
               userId: userId,
               recordId: record.id,
             )) {
-          throw StateError('The matching completed Qaza could not be reopened.');
+          throw StateError(
+              'The matching completed Qaza could not be reopened.');
         }
         record = (await _qazaService.repository.getRecordsByIds(
           userId: userId,
           recordIds: [record.id],
-        )).single;
+        ))
+            .single;
       }
       trackerCreatedId = record.id == trackerId ? trackerId : null;
     }
@@ -544,7 +549,8 @@ class DailySalahTrackingService {
             prayer: prayerType,
             date: date,
           )) {
-        throw StateError('The linked Qaza record no longer matches this prayer.');
+        throw StateError(
+            'The linked Qaza record no longer matches this prayer.');
       }
       return byId.single;
     }
@@ -660,7 +666,8 @@ class DailySalahTrackingService {
       status: null,
     );
     return page.records
-        .where((record) => _matches(record, userId: userId, prayer: prayerType, date: date))
+        .where((record) =>
+            _matches(record, userId: userId, prayer: prayerType, date: date))
         .toList(growable: false);
   }
 

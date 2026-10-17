@@ -2742,7 +2742,8 @@ class AppLocalizationsUr extends AppLocalizations {
       'اس سے نماز کی کیفیت رہ گئی ہو جائے گی اور اس کی قضا باقی حالت میں ہوگی۔ اگر اس کا قضا ریکارڈ پہلے ہی مکمل ہے تو اسے دوبارہ باقی کر دیا جائے گا۔';
 
   @override
-  String get dailySalahTrackingConfirmPrayedTitle => 'نماز کو ادا شدہ قرار دیں؟';
+  String get dailySalahTrackingConfirmPrayedTitle =>
+      'نماز کو ادا شدہ قرار دیں؟';
 
   @override
   String get dailySalahTrackingConfirmPrayedMessage =>
@@ -5564,7 +5565,15 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get dailySalahTrackingConfirmMissedMessage =>
-      'Is namaz aur tareekh ka Qaza record sirf tab banega jab pehle se mojood na ho.';
+      'Is se namaz ka status Missed ho jayega aur Qaza Pending hogi. Agar matching Qaza pehle hi Completed hai, to use dobara Pending kar diya jayega.';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedTitle =>
+      'Namaz ko parhi hui mark karein?';
+
+  @override
+  String get dailySalahTrackingConfirmPrayedMessage =>
+      'Is se namaz ka status Parhi ho jayega aur is se linked Qaza record mukammal ho jayega.';
 
   @override
   String get dailySalahTrackingUndoQaza =>

@@ -75,7 +75,8 @@ void main() {
         userId: userId,
         date: date,
         prayerType: PrayerType.fajr,
-      ))?.status,
+      ))
+          ?.status,
       DailySalahStatus.prayed,
     );
   });
@@ -230,7 +231,8 @@ void main() {
         userId: userId,
         date: date,
         prayerType: PrayerType.isha,
-      ))?.status,
+      ))
+          ?.status,
       DailySalahStatus.missed,
     );
     final reopened = await qazaService.getRecordsByIds(

@@ -2723,7 +2723,8 @@ class AppLocalizationsUrLatn extends AppLocalizations {
       "Is se namaz ka status Missed ho jayega aur Qaza Pending hogi. Agar matching Qaza pehle hi Completed hai, to use dobara Pending kar diya jayega.";
 
   @override
-  String get dailySalahTrackingConfirmPrayedTitle => 'Namaz ko parhi hui mark karein?';
+  String get dailySalahTrackingConfirmPrayedTitle =>
+      'Namaz ko parhi hui mark karein?';
 
   @override
   String get dailySalahTrackingConfirmPrayedMessage =>

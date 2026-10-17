@@ -99,8 +99,7 @@ void main() {
     expect(records.records, isEmpty);
   });
 
-  testWidgets(
-      'Missed is stable; changing to Prayed completes its linked Qaza',
+  testWidgets('Missed is stable; changing to Prayed completes its linked Qaza',
       (tester) async {
     await tester.pumpWidget(
       ProviderScope(
