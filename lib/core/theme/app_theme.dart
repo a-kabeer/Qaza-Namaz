@@ -51,21 +51,31 @@ class AppTheme {
     fontFeatures: [FontFeature.tabularFigures()],
   );
 
-  static ThemeData light({Locale? locale, String? assetPackage}) {
+  static ThemeData light({
+    Locale? locale,
+    String? assetPackage,
+    AppPrimaryColor primaryColor = AppPrimaryColor.teal,
+  }) {
+    final palette = _generatedBrandScheme(primaryColor, Brightness.light);
     return _base(
       FlexThemeData.light(
-        primary: _lightPrimary,
-        onPrimary: Colors.white,
-        primaryContainer: _lightPrimaryContainer,
-        onPrimaryContainer: _lightOnPrimaryContainer,
-        secondary: _lightSecondary,
-        onSecondary: Colors.white,
-        secondaryContainer: _lightSecondaryContainer,
-        onSecondaryContainer: _lightOnSecondaryContainer,
-        tertiary: _lightTertiary,
-        onTertiary: _lightOnTertiary,
-        tertiaryContainer: _lightTertiaryContainer,
-        onTertiaryContainer: _lightOnTertiaryContainer,
+        primary: palette?.primary ?? _lightPrimary,
+        onPrimary: palette?.onPrimary ?? Colors.white,
+        primaryContainer: palette?.primaryContainer ?? _lightPrimaryContainer,
+        onPrimaryContainer:
+            palette?.onPrimaryContainer ?? _lightOnPrimaryContainer,
+        secondary: palette?.secondary ?? _lightSecondary,
+        onSecondary: palette?.onSecondary ?? Colors.white,
+        secondaryContainer:
+            palette?.secondaryContainer ?? _lightSecondaryContainer,
+        onSecondaryContainer:
+            palette?.onSecondaryContainer ?? _lightOnSecondaryContainer,
+        tertiary: palette?.tertiary ?? _lightTertiary,
+        onTertiary: palette?.onTertiary ?? _lightOnTertiary,
+        tertiaryContainer:
+            palette?.tertiaryContainer ?? _lightTertiaryContainer,
+        onTertiaryContainer:
+            palette?.onTertiaryContainer ?? _lightOnTertiaryContainer,
         error: _lightError,
         onError: Colors.white,
         errorContainer: _lightErrorContainer,
@@ -82,21 +92,31 @@ class AppTheme {
     );
   }
 
-  static ThemeData dark({Locale? locale, String? assetPackage}) {
+  static ThemeData dark({
+    Locale? locale,
+    String? assetPackage,
+    AppPrimaryColor primaryColor = AppPrimaryColor.teal,
+  }) {
+    final palette = _generatedBrandScheme(primaryColor, Brightness.dark);
     return _base(
       FlexThemeData.dark(
-        primary: _darkPrimary,
-        onPrimary: _darkOnPrimary,
-        primaryContainer: _darkPrimaryContainer,
-        onPrimaryContainer: _darkOnPrimaryContainer,
-        secondary: _darkSecondary,
-        onSecondary: _darkOnSecondary,
-        secondaryContainer: _darkSecondaryContainer,
-        onSecondaryContainer: _darkOnSecondaryContainer,
-        tertiary: _darkTertiary,
-        onTertiary: _darkOnTertiary,
-        tertiaryContainer: _darkTertiaryContainer,
-        onTertiaryContainer: _darkOnTertiaryContainer,
+        primary: palette?.primary ?? _darkPrimary,
+        onPrimary: palette?.onPrimary ?? _darkOnPrimary,
+        primaryContainer: palette?.primaryContainer ?? _darkPrimaryContainer,
+        onPrimaryContainer:
+            palette?.onPrimaryContainer ?? _darkOnPrimaryContainer,
+        secondary: palette?.secondary ?? _darkSecondary,
+        onSecondary: palette?.onSecondary ?? _darkOnSecondary,
+        secondaryContainer:
+            palette?.secondaryContainer ?? _darkSecondaryContainer,
+        onSecondaryContainer:
+            palette?.onSecondaryContainer ?? _darkOnSecondaryContainer,
+        tertiary: palette?.tertiary ?? _darkTertiary,
+        onTertiary: palette?.onTertiary ?? _darkOnTertiary,
+        tertiaryContainer:
+            palette?.tertiaryContainer ?? _darkTertiaryContainer,
+        onTertiaryContainer:
+            palette?.onTertiaryContainer ?? _darkOnTertiaryContainer,
         error: _darkError,
         onError: _darkOnError,
         errorContainer: _darkErrorContainer,
@@ -112,6 +132,29 @@ class AppTheme {
       assetPackage: assetPackage,
     );
   }
+
+  static ColorScheme? _generatedBrandScheme(
+    AppPrimaryColor primaryColor,
+    Brightness brightness,
+  ) {
+    if (primaryColor == AppPrimaryColor.teal) return null;
+    return ColorScheme.fromSeed(
+      seedColor: colorFor(primaryColor),
+      brightness: brightness,
+    );
+  }
+
+  static Color colorFor(AppPrimaryColor primaryColor) =>
+      switch (primaryColor) {
+        AppPrimaryColor.teal => const Color(0xFF01485A),
+        AppPrimaryColor.blue => const Color(0xFF1D4ED8),
+        AppPrimaryColor.green => const Color(0xFF166534),
+        AppPrimaryColor.purple => const Color(0xFF7E22CE),
+        AppPrimaryColor.amber => const Color(0xFFB45309),
+        AppPrimaryColor.rose => const Color(0xFFBE123C),
+        AppPrimaryColor.slate => const Color(0xFF475569),
+        AppPrimaryColor.black => const Color(0xFF000000),
+      };
 
   // Neutral light surfaces.
   static const _lightSurface = Color(0xFFF7F8FA);
@@ -637,6 +680,8 @@ class AppChartColors extends ThemeExtension<AppChartColors> {
     );
   }
 }
+
+enum AppPrimaryColor { teal, blue, green, purple, amber, rose, slate, black }
 
 enum AppThemeMode { system, light, dark }
 

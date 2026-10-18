@@ -5,11 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../core/constants/app_metadata.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_theme_labels.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
 import '../prayer_time/application/prayer_time_providers.dart';
+import 'appearance_screen.dart';
 import 'profile_screen.dart';
 import '../account/account_screen.dart';
 
@@ -20,6 +23,8 @@ class SettingsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final locale = ref.watch(localeProvider);
+    final themeMode = ref.watch(themeModeProvider);
+    final primaryColor = ref.watch(primaryColorProvider);
 
     void open(Widget screen) {
       Navigator.push(
@@ -72,6 +77,36 @@ class SettingsScreen extends ConsumerWidget {
               title: l10n.profileTitle,
               subtitle: l10n.profileSettingsSubtitle,
               onTap: () => open(const ProfileScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: SettingsNavRow(
+              key: const Key('settings_appearance'),
+              icon: Icons.palette_outlined,
+              title: l10n.settingsAppearance,
+              subtitle:
+                  '${appThemeModeLabel(l10n, themeMode)} · ${appPrimaryColorLabel(l10n, primaryColor)}',
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    key: const Key('settings_appearance_color_swatch'),
+                    width: 16,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: AppTheme.colorFor(primaryColor),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.chevron_right_rounded),
+                ],
+              ),
+              onTap: () => open(const AppearanceScreen()),
             ),
           ),
           const SizedBox(height: 12),

@@ -2615,6 +2615,66 @@ abstract class AppLocalizations {
   /// **'Choose how the app looks on this device.'**
   String get settingsAppearanceSubtitle;
 
+  /// No description provided for @settingsThemeSelector.
+  ///
+  /// In en, this message translates to:
+  /// **'Theme'**
+  String get settingsThemeSelector;
+
+  /// No description provided for @settingsPrimaryColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary color'**
+  String get settingsPrimaryColor;
+
+  /// No description provided for @settingsPrimaryColorTeal.
+  ///
+  /// In en, this message translates to:
+  /// **'Teal'**
+  String get settingsPrimaryColorTeal;
+
+  /// No description provided for @settingsPrimaryColorBlue.
+  ///
+  /// In en, this message translates to:
+  /// **'Blue'**
+  String get settingsPrimaryColorBlue;
+
+  /// No description provided for @settingsPrimaryColorGreen.
+  ///
+  /// In en, this message translates to:
+  /// **'Green'**
+  String get settingsPrimaryColorGreen;
+
+  /// No description provided for @settingsPrimaryColorPurple.
+  ///
+  /// In en, this message translates to:
+  /// **'Purple'**
+  String get settingsPrimaryColorPurple;
+
+  /// No description provided for @settingsPrimaryColorAmber.
+  ///
+  /// In en, this message translates to:
+  /// **'Amber'**
+  String get settingsPrimaryColorAmber;
+
+  /// No description provided for @settingsPrimaryColorRose.
+  ///
+  /// In en, this message translates to:
+  /// **'Rose'**
+  String get settingsPrimaryColorRose;
+
+  /// No description provided for @settingsPrimaryColorSlate.
+  ///
+  /// In en, this message translates to:
+  /// **'Slate'**
+  String get settingsPrimaryColorSlate;
+
+  /// No description provided for @settingsPrimaryColorBlack.
+  ///
+  /// In en, this message translates to:
+  /// **'Black'**
+  String get settingsPrimaryColorBlack;
+
   /// No description provided for @settingsThemeSystem.
   ///
   /// In en, this message translates to:

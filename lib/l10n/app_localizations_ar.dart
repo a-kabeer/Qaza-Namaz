@@ -1520,6 +1520,36 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settingsAppearanceSubtitle => 'اختر مظهر التطبيق على هذا الجهاز.';
 
   @override
+  String get settingsThemeSelector => "المظهر";
+
+  @override
+  String get settingsPrimaryColor => "اللون الأساسي";
+
+  @override
+  String get settingsPrimaryColorTeal => "فيروزي";
+
+  @override
+  String get settingsPrimaryColorBlue => "أزرق";
+
+  @override
+  String get settingsPrimaryColorGreen => "أخضر";
+
+  @override
+  String get settingsPrimaryColorPurple => "بنفسجي";
+
+  @override
+  String get settingsPrimaryColorAmber => "كهرماني";
+
+  @override
+  String get settingsPrimaryColorRose => "وردي";
+
+  @override
+  String get settingsPrimaryColorSlate => "رمادي أردوازي";
+
+  @override
+  String get settingsPrimaryColorBlack => "أسود";
+
+  @override
   String get settingsThemeSystem => 'حسب النظام';
 
   @override
