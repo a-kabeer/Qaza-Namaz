@@ -30,10 +30,8 @@ abstract interface class CloudRemoteMetadataStore {
 }
 
 class LocalPhase1BackupSource implements Phase1BackupSource {
-  LocalPhase1BackupSource(
-    this.database, {
-    this.localAccountId,
-  }) : _backupService = LocalBackupService(database);
+  LocalPhase1BackupSource(this.database, {this.localAccountId})
+    : _backupService = LocalBackupService(database);
 
   final AppDatabase database;
 
@@ -55,11 +53,8 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
   }
 
   @override
-  Future<void> importBackup(String phase1BackupJson) =>
-      _backupService.importJson(
-        phase1BackupJson,
-        targetLocalAccountId: localAccountId,
-      );
+  Future<void> importBackup(String phase1BackupJson) => _backupService
+      .importJson(phase1BackupJson, targetLocalAccountId: localAccountId);
 
   @override
   Future<void> saveRecoverySnapshot(String phase1BackupJson) =>

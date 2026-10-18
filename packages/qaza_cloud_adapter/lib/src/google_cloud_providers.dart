@@ -430,7 +430,9 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     await _gateway.signOut();
     await _state.setCloudSyncEnabled(false);
     if (_state is CloudAccountScopedSyncStateStore) {
-      await (_state as CloudAccountScopedSyncStateStore).setActiveAccountId(null);
+      await (_state as CloudAccountScopedSyncStateStore).setActiveAccountId(
+        null,
+      );
     }
     await _clearCachedAccountProfile();
   }
@@ -632,19 +634,20 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         accountPinned = true;
       }
 
-      final result = await _engine(
-        state: operationState,
-        localAccountId: operationAccountId == null
-            ? null
-            : googleLocalWorkspaceId(operationAccountId),
-      ).sync(
-        allowInteractive: true,
-        createInitialBackup: true,
-        onProgress: (progress) {
-          latestProgress = progress;
-          onProgress?.call(progress);
-        },
-      );
+      final result =
+          await _engine(
+            state: operationState,
+            localAccountId: operationAccountId == null
+                ? null
+                : googleLocalWorkspaceId(operationAccountId),
+          ).sync(
+            allowInteractive: true,
+            createInitialBackup: true,
+            onProgress: (progress) {
+              latestProgress = progress;
+              onProgress?.call(progress);
+            },
+          );
       // Persist the successful-sync state before emitting 100% completion.
       final snapshot = await _snapshotFromResult(result, state: operationState);
       if (result.kind == CloudSyncResultKind.uploaded &&
@@ -733,23 +736,24 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         accountPinned = true;
       }
 
-      final result = await _engine(
-        state: operationState,
-        localAccountId: operationAccountId == null
-            ? null
-            : googleLocalWorkspaceId(operationAccountId),
-      ).resolveConflict(
-        conflict: _toAdapterConflict(conflict),
-        decision: choice == CloudConflictChoice.keepLocal
-            ? CloudConflictDecision.keepLocal
-            : CloudConflictDecision.useRemote,
-        confirmed: confirmed,
-        allowInteractive: true,
-        onProgress: (progress) {
-          latestProgress = progress;
-          onProgress?.call(progress);
-        },
-      );
+      final result =
+          await _engine(
+            state: operationState,
+            localAccountId: operationAccountId == null
+                ? null
+                : googleLocalWorkspaceId(operationAccountId),
+          ).resolveConflict(
+            conflict: _toAdapterConflict(conflict),
+            decision: choice == CloudConflictChoice.keepLocal
+                ? CloudConflictDecision.keepLocal
+                : CloudConflictDecision.useRemote,
+            confirmed: confirmed,
+            allowInteractive: true,
+            onProgress: (progress) {
+              latestProgress = progress;
+              onProgress?.call(progress);
+            },
+          );
       final snapshot = await _snapshotFromResult(result, state: operationState);
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&
@@ -786,16 +790,15 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           (activeAccountId == null || activeAccountId.trim().isEmpty)) {
         return await _snapshot(
           CloudSyncStatus.failed,
-          message: 'Reconnect the Google account before restoring its recovery snapshot.',
+          message:
+              'Reconnect the Google account before restoring its recovery snapshot.',
         );
       }
       final result = await _engine(
         localAccountId: activeAccountId == null
             ? null
             : googleLocalWorkspaceId(activeAccountId),
-      ).restoreLocalRecoverySnapshot(
-        confirmed: confirmed,
-      );
+      ).restoreLocalRecoverySnapshot(confirmed: confirmed);
       // Restoring a local safety snapshot is not a successful cloud backup.
       // Preserve the actual last successful remote sync timestamp.
       return await _snapshot(
