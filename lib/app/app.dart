@@ -40,6 +40,10 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
       LocalDateService.configureLocalTimezone(timezone.identifier);
     } catch (_) {
       // Local timezone is useful runtime state but does not gate local startup.
+    } finally {
+      // The first read may happen before native timezone discovery completes.
+      // Re-evaluate the cached date provider after startup and on every resume.
+      if (mounted) ref.invalidate(calendarTodayProvider);
     }
   }
 
