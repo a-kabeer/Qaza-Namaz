@@ -452,26 +452,54 @@ class AppDatabase extends _$AppDatabase {
   /// The local account/session bootstrap rows are expected and are excluded;
   /// any profile, Qaza ledger, plan-revision, or mutation data blocks an
   /// automatic destructive restore.
-  Future<bool> isFreshInstallationForCloudRestore() async {
+  Future<bool> isFreshInstallationForCloudRestore({
+    String? localAccountId,
+  }) async {
     return transaction(() async {
-      if (await isOnboardingCompleted() || await readDbRevision() != 1) {
-        return false;
+      if (localAccountId == null) {
+        if (await isOnboardingCompleted() || await readDbRevision() != 1) {
+          return false;
+        }
+
+        const businessTables = <String>[
+          'qaza_records',
+          'qaza_additions',
+          'qaza_deletion_actions',
+          'qaza_deletion_action_record_snapshots',
+          'qaza_profile_plan_provenance',
+          'account_profiles',
+          'account_plan_revisions',
+        ];
+        for (final table in businessTables) {
+          final row = await customSelect(
+            'SELECT COUNT(*) AS row_count FROM $table',
+          ).getSingle();
+          if (row.read<int>('row_count') != 0) return false;
+        }
+        return true;
       }
 
-      const businessTables = <String>[
-        'qaza_records',
-        'qaza_additions',
-        'qaza_deletion_actions',
-        'qaza_deletion_action_record_snapshots',
-        'qaza_profile_plan_provenance',
-        'account_profiles',
-        'account_plan_revisions',
+      final normalized = localAccountId.trim();
+      if (normalized.isEmpty) return false;
+
+      // Account switching is allowed even when another workspace has data or
+      // the global revision is greater than one. Only this workspace blocks
+      // automatic restore.
+      const ownedTables = <(String, String)>[
+        ('qaza_records', 'user_id'),
+        ('qaza_additions', 'user_id'),
+        ('qaza_deletion_actions', 'user_id'),
+        ('qaza_deletion_action_record_snapshots', 'user_id'),
+        ('qaza_profile_plan_provenance', 'user_id'),
+        ('account_profiles', 'local_account_id'),
+        ('account_plan_revisions', 'local_account_id'),
       ];
-      for (final table in businessTables) {
+      for (final (table, ownerColumn) in ownedTables) {
         final row = await customSelect(
-          'SELECT COUNT(*) AS row_count FROM $table',
-        ).getSingle();
-        if (row.read<int>('row_count') != 0) return false;
+          'SELECT 1 FROM $table WHERE $ownerColumn = ? LIMIT 1',
+          variables: [Variable(normalized)],
+        ).get();
+        if (row.isNotEmpty) return false;
       }
       return true;
     });

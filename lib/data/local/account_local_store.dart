@@ -87,16 +87,31 @@ class AccountLocalStore {
       throw StateError('Archived local account cannot become active.');
     }
 
-    await database.customUpdate(
-      '''UPDATE app_session_state
-         SET active_local_account_id = ?
-         WHERE id = 1''',
-      variables: [Variable(localAccountId)],
-    );
+    // The onboarding flag is global metadata, so it must follow the active
+    // workspace rather than retaining the previous user's value.
+    final profile = await loadProfile(localAccountId);
+    await database.transaction(() async {
+      await database.customUpdate(
+        '''UPDATE app_session_state
+           SET active_local_account_id = ?
+           WHERE id = 1''',
+        variables: [Variable(localAccountId)],
+      );
+      await database.setOnboardingCompletedInTransaction(
+        profile?.onboardingCompleted == true,
+      );
+    });
   }
 
-  Future<String> ensureLocalAccountActive() async {
-    final account = await getAccount(UserProfile.localLedgerUserId);
+  /// Creates a separate local workspace when it does not exist, then activates
+  /// it. Existing records are never deleted or copied during account switching.
+  Future<String> ensureAccountActive(String localAccountId) async {
+    final normalized = localAccountId.trim();
+    if (normalized.isEmpty) {
+      throw ArgumentError.value(localAccountId, 'localAccountId');
+    }
+
+    final account = await getAccount(normalized);
     if (account == null) {
       final now = DateTime.now().microsecondsSinceEpoch;
       await database.customInsert(
@@ -105,16 +120,19 @@ class AccountLocalStore {
             created_at, updated_at)
            VALUES (?, 'local', 'active', ?, ?)''',
         variables: [
-          Variable(UserProfile.localLedgerUserId),
+          Variable(normalized),
           Variable(now),
           Variable(now),
         ],
       );
     }
 
-    await activate(UserProfile.localLedgerUserId);
-    return UserProfile.localLedgerUserId;
+    await activate(normalized);
+    return normalized;
   }
+
+  Future<String> ensureLocalAccountActive() =>
+      ensureAccountActive(UserProfile.localLedgerUserId);
 
   Future<bool> hasAnyAccountData(String localAccountId) async {
     const queries = [

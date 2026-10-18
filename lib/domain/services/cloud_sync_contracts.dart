@@ -14,6 +14,7 @@ enum CloudAccountStatus {
 class CloudAccountSnapshot {
   const CloudAccountSnapshot({
     required this.status,
+    this.accountId,
     this.displayName,
     this.email,
     this.photoUrl,
@@ -23,6 +24,7 @@ class CloudAccountSnapshot {
 
   const CloudAccountSnapshot.unavailable()
       : status = CloudAccountStatus.unavailable,
+        accountId = null,
         displayName = null,
         email = null,
         photoUrl = null,
@@ -31,6 +33,7 @@ class CloudAccountSnapshot {
 
   const CloudAccountSnapshot.disconnected()
       : status = CloudAccountStatus.disconnected,
+        accountId = null,
         displayName = null,
         email = null,
         photoUrl = null,
@@ -40,6 +43,7 @@ class CloudAccountSnapshot {
   /// A locally cached identity is display-only until the user reconnects.
   /// It must never be treated as proof that Drive authorization is available.
   const CloudAccountSnapshot.reconnectRequired({
+    this.accountId,
     this.displayName,
     this.email,
     this.photoUrl,
@@ -47,7 +51,7 @@ class CloudAccountSnapshot {
         message = null,
         wasCancelled = false;
 
-  const CloudAccountSnapshot.failed(String value)
+  const CloudAccountSnapshot.failed(String value, {this.accountId})
       : status = CloudAccountStatus.failed,
         displayName = null,
         email = null,
@@ -59,6 +63,7 @@ class CloudAccountSnapshot {
   /// and must not trigger an error dialog.
   const CloudAccountSnapshot.cancelled()
       : status = CloudAccountStatus.disconnected,
+        accountId = null,
         displayName = null,
         email = null,
         photoUrl = null,
@@ -66,6 +71,9 @@ class CloudAccountSnapshot {
         wasCancelled = true;
 
   final CloudAccountStatus status;
+
+  /// Stable authenticated Google account ID; never infer identity from email.
+  final String? accountId;
   final String? displayName;
   final String? email;
   final String? photoUrl;

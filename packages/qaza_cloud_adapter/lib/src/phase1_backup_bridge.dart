@@ -30,17 +30,24 @@ abstract interface class CloudRemoteMetadataStore {
 }
 
 class LocalPhase1BackupSource implements Phase1BackupSource {
-  LocalPhase1BackupSource(this.database)
-    : _backupService = LocalBackupService(database);
+  LocalPhase1BackupSource(
+    this.database, {
+    this.localAccountId,
+  }) : _backupService = LocalBackupService(database);
 
   final AppDatabase database;
+
+  /// When set, cloud exports/imports are restricted to one local workspace.
+  /// Null preserves the all-workspace behavior for explicit full local exports.
+  final String? localAccountId;
   final LocalBackupService _backupService;
 
   @override
   Future<int> readDbRevision() => database.readDbRevision();
 
   @override
-  Future<String> exportBackup() => _backupService.exportJson();
+  Future<String> exportBackup() =>
+      _backupService.exportJson(localAccountId: localAccountId);
 
   @override
   Future<void> validateBackup(String phase1BackupJson) async {
@@ -49,7 +56,10 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
 
   @override
   Future<void> importBackup(String phase1BackupJson) =>
-      _backupService.importJson(phase1BackupJson);
+      _backupService.importJson(
+        phase1BackupJson,
+        targetLocalAccountId: localAccountId,
+      );
 
   @override
   Future<void> saveRecoverySnapshot(String phase1BackupJson) =>
