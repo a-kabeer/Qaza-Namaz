@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/local/account_local_store.dart';
 import '../../domain/entities/local_account.dart';
+import '../../domain/entities/user_profile.dart';
 
 class AccountSessionManager extends ChangeNotifier {
   AccountSessionManager({
@@ -60,6 +61,42 @@ class AccountSessionManager extends ChangeNotifier {
           message: error.toString(),
         ),
       );
+    }
+  }
+
+  /// Activates the stable workspace associated with a verified Google ID.
+  Future<void> activateGoogleAccount(String googleAccountId) =>
+      activateLocalAccount(googleLocalWorkspaceId(googleAccountId));
+
+  /// Returns to the existing Guest workspace without deleting any records.
+  Future<void> activateGuest() =>
+      activateLocalAccount(UserProfile.localLedgerUserId);
+
+  Future<void> activateLocalAccount(String localAccountId) async {
+    try {
+      await _accountStore.ensureAccountActive(localAccountId);
+      final account = await _accountStore.getAccount(localAccountId);
+      if (account == null) {
+        throw StateError('The selected local workspace could not be opened.');
+      }
+      _setState(
+        AccountSessionState(
+          phase: AccountSessionPhase.ready,
+          activeLocalAccountId: account.localAccountId,
+          activeAccount: account,
+        ),
+      );
+      _initialized = true;
+    } catch (error) {
+      _setState(
+        AccountSessionState(
+          phase: AccountSessionPhase.error,
+          activeLocalAccountId: null,
+          activeAccount: null,
+          message: error.toString(),
+        ),
+      );
+      rethrow;
     }
   }
 

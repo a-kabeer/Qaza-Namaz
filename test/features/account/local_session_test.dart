@@ -8,6 +8,17 @@ import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 
 void main() {
+  test('Google workspace IDs use the stable authenticated account ID', () {
+    expect(
+      googleLocalWorkspaceId('  stable-google-account-A  '),
+      'google:stable-google-account-A',
+    );
+    expect(
+      () => googleLocalWorkspaceId('  '),
+      throwsArgumentError,
+    );
+  });
+
   test('startup creates and restores one local device session', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
@@ -31,6 +42,46 @@ void main() {
     expect(
       manager.activeLocalAccountId,
       UserProfile.localLedgerUserId,
+    );
+  });
+
+  test('Google and Guest sessions use separate persistent workspaces',
+      () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final store = AccountLocalStore(database: database);
+    final manager = AccountSessionManager(accountStore: store);
+    await manager.initialize();
+    await database.qazaRecordsDao.insertRecord(
+      QazaRecordsCompanion.insert(
+        id: 'guest_only_record',
+        userId: UserProfile.localLedgerUserId,
+        prayerType: 'fajr',
+        originalDate: DateTime(2025, 1, 1),
+        status: 'pending',
+        createdAt: DateTime(2025, 1, 1),
+        updatedAt: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await manager.activateGoogleAccount('stable-google-account-A');
+    expect(manager.activeLocalAccountId, 'google:stable-google-account-A');
+    expect(
+      await database.qazaRecordsDao.getAll(
+        userId: 'google:stable-google-account-A',
+      ),
+      isEmpty,
+    );
+
+    await manager.activateGuest();
+    expect(manager.activeLocalAccountId, UserProfile.localLedgerUserId);
+    expect(
+      (await database.qazaRecordsDao.getAll(
+        userId: UserProfile.localLedgerUserId,
+      ))
+          .map((record) => record.id),
+      contains('guest_only_record'),
     );
   });
 }

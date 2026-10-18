@@ -1,5 +1,17 @@
 enum AccountMode { local }
 
+/// Stable local workspace key for a verified Google account.
+///
+/// The provider returns Google's stable account ID, not an email address.
+/// Emails can change and must never be used as workspace identity.
+String googleLocalWorkspaceId(String googleAccountId) {
+  final normalized = googleAccountId.trim();
+  if (normalized.isEmpty) {
+    throw ArgumentError.value(googleAccountId, 'googleAccountId');
+  }
+  return 'google:$normalized';
+}
+
 enum AccountLifecycleState { active, archived }
 
 class LocalAccount {

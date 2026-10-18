@@ -19,20 +19,24 @@ class _FakeCloudAccountProvider implements CloudAccountProvider {
   _FakeCloudAccountProvider({
     this.signInResult = const CloudAccountSnapshot(
       status: CloudAccountStatus.connected,
+      accountId: 'test-google-account-A',
     ),
-  });
+  }) : _snapshot = const CloudAccountSnapshot.disconnected();
 
   final CloudAccountSnapshot signInResult;
+  CloudAccountSnapshot _snapshot;
 
   @override
   bool get isSupported => true;
 
   @override
-  Future<CloudAccountSnapshot> restore() async =>
-      const CloudAccountSnapshot.disconnected();
+  Future<CloudAccountSnapshot> restore() async => _snapshot;
 
   @override
-  Future<CloudAccountSnapshot> signIn() async => signInResult;
+  Future<CloudAccountSnapshot> signIn() async {
+    _snapshot = signInResult;
+    return _snapshot;
+  }
 
   @override
   Future<List<RememberedCloudAccount>> rememberedAccounts() async =>
@@ -45,7 +49,9 @@ class _FakeCloudAccountProvider implements CloudAccountProvider {
       signInResult;
 
   @override
-  Future<void> disconnect() async {}
+  Future<void> disconnect() async {
+    _snapshot = const CloudAccountSnapshot.disconnected();
+  }
 }
 
 class _FakeCloudSyncProvider implements CloudSyncProvider {
@@ -156,6 +162,7 @@ Future<ProviderContainer> _container({
             signInResult: signInResult ??
                 const CloudAccountSnapshot(
                   status: CloudAccountStatus.connected,
+                  accountId: 'test-google-account-A',
                 ),
           ),
         ),
@@ -251,10 +258,6 @@ void main() {
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
     );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
-    );
 
     expect(find.byType(CloudSetupChoiceScreen), findsNothing);
     expect(find.byType(LanguageSelectionScreen), findsNothing);
@@ -283,10 +286,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
@@ -329,10 +328,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     final fakeSync =
@@ -381,10 +376,6 @@ void main() {
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
     );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
-    );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
     expect(find.byType(AlertDialog), findsNothing);
@@ -426,10 +417,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(find.byType(AlertDialog), findsOneWidget);
@@ -480,10 +467,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(find.byType(AlertDialog), findsOneWidget);
@@ -539,10 +522,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(

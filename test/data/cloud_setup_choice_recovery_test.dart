@@ -1,3 +1,4 @@
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
@@ -55,6 +56,12 @@ void main() {
     addTearDown(database.close);
 
     expect(await database.isFreshInstallationForCloudRestore(), isTrue);
+    expect(
+      await database.isFreshInstallationForCloudRestore(
+        localAccountId: 'google:account-A',
+      ),
+      isTrue,
+    );
 
     await database.customStatement(
       '''INSERT INTO account_profiles
@@ -62,6 +69,31 @@ void main() {
          VALUES ('guest', '{}', 1, 'device-test', 'operation-test')''',
     );
     expect(await database.isFreshInstallationForCloudRestore(), isFalse);
+    expect(
+      await database.isFreshInstallationForCloudRestore(
+        localAccountId: 'google:account-A',
+      ),
+      isTrue,
+    );
+
+    await database.customInsert(
+      '''INSERT INTO daily_salah_logs
+         (user_id, prayer_date, prayer_type, status, updated_at)
+         VALUES (?, ?, ?, ?, ?)''',
+      variables: [
+        Variable.withString('google:account-A'),
+        Variable.withString('2025-01-01'),
+        Variable.withString('fajr'),
+        Variable.withString('missed'),
+        Variable.withString('2025-01-01'),
+      ],
+    );
+    expect(
+      await database.isFreshInstallationForCloudRestore(
+        localAccountId: 'google:account-A',
+      ),
+      isFalse,
+    );
   });
 
   test('initial cloud backup pending marker survives reads and can be cleared',

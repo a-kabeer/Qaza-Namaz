@@ -64,6 +64,39 @@ final cloudAccountStartupRestoreProvider =
   return account.restore();
 });
 
+/// Restores the active cloud identity before routing to account-specific UI.
+/// StartupGate keeps the splash visible until workspace activation completes,
+/// preventing stale Guest onboarding/profile content from flashing on screen.
+final startupAccountWorkspaceRestoreProvider =
+    FutureProvider<void>((ref) async {
+  final cloudAccount = ref.watch(cloudAccountProvider);
+  final session = ref.read(accountSessionManagerProvider);
+  if (!cloudAccount.isSupported) {
+    await session.activateGuest();
+  } else {
+    final snapshot = await cloudAccount.restore();
+    final accountId = snapshot.accountId?.trim();
+    if (accountId != null &&
+        accountId.isNotEmpty &&
+        snapshot.status != CloudAccountStatus.disconnected &&
+        snapshot.status != CloudAccountStatus.unavailable) {
+      await session.activateGoogleAccount(accountId);
+    } else {
+      await session.activateGuest();
+    }
+  }
+
+  // AccountSessionManager.initialize() starts from the Guest workspace.
+  // Re-read profile and routing state after the verified startup identity
+  // selects its workspace, otherwise cached Guest data can leak into routing.
+  ref.invalidate(appRouteProvider);
+  ref.invalidate(userProfileProvider);
+  ref.invalidate(progressSummaryProvider);
+  ref.invalidate(qazaRepositoryProvider);
+  ref.invalidate(qazaAdditionRepositoryProvider);
+  ref.invalidate(qazaPlanRevisionRepositoryProvider);
+});
+
 final cloudSyncProvider = Provider<CloudSyncProvider>(
   (ref) => const UnsupportedCloudSyncProvider(),
 );

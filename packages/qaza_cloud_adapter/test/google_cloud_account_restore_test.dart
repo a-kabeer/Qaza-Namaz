@@ -29,6 +29,7 @@ void main() {
 
     expect(result.wasCancelled, isTrue);
     expect(result.status, CloudAccountStatus.disconnected);
+    expect(result.accountId, isNull);
     expect(await state.isCloudSyncEnabled(), isFalse);
     expect(scheduler.initializeCalls, 0);
   });
@@ -72,6 +73,7 @@ void main() {
 
       expect(snapshot.status, CloudAccountStatus.connected);
       expect(snapshot.isConnected, isTrue);
+      expect(snapshot.accountId, 'google-account-A');
       expect(snapshot.displayName, 'Saved Google User');
       expect(snapshot.email, 'saved@example.com');
       expect(gateway.currentAccountCalls, 1);
