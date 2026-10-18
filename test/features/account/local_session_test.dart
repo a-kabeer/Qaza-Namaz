@@ -8,6 +8,17 @@ import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 
 void main() {
+  test('Google workspace IDs use the stable authenticated account ID', () {
+    expect(
+      googleLocalWorkspaceId('  stable-google-account-A  '),
+      'google:stable-google-account-A',
+    );
+    expect(
+      () => googleLocalWorkspaceId('  '),
+      throwsArgumentError,
+    );
+  });
+
   test('startup creates and restores one local device session', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
