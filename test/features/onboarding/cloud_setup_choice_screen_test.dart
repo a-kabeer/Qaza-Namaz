@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/theme/app_theme.dart';
+import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 import 'package:qaza_namaz/features/onboarding/cloud_setup_choice_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
@@ -34,7 +35,14 @@ void main() {
 
   testWidgets('theme selector precedes language and offers only theme modes',
       (tester) async {
-    final container = ProviderContainer();
+    final container = ProviderContainer(
+      overrides: [
+        // Keep this UI contract test independent of platform cloud restore.
+        cloudAccountStartupRestoreProvider.overrideWith(
+          (ref) async => const CloudAccountSnapshot.unavailable(),
+        ),
+      ],
+    );
     addTearDown(container.dispose);
     await tester.pumpWidget(_app(container));
     await tester.pumpAndSettle();
