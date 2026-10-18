@@ -197,7 +197,6 @@ void main() {
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
-        accountId: 'test-google-account-A',
           accountId: 'test-google-account-A',
           displayName: 'A Test User',
           email: 'user@example.com',
@@ -302,7 +301,6 @@ void main() {
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
-        accountId: 'test-google-account-A',
           accountId: 'test-google-account-A',
           displayName: 'A Test User',
         ),
@@ -463,7 +461,6 @@ void main() {
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
-        accountId: 'test-google-account-A',
           accountId: 'test-google-account-A',
           displayName: 'A Test User',
         ),
@@ -503,7 +500,6 @@ void main() {
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
-        accountId: 'test-google-account-A',
           accountId: 'test-google-account-A',
           displayName: 'A Test User',
         ),
@@ -551,7 +547,6 @@ void main() {
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
-        accountId: 'test-google-account-A',
           accountId: 'test-google-account-A',
           displayName: 'A Test User',
         ),
@@ -605,7 +600,6 @@ void main() {
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
-        accountId: 'test-google-account-A',
           accountId: 'test-google-account-A',
           displayName: 'A Test User',
         ),
@@ -708,7 +702,6 @@ void main() {
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
-        accountId: 'test-google-account-A',
           accountId: 'test-google-account-A',
           displayName: ' ',
           email: ' ',
@@ -745,7 +738,6 @@ void main() {
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
-        accountId: 'test-google-account-A',
           accountId: 'test-google-account-A',
           displayName: 'Connected User',
           email: 'connected@example.com',
