@@ -655,7 +655,6 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     widget.onAccountChanged(const CloudAccountSnapshot.disconnected());
     ref.invalidate(cloudAccountStartupRestoreProvider);
     ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = false;
-    ref.invalidate(startupAccountWorkspaceRestoreProvider);
     ref.invalidate(returningAccountChoicePendingProvider);
     ref.invalidate(cloudSetupChoiceCompleteProvider);
     if (!mounted) return;

@@ -187,7 +187,9 @@ class StartupSessionErrorBoundary extends StatelessWidget {
       body: SafeArea(
         child: ErrorState(
           title: l10n.startupProfileLoadErrorTitle,
-          message: l10n.startupProfileLoadErrorMessage,
+          message: message?.trim().isNotEmpty == true
+              ? message!.trim()
+              : l10n.startupProfileLoadErrorMessage,
           onRetry: onRetry,
           icon: Icons.storage_rounded,
         ),
