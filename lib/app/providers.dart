@@ -73,19 +73,28 @@ final startupAccountWorkspaceRestoreProvider =
   final session = ref.read(accountSessionManagerProvider);
   if (!cloudAccount.isSupported) {
     await session.activateGuest();
-    return;
+  } else {
+    final snapshot = await cloudAccount.restore();
+    final accountId = snapshot.accountId?.trim();
+    if (accountId != null &&
+        accountId.isNotEmpty &&
+        snapshot.status != CloudAccountStatus.disconnected &&
+        snapshot.status != CloudAccountStatus.unavailable) {
+      await session.activateGoogleAccount(accountId);
+    } else {
+      await session.activateGuest();
+    }
   }
 
-  final snapshot = await cloudAccount.restore();
-  final accountId = snapshot.accountId?.trim();
-  if (accountId != null &&
-      accountId.isNotEmpty &&
-      snapshot.status != CloudAccountStatus.disconnected &&
-      snapshot.status != CloudAccountStatus.unavailable) {
-    await session.activateGoogleAccount(accountId);
-  } else {
-    await session.activateGuest();
-  }
+  // AccountSessionManager.initialize() starts from the Guest workspace.
+  // Re-read profile and routing state after the verified startup identity
+  // selects its workspace, otherwise cached Guest data can leak into routing.
+  ref.invalidate(appRouteProvider);
+  ref.invalidate(userProfileProvider);
+  ref.invalidate(progressSummaryProvider);
+  ref.invalidate(qazaRepositoryProvider);
+  ref.invalidate(qazaAdditionRepositoryProvider);
+  ref.invalidate(qazaPlanRevisionRepositoryProvider);
 });
 
 final cloudSyncProvider = Provider<CloudSyncProvider>(
