@@ -193,6 +193,7 @@ final saveProfileUseCaseProvider = Provider<SaveProfileUseCase>((ref) {
     profileRepository: ref.watch(userProfileRepositoryProvider),
     reconciliationService:
         ref.watch(profileQazaPlanReconciliationServiceProvider),
+    activeUserId: () => ref.read(activeUserIdProvider),
     diagnostics: ref.watch(diagnosticsProvider),
   );
 });

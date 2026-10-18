@@ -26,14 +26,25 @@ class SaveProfileUseCase {
   SaveProfileUseCase({
     required UserProfileRepository profileRepository,
     required ProfileQazaPlanReconciliationService reconciliationService,
+    String? Function()? activeUserId,
     DiagnosticsService diagnostics = const NoopDiagnostics(),
   })  : _profileRepository = profileRepository,
         _reconciliationService = reconciliationService,
+        _activeUserId = activeUserId ?? (() => UserProfile.localLedgerUserId),
         _diagnostics = diagnostics;
 
   final UserProfileRepository _profileRepository;
   final ProfileQazaPlanReconciliationService _reconciliationService;
+  final String? Function() _activeUserId;
   final DiagnosticsService _diagnostics;
+
+  String _requireActiveUserId() {
+    final userId = _activeUserId()?.trim();
+    if (userId == null || userId.isEmpty) {
+      throw StateError('No active local workspace is available.');
+    }
+    return userId;
+  }
 
   Future<void> saveDraft(UserProfile profile) {
     return _profileRepository.saveLocalOnly(
@@ -50,7 +61,7 @@ class SaveProfileUseCase {
     }
     try {
       return await _reconciliationService.preview(
-        userId: UserProfile.localLedgerUserId,
+        userId: _requireActiveUserId(),
         oldProfile: oldProfile,
         newProfile: newProfile,
       );
@@ -89,10 +100,11 @@ class SaveProfileUseCase {
       );
     }
 
+    final userId = _requireActiveUserId();
     await _profileRepository.save(newProfile);
     try {
       final result = await _reconciliationService.apply(
-        userId: UserProfile.localLedgerUserId,
+        userId: userId,
         newProfile: newProfile,
         preview: preview,
         choice: choice,
