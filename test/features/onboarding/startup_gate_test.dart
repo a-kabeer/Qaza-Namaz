@@ -21,19 +21,22 @@ class _FakeCloudAccountProvider implements CloudAccountProvider {
       status: CloudAccountStatus.connected,
       accountId: 'test-google-account-A',
     ),
-  });
+  }) : _snapshot = const CloudAccountSnapshot.disconnected();
 
   final CloudAccountSnapshot signInResult;
+  CloudAccountSnapshot _snapshot;
 
   @override
   bool get isSupported => true;
 
   @override
-  Future<CloudAccountSnapshot> restore() async =>
-      const CloudAccountSnapshot.disconnected();
+  Future<CloudAccountSnapshot> restore() async => _snapshot;
 
   @override
-  Future<CloudAccountSnapshot> signIn() async => signInResult;
+  Future<CloudAccountSnapshot> signIn() async {
+    _snapshot = signInResult;
+    return _snapshot;
+  }
 
   @override
   Future<List<RememberedCloudAccount>> rememberedAccounts() async =>
@@ -46,7 +49,9 @@ class _FakeCloudAccountProvider implements CloudAccountProvider {
       signInResult;
 
   @override
-  Future<void> disconnect() async {}
+  Future<void> disconnect() async {
+    _snapshot = const CloudAccountSnapshot.disconnected();
+  }
 }
 
 class _FakeCloudSyncProvider implements CloudSyncProvider {

@@ -191,9 +191,9 @@ void main() {
     );
     final remoteBackup = await service.exportJson(localAccountId: googleId);
 
-    await database.qazaRecordsDao.deleteRecord(
+    await database.qazaRecordsDao.deleteById(
       userId: googleId,
-      recordId: 'remote_google_record',
+      id: 'remote_google_record',
     );
     await database.qazaRecordsDao.insertRecord(
       _recordFor(googleId, 'local_google_record', DateTime(2025, 1, 3)),
