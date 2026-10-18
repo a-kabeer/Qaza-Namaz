@@ -1,3 +1,4 @@
+/// Localized appearance labels shared by setup and Settings screens.
 import '../../l10n/app_localizations.dart';
 import 'app_theme.dart';
 
