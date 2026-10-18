@@ -213,7 +213,7 @@ void main() {
       await _pumpThemeUi(tester);
       expect(container.read(primaryColorProvider), AppPrimaryColor.blue);
 
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await tester.pump(const Duration(milliseconds: 20));
       final prefs = await SharedPreferences.getInstance();
       expect(prefs.getString(ThemeModeNotifier.storageKey), 'dark');
       expect(prefs.getString(PrimaryColorNotifier.storageKey), 'blue');
@@ -226,7 +226,7 @@ void main() {
       addTearDown(restored.dispose);
       restored.read(themeModeProvider);
       restored.read(primaryColorProvider);
-      await Future<void>.delayed(const Duration(milliseconds: 20));
+      await tester.pump(const Duration(milliseconds: 20));
       expect(restored.read(themeModeProvider), AppThemeMode.dark);
       expect(restored.read(primaryColorProvider), AppPrimaryColor.blue);
     },
