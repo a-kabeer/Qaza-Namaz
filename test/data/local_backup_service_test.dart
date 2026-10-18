@@ -211,7 +211,7 @@ void main() {
     final restored = await accounts.loadProfile(googleId);
     expect(restored?.onboardingCompleted, isTrue);
     expect(
-      (await database.activeAccount()).localAccountId,
+      (await accounts.activeAccount())!.localAccountId,
       googleId,
     );
   });
