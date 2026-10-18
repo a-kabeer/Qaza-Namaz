@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
