@@ -333,7 +333,10 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     final scopedState = _state is CloudAccountScopedSyncStateStore
         ? _state as CloudAccountScopedSyncStateStore
         : null;
-    final accountId = cachedAccountId ?? await scopedState?.activeAccountId();
+    final activeAccountId = await scopedState?.activeAccountId();
+    // The active sync namespace is authoritative if a stale cached profile
+    // belongs to a different Google account.
+    final accountId = activeAccountId ?? cachedAccountId;
     if (reconnectRequired) {
       return CloudAccountSnapshot.reconnectRequired(
         accountId: accountId,

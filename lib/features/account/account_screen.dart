@@ -408,6 +408,36 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       CloudSyncSnapshot result;
       switch (discovery.status) {
         case CloudBackupDiscoveryStatus.noBackup:
+          final localAccountId = ref
+              .read(accountSessionManagerProvider)
+              .activeLocalAccountId;
+          final profile = localAccountId == null
+              ? null
+              : await ref
+                  .read(accountLocalStoreProvider)
+                  .loadProfile(localAccountId);
+
+          if (profile == null) {
+            // A newly connected account needs onboarding before its first
+            // cloud snapshot. Do not upload an empty workspace and mistake it
+            // for a completed backup.
+            final database = ref.read(appDatabaseProvider);
+            await database.markInitialCloudBackupPending();
+            ref.invalidate(initialCloudBackupPendingProvider);
+            result = await cloudSync.status();
+            if (!mounted) return;
+            setState(() {
+              _sync = result;
+              _message = null;
+              _backupProgress = null;
+            });
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute<void>(builder: (_) => const StartupGate()),
+              (_) => false,
+            );
+            return;
+          }
+
           result = await cloudSync.backupNow(
             onProgress: _publishBackupProgress,
           );
