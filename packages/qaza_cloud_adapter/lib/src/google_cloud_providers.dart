@@ -156,6 +156,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
             photoUrl: account.photoUrl,
           );
           return CloudAccountSnapshot.reconnectRequired(
+            accountId: account.id,
             displayName: account.displayName,
             email: account.email,
             photoUrl: account.photoUrl,
