@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../../app/providers.dart';
+import '../../app/workspace_refresh.dart';
 import '../../core/diagnostics/diagnostics.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
@@ -92,14 +93,7 @@ class _QazaDataManagementScreenState
       if (!confirmed || !mounted) return;
 
       final restored = await service.importJson(jsonText);
-      ref.invalidate(progressSummaryProvider);
-      ref.invalidate(userProfileProvider);
-      ref.invalidate(appRouteProvider);
-      ref.invalidate(homeDashboardActivityProvider);
-      ref.invalidate(homeDailyProgressProvider);
-      ref.invalidate(homeQazaActivityCurrentWeekProvider);
-      ref.invalidate(homeQazaActivityDailyGoalsProvider);
-      ref.invalidate(homeFallbackPendingProvider);
+      await refreshWorkspaceAfterRestore(ref);
 
       if (mounted) {
         _showMessage(

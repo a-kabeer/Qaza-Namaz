@@ -1,0 +1,34 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import 'providers.dart';
+import '../features/daily_salah/daily_salah_tracking_providers.dart';
+import '../features/home/home_controller.dart';
+import '../features/home/providers/home_providers.dart';
+import '../features/qaza/qaza_addition_history_screen.dart';
+import '../features/qaza/qaza_tracker_controller.dart';
+
+/// Refreshes data derived from the persisted active workspace after a full
+/// database import or cloud restore. Refresh the session before scoped data.
+Future<void> refreshWorkspaceAfterRestore(WidgetRef ref) async {
+  await ref.read(accountSessionManagerProvider).refresh();
+
+  ref.invalidate(appRouteProvider);
+  ref.invalidate(userProfileProvider);
+  ref.invalidate(progressSummaryProvider);
+  ref.invalidate(qazaRepositoryProvider);
+  ref.invalidate(qazaAdditionRepositoryProvider);
+  ref.invalidate(qazaPlanRevisionRepositoryProvider);
+  ref.invalidate(qazaTrackerControllerProvider);
+  ref.invalidate(qazaAdditionHistoryControllerProvider);
+
+  ref.invalidate(dailySalahTrackingEnabledProvider);
+  ref.invalidate(dailySalahTrackingLogsProvider);
+  ref.invalidate(enabledPrayerTypesProvider);
+  ref.invalidate(effectiveWitrProvider);
+
+  ref.read(homeControllerProvider).invalidateDashboard();
+  ref.invalidate(homeDailyProgressProvider);
+  ref.invalidate(homeQazaActivityCurrentWeekProvider);
+  ref.invalidate(homeQazaActivityDailyGoalsProvider);
+  ref.invalidate(homeFallbackPendingProvider);
+}
