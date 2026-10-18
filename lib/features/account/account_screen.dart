@@ -408,9 +408,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       CloudSyncSnapshot result;
       switch (discovery.status) {
         case CloudBackupDiscoveryStatus.noBackup:
-          final localAccountId = ref
-              .read(accountSessionManagerProvider)
-              .activeLocalAccountId;
+          final localAccountId =
+              ref.read(accountSessionManagerProvider).activeLocalAccountId;
           final profile = localAccountId == null
               ? null
               : await ref

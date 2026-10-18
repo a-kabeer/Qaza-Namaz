@@ -541,10 +541,9 @@ class LocalBackupService {
 
     // Keep the device's active session and global preferences unchanged. A
     // background sync must not redirect the foreground UI to another account.
-    final localSession =
-        (localData['app_session_state'] as List<dynamic>)
-            .map((row) => Map<String, dynamic>.from(row as Map))
-            .toList(growable: false);
+    final localSession = (localData['app_session_state'] as List<dynamic>)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList(growable: false);
     mergedData['app_session_state'] = localSession;
 
     // The import must not change which workspace is active, but its durable
@@ -558,8 +557,7 @@ class LocalBackupService {
     if (activeLocalAccountId != null) {
       final profiles = mergedData['account_profiles'] as List<dynamic>;
       for (final raw in profiles) {
-        if (raw is! Map ||
-            raw['local_account_id'] != activeLocalAccountId) {
+        if (raw is! Map || raw['local_account_id'] != activeLocalAccountId) {
           continue;
         }
         final payload = raw['payload_json'];
