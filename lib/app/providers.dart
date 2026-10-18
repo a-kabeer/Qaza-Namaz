@@ -64,11 +64,18 @@ final cloudAccountStartupRestoreProvider =
   return account.restore();
 });
 
+/// True after an explicit account-choice flow already activated the selected
+/// workspace during this process.
+final startupWorkspaceRestoreSatisfiedProvider =
+    StateProvider<bool>((ref) => false);
+
 /// Restores the active cloud identity before routing to account-specific UI.
 /// StartupGate keeps the splash visible until workspace activation completes,
 /// preventing stale Guest onboarding/profile content from flashing on screen.
 final startupAccountWorkspaceRestoreProvider =
     FutureProvider<void>((ref) async {
+  if (ref.read(startupWorkspaceRestoreSatisfiedProvider)) return;
+
   final cloudAccount = ref.watch(cloudAccountProvider);
   final session = ref.read(accountSessionManagerProvider);
   if (!cloudAccount.isSupported) {

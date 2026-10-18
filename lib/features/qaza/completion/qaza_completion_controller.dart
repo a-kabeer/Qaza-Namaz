@@ -90,7 +90,8 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
       final account = await cloudAccount.restore();
       if (account.isConnected) return;
 
-      await database.markGuestGooglePromptShown();
+      // The app-level host marks the prompt shown only after initiating
+      // dialog presentation, avoiding a lost request when the host is absent.
       ref.read(guestConnectPromptRequestProvider.notifier).state++;
     } catch (_) {
       // Prompt failures must never affect the Qaza completion that just saved.

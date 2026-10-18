@@ -18,14 +18,7 @@ class FatalDatabaseErrorApp extends StatefulWidget {
 }
 
 class _FatalDatabaseErrorAppState extends State<FatalDatabaseErrorApp> {
-  Object? _error;
-
-  @override
-  void initState() {
-    super.initState();
-    _error = widget.error;
-  }
-
+  bool _retryFailed = false;
   bool _retrying = false;
 
   @override
@@ -60,7 +53,7 @@ class _FatalDatabaseErrorAppState extends State<FatalDatabaseErrorApp> {
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
-                    if (_error != null) ...[
+                    if (_retryFailed) ...[
                       const SizedBox(height: 12),
                       Text(
                         'The retry also failed. Close and reopen the app after '
@@ -95,17 +88,16 @@ class _FatalDatabaseErrorAppState extends State<FatalDatabaseErrorApp> {
   Future<void> _retry() async {
     setState(() {
       _retrying = true;
-      _error = null;
+      _retryFailed = false;
     });
 
     try {
       await widget.onRetry();
-    } catch (error) {
+    } catch (_) {
       if (!mounted) return;
-      setState(() {
-        _error = error;
-        _retrying = false;
-      });
+      setState(() => _retryFailed = true);
+    } finally {
+      if (mounted) setState(() => _retrying = false);
     }
   }
 }
