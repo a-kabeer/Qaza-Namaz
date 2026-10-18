@@ -55,8 +55,6 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
 
   Future<void> _refreshLocalDateEnvironment() async {
     await _configureLocalTimezone();
-    if (!mounted) return;
-    ref.invalidate(calendarTodayProvider);
   }
 
   @override
