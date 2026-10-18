@@ -36,7 +36,12 @@ class AccountSessionManager extends ChangeNotifier {
   }
 
   Future<void> _initializeLocalState() async {
-    _setState(const AccountSessionState.loading());
+    // The initial state is already loading. Avoid a redundant synchronous
+    // notifyListeners() when initialize() is called from app initState, which
+    // can dirty ProviderScope while its widget subtree is still mounting.
+    if (_state.phase != AccountSessionPhase.loading) {
+      _setState(const AccountSessionState.loading());
+    }
     try {
       await _accountStore.ensureInitialized();
       final localAccountId = await _accountStore.ensureLocalAccountActive();
