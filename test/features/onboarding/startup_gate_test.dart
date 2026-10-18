@@ -162,6 +162,7 @@ Future<ProviderContainer> _container({
             signInResult: signInResult ??
                 const CloudAccountSnapshot(
                   status: CloudAccountStatus.connected,
+                  accountId: 'test-google-account-A',
                 ),
           ),
         ),
