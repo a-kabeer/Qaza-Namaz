@@ -1532,6 +1532,36 @@ class AppLocalizationsEn extends AppLocalizations {
       'Choose how the app looks on this device.';
 
   @override
+  String get settingsThemeSelector => 'Theme';
+
+  @override
+  String get settingsPrimaryColor => 'Primary color';
+
+  @override
+  String get settingsPrimaryColorTeal => 'Teal';
+
+  @override
+  String get settingsPrimaryColorBlue => 'Blue';
+
+  @override
+  String get settingsPrimaryColorGreen => 'Green';
+
+  @override
+  String get settingsPrimaryColorPurple => 'Purple';
+
+  @override
+  String get settingsPrimaryColorAmber => 'Amber';
+
+  @override
+  String get settingsPrimaryColorRose => 'Rose';
+
+  @override
+  String get settingsPrimaryColorSlate => 'Slate';
+
+  @override
+  String get settingsPrimaryColorBlack => 'Black';
+
+  @override
   String get settingsThemeSystem => 'System';
 
   @override

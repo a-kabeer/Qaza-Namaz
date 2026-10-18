@@ -1530,6 +1530,36 @@ class AppLocalizationsUr extends AppLocalizations {
       'منتخب کریں کہ ایپ اس ڈیوائس پر کیسی نظر آئے۔';
 
   @override
+  String get settingsThemeSelector => 'تھیم';
+
+  @override
+  String get settingsPrimaryColor => 'بنیادی رنگ';
+
+  @override
+  String get settingsPrimaryColorTeal => 'فیروزی';
+
+  @override
+  String get settingsPrimaryColorBlue => 'نیلا';
+
+  @override
+  String get settingsPrimaryColorGreen => 'سبز';
+
+  @override
+  String get settingsPrimaryColorPurple => 'جامنی';
+
+  @override
+  String get settingsPrimaryColorAmber => 'عنبر';
+
+  @override
+  String get settingsPrimaryColorRose => 'گلابی';
+
+  @override
+  String get settingsPrimaryColorSlate => 'سلیٹی';
+
+  @override
+  String get settingsPrimaryColorBlack => 'سیاہ';
+
+  @override
   String get settingsThemeSystem => 'سسٹم';
 
   @override
@@ -4389,6 +4419,36 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get settingsAppearanceSubtitle =>
       'Muntakhab karein keh app is device par kaisi nazar aaie';
+
+  @override
+  String get settingsThemeSelector => 'Theme';
+
+  @override
+  String get settingsPrimaryColor => 'Bunyadi Rang';
+
+  @override
+  String get settingsPrimaryColorTeal => 'Teal';
+
+  @override
+  String get settingsPrimaryColorBlue => 'Neela';
+
+  @override
+  String get settingsPrimaryColorGreen => 'Hara';
+
+  @override
+  String get settingsPrimaryColorPurple => 'Baingani';
+
+  @override
+  String get settingsPrimaryColorAmber => 'Amber';
+
+  @override
+  String get settingsPrimaryColorRose => 'Gulabi';
+
+  @override
+  String get settingsPrimaryColorSlate => 'Slate';
+
+  @override
+  String get settingsPrimaryColorBlack => 'Kala';
 
   @override
   String get settingsThemeSystem => 'System';

@@ -28,11 +28,13 @@ class SettingsNavRow extends StatelessWidget {
       required this.icon,
       required this.title,
       this.subtitle,
+      this.trailing,
       this.onTap});
 
   final IconData icon;
   final String title;
   final String? subtitle;
+  final Widget? trailing;
   final VoidCallback? onTap;
 
   @override
@@ -40,7 +42,7 @@ class SettingsNavRow extends StatelessWidget {
         leading: Icon(icon),
         title: Text(title),
         subtitle: subtitle == null ? null : Text(subtitle!),
-        trailing: const Icon(Icons.chevron_right_rounded),
+        trailing: trailing ?? const Icon(Icons.chevron_right_rounded),
         onTap: onTap,
       );
 }

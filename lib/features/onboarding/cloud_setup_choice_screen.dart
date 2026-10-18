@@ -7,6 +7,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/theme/app_theme_labels.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
 import '../../l10n/app_localizations.dart';
@@ -618,6 +620,25 @@ class _CloudSetupChoiceScreenState
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
+    final themeMode = ref.watch(themeModeProvider);
+    PopupMenuItem<AppThemeMode> themeModeItem(
+      AppThemeMode mode,
+      String label,
+    ) =>
+        PopupMenuItem<AppThemeMode>(
+          key: Key('cloud_setup_theme_option_${mode.name}'),
+          value: mode,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(label),
+              if (mode == themeMode)
+                Icon(Icons.check_rounded, color: scheme.primary, size: 18)
+              else
+                const SizedBox(width: 18),
+            ],
+          ),
+        );
     final backupFound =
         _discovery?.status == CloudBackupDiscoveryStatus.backupFound;
     final restoreProgress = _restoreProgress;
@@ -640,6 +661,31 @@ class _CloudSetupChoiceScreenState
         automaticallyImplyLeading: false,
         title: const SizedBox.shrink(),
         actions: [
+          PopupMenuButton<AppThemeMode>(
+            key: const Key('cloud_setup_theme_selector'),
+            tooltip: l10n.settingsThemeSelector,
+            onSelected: ref.read(themeModeProvider.notifier).set,
+            itemBuilder: (context) => [
+              themeModeItem(AppThemeMode.system, l10n.settingsThemeSystem),
+              themeModeItem(AppThemeMode.light, l10n.settingsThemeLight),
+              themeModeItem(AppThemeMode.dark, l10n.settingsThemeDark),
+            ],
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '${l10n.settingsThemeSelector}: ${appThemeModeLabel(l10n, themeMode)}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.labelSmall,
+                  ),
+                  const Icon(Icons.expand_more_rounded, size: 18),
+                ],
+              ),
+            ),
+          ),
           Padding(
             padding: const EdgeInsets.only(right: 12),
             child: LanguageSelector<Locale>(

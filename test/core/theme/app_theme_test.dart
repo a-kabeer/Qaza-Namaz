@@ -154,6 +154,38 @@ void main() {
     });
   });
 
+  group('Primary color palettes', () {
+    test('provides eight choices with readable primary and secondary roles',
+        () {
+      expect(AppPrimaryColor.values, hasLength(8));
+      expect(AppTheme.colorFor(AppPrimaryColor.teal), const Color(0xFF01485A));
+      for (final color in AppPrimaryColor.values) {
+        final light = AppTheme.light(primaryColor: color).colorScheme;
+        final dark = AppTheme.dark(primaryColor: color).colorScheme;
+        expect(
+          _contrastRatio(light.onPrimary, light.primary),
+          greaterThanOrEqualTo(4.5),
+          reason: '${color.name} light primary',
+        );
+        expect(
+          _contrastRatio(dark.onPrimary, dark.primary),
+          greaterThanOrEqualTo(4.5),
+          reason: '${color.name} dark primary',
+        );
+        expect(
+          _contrastRatio(light.onSecondary, light.secondary),
+          greaterThanOrEqualTo(4.5),
+          reason: '${color.name} light secondary',
+        );
+        expect(
+          _contrastRatio(dark.onSecondary, dark.secondary),
+          greaterThanOrEqualTo(4.5),
+          reason: '${color.name} dark secondary',
+        );
+      }
+    });
+  });
+
   group('AppTheme typography and mode', () {
     test('Urdu theme uses Nastaliq with role-specific metrics', () {
       final theme = AppTheme.light(locale: const Locale('ur'));

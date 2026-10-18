@@ -1539,6 +1539,36 @@ class AppLocalizationsUrLatn extends AppLocalizations {
       'muntakhab karein keh app is device par kaisi nazar aaie';
 
   @override
+  String get settingsThemeSelector => "Theme";
+
+  @override
+  String get settingsPrimaryColor => "Bunyadi Rang";
+
+  @override
+  String get settingsPrimaryColorTeal => "Teal";
+
+  @override
+  String get settingsPrimaryColorBlue => "Neela";
+
+  @override
+  String get settingsPrimaryColorGreen => "Hara";
+
+  @override
+  String get settingsPrimaryColorPurple => "Baingani";
+
+  @override
+  String get settingsPrimaryColorAmber => "Amber";
+
+  @override
+  String get settingsPrimaryColorRose => "Gulabi";
+
+  @override
+  String get settingsPrimaryColorSlate => "Slate";
+
+  @override
+  String get settingsPrimaryColorBlack => "Kala";
+
+  @override
   String get settingsThemeSystem => 'system';
 
   @override

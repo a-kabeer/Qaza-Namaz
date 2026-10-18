@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/licenses/app_license_registry.dart';
+import 'package:qaza_namaz/core/theme/app_theme.dart';
 import 'package:qaza_namaz/domain/entities/qaza_progress.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/repositories/user_profile_repository.dart';
@@ -47,17 +48,31 @@ Future<void> _chooseLanguage(
   await tester.pumpAndSettle();
 }
 
+Future<void> _pumpThemeUi(WidgetTester tester) async {
+  // Some app-level animations can keep pumpAndSettle waiting indefinitely.
+  // Advance the route/theme animations by a bounded amount instead.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
 Widget _app(ProviderContainer container) {
   registerAppLicenses();
   return UncontrolledProviderScope(
     container: container,
     child: Consumer(
-      builder: (context, ref, child) => MaterialApp(
-        locale: ref.watch(localeProvider),
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        home: const SettingsScreen(),
-      ),
+      builder: (context, ref, child) {
+        final locale = ref.watch(localeProvider);
+        final primaryColor = ref.watch(primaryColorProvider);
+        return MaterialApp(
+          locale: locale,
+          theme: AppTheme.light(locale: locale, primaryColor: primaryColor),
+          darkTheme: AppTheme.dark(locale: locale, primaryColor: primaryColor),
+          themeMode: ref.watch(themeModeProvider).materialMode,
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const SettingsScreen(),
+        );
+      },
     ),
   );
 }
@@ -163,6 +178,57 @@ void main() {
       expect(repository.saveCount, 0);
       expect(container.read(localeProvider).languageCode, 'ur');
       expect(prefs.getString(LocaleNotifier.storageKey), 'ur');
+    },
+  );
+
+  testWidgets(
+    'Appearance updates theme/color immediately and restores them',
+    (tester) async {
+      final repository = _FakeUserProfileRepository(
+        stored: const UserProfile(
+          languageCode: 'en',
+          onboardingCompleted: true,
+        ),
+      );
+      final container = _container(repository, _EnglishLocaleNotifier.new);
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(_app(container));
+      await _pumpThemeUi(tester);
+      expect(find.byKey(const Key('settings_appearance')), findsOneWidget);
+      expect(
+        find.byKey(const Key('settings_appearance_color_swatch')),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const Key('settings_appearance')));
+      await _pumpThemeUi(tester);
+      await tester.tap(find.byKey(const Key('appearance_theme_dark')));
+      await _pumpThemeUi(tester);
+      expect(container.read(themeModeProvider), AppThemeMode.dark);
+
+      final blue = find.byKey(const Key('appearance_primary_color_blue'));
+      await tester.ensureVisible(blue);
+      await tester.tap(blue);
+      await _pumpThemeUi(tester);
+      expect(container.read(primaryColorProvider), AppPrimaryColor.blue);
+
+      await tester.pump(const Duration(milliseconds: 20));
+      final prefs = await SharedPreferences.getInstance();
+      expect(prefs.getString(ThemeModeNotifier.storageKey), 'dark');
+      expect(prefs.getString(PrimaryColorNotifier.storageKey), 'blue');
+      expect(repository.saveCount, 0);
+      expect(repository.stored?.languageCode, 'en');
+
+      final restored = ProviderContainer(
+        overrides: [localeProvider.overrideWith(_EnglishLocaleNotifier.new)],
+      );
+      addTearDown(restored.dispose);
+      restored.read(themeModeProvider);
+      restored.read(primaryColorProvider);
+      await tester.pump(const Duration(milliseconds: 20));
+      expect(restored.read(themeModeProvider), AppThemeMode.dark);
+      expect(restored.read(primaryColorProvider), AppPrimaryColor.blue);
     },
   );
 

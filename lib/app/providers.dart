@@ -371,10 +371,11 @@ final latestPendingProvider =
 
 class ThemeModeNotifier extends Notifier<AppThemeMode> {
   static const String storageKey = 'qaza_theme_mode';
+  bool _selectionMade = false;
 
   @override
   AppThemeMode build() {
-    Future.microtask(restore);
+    Future<void>.microtask(restore);
     return AppThemeMode.system;
   }
 
@@ -382,15 +383,18 @@ class ThemeModeNotifier extends Notifier<AppThemeMode> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final stored = prefs.getString(storageKey);
-      if (stored == null) return;
+      if (_selectionMade || stored == null) return;
       state = AppThemeMode.values.firstWhere(
         (mode) => mode.name == stored,
         orElse: () => AppThemeMode.system,
       );
-    } catch (_) {}
+    } catch (_) {
+      // Theme preference failures must not block startup.
+    }
   }
 
   void set(AppThemeMode mode) {
+    _selectionMade = true;
     state = mode;
     _persist(mode);
   }
@@ -399,12 +403,59 @@ class ThemeModeNotifier extends Notifier<AppThemeMode> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(storageKey, mode.name);
-    } catch (_) {}
+    } catch (_) {
+      // Retain the current in-memory selection if persistence is unavailable.
+    }
   }
 }
 
 final themeModeProvider =
     NotifierProvider<ThemeModeNotifier, AppThemeMode>(ThemeModeNotifier.new);
+
+class PrimaryColorNotifier extends Notifier<AppPrimaryColor> {
+  static const String storageKey = 'qaza_primary_color';
+  bool _selectionMade = false;
+
+  @override
+  AppPrimaryColor build() {
+    Future<void>.microtask(restore);
+    return AppPrimaryColor.teal;
+  }
+
+  Future<void> restore() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final stored = prefs.getString(storageKey);
+      if (_selectionMade || stored == null) return;
+      state = AppPrimaryColor.values.firstWhere(
+        (color) => color.name == stored,
+        orElse: () => AppPrimaryColor.teal,
+      );
+    } catch (_) {
+      // Theme preference failures must not block startup.
+    }
+  }
+
+  void set(AppPrimaryColor color) {
+    _selectionMade = true;
+    state = color;
+    _persist(color);
+  }
+
+  Future<void> _persist(AppPrimaryColor color) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(storageKey, color.name);
+    } catch (_) {
+      // Retain the current in-memory selection if persistence is unavailable.
+    }
+  }
+}
+
+final primaryColorProvider =
+    NotifierProvider<PrimaryColorNotifier, AppPrimaryColor>(
+  PrimaryColorNotifier.new,
+);
 
 /// Persists the app-wide Hijri display offset without changing source dates.
 final hijriDateAdjustmentProvider =
