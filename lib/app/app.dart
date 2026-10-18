@@ -41,9 +41,12 @@ class _QazaNamazAppState extends ConsumerState<QazaNamazApp>
     } catch (_) {
       // Local timezone is useful runtime state but does not gate local startup.
     } finally {
-      // The first read may happen before native timezone discovery completes.
-      // Re-evaluate the cached date provider after startup and on every resume.
-      if (mounted) ref.invalidate(calendarTodayProvider);
+      // Timezone discovery can complete during the first widget frame. Defer
+      // invalidation until that frame ends so Riverpod never dirties the root
+      // ProviderScope while its element tree is mounting.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) ref.invalidate(calendarTodayProvider);
+      });
     }
   }
 
