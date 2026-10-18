@@ -78,7 +78,7 @@ void main() {
     await tester.tap(find.byKey(const Key('cloud_setup_theme_option_dark')));
     await tester.pumpAndSettle();
     expect(container.read(themeModeProvider), AppThemeMode.dark);
-    await Future<void>.delayed(const Duration(milliseconds: 20));
+    await tester.pump(const Duration(milliseconds: 20));
     final prefs = await SharedPreferences.getInstance();
     expect(prefs.getString(ThemeModeNotifier.storageKey), 'dark');
   });
