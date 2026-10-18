@@ -26,11 +26,11 @@ class SaveProfileUseCase {
   SaveProfileUseCase({
     required UserProfileRepository profileRepository,
     required ProfileQazaPlanReconciliationService reconciliationService,
-    String? Function()? activeUserId,
+    required String? Function() activeUserId,
     DiagnosticsService diagnostics = const NoopDiagnostics(),
   })  : _profileRepository = profileRepository,
         _reconciliationService = reconciliationService,
-        _activeUserId = activeUserId ?? (() => UserProfile.localLedgerUserId),
+        _activeUserId = activeUserId,
         _diagnostics = diagnostics;
 
   final UserProfileRepository _profileRepository;

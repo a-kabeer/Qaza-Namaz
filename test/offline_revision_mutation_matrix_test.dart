@@ -198,4 +198,35 @@ void main() {
       isNull,
     );
   });
+
+  test('append and upsert preserve addition ID and record version', () async {
+    final date = DateTime(2026, 10, 1);
+    final appended = _record('metadata-append', date).copyWith(
+      additionId: 'addition-append',
+      recordVersion: 3,
+    );
+    await store.appendRecords('guest', [appended]);
+
+    var stored = await database.qazaRecordsDao.findById(
+      userId: 'guest',
+      id: appended.id,
+    );
+    expect(stored?.additionId, 'addition-append');
+    expect(stored?.recordVersion, 3);
+
+    final upserted = _record('metadata-upsert', DateTime(2026, 10, 2)).copyWith(
+      additionId: 'addition-upsert',
+      recordVersion: 4,
+    );
+    await store.upsertRecords('guest', [upserted]);
+
+    stored = await database.qazaRecordsDao.findById(
+      userId: 'guest',
+      id: upserted.id,
+    );
+    expect(stored?.additionId, 'addition-upsert');
+    expect(stored?.recordVersion, 4);
+  });
+
+
 }
