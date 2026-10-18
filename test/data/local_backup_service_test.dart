@@ -6,7 +6,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
+import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/domain/entities/user_profile.dart';
 
 QazaRecordsCompanion _record(String id, DateTime date) =>
     _recordFor('guest', id, date);
@@ -166,6 +168,50 @@ void main() {
     expect(decoded['data']['qaza_records'].single['userId'], googleId);
     expect(
       decoded['data']['app_session_state'].single['active_local_account_id'],
+      googleId,
+    );
+  });
+
+  test('scoped restore restores onboarding state for the active workspace',
+      () async {
+    const googleId = 'google:account-onboarding';
+    final now = DateTime.now().microsecondsSinceEpoch;
+    await database.customInsert(
+      '''INSERT INTO local_accounts
+         (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+         VALUES (?, 'local', 'active', ?, ?)''',
+      variables: [
+        Variable.withString(googleId),
+        Variable.withInt(now),
+        Variable.withInt(now),
+      ],
+    );
+    final accounts = AccountLocalStore(database: database);
+    await accounts.saveProfile(
+      googleId,
+      const UserProfile(onboardingCompleted: true),
+    );
+    await accounts.activate(googleId);
+    final remoteBackup = await service.exportJson(localAccountId: googleId);
+
+    // Simulate a fresh local copy of the target workspace before restore.
+    await database.customUpdate(
+      'DELETE FROM account_profiles WHERE local_account_id = ?',
+      variables: [Variable.withString(googleId)],
+    );
+    await accounts.activate(googleId);
+    expect(await database.isOnboardingCompleted(), isFalse);
+
+    await service.importJson(
+      remoteBackup,
+      targetLocalAccountId: googleId,
+    );
+
+    expect(await database.isOnboardingCompleted(), isTrue);
+    final restored = await accounts.loadProfile(googleId);
+    expect(restored?.onboardingCompleted, isTrue);
+    expect(
+      (await database.activeAccount()).localAccountId,
       googleId,
     );
   });

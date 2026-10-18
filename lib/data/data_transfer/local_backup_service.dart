@@ -541,12 +541,44 @@ class LocalBackupService {
 
     // Keep the device's active session and global preferences unchanged. A
     // background sync must not redirect the foreground UI to another account.
-    mergedData['app_session_state'] =
+    final localSession =
         (localData['app_session_state'] as List<dynamic>)
             .map((row) => Map<String, dynamic>.from(row as Map))
             .toList(growable: false);
-    mergedData['meta_store'] =
+    mergedData['app_session_state'] = localSession;
+
+    // The import must not change which workspace is active, but its durable
+    // onboarding flag must agree with the profile for that active workspace.
+    // Otherwise restoring a completed Google profile into a fresh workspace
+    // leaves the app routed through onboarding and causes a stale-screen flash.
+    final activeLocalAccountId = localSession.isEmpty
+        ? null
+        : localSession.first['active_local_account_id'] as String?;
+    var activeOnboardingCompleted = false;
+    if (activeLocalAccountId != null) {
+      final profiles = mergedData['account_profiles'] as List<dynamic>;
+      for (final raw in profiles) {
+        if (raw is! Map ||
+            raw['local_account_id'] != activeLocalAccountId) {
+          continue;
+        }
+        final payload = raw['payload_json'];
+        if (payload is String) {
+          try {
+            final decodedProfile = jsonDecode(payload);
+            activeOnboardingCompleted = decodedProfile is Map &&
+                decodedProfile['onboardingCompleted'] == true;
+          } catch (_) {
+            activeOnboardingCompleted = false;
+          }
+        }
+        break;
+      }
+    }
+    final mergedMeta =
         Map<String, dynamic>.from(localData['meta_store'] as Map);
+    mergedMeta['is_onboarding_completed'] = activeOnboardingCompleted;
+    mergedData['meta_store'] = mergedMeta;
 
     final metadata = Map<String, dynamic>.from(remoteRoot['metadata'] as Map);
     final localMetadata =
