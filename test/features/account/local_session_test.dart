@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/local/database/app_database.dart' show QazaRecordsCompanion;
 import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
@@ -31,6 +32,44 @@ void main() {
     expect(
       manager.activeLocalAccountId,
       UserProfile.localLedgerUserId,
+    );
+  });
+
+  test('Google and Guest sessions use separate persistent workspaces', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final store = AccountLocalStore(database: database);
+    final manager = AccountSessionManager(accountStore: store);
+    await manager.initialize();
+    await database.qazaRecordsDao.insertRecord(
+      QazaRecordsCompanion.insert(
+        id: 'guest_only_record',
+        userId: UserProfile.localLedgerUserId,
+        prayerType: 'fajr',
+        originalDate: DateTime(2025, 1, 1),
+        status: 'pending',
+        createdAt: DateTime(2025, 1, 1),
+        updatedAt: DateTime(2025, 1, 1),
+      ),
+    );
+
+    await manager.activateGoogleAccount('stable-google-account-A');
+    expect(manager.activeLocalAccountId, 'google:stable-google-account-A');
+    expect(
+      await database.qazaRecordsDao.getAll(
+        userId: 'google:stable-google-account-A',
+      ),
+      isEmpty,
+    );
+
+    await manager.activateGuest();
+    expect(manager.activeLocalAccountId, UserProfile.localLedgerUserId);
+    expect(
+      (await database.qazaRecordsDao.getAll(
+        userId: UserProfile.localLedgerUserId,
+      )).map((record) => record.id),
+      contains('guest_only_record'),
     );
   });
 }

@@ -55,6 +55,12 @@ void main() {
     addTearDown(database.close);
 
     expect(await database.isFreshInstallationForCloudRestore(), isTrue);
+    expect(
+      await database.isFreshInstallationForCloudRestore(
+        localAccountId: 'google:account-A',
+      ),
+      isTrue,
+    );
 
     await database.customStatement(
       '''INSERT INTO account_profiles
@@ -62,6 +68,12 @@ void main() {
          VALUES ('guest', '{}', 1, 'device-test', 'operation-test')''',
     );
     expect(await database.isFreshInstallationForCloudRestore(), isFalse);
+    expect(
+      await database.isFreshInstallationForCloudRestore(
+        localAccountId: 'google:account-A',
+      ),
+      isTrue,
+    );
   });
 
   test('initial cloud backup pending marker survives reads and can be cleared',

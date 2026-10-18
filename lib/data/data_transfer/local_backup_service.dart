@@ -35,7 +35,10 @@ class LocalBackupService {
 
   final AppDatabase database;
 
-  Future<String> exportJson({DateTime? exportedAt}) async {
+  Future<String> exportJson({
+    DateTime? exportedAt,
+    String? localAccountId,
+  }) async {
     return database.transaction(() async {
       final dbRevision = await database.readDbRevision();
       final users = await database.qazaRecordsDao.userIds();
@@ -170,6 +173,73 @@ class LocalBackupService {
         },
       };
 
+      if (localAccountId != null) {
+        final normalized = localAccountId.trim();
+        if (normalized.isEmpty) {
+          throw ArgumentError.value(localAccountId, 'localAccountId');
+        }
+        final data = document['data'] as Map<String, dynamic>;
+        final accounts = data['local_accounts'] as List<dynamic>;
+        if (!accounts.any(
+          (row) => row is Map && row['local_account_id'] == normalized,
+        )) {
+          throw LocalBackupException(
+            'The selected local workspace is not available for backup.',
+          );
+        }
+
+        _filterOwnedRows(data, 'qaza_records', 'userId', normalized);
+        _filterOwnedRows(data, 'daily_salah_logs', 'user_id', normalized);
+        _filterOwnedRows(data, 'qaza_additions', 'user_id', normalized);
+        _filterOwnedRows(data, 'qaza_deletion_actions', 'user_id', normalized);
+        _filterOwnedRows(
+          data,
+          'qaza_deletion_action_record_snapshots',
+          'user_id',
+          normalized,
+        );
+        _filterOwnedRows(
+          data,
+          'qaza_profile_plan_provenance',
+          'user_id',
+          normalized,
+        );
+        _filterOwnedRows(data, 'local_accounts', 'local_account_id', normalized);
+        _filterOwnedRows(data, 'account_profiles', 'local_account_id', normalized);
+        _filterOwnedRows(
+          data,
+          'account_plan_revisions',
+          'local_account_id',
+          normalized,
+        );
+
+        // The remote snapshot describes this workspace, not the currently
+        // foregrounded workspace on the device.
+        data['app_session_state'] = <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 1,
+            'active_local_account_id': normalized,
+          },
+        ];
+
+        final profileRows = data['account_profiles'] as List<dynamic>;
+        var profileOnboardingCompleted = false;
+        if (profileRows.isNotEmpty) {
+          final rawProfile = (profileRows.single as Map)['payload_json'];
+          if (rawProfile is String) {
+            try {
+              final decodedProfile = jsonDecode(rawProfile);
+              profileOnboardingCompleted = decodedProfile is Map &&
+                  decodedProfile['onboardingCompleted'] == true;
+            } catch (_) {
+              profileOnboardingCompleted = false;
+            }
+          }
+        }
+        final meta = data['meta_store'] as Map<String, dynamic>;
+        meta['is_onboarding_completed'] = profileOnboardingCompleted;
+      }
+
       return const JsonEncoder.withIndent('  ').convert(document);
     });
   }
@@ -189,8 +259,26 @@ class LocalBackupService {
     );
   }
 
-  Future<LocalBackupAnalysis> importJson(String jsonText) async {
-    final decoded = _decodeAndValidate(jsonText);
+  Future<LocalBackupAnalysis> importJson(
+    String jsonText, {
+    String? targetLocalAccountId,
+  }) async {
+    var decoded = _decodeAndValidate(jsonText);
+    if (targetLocalAccountId != null) {
+      final localDocument = jsonDecode(await exportJson());
+      if (localDocument is! Map) {
+        throw const LocalBackupException(
+          'The current local database could not be prepared for a safe restore.',
+        );
+      }
+      final localDecoded = _decodeAndValidate(jsonEncode(localDocument));
+      decoded = _mergeWorkspaceBackup(
+        decoded,
+        localDecoded,
+        targetLocalAccountId,
+      );
+    }
+
     final metadata = decoded['metadata'] as Map<String, dynamic>;
     final data = decoded['data'] as Map<String, dynamic>;
     final backupRevision = metadata['db_revision'] as int;
@@ -329,6 +417,151 @@ class LocalBackupService {
       accountCount: (data['local_accounts'] as List<dynamic>).length,
       onboardingCompleted: meta['is_onboarding_completed'] == true,
     );
+  }
+
+  void _filterOwnedRows(
+    Map<String, dynamic> data,
+    String table,
+    String ownerColumn,
+    String ownerId,
+  ) {
+    final rows = (data[table] as List<dynamic>?) ?? const <dynamic>[];
+    data[table] = rows
+        .where((raw) => raw is Map && raw[ownerColumn] == ownerId)
+        .toList(growable: false);
+  }
+
+  Map<String, dynamic> _mergeWorkspaceBackup(
+    Map<String, dynamic> remoteRoot,
+    Map<String, dynamic> localRoot,
+    String targetLocalAccountId,
+  ) {
+    final target = targetLocalAccountId.trim();
+    if (target.isEmpty) {
+      throw ArgumentError.value(targetLocalAccountId, 'targetLocalAccountId');
+    }
+
+    final remoteData = Map<String, dynamic>.from(remoteRoot['data'] as Map);
+    final localData = Map<String, dynamic>.from(localRoot['data'] as Map);
+    final remoteSession =
+        (remoteData['app_session_state'] as List<dynamic>?) ?? const [];
+    final remoteAccounts =
+        (remoteData['local_accounts'] as List<dynamic>?) ?? const [];
+    String? sourceAccountId;
+    if (remoteSession.isNotEmpty && remoteSession.first is Map) {
+      final value = (remoteSession.first as Map)['active_local_account_id'];
+      if (value is String && value.trim().isNotEmpty) {
+        sourceAccountId = value;
+      }
+    }
+    if (sourceAccountId == null &&
+        remoteAccounts.length == 1 &&
+        remoteAccounts.single is Map) {
+      final value = (remoteAccounts.single as Map)['local_account_id'];
+      if (value is String && value.trim().isNotEmpty) {
+        sourceAccountId = value;
+      }
+    }
+    if (sourceAccountId == null ||
+        !remoteAccounts.any(
+          (row) =>
+              row is Map && row['local_account_id'] == sourceAccountId,
+        )) {
+      throw const LocalBackupException(
+        'The cloud backup does not identify a single workspace to restore.',
+      );
+    }
+
+    // Never silently attach a known, different Google workspace. Legacy
+    // backups labelled "guest" can be adopted by the verified target account.
+    if (sourceAccountId.startsWith('google:') && sourceAccountId != target) {
+      throw const LocalBackupException(
+        'This backup belongs to a different Google account. Local data was not changed.',
+      );
+    }
+
+    List<Map<String, dynamic>> remoteOwned(
+      String table,
+      String ownerColumn,
+    ) {
+      final rows = (remoteData[table] as List<dynamic>?) ?? const <dynamic>[];
+      return rows
+          .where((raw) => raw is Map && raw[ownerColumn] == sourceAccountId)
+          .map((raw) {
+            final row = Map<String, dynamic>.from(raw as Map);
+            row[ownerColumn] = target;
+            return row;
+          })
+          .toList(growable: false);
+    }
+
+    List<Map<String, dynamic>> localOthers(
+      String table,
+      String ownerColumn,
+    ) {
+      final rows = (localData[table] as List<dynamic>?) ?? const <dynamic>[];
+      return rows
+          .where((raw) => raw is Map && raw[ownerColumn] != target)
+          .map((raw) => Map<String, dynamic>.from(raw as Map))
+          .toList(growable: false);
+    }
+
+    final mergedData = Map<String, dynamic>.from(localData);
+    const userOwnedTables = <(String, String)>[
+      ('qaza_records', 'userId'),
+      ('daily_salah_logs', 'user_id'),
+      ('qaza_additions', 'user_id'),
+      ('qaza_deletion_actions', 'user_id'),
+      ('qaza_deletion_action_record_snapshots', 'user_id'),
+      ('qaza_profile_plan_provenance', 'user_id'),
+    ];
+    for (final (table, ownerColumn) in userOwnedTables) {
+      mergedData[table] = <Map<String, dynamic>>[
+        ...localOthers(table, ownerColumn),
+        ...remoteOwned(table, ownerColumn),
+      ];
+    }
+
+    mergedData['local_accounts'] = <Map<String, dynamic>>[
+      ...localOthers('local_accounts', 'local_account_id'),
+      ...remoteOwned('local_accounts', 'local_account_id').map((row) {
+        row['account_mode'] = 'local';
+        row['lifecycle_state'] = 'active';
+        return row;
+      }),
+    ];
+    mergedData['account_profiles'] = <Map<String, dynamic>>[
+      ...localOthers('account_profiles', 'local_account_id'),
+      ...remoteOwned('account_profiles', 'local_account_id'),
+    ];
+    mergedData['account_plan_revisions'] = <Map<String, dynamic>>[
+      ...localOthers('account_plan_revisions', 'local_account_id'),
+      ...remoteOwned('account_plan_revisions', 'local_account_id'),
+    ];
+
+    // Keep the device's active session and global preferences unchanged. A
+    // background sync must not redirect the foreground UI to another account.
+    mergedData['app_session_state'] =
+        (localData['app_session_state'] as List<dynamic>)
+            .map((row) => Map<String, dynamic>.from(row as Map))
+            .toList(growable: false);
+    mergedData['meta_store'] =
+        Map<String, dynamic>.from(localData['meta_store'] as Map);
+
+    final metadata = Map<String, dynamic>.from(remoteRoot['metadata'] as Map);
+    final localMetadata = Map<String, dynamic>.from(localRoot['metadata'] as Map);
+    final remoteRevision = metadata['db_revision'] as int;
+    final localRevision = localMetadata['db_revision'] as int;
+    metadata['db_revision'] =
+        remoteRevision > localRevision ? remoteRevision : localRevision;
+
+    final mergedRoot = <String, dynamic>{
+      'metadata': metadata,
+      'data': mergedData,
+    };
+    // Validate cross-table references before the transactional import clears
+    // any rows. Any failure leaves the local database unchanged.
+    return _decodeAndValidate(jsonEncode(mergedRoot));
   }
 
   Map<String, dynamic> _decodeAndValidate(String jsonText) {

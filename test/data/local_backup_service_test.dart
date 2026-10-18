@@ -9,9 +9,16 @@ import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 
 QazaRecordsCompanion _record(String id, DateTime date) =>
+    _recordFor('guest', id, date);
+
+QazaRecordsCompanion _recordFor(
+  String userId,
+  String id,
+  DateTime date,
+) =>
     QazaRecordsCompanion.insert(
       id: id,
-      userId: 'guest',
+      userId: userId,
       prayerType: PrayerType.fajr.name,
       originalDate: date,
       status: QazaStatus.pending.name,
@@ -124,6 +131,88 @@ void main() {
       decoded['data']['meta_store']['daily_salah_tracking_enabled'],
       false,
     );
+  });
+
+  test('cloud export contains only the requested local workspace', () async {
+    const googleId = 'google:account-A';
+    final now = DateTime.now().microsecondsSinceEpoch;
+    await database.customInsert(
+      '''INSERT INTO local_accounts
+         (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+         VALUES (?, 'local', 'active', ?, ?)''',
+      variables: [
+        Variable.withString(googleId),
+        Variable.withInt(now),
+        Variable.withInt(now),
+      ],
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _record('guest_record', DateTime(2025, 1, 1)),
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(googleId, 'google_record', DateTime(2025, 1, 2)),
+    );
+
+    final decoded = jsonDecode(
+      await service.exportJson(localAccountId: googleId),
+    );
+
+    expect(decoded['data']['local_accounts'], hasLength(1));
+    expect(
+      decoded['data']['local_accounts'].single['local_account_id'],
+      googleId,
+    );
+    expect(decoded['data']['qaza_records'], hasLength(1));
+    expect(decoded['data']['qaza_records'].single['userId'], googleId);
+    expect(
+      decoded['data']['app_session_state'].single['active_local_account_id'],
+      googleId,
+    );
+  });
+
+  test('scoped cloud restore replaces only its workspace', () async {
+    const googleId = 'google:account-A';
+    final now = DateTime.now().microsecondsSinceEpoch;
+    await database.customInsert(
+      '''INSERT INTO local_accounts
+         (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+         VALUES (?, 'local', 'active', ?, ?)''',
+      variables: [
+        Variable.withString(googleId),
+        Variable.withInt(now),
+        Variable.withInt(now),
+      ],
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _record('guest_record', DateTime(2025, 1, 1)),
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(googleId, 'remote_google_record', DateTime(2025, 1, 2)),
+    );
+    final remoteBackup = await service.exportJson(localAccountId: googleId);
+
+    await database.qazaRecordsDao.deleteRecord(
+      userId: googleId,
+      recordId: 'remote_google_record',
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(googleId, 'local_google_record', DateTime(2025, 1, 3)),
+    );
+
+    await service.importJson(
+      remoteBackup,
+      targetLocalAccountId: googleId,
+    );
+
+    final guestRows = await database.qazaRecordsDao.getAll(userId: 'guest');
+    final googleRows = await database.qazaRecordsDao.getAll(userId: googleId);
+    expect(guestRows.map((row) => row.id), contains('guest_record'));
+    expect(googleRows.map((row) => row.id), contains('remote_google_record'));
+    expect(googleRows.map((row) => row.id), isNot(contains('local_google_record')));
+    final activeSession = await database.customSelect(
+      'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
+    ).getSingle();
+    expect(activeSession.read<String>('active_local_account_id'), 'guest');
   });
 
   test('backup preserves daily Salah links and the tracking preference',
