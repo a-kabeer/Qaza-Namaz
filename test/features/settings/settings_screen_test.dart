@@ -48,6 +48,13 @@ Future<void> _chooseLanguage(
   await tester.pumpAndSettle();
 }
 
+Future<void> _pumpThemeUi(WidgetTester tester) async {
+  // Some app-level animations can keep pumpAndSettle waiting indefinitely.
+  // Advance the route/theme animations by a bounded amount instead.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 400));
+}
+
 Widget _app(ProviderContainer container) {
   registerAppLicenses();
   return UncontrolledProviderScope(
@@ -187,7 +194,7 @@ void main() {
       addTearDown(container.dispose);
 
       await tester.pumpWidget(_app(container));
-      await tester.pumpAndSettle();
+      await _pumpThemeUi(tester);
       expect(find.byKey(const Key('settings_appearance')), findsOneWidget);
       expect(
         find.byKey(const Key('settings_appearance_color_swatch')),
@@ -195,15 +202,15 @@ void main() {
       );
 
       await tester.tap(find.byKey(const Key('settings_appearance')));
-      await tester.pumpAndSettle();
+      await _pumpThemeUi(tester);
       await tester.tap(find.byKey(const Key('appearance_theme_dark')));
-      await tester.pumpAndSettle();
+      await _pumpThemeUi(tester);
       expect(container.read(themeModeProvider), AppThemeMode.dark);
 
       final blue = find.byKey(const Key('appearance_primary_color_blue'));
       await tester.ensureVisible(blue);
       await tester.tap(blue);
-      await tester.pumpAndSettle();
+      await _pumpThemeUi(tester);
       expect(container.read(primaryColorProvider), AppPrimaryColor.blue);
 
       await Future<void>.delayed(const Duration(milliseconds: 20));
