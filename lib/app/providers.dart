@@ -67,7 +67,8 @@ final cloudAccountStartupRestoreProvider =
 /// Restores the active cloud identity before routing to account-specific UI.
 /// StartupGate keeps the splash visible until workspace activation completes,
 /// preventing stale Guest onboarding/profile content from flashing on screen.
-final startupAccountWorkspaceRestoreProvider = FutureProvider<void>((ref) async {
+final startupAccountWorkspaceRestoreProvider =
+    FutureProvider<void>((ref) async {
   final cloudAccount = ref.watch(cloudAccountProvider);
   final session = ref.read(accountSessionManagerProvider);
   if (!cloudAccount.isSupported) {

@@ -34,7 +34,8 @@ void main() {
     );
   });
 
-  test('Google and Guest sessions use separate persistent workspaces', () async {
+  test('Google and Guest sessions use separate persistent workspaces',
+      () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
@@ -67,7 +68,8 @@ void main() {
     expect(
       (await database.qazaRecordsDao.getAll(
         userId: UserProfile.localLedgerUserId,
-      )).map((record) => record.id),
+      ))
+          .map((record) => record.id),
       contains('guest_only_record'),
     );
   });

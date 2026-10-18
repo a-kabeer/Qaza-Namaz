@@ -204,8 +204,10 @@ class LocalBackupService {
           'user_id',
           normalized,
         );
-        _filterOwnedRows(data, 'local_accounts', 'local_account_id', normalized);
-        _filterOwnedRows(data, 'account_profiles', 'local_account_id', normalized);
+        _filterOwnedRows(
+            data, 'local_accounts', 'local_account_id', normalized);
+        _filterOwnedRows(
+            data, 'account_profiles', 'local_account_id', normalized);
         _filterOwnedRows(
           data,
           'account_plan_revisions',
@@ -464,8 +466,7 @@ class LocalBackupService {
     }
     if (sourceAccountId == null ||
         !remoteAccounts.any(
-          (row) =>
-              row is Map && row['local_account_id'] == sourceAccountId,
+          (row) => row is Map && row['local_account_id'] == sourceAccountId,
         )) {
       throw const LocalBackupException(
         'The cloud backup does not identify a single workspace to restore.',
@@ -488,11 +489,10 @@ class LocalBackupService {
       return rows
           .where((raw) => raw is Map && raw[ownerColumn] == sourceAccountId)
           .map((raw) {
-            final row = Map<String, dynamic>.from(raw as Map);
-            row[ownerColumn] = target;
-            return row;
-          })
-          .toList(growable: false);
+        final row = Map<String, dynamic>.from(raw as Map);
+        row[ownerColumn] = target;
+        return row;
+      }).toList(growable: false);
     }
 
     List<Map<String, dynamic>> localOthers(
@@ -549,7 +549,8 @@ class LocalBackupService {
         Map<String, dynamic>.from(localData['meta_store'] as Map);
 
     final metadata = Map<String, dynamic>.from(remoteRoot['metadata'] as Map);
-    final localMetadata = Map<String, dynamic>.from(localRoot['metadata'] as Map);
+    final localMetadata =
+        Map<String, dynamic>.from(localRoot['metadata'] as Map);
     final remoteRevision = metadata['db_revision'] as int;
     final localRevision = localMetadata['db_revision'] as int;
     metadata['db_revision'] =

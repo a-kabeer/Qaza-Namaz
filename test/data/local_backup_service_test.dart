@@ -208,10 +208,13 @@ void main() {
     final googleRows = await database.qazaRecordsDao.getAll(userId: googleId);
     expect(guestRows.map((row) => row.id), contains('guest_record'));
     expect(googleRows.map((row) => row.id), contains('remote_google_record'));
-    expect(googleRows.map((row) => row.id), isNot(contains('local_google_record')));
-    final activeSession = await database.customSelect(
-      'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
-    ).getSingle();
+    expect(googleRows.map((row) => row.id),
+        isNot(contains('local_google_record')));
+    final activeSession = await database
+        .customSelect(
+          'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
+        )
+        .getSingle();
     expect(activeSession.read<String>('active_local_account_id'), 'guest');
   });
 

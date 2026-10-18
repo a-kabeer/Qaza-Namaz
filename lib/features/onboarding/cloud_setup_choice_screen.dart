@@ -174,9 +174,11 @@ class _CloudSetupChoiceScreenState
             ref.read(accountSessionManagerProvider).activeLocalAccountId;
         if (conflict != null &&
             localAccountId != null &&
-            await ref.read(appDatabaseProvider).isFreshInstallationForCloudRestore(
-              localAccountId: localAccountId,
-            ) &&
+            await ref
+                .read(appDatabaseProvider)
+                .isFreshInstallationForCloudRestore(
+                  localAccountId: localAccountId,
+                ) &&
             conflict.localRevision ==
                 await ref.read(appDatabaseProvider).readDbRevision()) {
           // Automatic replacement is permitted only when the database itself

@@ -428,9 +428,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           } else {
             final database = ref.read(appDatabaseProvider);
             final fresh = await database.isFreshInstallationForCloudRestore(
-              localAccountId: ref
-                  .read(accountSessionManagerProvider)
-                  .activeLocalAccountId,
+              localAccountId:
+                  ref.read(accountSessionManagerProvider).activeLocalAccountId,
             );
             final revision = await database.readDbRevision();
             if (fresh && conflict.localRevision == revision) {
