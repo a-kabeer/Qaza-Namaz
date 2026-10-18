@@ -463,6 +463,7 @@ class AppDatabase extends _$AppDatabase {
 
         const businessTables = <String>[
           'qaza_records',
+          'daily_salah_logs',
           'qaza_additions',
           'qaza_deletion_actions',
           'qaza_deletion_action_record_snapshots',
@@ -487,6 +488,7 @@ class AppDatabase extends _$AppDatabase {
       // automatic restore.
       const ownedTables = <(String, String)>[
         ('qaza_records', 'user_id'),
+        ('daily_salah_logs', 'user_id'),
         ('qaza_additions', 'user_id'),
         ('qaza_deletion_actions', 'user_id'),
         ('qaza_deletion_action_record_snapshots', 'user_id'),

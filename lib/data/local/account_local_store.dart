@@ -137,9 +137,11 @@ class AccountLocalStore {
   Future<bool> hasAnyAccountData(String localAccountId) async {
     const queries = [
       'SELECT 1 FROM qaza_records WHERE user_id = ? LIMIT 1',
+      'SELECT 1 FROM daily_salah_logs WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM qaza_additions WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM qaza_deletion_actions WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM qaza_deletion_action_record_snapshots WHERE user_id = ? LIMIT 1',
+      'SELECT 1 FROM qaza_profile_plan_provenance WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM account_profiles WHERE local_account_id = ? LIMIT 1',
       'SELECT 1 FROM account_plan_revisions WHERE local_account_id = ? LIMIT 1',
     ];

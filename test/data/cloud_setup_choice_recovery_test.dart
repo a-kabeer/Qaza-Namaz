@@ -74,6 +74,25 @@ void main() {
       ),
       isTrue,
     );
+
+    await database.customInsert(
+      '''INSERT INTO daily_salah_logs
+         (user_id, prayer_date, prayer_type, status, updated_at)
+         VALUES (?, ?, ?, ?, ?)''',
+      variables: [
+        Variable.withString('google:account-A'),
+        Variable.withString('2025-01-01'),
+        Variable.withString('fajr'),
+        Variable.withString('missed'),
+        Variable.withString('2025-01-01'),
+      ],
+    );
+    expect(
+      await database.isFreshInstallationForCloudRestore(
+        localAccountId: 'google:account-A',
+      ),
+      isFalse,
+    );
   });
 
   test('initial cloud backup pending marker survives reads and can be cleared',
