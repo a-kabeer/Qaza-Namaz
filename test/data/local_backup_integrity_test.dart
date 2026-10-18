@@ -479,5 +479,4 @@ void main() {
       hasLength(1),
     );
   });
-
 }

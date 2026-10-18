@@ -711,5 +711,4 @@ void main() {
     expect(alreadyRestored.alreadyResolved, isTrue);
     expect(await db.readDbRevision(), start + 4);
   });
-
 }

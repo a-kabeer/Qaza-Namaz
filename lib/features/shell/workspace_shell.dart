@@ -135,7 +135,10 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
             index: index,
             children: [
               for (var i = 0; i < _pages.length; i++)
-                if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
+                if (_mounted.contains(i))
+                  _pages[i]
+                else
+                  const SizedBox.shrink(),
             ],
           ),
         ),

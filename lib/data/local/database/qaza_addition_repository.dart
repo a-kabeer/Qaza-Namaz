@@ -231,7 +231,8 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
     void Function(int processed, int total, int added)? onProgress,
   }) async {
     try {
-      return await database.transactionWithRevision<QazaAdditionMutationResult>(() async {
+      return await database.transactionWithRevision<QazaAdditionMutationResult>(
+          () async {
         if (isCancellationRequested?.call() ?? false) {
           throw const _CancelledTransaction();
         }
@@ -293,7 +294,8 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
     void Function(int processed, int total, int added)? onProgress,
   }) async {
     try {
-      return await database.transactionWithRevision<QazaAdditionMutationResult>(() async {
+      return await database.transactionWithRevision<QazaAdditionMutationResult>(
+          () async {
         if (isCancellationRequested?.call() ?? false) {
           throw const _CancelledTransaction();
         }
@@ -627,8 +629,9 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           restoredCount: restored,
           conflictCount: conflicts,
         );
-      }, mutationPredicate: (result) =>
-          result.restoredCount > 0 || result.conflictCount > 0);
+      },
+          mutationPredicate: (result) =>
+              result.restoredCount > 0 || result.conflictCount > 0);
 
   Future<void> _insertAddition(QazaAddition addition) => database.customInsert(
         '''INSERT INTO qaza_additions
