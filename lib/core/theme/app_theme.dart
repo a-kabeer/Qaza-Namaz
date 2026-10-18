@@ -113,8 +113,7 @@ class AppTheme {
             palette?.onSecondaryContainer ?? _darkOnSecondaryContainer,
         tertiary: palette?.tertiary ?? _darkTertiary,
         onTertiary: palette?.onTertiary ?? _darkOnTertiary,
-        tertiaryContainer:
-            palette?.tertiaryContainer ?? _darkTertiaryContainer,
+        tertiaryContainer: palette?.tertiaryContainer ?? _darkTertiaryContainer,
         onTertiaryContainer:
             palette?.onTertiaryContainer ?? _darkOnTertiaryContainer,
         error: _darkError,
@@ -144,8 +143,7 @@ class AppTheme {
     );
   }
 
-  static Color colorFor(AppPrimaryColor primaryColor) =>
-      switch (primaryColor) {
+  static Color colorFor(AppPrimaryColor primaryColor) => switch (primaryColor) {
         AppPrimaryColor.teal => const Color(0xFF01485A),
         AppPrimaryColor.blue => const Color(0xFF1D4ED8),
         AppPrimaryColor.green => const Color(0xFF166534),

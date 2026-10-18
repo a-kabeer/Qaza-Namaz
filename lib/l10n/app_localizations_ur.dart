@@ -1530,34 +1530,34 @@ class AppLocalizationsUr extends AppLocalizations {
       'منتخب کریں کہ ایپ اس ڈیوائس پر کیسی نظر آئے۔';
 
   @override
-  String get settingsThemeSelector => "تھیم";
+  String get settingsThemeSelector => 'تھیم';
 
   @override
-  String get settingsPrimaryColor => "بنیادی رنگ";
+  String get settingsPrimaryColor => 'بنیادی رنگ';
 
   @override
-  String get settingsPrimaryColorTeal => "فیروزی";
+  String get settingsPrimaryColorTeal => 'فیروزی';
 
   @override
-  String get settingsPrimaryColorBlue => "نیلا";
+  String get settingsPrimaryColorBlue => 'نیلا';
 
   @override
-  String get settingsPrimaryColorGreen => "سبز";
+  String get settingsPrimaryColorGreen => 'سبز';
 
   @override
-  String get settingsPrimaryColorPurple => "جامنی";
+  String get settingsPrimaryColorPurple => 'جامنی';
 
   @override
-  String get settingsPrimaryColorAmber => "عنبر";
+  String get settingsPrimaryColorAmber => 'عنبر';
 
   @override
-  String get settingsPrimaryColorRose => "گلابی";
+  String get settingsPrimaryColorRose => 'گلابی';
 
   @override
-  String get settingsPrimaryColorSlate => "سلیٹی";
+  String get settingsPrimaryColorSlate => 'سلیٹی';
 
   @override
-  String get settingsPrimaryColorBlack => "سیاہ";
+  String get settingsPrimaryColorBlack => 'سیاہ';
 
   @override
   String get settingsThemeSystem => 'سسٹم';
@@ -4421,34 +4421,34 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
       'Muntakhab karein keh app is device par kaisi nazar aaie';
 
   @override
-  String get settingsThemeSelector => "Theme";
+  String get settingsThemeSelector => 'Theme';
 
   @override
-  String get settingsPrimaryColor => "Bunyadi Rang";
+  String get settingsPrimaryColor => 'Bunyadi Rang';
 
   @override
-  String get settingsPrimaryColorTeal => "Teal";
+  String get settingsPrimaryColorTeal => 'Teal';
 
   @override
-  String get settingsPrimaryColorBlue => "Neela";
+  String get settingsPrimaryColorBlue => 'Neela';
 
   @override
-  String get settingsPrimaryColorGreen => "Hara";
+  String get settingsPrimaryColorGreen => 'Hara';
 
   @override
-  String get settingsPrimaryColorPurple => "Baingani";
+  String get settingsPrimaryColorPurple => 'Baingani';
 
   @override
-  String get settingsPrimaryColorAmber => "Amber";
+  String get settingsPrimaryColorAmber => 'Amber';
 
   @override
-  String get settingsPrimaryColorRose => "Gulabi";
+  String get settingsPrimaryColorRose => 'Gulabi';
 
   @override
-  String get settingsPrimaryColorSlate => "Slate";
+  String get settingsPrimaryColorSlate => 'Slate';
 
   @override
-  String get settingsPrimaryColorBlack => "Kala";
+  String get settingsPrimaryColorBlack => 'Kala';
 
   @override
   String get settingsThemeSystem => 'System';

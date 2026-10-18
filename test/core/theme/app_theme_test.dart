@@ -155,7 +155,8 @@ void main() {
   });
 
   group('Primary color palettes', () {
-    test('provides eight choices with readable primary and secondary roles', () {
+    test('provides eight choices with readable primary and secondary roles',
+        () {
       expect(AppPrimaryColor.values, hasLength(8));
       expect(AppTheme.colorFor(AppPrimaryColor.teal), const Color(0xFF01485A));
       for (final color in AppPrimaryColor.values) {
