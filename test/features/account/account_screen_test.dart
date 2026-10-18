@@ -44,6 +44,7 @@ class _FakeCloudAccountProvider extends UnsupportedCloudAccountProvider {
   _FakeCloudAccountProvider({required this.snapshot});
 
   CloudAccountSnapshot snapshot;
+  int signInCalls = 0;
 
   @override
   bool get isSupported => true;
@@ -52,7 +53,10 @@ class _FakeCloudAccountProvider extends UnsupportedCloudAccountProvider {
   Future<CloudAccountSnapshot> restore() async => snapshot;
 
   @override
-  Future<CloudAccountSnapshot> signIn() async => snapshot;
+  Future<CloudAccountSnapshot> signIn() async {
+    signInCalls++;
+    return snapshot;
+  }
 
   @override
   Future<List<RememberedCloudAccount>> rememberedAccounts() async =>
@@ -259,7 +263,7 @@ void main() {
   );
 
   testWidgets(
-    'auto-connect waits for account restore before opening account choice',
+    'auto-connect waits for account restore before invoking native sign-in',
     (tester) async {
       final database = AppDatabase(NativeDatabase.memory());
       final manager = await _createSession(database);
@@ -286,9 +290,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      expect(cloudAccount.signInCalls, 1);
       expect(
         find.byKey(const Key('continue_with_new_google_account')),
-        findsOneWidget,
+        findsNothing,
       );
     },
   );
