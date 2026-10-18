@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../daily_salah/daily_salah_tracking_providers.dart';
+import '../home/home_controller.dart';
+import '../qaza/qaza_addition_history_screen.dart';
 import '../qaza/qaza_tracker_controller.dart';
 
 /// State of the "Reset Qaza Counter" action.
@@ -47,6 +50,11 @@ class QazaResetController extends AutoDisposeNotifier<QazaResetState> {
       ref.invalidate(oldestPendingProvider);
       ref.invalidate(latestPendingProvider);
       ref.invalidate(qazaTrackerControllerProvider);
+      ref.invalidate(qazaAdditionHistoryControllerProvider);
+      ref.invalidate(dailySalahTrackingEnabledProvider);
+      ref.invalidate(dailySalahTrackingLogsProvider);
+      await ref.read(qazaUndoManagerProvider).clear(userId: userId);
+      ref.read(homeControllerProvider).invalidateDashboard();
       state = QazaResetState(recordCount: summary.overall.total);
       return true;
     } catch (error) {

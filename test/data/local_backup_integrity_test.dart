@@ -461,4 +461,23 @@ void main() {
     expect(prefs.getString('language_code'), 'ur');
     expect(prefs.getString('qaza_theme_mode'), 'dark');
   });
+  test('ignored prayer-date uniqueness conflicts are not reported inserted',
+      () async {
+    final date = DateTime(2026, 10, 10);
+    await database.qazaRecordsDao.insertRecord(
+      _record('daily-salah-guest-fajr-20261010', date),
+    );
+
+    final insertedIds =
+        await database.qazaRecordsDao.insertRecordsReturningInsertedIds([
+      _record('guest_fajr_plan_20261010', date),
+    ]);
+
+    expect(insertedIds, isEmpty);
+    expect(
+      await database.qazaRecordsDao.getAll(userId: 'guest'),
+      hasLength(1),
+    );
+  });
+
 }
