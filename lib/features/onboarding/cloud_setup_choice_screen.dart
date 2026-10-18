@@ -10,7 +10,6 @@ import '../../core/errors/app_error_messages.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
 import '../../l10n/app_localizations.dart';
-import '../account/google_account_choice_screen.dart';
 
 class CloudSetupChoiceScreen extends ConsumerStatefulWidget {
   const CloudSetupChoiceScreen({super.key});
@@ -73,6 +72,7 @@ class _CloudSetupChoiceScreenState
       final account = await ref.read(cloudAccountStartupRestoreProvider.future);
       if (!mounted) return;
       if (account.isConnected) {
+        await _activateGoogleWorkspace(account);
         _accountConnected = true;
         await _discoverBackup();
       } else if (account.status == CloudAccountStatus.reconnectRequired) {
@@ -100,6 +100,24 @@ class _CloudSetupChoiceScreenState
     } finally {
       if (mounted) setState(() => _working = false);
     }
+  }
+
+  Future<void> _activateGoogleWorkspace(CloudAccountSnapshot account) async {
+    final stableAccountId = account.accountId?.trim();
+    if (stableAccountId == null || stableAccountId.isEmpty) {
+      throw StateError(
+        'Google could not verify this account. Please try signing in again.',
+      );
+    }
+    await ref
+        .read(accountSessionManagerProvider)
+        .activateGoogleAccount(stableAccountId);
+    ref.invalidate(appRouteProvider);
+    ref.invalidate(userProfileProvider);
+    ref.invalidate(progressSummaryProvider);
+    ref.invalidate(qazaRepositoryProvider);
+    ref.invalidate(qazaAdditionRepositoryProvider);
+    ref.invalidate(qazaPlanRevisionRepositoryProvider);
   }
 
   Future<void> _completeChoice() async {
@@ -152,10 +170,13 @@ class _CloudSetupChoiceScreenState
           _discovery = result;
         });
         final conflict = result.conflict;
+        final localAccountId =
+            ref.read(accountSessionManagerProvider).activeLocalAccountId;
         if (conflict != null &&
-            await ref
-                .read(appDatabaseProvider)
-                .isFreshInstallationForCloudRestore() &&
+            localAccountId != null &&
+            await ref.read(appDatabaseProvider).isFreshInstallationForCloudRestore(
+              localAccountId: localAccountId,
+            ) &&
             conflict.localRevision ==
                 await ref.read(appDatabaseProvider).readDbRevision()) {
           // Automatic replacement is permitted only when the database itself
@@ -176,15 +197,8 @@ class _CloudSetupChoiceScreenState
       await _persistSelectedLanguage();
       if (!mounted) return;
       final accountProvider = ref.read(cloudAccountProvider);
-      final selectedAccountId =
-          await showGoogleAccountChoiceScreen(context, accountProvider);
-      if (!mounted || selectedAccountId == null) return;
       _cloudAttempted = true;
-      final account = selectedAccountId.isEmpty
-          ? await accountProvider.signIn()
-          : await accountProvider.signInWithRememberedAccount(
-              selectedAccountId,
-            );
+      final account = await accountProvider.signIn();
       if (!mounted || account.wasCancelled) return;
       if (!account.isConnected) {
         _accountConnected = false;
@@ -195,6 +209,7 @@ class _CloudSetupChoiceScreenState
         );
         return;
       }
+      await _activateGoogleWorkspace(account);
       _accountConnected = true;
       // This follows the explicit "Use Google" tap; automatic restoration
       // never requests Drive consent.
@@ -230,6 +245,13 @@ class _CloudSetupChoiceScreenState
         }
         _accountConnected = false;
       }
+      await ref.read(accountSessionManagerProvider).activateGuest();
+      ref.invalidate(appRouteProvider);
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(progressSummaryProvider);
+      ref.invalidate(qazaRepositoryProvider);
+      ref.invalidate(qazaAdditionRepositoryProvider);
+      ref.invalidate(qazaPlanRevisionRepositoryProvider);
       await _completeChoice();
     } catch (error) {
       if (mounted) {

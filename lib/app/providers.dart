@@ -64,6 +64,29 @@ final cloudAccountStartupRestoreProvider =
   return account.restore();
 });
 
+/// Restores the active cloud identity before routing to account-specific UI.
+/// StartupGate keeps the splash visible until workspace activation completes,
+/// preventing stale Guest onboarding/profile content from flashing on screen.
+final startupAccountWorkspaceRestoreProvider = FutureProvider<void>((ref) async {
+  final cloudAccount = ref.watch(cloudAccountProvider);
+  final session = ref.read(accountSessionManagerProvider);
+  if (!cloudAccount.isSupported) {
+    await session.activateGuest();
+    return;
+  }
+
+  final snapshot = await cloudAccount.restore();
+  final accountId = snapshot.accountId?.trim();
+  if (accountId != null &&
+      accountId.isNotEmpty &&
+      snapshot.status != CloudAccountStatus.disconnected &&
+      snapshot.status != CloudAccountStatus.unavailable) {
+    await session.activateGoogleAccount(accountId);
+  } else {
+    await session.activateGuest();
+  }
+});
+
 final cloudSyncProvider = Provider<CloudSyncProvider>(
   (ref) => const UnsupportedCloudSyncProvider(),
 );

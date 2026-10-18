@@ -3,7 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
-import 'package:qaza_namaz/data/local/database/app_database.dart' show QazaRecordsCompanion;
 import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';

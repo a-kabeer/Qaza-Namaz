@@ -8,7 +8,6 @@ import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
 import '../data_management/qaza_data_management_screen.dart';
 import '../onboarding/startup_gate.dart';
-import 'google_account_choice_screen.dart';
 import '../settings/qaza_reset_controller.dart';
 
 class AccountScreen extends ConsumerStatefulWidget {
@@ -362,21 +361,15 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   Future<void> _connect() async {
     if (_busy || _settingsBusy || _backupBusy) return;
     final accountProvider = ref.read(cloudAccountProvider);
-    final selectedAccountId =
-        await showGoogleAccountChoiceScreen(context, accountProvider);
-    if (!mounted || selectedAccountId == null) return;
-
+    // Set the guard before opening the native picker to prevent duplicate
+    // authentication dialogs from repeated taps.
     setState(() {
       _busy = true;
       _message = null;
     });
     try {
-      final account = selectedAccountId.isEmpty
-          ? await accountProvider.signIn()
-          : await accountProvider.signInWithRememberedAccount(
-              selectedAccountId,
-            );
-      if (!mounted) return;
+      final account = await accountProvider.signIn();
+      if (!mounted || account.wasCancelled) return;
       widget.onAccountChanged(account);
       if (!account.isConnected) {
         setState(() {
@@ -389,6 +382,23 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         });
         return;
       }
+
+      final stableAccountId = account.accountId?.trim();
+      if (stableAccountId == null || stableAccountId.isEmpty) {
+        setState(() {
+          _message = AppLocalizations.of(context).cloudConnectionFailed;
+        });
+        return;
+      }
+      await ref
+          .read(accountSessionManagerProvider)
+          .activateGoogleAccount(stableAccountId);
+      ref.invalidate(appRouteProvider);
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(progressSummaryProvider);
+      ref.invalidate(qazaRepositoryProvider);
+      ref.invalidate(qazaAdditionRepositoryProvider);
+      ref.invalidate(qazaPlanRevisionRepositoryProvider);
 
       final cloudSync = ref.read(cloudSyncProvider);
       final discovery = await cloudSync.discoverBackup(
@@ -417,7 +427,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
             );
           } else {
             final database = ref.read(appDatabaseProvider);
-            final fresh = await database.isFreshInstallationForCloudRestore();
+            final fresh = await database.isFreshInstallationForCloudRestore(
+              localAccountId: ref
+                  .read(accountSessionManagerProvider)
+                  .activeLocalAccountId,
+            );
             final revision = await database.readDbRevision();
             if (fresh && conflict.localRevision == revision) {
               result = await cloudSync.resolveConflict(
@@ -498,30 +512,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         return;
       }
 
-      final backUpFirst = await showDialog<bool>(
-        context: context,
-        builder: (dialogContext) => AlertDialog(
-          title:
-              Text(AppLocalizations.of(dialogContext).cloudSignOutPendingTitle),
-          content: Text(
-            AppLocalizations.of(dialogContext).cloudSignOutPendingMessage,
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(AppLocalizations.of(dialogContext).commonCancel),
-            ),
-            FilledButton(
-              onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: Text(
-                AppLocalizations.of(dialogContext).cloudBackupAndSignOut,
-              ),
-            ),
-          ],
-        ),
-      );
-      if (backUpFirst != true || !mounted) return;
-
+      // On a reachable account, attempt backup immediately. Only ask the user
+      // what to do if backup fails or an unresolved conflict blocks it.
       while (mounted) {
         setState(() {
           _backupProgress = const CloudBackupProgress.checking();
@@ -622,6 +614,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
 
   Future<void> _finishSignOut() async {
     await ref.read(cloudAccountProvider).disconnect();
+    // Switch away from the outgoing workspace without deleting its local data.
+    await ref.read(accountSessionManagerProvider).activateGuest();
+    ref.invalidate(appRouteProvider);
+    ref.invalidate(userProfileProvider);
+    ref.invalidate(progressSummaryProvider);
+    ref.invalidate(qazaRepositoryProvider);
+    ref.invalidate(qazaAdditionRepositoryProvider);
+    ref.invalidate(qazaPlanRevisionRepositoryProvider);
     await ref.read(appDatabaseProvider).markReturningAccountChoicePending();
     widget.onAccountChanged(const CloudAccountSnapshot.disconnected());
     ref.invalidate(cloudAccountStartupRestoreProvider);

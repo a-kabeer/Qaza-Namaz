@@ -19,6 +19,7 @@ class _FakeCloudAccountProvider implements CloudAccountProvider {
   _FakeCloudAccountProvider({
     this.signInResult = const CloudAccountSnapshot(
       status: CloudAccountStatus.connected,
+      accountId: 'test-google-account-A',
     ),
   });
 
@@ -251,10 +252,6 @@ void main() {
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
     );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
-    );
 
     expect(find.byType(CloudSetupChoiceScreen), findsNothing);
     expect(find.byType(LanguageSelectionScreen), findsNothing);
@@ -283,10 +280,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
@@ -329,10 +322,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     final fakeSync =
@@ -381,10 +370,6 @@ void main() {
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
     );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
-    );
 
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
     expect(find.byType(AlertDialog), findsNothing);
@@ -426,10 +411,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(find.byType(AlertDialog), findsOneWidget);
@@ -480,10 +461,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(find.byType(AlertDialog), findsOneWidget);
@@ -539,10 +516,6 @@ void main() {
     await _tapVisible(
       tester,
       find.byKey(const Key('cloud_setup_connect_google')),
-    );
-    await _tapVisible(
-      tester,
-      find.byKey(const Key('continue_with_new_google_account')),
     );
 
     expect(

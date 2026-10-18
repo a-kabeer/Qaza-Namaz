@@ -65,7 +65,7 @@ class StartupGate extends ConsumerWidget {
               onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
             ),
             data: (completed) => completed
-                ? _profileDestination(ref, cloudEnabled: true)
+                ? _restoredWorkspaceDestination(ref)
                 : const CloudSetupChoiceScreen(),
           );
         },
@@ -73,6 +73,18 @@ class StartupGate extends ConsumerWidget {
     }
 
     return _profileDestination(ref, cloudEnabled: false);
+  }
+
+  Widget _restoredWorkspaceDestination(WidgetRef ref) {
+    final workspace = ref.watch(startupAccountWorkspaceRestoreProvider);
+    return workspace.when(
+      loading: () => const SplashScreen(),
+      error: (_, __) => StartupProfileLoadErrorBoundary(
+        key: const Key('startup_account_workspace_restore_error'),
+        onRetry: () => ref.invalidate(startupAccountWorkspaceRestoreProvider),
+      ),
+      data: (_) => _profileDestination(ref, cloudEnabled: true),
+    );
   }
 
   Widget _profileDestination(

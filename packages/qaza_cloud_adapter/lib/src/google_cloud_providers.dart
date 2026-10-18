@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
+import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'cloud_models.dart';
@@ -86,6 +87,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
           await accountState.setReconnectRequired(true);
         }
         return CloudAccountSnapshot.reconnectRequired(
+          accountId: activeAccountId,
           displayName: account.displayName,
           email: account.email,
           photoUrl: account.photoUrl,
@@ -124,6 +126,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
           );
           return CloudAccountSnapshot(
             status: CloudAccountStatus.connected,
+            accountId: account.id,
             displayName: account.displayName,
             email: account.email,
             photoUrl: account.photoUrl,
@@ -161,7 +164,14 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
         return await _cachedProfileSnapshot(reconnectRequired: true);
       }
     } catch (error) {
-      return CloudAccountSnapshot.failed(error.toString());
+      final scopedState = _state is CloudAccountScopedSyncStateStore
+          ? _state as CloudAccountScopedSyncStateStore
+          : null;
+      final activeAccountId = await scopedState?.activeAccountId();
+      return CloudAccountSnapshot.failed(
+        error.toString(),
+        accountId: activeAccountId,
+      );
     }
   }
 
@@ -319,8 +329,14 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
     final displayName = readValue(_cachedDisplayNameKey);
     final email = readValue(_cachedEmailKey);
     final photoUrl = readValue(_cachedPhotoUrlKey);
+    final cachedAccountId = readValue(_cachedAccountIdKey);
+    final scopedState = _state is CloudAccountScopedSyncStateStore
+        ? _state as CloudAccountScopedSyncStateStore
+        : null;
+    final accountId = cachedAccountId ?? await scopedState?.activeAccountId();
     if (reconnectRequired) {
       return CloudAccountSnapshot.reconnectRequired(
+        accountId: accountId,
         displayName: displayName,
         email: email,
         photoUrl: photoUrl,
@@ -329,6 +345,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
 
     return CloudAccountSnapshot(
       status: CloudAccountStatus.connected,
+      accountId: accountId,
       displayName: displayName,
       email: email,
       photoUrl: photoUrl,
@@ -380,6 +397,7 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
       }
       return CloudAccountSnapshot(
         status: CloudAccountStatus.connected,
+        accountId: account.id,
         displayName: account.displayName,
         email: account.email,
         photoUrl: account.photoUrl,
@@ -406,9 +424,14 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
 
   @override
   Future<void> disconnect() async {
-    // The worker guard is persisted before OAuth sign-out can begin.
+    // Stop work before removing the active binding. The account-specific sync
+    // cursor remains namespaced and can be reused if the user signs in again.
     await _scheduler.disconnect();
     await _gateway.signOut();
+    await _state.setCloudSyncEnabled(false);
+    if (_state is CloudAccountScopedSyncStateStore) {
+      await (_state as CloudAccountScopedSyncStateStore).setActiveAccountId(null);
+    }
     await _clearCachedAccountProfile();
   }
 }
@@ -495,6 +518,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       try {
         final result = await _engine(
           state: verified.state,
+          localAccountId: accountId == null
+              ? null
+              : googleLocalWorkspaceId(accountId),
         ).discoverBackup(allowInteractive: allowInteractive);
         switch (result.kind) {
           case CloudBackupDiscoveryKind.noBackup:
@@ -606,7 +632,12 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         accountPinned = true;
       }
 
-      final result = await _engine(state: operationState).sync(
+      final result = await _engine(
+        state: operationState,
+        localAccountId: operationAccountId == null
+            ? null
+            : googleLocalWorkspaceId(operationAccountId),
+      ).sync(
         allowInteractive: true,
         createInitialBackup: true,
         onProgress: (progress) {
@@ -702,7 +733,12 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         accountPinned = true;
       }
 
-      final result = await _engine(state: operationState).resolveConflict(
+      final result = await _engine(
+        state: operationState,
+        localAccountId: operationAccountId == null
+            ? null
+            : googleLocalWorkspaceId(operationAccountId),
+      ).resolveConflict(
         conflict: _toAdapterConflict(conflict),
         decision: choice == CloudConflictChoice.keepLocal
             ? CloudConflictDecision.keepLocal
@@ -742,7 +778,22 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     required bool confirmed,
   }) async {
     try {
-      final result = await _engine().restoreLocalRecoverySnapshot(
+      final scopedState = _state is CloudAccountScopedSyncStateStore
+          ? _state as CloudAccountScopedSyncStateStore
+          : null;
+      final activeAccountId = await scopedState?.activeAccountId();
+      if (scopedState != null &&
+          (activeAccountId == null || activeAccountId.trim().isEmpty)) {
+        return await _snapshot(
+          CloudSyncStatus.failed,
+          message: 'Reconnect the Google account before restoring its recovery snapshot.',
+        );
+      }
+      final result = await _engine(
+        localAccountId: activeAccountId == null
+            ? null
+            : googleLocalWorkspaceId(activeAccountId),
+      ).restoreLocalRecoverySnapshot(
         confirmed: confirmed,
       );
       // Restoring a local safety snapshot is not a successful cloud backup.
@@ -761,8 +812,18 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     }
   }
 
-  CloudSyncEngine _engine({CloudSyncStateStore? state}) => CloudSyncEngine(
-    phase1: _phase1,
+  CloudSyncEngine _engine({
+    CloudSyncStateStore? state,
+    String? localAccountId,
+  }) => CloudSyncEngine(
+    // Cloud work is pinned to the verified Google identity rather than the
+    // currently visible account. This also protects background sync.
+    phase1: localAccountId == null
+        ? _phase1
+        : LocalPhase1BackupSource(
+            _phase1.database,
+            localAccountId: localAccountId,
+          ),
     remote: GoogleDriveAppDataStore(_gateway),
     state: state ?? _state,
   );
