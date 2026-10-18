@@ -227,6 +227,4 @@ void main() {
     expect(stored?.additionId, 'addition-upsert');
     expect(stored?.recordVersion, 4);
   });
-
-
 }
