@@ -10,6 +10,7 @@ import '../../domain/entities/qaza_addition.dart';
 import '../../l10n/app_localizations.dart';
 import 'widgets/qaza_addition_date_summary.dart';
 import 'qaza_navigation.dart';
+import 'qaza_tracker_controller.dart';
 
 enum QazaAdditionHistoryTab { recent, deleted }
 
