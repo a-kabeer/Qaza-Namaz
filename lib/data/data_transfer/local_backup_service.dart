@@ -1583,8 +1583,8 @@ class LocalBackupService {
       "DELETE FROM meta_store WHERE key IN ("
       "'daily_salah_tracking_enabled', "
       "'daily_salah_tracking_setup_dismissed') "
-      "OR key LIKE 'daily_salah_tracking_enabled:%' "
-      "OR key LIKE 'daily_salah_tracking_setup_dismissed:%'",
+      "OR key GLOB 'daily_salah_tracking_enabled:*' "
+      "OR key GLOB 'daily_salah_tracking_setup_dismissed:*'",
     );
     await database.customStatement('DELETE FROM daily_salah_logs');
     await database.customStatement(
