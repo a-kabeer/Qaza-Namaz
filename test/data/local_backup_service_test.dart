@@ -172,7 +172,7 @@ void main() {
     );
   });
 
-  test('scoped restore restores onboarding state for the active workspace',
+  test('scoped restore restores onboarding and tracking settings for the active workspace',
       () async {
     const googleId = 'google:account-onboarding';
     final now = DateTime.now().microsecondsSinceEpoch;
@@ -192,6 +192,7 @@ void main() {
       const UserProfile(onboardingCompleted: true),
     );
     await accounts.activate(googleId);
+    await database.setDailySalahTrackingEnabled(true);
     final remoteBackup = await service.exportJson(localAccountId: googleId);
 
     // Simulate a fresh local copy of the target workspace before restore.
@@ -201,6 +202,7 @@ void main() {
     );
     await accounts.activate(googleId);
     expect(await database.isOnboardingCompleted(), isFalse);
+    await database.setDailySalahTrackingEnabled(false);
 
     await service.importJson(
       remoteBackup,
@@ -208,6 +210,7 @@ void main() {
     );
 
     expect(await database.isOnboardingCompleted(), isTrue);
+    expect(await database.isDailySalahTrackingEnabled(), isTrue);
     final restored = await accounts.loadProfile(googleId);
     expect(restored?.onboardingCompleted, isTrue);
     expect(
@@ -262,6 +265,60 @@ void main() {
         )
         .getSingle();
     expect(activeSession.read<String>('active_local_account_id'), 'guest');
+  });
+
+  test('legacy Guest cloud backup adoption remaps Qaza IDs and linked references',
+      () async {
+    const googleId = 'google:account-adopt';
+    final date = DateTime(2025, 1, 1);
+    const guestRecordId = 'guest_fajr_2025-01-01';
+    await database.qazaRecordsDao.insertRecord(
+      _record(guestRecordId, date),
+    );
+    await database.customInsert(
+      '''INSERT INTO daily_salah_logs
+         (user_id, prayer_date, prayer_type, status,
+          tracker_created_qaza_id, linked_qaza_id, completion_sync_id,
+          updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+      variables: [
+        Variable.withString('guest'),
+        Variable.withString('2025-01-01'),
+        Variable.withString('fajr'),
+        Variable.withString('missed'),
+        Variable.withString(guestRecordId),
+        Variable.withString(guestRecordId),
+        Variable.withString('sync-adopt-1'),
+        Variable.withString(DateTime.utc(2025, 1, 1).toIso8601String()),
+      ],
+    );
+
+    final backup = await service.exportJson(localAccountId: 'guest');
+    await service.importJson(backup, targetLocalAccountId: googleId);
+
+    final guestRows = await database.qazaRecordsDao.getAll(userId: 'guest');
+    final googleRows = await database.qazaRecordsDao.getAll(userId: googleId);
+    const adoptedRecordId = 'google:account-adopt_fajr_2025-01-01';
+    expect(guestRows.map((row) => row.id), contains(guestRecordId));
+    expect(googleRows.map((row) => row.id), contains(adoptedRecordId));
+    expect(
+      googleRows.map((row) => row.id).toSet().intersection(
+        guestRows.map((row) => row.id).toSet(),
+      ),
+      isEmpty,
+    );
+
+    final links = await database.customSelect(
+      'SELECT tracker_created_qaza_id, linked_qaza_id FROM daily_salah_logs '
+      'WHERE user_id = ?',
+      variables: [Variable.withString(googleId)],
+    ).get();
+    expect(links, hasLength(1));
+    expect(
+      links.single.read<String?>('tracker_created_qaza_id'),
+      adoptedRecordId,
+    );
+    expect(links.single.read<String?>('linked_qaza_id'), adoptedRecordId);
   });
 
   test('backup preserves daily Salah links and the tracking preference',
