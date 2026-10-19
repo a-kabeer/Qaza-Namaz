@@ -6,6 +6,7 @@ import '../features/home/home_controller.dart';
 import '../features/home/providers/home_providers.dart';
 import '../features/qaza/qaza_addition_history_screen.dart';
 import '../features/qaza/qaza_tracker_controller.dart';
+import '../features/prayer_time/application/prayer_time_providers.dart';
 
 /// Refreshes data derived from the persisted active workspace after a full
 /// database import or cloud restore. Refresh the session before scoped data.
@@ -20,6 +21,9 @@ Future<void> refreshWorkspaceAfterRestore(WidgetRef ref) async {
   ref.invalidate(qazaPlanRevisionRepositoryProvider);
   ref.invalidate(qazaTrackerControllerProvider);
   ref.invalidate(qazaAdditionHistoryControllerProvider);
+  ref.invalidate(prayerTimeControllerProvider);
+  ref.invalidate(hijriDateAdjustmentProvider);
+  ref.invalidate(homePrayerSelectionProvider);
 
   ref.invalidate(dailySalahTrackingEnabledProvider);
   ref.invalidate(dailySalahTrackingLogsProvider);
