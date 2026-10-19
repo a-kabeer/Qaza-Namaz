@@ -225,7 +225,7 @@ class AccountLocalStore {
       if (normalized.isEmpty) {
         await database.customStatement(
           'DELETE FROM meta_store WHERE key = ?',
-          variables: [Variable(key)],
+          [Variable(key)],
         );
       } else {
         await database.customInsert(
