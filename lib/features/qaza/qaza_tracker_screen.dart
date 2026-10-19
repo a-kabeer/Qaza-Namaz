@@ -1410,7 +1410,7 @@ class _FilterSortBar extends StatelessWidget {
               onPressed: onFilterTap,
               icon: const Icon(Icons.filter_list_rounded),
               label: Text(
-                state.isFiltered ? 'Filters active' : 'Filter',
+                state.isFiltered ? l10n.qazaFiltersActive : l10n.qazaFilter,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
