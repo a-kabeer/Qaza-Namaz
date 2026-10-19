@@ -2908,4 +2908,39 @@ class AppLocalizationsUrLatn extends AppLocalizations {
 
   @override
   String get profileEstimateUsingAge => 'Umar ke andazay se';
+  @override
+  String qazaAdditionEditSummary(
+    int addedCount,
+    int removedCount,
+    int protectedCount,
+  ) =>
+      '$addedCount shamil • $removedCount hataye gaye • $protectedCount mehfooz';
+
+  @override
+  String qazaAdditionMoreDates(int count) => '+ $count mazeed';
+
+  @override
+  String get cloudBackupFrequencyLabel => 'Backup ki frequency';
+
+  @override
+  String get cloudBackupFrequencyDaily => 'Rozana';
+
+  @override
+  String get cloudBackupFrequencyWeekly => 'Haftawar';
+
+  @override
+  String get cloudBackupFrequencyMonthly => 'Mahawarana';
+
+  @override
+  String get cloudBackupChecking => 'Backup check ho raha hai…';
+
+  @override
+  String get cloudBackupPreparing => 'Backup tayyar ho raha hai…';
+
+  @override
+  String get cloudBackupCompleted => 'Backup mukammal ho gaya';
+
+  @override
+  String get cloudBackupUploading => 'Google Drive par upload ho raha hai';
+
 }
