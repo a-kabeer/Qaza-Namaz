@@ -309,19 +309,37 @@ final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
 /// Durable initial-backup marker, invalidated whenever onboarding or cloud
 /// backup completes. It survives process death between local commit and upload.
 final initialCloudBackupPendingProvider = FutureProvider<bool>((ref) {
-  return ref.watch(appDatabaseProvider).hasPendingInitialCloudBackup();
+  final localAccountId = ref.watch(activeUserIdProvider);
+  return ref.watch(appDatabaseProvider).hasPendingInitialCloudBackup(
+        localAccountId: localAccountId,
+      );
 });
 
 /// Best-effort initial backup retry that never gates local Home navigation.
 /// The cloud adapter verifies its own authenticated account before uploading;
 /// this additional guard prevents clearing a marker after an account switch.
 final initialCloudBackupRetryProvider = FutureProvider<void>((ref) async {
-  final sync = ref.read(cloudSyncProvider);
-  if (!sync.isSupported || !ref.read(cloudAccountProvider).isSupported) return;
+  final sync = ref.watch(cloudSyncProvider);
+  if (!sync.isSupported || !ref.watch(cloudAccountProvider).isSupported) return;
+  if (ref.watch(skipPendingInitialCloudBackupForSessionProvider)) return;
 
-  final database = ref.read(appDatabaseProvider);
-  final localAccountId = ref.read(activeUserIdProvider);
+  final database = ref.watch(appDatabaseProvider);
+  final localAccountId = ref.watch(activeUserIdProvider);
   if (localAccountId == null || !localAccountId.startsWith('google:')) return;
+
+  UserProfile? profile;
+  try {
+    // Depend on the active profile, not just its value at startup, so a
+    // workspace that completes onboarding later gets another safe retry.
+    profile = await ref.watch(userProfileProvider.future);
+  } catch (_) {
+    return;
+  }
+  if (profile?.isComplete != true ||
+      ref.watch(activeUserIdProvider) != localAccountId ||
+      ref.watch(skipPendingInitialCloudBackupForSessionProvider)) {
+    return;
+  }
   if (!await database.hasPendingInitialCloudBackup(
     localAccountId: localAccountId,
   )) {

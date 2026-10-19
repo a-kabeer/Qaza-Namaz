@@ -75,9 +75,22 @@ class AccountSessionManager extends ChangeNotifier {
   Future<void> activateGoogleAccount(String googleAccountId) =>
       activateLocalAccount(googleLocalWorkspaceId(googleAccountId));
 
-  /// Returns to the existing Guest workspace without deleting any records.
-  Future<void> activateGuest() =>
-      activateLocalAccount(UserProfile.localLedgerUserId);
+  /// Returns to a safe local Guest workspace without deleting any records.
+  ///
+  /// Older installations may have adopted and archived the legacy `guest`
+  /// workspace. Never reactivate that archived workspace during sign-out;
+  /// create an empty temporary Guest workspace instead and let the account
+  /// chooser explicitly reopen a saved Guest account.
+  Future<void> activateGuest() async {
+    final legacyGuest =
+        await _accountStore.getAccount(UserProfile.localLedgerUserId);
+    if (legacyGuest?.lifecycleState == AccountLifecycleState.archived) {
+      final freshGuestId = await _accountStore.createGuestWorkspace();
+      await activateLocalAccount(freshGuestId);
+      return;
+    }
+    await activateLocalAccount(UserProfile.localLedgerUserId);
+  }
 
   Future<void> activateLocalAccount(String localAccountId) async {
     try {

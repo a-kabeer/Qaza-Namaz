@@ -246,8 +246,10 @@ class _CloudSetupChoiceScreenState
               await database.clearPendingInitialCloudBackup();
               ref.invalidate(initialCloudBackupPendingProvider);
             } else {
+              // Home remains available; retain the pending marker for a later
+              // account-scoped retry or app restart.
               ref.read(skipPendingInitialCloudBackupForSessionProvider
-                  .notifier).state = true;
+                  .notifier).state = false;
             }
           }
         }

@@ -151,6 +151,15 @@ class AccountLocalStore {
       await activate(persisted.localAccountId);
       return persisted.localAccountId;
     }
+
+    // A migration or an interrupted older sign-out can leave the legacy Guest
+    // session pointing at an archived workspace. Recover into a fresh local
+    // workspace instead of trying to reactivate the archived row.
+    final legacyGuest =
+        await getAccount(UserProfile.localLedgerUserId);
+    if (legacyGuest?.lifecycleState == AccountLifecycleState.archived) {
+      return createGuestWorkspace();
+    }
     return ensureAccountActive(UserProfile.localLedgerUserId);
   }
 

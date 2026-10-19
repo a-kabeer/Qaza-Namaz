@@ -145,4 +145,50 @@ void main() {
     );
   });
 
+
+  test('sign-out fallback never tries to reactivate an archived legacy Guest',
+      () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final store = AccountLocalStore(database: database);
+    final manager = AccountSessionManager(accountStore: store);
+    await manager.initialize();
+
+    await database.customUpdate(
+      "UPDATE local_accounts SET lifecycle_state = 'archived' "
+      "WHERE local_account_id = 'guest'",
+    );
+
+    await manager.activateGuest();
+
+    expect(manager.state.phase, AccountSessionPhase.ready);
+    expect(manager.activeLocalAccountId, startsWith('guest:'));
+    expect(manager.activeLocalAccountId, isNot('guest'));
+    expect((await store.getAccount('guest'))?.lifecycleState,
+        AccountLifecycleState.archived);
+  });
+
+
+  test('startup recovers if the persisted legacy Guest workspace is archived',
+      () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final store = AccountLocalStore(database: database);
+    final initialManager = AccountSessionManager(accountStore: store);
+    await initialManager.initialize();
+
+    await database.customUpdate(
+      "UPDATE local_accounts SET lifecycle_state = 'archived' "
+      "WHERE local_account_id = 'guest'",
+    );
+
+    final restartedManager = AccountSessionManager(accountStore: store);
+    await restartedManager.initialize();
+
+    expect(restartedManager.state.phase, AccountSessionPhase.ready);
+    expect(restartedManager.activeLocalAccountId, startsWith('guest:'));
+    expect((await store.getAccount('guest'))?.lifecycleState,
+        AccountLifecycleState.archived);
+  });
+
 }

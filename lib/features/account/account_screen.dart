@@ -394,6 +394,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     var workspaceActivated = false;
     var initialBackupPendingMarked = false;
     var guestWorkspaceAdopted = false;
+    String? initialBackupLocalAccountId;
     var googleWorkspaceExistedBefore = false;
     // This means the stable Google identity had no workspace before activation.
     var googleWorkspaceWasUninitialized = true;
@@ -412,7 +413,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         if (initialBackupPendingMarked) {
           await container
               .read(appDatabaseProvider)
-              .clearPendingInitialCloudBackup();
+              .clearPendingInitialCloudBackup(localAccountId: initialBackupLocalAccountId);
           container.invalidate(initialCloudBackupPendingProvider);
           initialBackupPendingMarked = false;
         }
@@ -445,6 +446,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         return;
       }
       final targetWorkspaceId = googleLocalWorkspaceId(stableAccountId);
+      initialBackupLocalAccountId = targetWorkspaceId;
       googleWorkspaceExistedBefore = await container
               .read(accountLocalStoreProvider)
               .getAccount(targetWorkspaceId) !=
@@ -550,7 +552,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               !result.hasPendingChanges) {
             await container
                 .read(appDatabaseProvider)
-                .clearPendingInitialCloudBackup();
+                .clearPendingInitialCloudBackup(localAccountId: initialBackupLocalAccountId);
             initialBackupPendingMarked = false;
             container.invalidate(initialCloudBackupPendingProvider);
             container
@@ -676,6 +678,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         });
       }
     } finally {
+      if (guestWorkspaceAdopted) {
+        // The interactive backup attempt has finished. Let the account-scoped
+        // background retry take over only if its marker is still pending.
+        container
+            .read(skipPendingInitialCloudBackupForSessionProvider.notifier)
+            .state = false;
+        container.invalidate(initialCloudBackupRetryProvider);
+      }
       if (mounted) setState(() => _busy = false);
     }
   }
