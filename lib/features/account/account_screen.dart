@@ -89,6 +89,10 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     final activeAccount =
         ref.watch(accountSessionManagerProvider).activeAccount;
     final isGuest = isGuestLocalWorkspaceId(activeAccount?.localAccountId);
+    // The cloud card owns Google sign-out when a Google identity is connected.
+    // Avoid showing two identical actions if startup is still reconciling the
+    // previously active Guest workspace.
+    final showGuestSignOut = isGuest && !account.isConnected;
 
     return AppScaffold(
       title: l10n.accountTitle,
@@ -107,7 +111,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             ),
             const SizedBox(height: 16),
           ],
-          if (isGuest) ...[
+          if (showGuestSignOut) ...[
             Card(
               child: ListTile(
                 key: const Key('account_guest_sign_out'),
