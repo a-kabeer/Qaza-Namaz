@@ -1061,6 +1061,14 @@
       }
     }
   },
+  "cloudBackupFrequencyLabel": "بیک اپ کی فریکوئنسی",
+  "cloudBackupFrequencyDaily": "روزانہ",
+  "cloudBackupFrequencyWeekly": "ہفتہ وار",
+  "cloudBackupFrequencyMonthly": "ماہانہ",
+  "cloudBackupChecking": "بیک اپ چیک کیا جا رہا ہے…",
+  "cloudBackupPreparing": "بیک اپ تیار کیا جا رہا ہے…",
+  "cloudBackupCompleted": "بیک اپ مکمل ہو گیا",
+  "cloudBackupUploading": "گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے",
   "cloudBackupTitle": "کلاؤڈ بیک اپ",
   "cloudBackupDescription": "اپنی قضا کی پیش رفت کا گوگل ڈرائیو ایپ ڈیٹا میں الگ بیک اپ محفوظ رکھیں۔",
   "cloudConnect": "گوگل سے سائن اِن کریں",
