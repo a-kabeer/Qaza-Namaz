@@ -16,6 +16,7 @@ QazaActivityPeriod _period({
   required DateTime today,
   List<int> completed = const [0, 5, 5, 5, 5, 4, 2],
   int target = 5,
+  bool targetAvailable = true,
 }) {
   final from = DateTime(today.year, today.month, today.day - 6);
   final days = [
@@ -34,17 +35,27 @@ QazaActivityPeriod _period({
     today: today,
     days: days,
     dailyTarget: target,
+    targetAvailable: targetAvailable,
   );
 }
 
-Widget _app({required Widget child}) => MaterialApp(
+Widget _app({
+  required Widget child,
+  ThemeData? theme,
+  ThemeData? darkTheme,
+  ThemeMode themeMode = ThemeMode.light,
+}) =>
+    MaterialApp(
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
       locale: const Locale('en'),
-      theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
-        useMaterial3: true,
-      ),
+      theme: theme ??
+          ThemeData(
+            colorScheme: ColorScheme.fromSeed(seedColor: Colors.teal),
+            useMaterial3: true,
+          ),
+      darkTheme: darkTheme ?? ThemeData.dark(useMaterial3: true),
+      themeMode: themeMode,
       home: Scaffold(body: child),
     );
 
@@ -83,7 +94,8 @@ void main() {
     expect(chart.data.barGroups, hasLength(7));
   });
 
-  testWidgets('entire Daily Goals card opens details', (tester) async {
+  testWidgets('Daily Goals card details remain reachable outside the chart',
+      (tester) async {
     var tapped = false;
     final period = _period(today: today);
 
@@ -106,7 +118,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('home_daily_goals_details')), findsNothing);
-    await tester.tap(find.byKey(const Key('home_daily_goals_tap')));
+    final cardRect = tester.getRect(find.byKey(const Key('home_daily_goals_tap')));
+    await tester.tapAt(Offset(cardRect.center.dx, cardRect.top + 10));
     expect(tapped, isTrue);
   });
 
@@ -138,10 +151,151 @@ void main() {
     final chart = tester.widget<BarChart>(
       find.byKey(const Key('home_daily_goals_chart')),
     );
-    expect(chart.data.barGroups[1].barRods.single.toY, 6);
+    expect(chart.data.barGroups[1].barRods.single.toY, 5);
     expect(chart.data.barGroups[1].barRods.single.backDrawRodData.toY, 5);
-    expect(chart.data.barGroups[4].barRods.single.toY, 8);
-    expect(chart.data.maxY, 8);
+    expect(chart.data.barGroups[4].barRods.single.toY, 5);
+    expect(chart.data.maxY, 5);
+  });
+
+
+  testWidgets('press tooltip shows only the actual count, including zero',
+      (tester) async {
+    var detailsOpened = false;
+    final period = _period(
+      today: today,
+      completed: const [0, 6, 5, 3, 8, 4, 2],
+      target: 5,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          homeDashboardActivityProvider.overrideWith(
+            (ref) => Future.value(
+              HomeDashboardActivity(
+                dailyProgress: const HomeDailyProgress(completed: 0, target: 5),
+                currentWeek: period,
+                dailyGoals: period,
+              ),
+            ),
+          ),
+        ],
+        child: _app(
+          child: HomeDailyGoals(onDetails: () => detailsOpened = true),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final interaction = find.byKey(
+      const Key('home_daily_goals_chart_interaction'),
+    );
+    final chartRect = tester.getRect(interaction);
+
+    // The first day has no visible bar, but its chart region remains tappable.
+    final zeroGesture = await tester.startGesture(
+      Offset(chartRect.left + chartRect.width * (0.5 / 7), chartRect.top + 40),
+    );
+    await tester.pump();
+    final tooltip = find.byKey(const Key('home_daily_goals_tooltip'));
+    expect(tester.widget<Text>(tooltip).data, '0');
+    final tooltipTopForZero = tester.getTopLeft(tooltip).dy;
+    expect(find.text('0 completed'), findsNothing);
+    expect(detailsOpened, isFalse);
+    await zeroGesture.up();
+    await tester.pump();
+    expect(tooltip, findsNothing);
+
+    // Day five completed eight; the visible bar is capped at the target of 5.
+    final overTargetGesture = await tester.startGesture(
+      Offset(
+        chartRect.left + chartRect.width * (4.5 / 7),
+        chartRect.top + 40,
+      ),
+    );
+    await tester.pump();
+    expect(tester.widget<Text>(tooltip).data, '8');
+    expect(tester.getTopLeft(tooltip).dy, tooltipTopForZero);
+    expect(find.text('Daily target: 5'), findsNothing);
+    expect(detailsOpened, isFalse);
+    await overTargetGesture.up();
+    await tester.pump();
+    expect(tooltip, findsNothing);
+  });
+
+  testWidgets('missing target keeps completion visible without goal tracks',
+      (tester) async {
+    final period = _period(
+      today: today,
+      completed: const [0, 2, 1, 0, 0, 0, 0],
+      target: 0,
+      targetAvailable: false,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          homeDashboardActivityProvider.overrideWith(
+            (ref) => Future.value(
+              HomeDashboardActivity(
+                dailyProgress: const HomeDailyProgress(completed: 0, target: 0),
+                currentWeek: period,
+                dailyGoals: period,
+              ),
+            ),
+          ),
+        ],
+        child: _app(child: HomeDailyGoals(onDetails: () {})),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<BarChart>(
+      find.byKey(const Key('home_daily_goals_chart')),
+    );
+    expect(chart.data.maxY, 2);
+    expect(chart.data.barGroups[1].barRods.single.toY, 2);
+    expect(chart.data.barGroups[1].barRods.single.backDrawRodData.show, isFalse);
+  });
+
+  testWidgets('chart colors follow the active dark theme', (tester) async {
+    final period = _period(today: today);
+    final darkTheme = ThemeData(
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: Colors.deepPurple,
+        brightness: Brightness.dark,
+      ),
+      useMaterial3: true,
+    );
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          homeDashboardActivityProvider.overrideWith(
+            (ref) => Future.value(
+              HomeDashboardActivity(
+                dailyProgress: const HomeDailyProgress(completed: 0, target: 5),
+                currentWeek: period,
+                dailyGoals: period,
+              ),
+            ),
+          ),
+        ],
+        child: _app(
+          child: HomeDailyGoals(onDetails: () {}),
+          darkTheme: darkTheme,
+          themeMode: ThemeMode.dark,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final chart = tester.widget<BarChart>(
+      find.byKey(const Key('home_daily_goals_chart')),
+    );
+    expect(chart.data.barGroups.first.barRods.single.color,
+        darkTheme.colorScheme.primary);
+    expect(
+      chart.data.barGroups.first.barRods.single.backDrawRodData.color,
+      darkTheme.colorScheme.primaryContainer,
+    );
   });
 
   testWidgets('weekday labels come from the seven actual dates',
