@@ -255,8 +255,11 @@ class _AddQazaScreenState extends ConsumerState<AddQazaScreen> {
             ),
             title: Text(l10n.qazaAdditionUpdated),
             content: Text(
-              '${result.added} added • ${result.removed} removed • '
-              '${result.protected} protected',
+              l10n.qazaAdditionEditSummary(
+                result.added,
+                result.removed,
+                result.protected,
+              ),
               textAlign: TextAlign.center,
             ),
             actions: [
