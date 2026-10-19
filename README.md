@@ -87,3 +87,5 @@ The default root application remains offline-only. The separately built
 `apps/qaza_app_cloud` host opts into the removable Google Drive adapter without
 adding cloud SDK dependencies to the offline target. See
 `docs/PHASE_2_CLOUD_ADAPTER.md` for configuration, build, and device QA gates.
+
+<!-- temporary formatter trigger; not included in the TP-GEN PR -->
