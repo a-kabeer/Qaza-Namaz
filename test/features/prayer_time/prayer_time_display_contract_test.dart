@@ -34,13 +34,13 @@ void main() {
     expect(
       source,
       contains(
-        'DateFormatters.formatDurationHhMmSs(restrictedRemaining)',
+        'DateFormatters.formatDurationHhMmSs(remaining)',
       ),
     );
     expect(
       source,
       contains(
-        'DateFormatters.formatDurationHhMmSs(nextRemaining)',
+        'DateFormatters.formatDurationHhMmSs(countdownRemaining)',
       ),
     );
     expect(source, isNot(contains('RestrictedTimesStatusCard')));
@@ -123,19 +123,22 @@ void main() {
       ),
     );
     expect(source, contains('final countdownPrayer = focusPrayer;'));
-    expect(source, contains('focusLabel = l10n.homeRemaining;'));
+    expect(source, isNot(contains('focusLabel = l10n.homeRemaining;')));
     expect(source, contains('l10n.prayerTimeUpcomingPrayer('));
-    expect(source, contains('_prayerLabel(l10n, nextPrayer)'));
+    expect(source, contains('_prayerLabel(l10n, countdownTargetPrayer)'));
+    expect(source, contains('shouldUseSunriseCountdownTarget('));
+    expect(source, contains('countdownTargetAt = countdownToSunrise'));
+    expect(source, isNot(contains('if (activeRestriction != null && restrictedRemaining != null)')));
     expect(
       source,
       contains(
-        'nextAt == null ? null : _formatTime(context, nextAt, snapshot)',
+        'countdownTargetAt == null',
       ),
     );
-    expect(source, contains('_formatTime(context, nextAt, snapshot)'));
+    expect(source, contains('_formatTime(context, countdownTargetAt, snapshot)'));
     expect(source, contains('label: focusLabel'));
     expect(
-        source, contains('DateFormatters.formatDurationHhMmSs(nextRemaining)'));
+        source, contains('DateFormatters.formatDurationHhMmSs(countdownRemaining)'));
   });
 
   test('Home reuses the shared active restricted-time row', () {

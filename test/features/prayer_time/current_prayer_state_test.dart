@@ -68,6 +68,33 @@ void main() {
   DateTime local(int d, int h) =>
       tz.TZDateTime(karachi, 2026, 10, d, h).toUtc();
 
+  test('sunrise countdown starts at Fajr and ends exactly at sunrise', () {
+    final schedule = makeSchedule(DateTime(2026, 10, 11));
+    final fajr = schedule.localFor(PrayerSlot.fajr, karachi);
+    final sunrise = schedule.localAstronomicalSunrise(karachi);
+
+    bool targetsSunrise(DateTime now) => shouldUseSunriseCountdownTarget(
+          schedule: schedule,
+          location: karachi,
+          now: now,
+        );
+
+    expect(
+      targetsSunrise(fajr.subtract(const Duration(seconds: 1))),
+      isFalse,
+    );
+    expect(targetsSunrise(fajr), isTrue);
+    expect(
+      targetsSunrise(sunrise.subtract(const Duration(seconds: 1))),
+      isTrue,
+    );
+    expect(targetsSunrise(sunrise), isFalse);
+    expect(
+      targetsSunrise(sunrise.add(const Duration(minutes: 15))),
+      isFalse,
+    );
+  });
+
   test('Isha points to Fajr on the following day', () {
     final state = resolveCurrentPrayerState(
       snapshot: makeSnapshot(DateTime(2026, 10, 11), DateTime(2026, 10, 12)),

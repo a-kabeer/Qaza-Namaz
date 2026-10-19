@@ -30,6 +30,21 @@ class CurrentPrayerState {
       current ?? (next == PrayerSlot.fajr ? PrayerSlot.isha : next);
 }
 
+/// Whether the Prayer Time focus card should target today's sunrise.
+///
+/// This is a presentation-only rule: it deliberately does not add Sunrise to
+/// the global prayer sequence or affect Qaza restriction eligibility.
+bool shouldUseSunriseCountdownTarget({
+  required PrayerSchedule schedule,
+  required tz.Location location,
+  required DateTime now,
+}) {
+  final localNow = tz.TZDateTime.from(now, location);
+  final fajr = schedule.localFor(PrayerSlot.fajr, location);
+  final sunrise = schedule.localAstronomicalSunrise(location);
+  return !localNow.isBefore(fajr) && localNow.isBefore(sunrise);
+}
+
 DateTime _dateOnly(DateTime date) => DateTime(date.year, date.month, date.day);
 
 /// Whether [snapshot] contains the requested local date and the immediately
