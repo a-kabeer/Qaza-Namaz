@@ -254,9 +254,7 @@ void main() {
     expect(chart.data.maxY, 2);
     expect(chart.data.barGroups[1].barRods.single.toY, 2);
     expect(
-      chart.data.barGroups[1].barRods.single.backDrawRodData.show,
-      isFalse,
-    );
+        chart.data.barGroups[1].barRods.single.backDrawRodData.show, isFalse);
   });
 
   testWidgets('chart colors follow the active dark theme', (tester) async {
@@ -293,10 +291,8 @@ void main() {
     final chart = tester.widget<BarChart>(
       find.byKey(const Key('home_daily_goals_chart')),
     );
-    expect(
-      chart.data.barGroups.first.barRods.single.color,
-      darkTheme.colorScheme.primary,
-    );
+    expect(chart.data.barGroups.first.barRods.single.color,
+        darkTheme.colorScheme.primary);
     expect(
       chart.data.barGroups.first.barRods.single.backDrawRodData.color,
       darkTheme.colorScheme.primaryContainer,
