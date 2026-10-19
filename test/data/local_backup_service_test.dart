@@ -9,6 +9,7 @@ import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
+import 'package:qaza_namaz/domain/entities/local_account.dart';
 
 QazaRecordsCompanion _record(String id, DateTime date) =>
     _recordFor('guest', id, date);
@@ -154,6 +155,10 @@ void main() {
     await database.qazaRecordsDao.insertRecord(
       _recordFor(googleId, 'google_record', DateTime(2025, 1, 2)),
     );
+    await AccountLocalStore(database: database).saveWorkspaceDisplayName(
+      googleId,
+      'Google Account A',
+    );
 
     final decoded = jsonDecode(
       await service.exportJson(localAccountId: googleId),
@@ -169,6 +174,10 @@ void main() {
     expect(
       decoded['data']['app_session_state'].single['active_local_account_id'],
       googleId,
+    );
+    expect(
+      decoded['data']['meta_store']['workspace_display_names_by_account'],
+      {googleId: 'Google Account A'},
     );
   });
 
@@ -770,4 +779,142 @@ void main() {
     final decoded = jsonDecode(backup) as Map<String, dynamic>;
     expect(jsonEncode(decoded['data']).contains('device-local-test'), isFalse);
   });
+
+  test('Guest adoption is recoverable, atomic, and remaps plan owner references',
+      () async {
+    final store = AccountLocalStore(database: database);
+    final guestId = await store.createGuestWorkspace(displayName: 'Amina');
+    final profile = UserProfile(
+      gender: Gender.male,
+      madhab: Madhab.hanafi,
+      dateOfBirth: DateTime(1990, 1, 1),
+      pubertyAge: 12,
+      startPrayingAge: 15,
+      witrIncluded: true,
+      onboardingCompleted: true,
+    );
+    await store.saveProfile(guestId, profile);
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_adoption_fajr', DateTime(2025, 1, 1)),
+    );
+    await database.customInsert(
+      '''INSERT INTO account_plan_revisions
+         (local_account_id, revision_id, payload_json, created_at)
+         VALUES (?, ?, ?, ?)''',
+      variables: [
+        Variable(guestId),
+        Variable('guest-plan-revision'),
+        Variable(jsonEncode({
+          'userId': guestId,
+          'revisionId': 'guest-plan-revision',
+        })),
+        Variable(DateTime(2025, 1, 1).microsecondsSinceEpoch),
+      ],
+    );
+
+    const googleId = 'google:stable-adoption-account';
+    await store.ensureAccountActive(googleId);
+    await service.adoptGuestWorkspace(
+      sourceLocalAccountId: guestId,
+      targetGoogleLocalAccountId: googleId,
+      googleDisplayName: 'Amina Google',
+    );
+
+    expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: googleId))
+          .map((record) => record.id),
+      ['guest_adoption_fajr'],
+    );
+    expect((await store.getAccount(guestId))?.lifecycleState,
+        AccountLifecycleState.archived);
+    expect((await store.getAccount(googleId))?.displayName, 'Amina Google');
+    expect(await store.hasAnyAccountData(guestId), isFalse);
+    expect(await store.hasAnyAccountData(googleId), isTrue);
+
+    final revisionRows = await database.customSelect(
+      'SELECT payload_json FROM account_plan_revisions '
+      'WHERE local_account_id = ?',
+      variables: [Variable(googleId)],
+    ).get();
+    expect(revisionRows, hasLength(1));
+    expect(
+      jsonDecode(revisionRows.single.read<String>('payload_json'))['userId'],
+      googleId,
+    );
+
+    final snapshots = await database.customSelect(
+      'SELECT payload_json FROM local_account_adoption_snapshots '
+      'WHERE source_local_account_id = ? AND target_local_account_id = ?',
+      variables: [Variable(guestId), Variable(googleId)],
+    ).get();
+    expect(snapshots, hasLength(1));
+    final recovery = jsonDecode(snapshots.single.read<String>('payload_json'));
+    expect(
+      recovery['data']['local_accounts'].single['local_account_id'],
+      guestId,
+    );
+    expect(recovery['data']['qaza_records'], hasLength(1));
+    final activeRows = await database.customSelect(
+      'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
+    ).get();
+    expect(activeRows.single.read<String>('active_local_account_id'), googleId);
+  });
+
+  test('Guest adoption refuses to overwrite an existing Google workspace',
+      () async {
+    final store = AccountLocalStore(database: database);
+    final guestId = await store.createGuestWorkspace(displayName: 'Amina');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_must_survive', DateTime(2025, 1, 2)),
+    );
+    const googleId = 'google:existing-workspace';
+    await store.ensureAccountActive(googleId);
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(googleId, 'google_existing_record', DateTime(2025, 1, 3)),
+    );
+
+    await expectLater(
+      service.adoptGuestWorkspace(
+        sourceLocalAccountId: guestId,
+        targetGoogleLocalAccountId: googleId,
+        googleDisplayName: 'Amina Google',
+      ),
+      throwsA(isA<LocalBackupException>()),
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: guestId))
+          .map((record) => record.id),
+      ['guest_must_survive'],
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: googleId))
+          .map((record) => record.id),
+      ['google_existing_record'],
+    );
+  });
+
+
+  test('initial cloud backup marker belongs to the workspace that created it',
+      () async {
+    final store = AccountLocalStore(database: database);
+    await database.markInitialCloudBackupPending();
+
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
+    const googleId = 'google:independent-workspace';
+    await store.ensureAccountActive(googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isFalse);
+
+    await store.activate('guest');
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
+    await store.activate(googleId);
+    await database.clearPendingInitialCloudBackup(localAccountId: googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isFalse);
+
+    await store.activate('guest');
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+  });
+
 }

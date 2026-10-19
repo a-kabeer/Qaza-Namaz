@@ -84,4 +84,65 @@ void main() {
       contains('guest_only_record'),
     );
   });
+
+  test('multiple Guest workspaces keep names and survive process restart',
+      () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+
+    final store = AccountLocalStore(database: database);
+    final manager = AccountSessionManager(accountStore: store);
+    await manager.initialize();
+
+    final firstGuestId =
+        await store.createGuestWorkspace(displayName: 'Amina');
+    await manager.activateLocalAccount(firstGuestId);
+    await database.qazaRecordsDao.insertRecord(
+      QazaRecordsCompanion.insert(
+        id: 'first_guest_fajr',
+        userId: firstGuestId,
+        prayerType: 'fajr',
+        originalDate: DateTime(2025, 1, 1),
+        status: 'pending',
+        createdAt: DateTime(2025, 1, 1),
+        updatedAt: DateTime(2025, 1, 1),
+      ),
+    );
+
+    final secondGuestId =
+        await store.createGuestWorkspace(displayName: 'Bilal');
+    await manager.activateLocalAccount(secondGuestId);
+
+    final guests = await store.listGuestWorkspaces();
+    expect(
+      guests.map((account) => account.localAccountId),
+      containsAll([firstGuestId, secondGuestId]),
+    );
+    expect(
+      guests.singleWhere((account) => account.localAccountId == firstGuestId)
+          .displayName,
+      'Amina',
+    );
+    expect(
+      guests.singleWhere((account) => account.localAccountId == secondGuestId)
+          .displayName,
+      'Bilal',
+    );
+    expect(
+      await database.qazaRecordsDao.getAll(userId: secondGuestId),
+      isEmpty,
+    );
+
+    await manager.activateLocalAccount(firstGuestId);
+    final restartedManager = AccountSessionManager(accountStore: store);
+    await restartedManager.initialize();
+
+    expect(restartedManager.activeLocalAccountId, firstGuestId);
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: firstGuestId))
+          .map((record) => record.id),
+      ['first_guest_fajr'],
+    );
+  });
+
 }

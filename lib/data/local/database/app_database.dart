@@ -491,30 +491,88 @@ class AppDatabase extends _$AppDatabase {
     return revision;
   }
 
-  /// Durable marker for an initial cloud backup that must be retried if the
-  /// process exits after local onboarding commits.
-  Future<bool> hasPendingInitialCloudBackup() async {
+  /// Returns the active workspace ID used to scope the durable initial-upload
+  /// marker. This keeps one Google account's pending upload from appearing
+  /// while an unrelated Guest or Google workspace is active.
+  Future<String?> _activeAccountForInitialBackup() async {
+    final rows = await customSelect(
+      'SELECT active_local_account_id FROM app_session_state '
+      'WHERE id = 1 LIMIT 1',
+    ).get();
+    if (rows.isEmpty) return null;
+    final id = rows.first.read<String?>('active_local_account_id')?.trim();
+    return id == null || id.isEmpty ? null : id;
+  }
+
+  Future<String?> _pendingInitialBackupAccount() async {
+    final rows = await customSelect(
+      "SELECT value FROM meta_store "
+      "WHERE key = 'initial_cloud_backup_pending_account_id' LIMIT 1",
+    ).get();
+    if (rows.isEmpty) return null;
+    final id = rows.first.read<String>('value').trim();
+    return id.isEmpty ? null : id;
+  }
+
+  /// Durable marker for an initial upload, scoped to a local workspace.
+  /// A legacy marker without an owner is ambiguous, so it is not assigned to
+  /// whichever account happens to be active after an upgrade.
+  Future<bool> hasPendingInitialCloudBackup({String? localAccountId}) async {
     final rows = await customSelect(
       "SELECT value FROM meta_store "
       "WHERE key = 'initial_cloud_backup_pending' LIMIT 1",
     ).get();
-    return rows.isNotEmpty && rows.first.read<String>('value') == '1';
+    if (rows.isEmpty || rows.first.read<String>('value') != '1') return false;
+
+    final pendingAccount = await _pendingInitialBackupAccount();
+    if (pendingAccount == null) return false;
+    final activeAccount =
+        localAccountId ?? await _activeAccountForInitialBackup();
+    return activeAccount == pendingAccount;
   }
 
-  Future<void> markInitialCloudBackupPending() async {
-    await customUpdate(
-      '''INSERT INTO meta_store (key, value)
-         VALUES ('initial_cloud_backup_pending', '1')
-         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-    );
+  Future<void> markInitialCloudBackupPending({String? localAccountId}) async {
+    final accountId = localAccountId ?? await _activeAccountForInitialBackup();
+    await transaction(() async {
+      await customInsert(
+        '''INSERT INTO meta_store (key, value)
+           VALUES ('initial_cloud_backup_pending', '1')
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      );
+      if (accountId == null || accountId.trim().isEmpty) {
+        await customStatement(
+          "DELETE FROM meta_store "
+          "WHERE key = 'initial_cloud_backup_pending_account_id'",
+        );
+      } else {
+        await customInsert(
+          '''INSERT INTO meta_store (key, value)
+             VALUES ('initial_cloud_backup_pending_account_id', ?)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+          variables: [Variable(accountId.trim())],
+        );
+      }
+    });
   }
 
-  Future<void> clearPendingInitialCloudBackup() async {
-    await customUpdate(
-      '''INSERT INTO meta_store (key, value)
-         VALUES ('initial_cloud_backup_pending', '0')
-         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-    );
+  Future<void> clearPendingInitialCloudBackup({String? localAccountId}) async {
+    final pendingAccount = await _pendingInitialBackupAccount();
+    final activeAccount =
+        localAccountId ?? await _activeAccountForInitialBackup();
+    // A late callback for workspace B must not clear workspace A's marker.
+    if (pendingAccount != null && activeAccount != pendingAccount) return;
+
+    await transaction(() async {
+      await customInsert(
+        '''INSERT INTO meta_store (key, value)
+           VALUES ('initial_cloud_backup_pending', '0')
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      );
+      await customStatement(
+        "DELETE FROM meta_store "
+        "WHERE key = 'initial_cloud_backup_pending_account_id'",
+      );
+    });
   }
 
   /// Returns true only when the database is still a genuinely fresh install.

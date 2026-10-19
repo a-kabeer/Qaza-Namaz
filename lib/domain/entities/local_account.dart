@@ -1,5 +1,12 @@
 enum AccountMode { local }
 
+/// Whether a persisted local workspace represents a Guest session.
+/// The bare 'guest' ID is retained for compatibility with existing installs.
+bool isGuestLocalWorkspaceId(String? localAccountId) {
+  final value = localAccountId?.trim();
+  return value == 'guest' || (value?.startsWith('guest:') ?? false);
+}
+
 /// Stable local workspace key for a verified Google account.
 ///
 /// The provider returns Google's stable account ID, not an email address.
@@ -21,6 +28,7 @@ class LocalAccount {
     required this.lifecycleState,
     required this.createdAt,
     required this.updatedAt,
+    this.displayName,
   });
 
   final String localAccountId;
@@ -28,6 +36,7 @@ class LocalAccount {
   final AccountLifecycleState lifecycleState;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? displayName;
 }
 
 enum AccountSessionPhase { loading, connecting, ready, error }

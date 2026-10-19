@@ -588,4 +588,40 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets(
+    'Guest onboarding displays and saves Name before the prayer fields',
+    (tester) async {
+      String? savedName;
+      await tester.pumpWidget(
+        MaterialApp(
+          locale: const Locale('en'),
+          localizationsDelegates: AppLocalizations.localizationsDelegates,
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: Scaffold(
+            body: ProfileForm(
+              initialProfile: const UserProfile(),
+              showGuestName: true,
+              onGuestNameChanged: (name) async {
+                savedName = name;
+              },
+              onSubmit: (_) async {},
+            ),
+          ),
+        ),
+      );
+
+      final nameFinder = find.byKey(const Key('profile_guest_name'));
+      final genderFinder = find.byKey(const Key('profile_gender'));
+      expect(nameFinder, findsOneWidget);
+      expect(
+        tester.getTopLeft(nameFinder).dy,
+        lessThan(tester.getTopLeft(genderFinder).dy),
+      );
+      await tester.enterText(nameFinder, 'Amina');
+      await tester.pumpAndSettle();
+      expect(savedName, 'Amina');
+    },
+  );
+
 }

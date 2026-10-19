@@ -150,19 +150,20 @@ final startupAccountWorkspaceRestoreProvider =
 
   final cloudAccount = ref.watch(cloudAccountProvider);
   final session = ref.read(accountSessionManagerProvider);
-  if (!cloudAccount.isSupported) {
-    await session.activateGuest();
-  } else {
+  if (cloudAccount.isSupported) {
     final snapshot = await cloudAccount.restore();
     final accountId = snapshot.accountId?.trim();
     if (accountId != null &&
         accountId.isNotEmpty &&
         snapshot.status != CloudAccountStatus.disconnected &&
         snapshot.status != CloudAccountStatus.unavailable) {
+      // A verified Google identity selects its own workspace. When no Google
+      // identity is connected, preserve the persisted local workspace rather
+      // than resetting every returning Guest to the legacy fixed workspace.
       await session.activateGoogleAccount(accountId);
-    } else {
-      await session.activateGuest();
     }
+    // Disconnected, offline, and unavailable cloud states do not prove that
+    // a local workspace should be replaced or cleared.
   }
 
   // AccountSessionManager.initialize() starts from the Guest workspace.
@@ -309,6 +310,36 @@ final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
 /// backup completes. It survives process death between local commit and upload.
 final initialCloudBackupPendingProvider = FutureProvider<bool>((ref) {
   return ref.watch(appDatabaseProvider).hasPendingInitialCloudBackup();
+});
+
+/// Best-effort initial backup retry that never gates local Home navigation.
+/// The cloud adapter verifies its own authenticated account before uploading;
+/// this additional guard prevents clearing a marker after an account switch.
+final initialCloudBackupRetryProvider = FutureProvider<void>((ref) async {
+  final sync = ref.read(cloudSyncProvider);
+  if (!sync.isSupported || !ref.read(cloudAccountProvider).isSupported) return;
+
+  final database = ref.read(appDatabaseProvider);
+  final localAccountId = ref.read(activeUserIdProvider);
+  if (localAccountId == null || !localAccountId.startsWith('google:')) return;
+  if (!await database.hasPendingInitialCloudBackup(
+    localAccountId: localAccountId,
+  )) {
+    return;
+  }
+
+  try {
+    final result = await sync.backupNow();
+    if (ref.read(activeUserIdProvider) != localAccountId) return;
+    if (result.status == CloudSyncStatus.synced && !result.hasPendingChanges) {
+      await database.clearPendingInitialCloudBackup(
+        localAccountId: localAccountId,
+      );
+      ref.invalidate(initialCloudBackupPendingProvider);
+    }
+  } catch (_) {
+    // A failed background attempt leaves all local data and the marker intact.
+  }
 });
 
 /// Explicit sign-out returns to account choice without resetting onboarding.
