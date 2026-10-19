@@ -413,7 +413,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         if (initialBackupPendingMarked) {
           await container
               .read(appDatabaseProvider)
-              .clearPendingInitialCloudBackup(localAccountId: initialBackupLocalAccountId);
+              .clearPendingInitialCloudBackup(
+                  localAccountId: initialBackupLocalAccountId);
           container.invalidate(initialCloudBackupPendingProvider);
           initialBackupPendingMarked = false;
         }
@@ -487,7 +488,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           if (!googleWorkspaceExistedBefore &&
               isGuestLocalWorkspaceId(previousWorkspaceId) &&
               previousWorkspaceId != null) {
-            await container.read(localBackupServiceProvider).adoptGuestWorkspace(
+            await container
+                .read(localBackupServiceProvider)
+                .adoptGuestWorkspace(
                   sourceLocalAccountId: previousWorkspaceId,
                   targetGoogleLocalAccountId: targetWorkspaceId,
                   googleDisplayName: account.displayName?.trim() ?? '',
@@ -552,7 +555,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               !result.hasPendingChanges) {
             await container
                 .read(appDatabaseProvider)
-                .clearPendingInitialCloudBackup(localAccountId: initialBackupLocalAccountId);
+                .clearPendingInitialCloudBackup(
+                    localAccountId: initialBackupLocalAccountId);
             initialBackupPendingMarked = false;
             container.invalidate(initialCloudBackupPendingProvider);
             container

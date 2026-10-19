@@ -180,7 +180,8 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final hijriOffset = ref.watch(hijriDateAdjustmentProvider).valueOrNull ?? 0;
-    final activeAccount = ref.watch(accountSessionManagerProvider).activeAccount;
+    final activeAccount =
+        ref.watch(accountSessionManagerProvider).activeAccount;
     final showGuestName =
         isGuestLocalWorkspaceId(activeAccount?.localAccountId);
     return Scaffold(

@@ -780,7 +780,8 @@ void main() {
     expect(jsonEncode(decoded['data']).contains('device-local-test'), isFalse);
   });
 
-  test('Guest adoption is recoverable, atomic, and remaps plan owner references',
+  test(
+      'Guest adoption is recoverable, atomic, and remaps plan owner references',
       () async {
     final store = AccountLocalStore(database: database);
     final guestId = await store.createGuestWorkspace(displayName: 'Amina');
@@ -855,9 +856,11 @@ void main() {
       guestId,
     );
     expect(recovery['data']['qaza_records'], hasLength(1));
-    final activeRows = await database.customSelect(
-      'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
-    ).get();
+    final activeRows = await database
+        .customSelect(
+          'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
+        )
+        .get();
     expect(activeRows.single.read<String>('active_local_account_id'), googleId);
   });
 
@@ -894,7 +897,6 @@ void main() {
     );
   });
 
-
   test('initial cloud backup marker belongs to the workspace that created it',
       () async {
     final store = AccountLocalStore(database: database);
@@ -916,5 +918,4 @@ void main() {
     await store.activate('guest');
     expect(await database.hasPendingInitialCloudBackup(), isTrue);
   });
-
 }

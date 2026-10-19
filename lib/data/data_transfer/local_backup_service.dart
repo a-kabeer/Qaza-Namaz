@@ -61,10 +61,12 @@ class LocalBackupService {
       final trackingEnabledByAccount = <String, bool>{};
       final trackingSetupDismissedByAccount = <String, bool>{};
       final workspaceDisplayNames = <String, String>{};
-      final workspaceNameRows = await database.customSelect(
-        "SELECT key, value FROM meta_store "
-        "WHERE key LIKE 'workspace_display_name:%'",
-      ).get();
+      final workspaceNameRows = await database
+          .customSelect(
+            "SELECT key, value FROM meta_store "
+            "WHERE key LIKE 'workspace_display_name:%'",
+          )
+          .get();
       const workspaceNamePrefix = 'workspace_display_name:';
       for (final row in workspaceNameRows) {
         final key = row.read<String>('key');
@@ -400,8 +402,7 @@ class LocalBackupService {
         payload_json TEXT NOT NULL
       )
     ''');
-    final snapshotId =
-        'adoption-${DateTime.now().microsecondsSinceEpoch}';
+    final snapshotId = 'adoption-${DateTime.now().microsecondsSinceEpoch}';
     await database.transaction(() async {
       await database.customInsert(
         '''INSERT INTO local_account_adoption_snapshots
@@ -452,10 +453,12 @@ class LocalBackupService {
         );
       }
 
-      final sessionRows = await database.customSelect(
-        'SELECT active_local_account_id FROM app_session_state '
-        'WHERE id = 1 LIMIT 1',
-      ).get();
+      final sessionRows = await database
+          .customSelect(
+            'SELECT active_local_account_id FROM app_session_state '
+            'WHERE id = 1 LIMIT 1',
+          )
+          .get();
       final activeId = sessionRows.isEmpty
           ? null
           : sessionRows.first.read<String?>('active_local_account_id');
@@ -583,8 +586,8 @@ class LocalBackupService {
           final payload = jsonDecode(
             profileRows.first.read<String>('payload_json'),
           );
-          onboardingCompleted = payload is Map &&
-              payload['onboardingCompleted'] == true;
+          onboardingCompleted =
+              payload is Map && payload['onboardingCompleted'] == true;
         } catch (_) {
           onboardingCompleted = false;
         }
@@ -1082,8 +1085,8 @@ class LocalBackupService {
       mergedMeta['workspace_display_names_by_account'] as Map? ??
           const <String, dynamic>{},
     );
-    final remoteNamesRaw =
-        (remoteData['meta_store'] as Map?)?['workspace_display_names_by_account'];
+    final remoteNamesRaw = (remoteData['meta_store']
+        as Map?)?['workspace_display_names_by_account'];
     final remoteNames = remoteNamesRaw is Map
         ? Map<String, dynamic>.from(remoteNamesRaw)
         : const <String, dynamic>{};
