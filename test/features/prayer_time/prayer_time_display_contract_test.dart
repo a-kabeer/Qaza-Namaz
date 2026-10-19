@@ -128,17 +128,31 @@ void main() {
     expect(source, contains('_prayerLabel(l10n, countdownTargetPrayer)'));
     expect(source, contains('shouldUseSunriseCountdownTarget('));
     expect(source, contains('countdownTargetAt = countdownToSunrise'));
-    expect(source, isNot(contains('if (activeRestriction != null && restrictedRemaining != null)')));
+    expect(
+      source,
+      isNot(
+        contains(
+          'if (activeRestriction != null && restrictedRemaining != null)',
+        ),
+      ),
+    );
     expect(
       source,
       contains(
         'countdownTargetAt == null',
       ),
     );
-    expect(source, contains('_formatTime(context, countdownTargetAt, snapshot)'));
+    expect(
+      source,
+      contains('_formatTime(context, countdownTargetAt, snapshot)'),
+    );
     expect(source, contains('label: focusLabel'));
     expect(
-        source, contains('DateFormatters.formatDurationHhMmSs(countdownRemaining)'));
+      source,
+      contains(
+        'DateFormatters.formatDurationHhMmSs(countdownRemaining)',
+      ),
+    );
   });
 
   test('Home reuses the shared active restricted-time row', () {
