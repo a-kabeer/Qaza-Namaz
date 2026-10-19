@@ -449,7 +449,10 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
             await database.markInitialCloudBackupPending();
             container.invalidate(initialCloudBackupPendingProvider);
             result = await cloudSync.status();
-            if (!mounted) return;
+            if (!mounted) {
+              await restorePreviousWorkspace();
+              return;
+            }
             setState(() {
               _sync = result;
               _message = null;
@@ -502,9 +505,17 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 confirmed: true,
                 onProgress: _publishBackupProgress,
               );
+              if (!mounted) {
+                await restorePreviousWorkspace();
+                return;
+              }
               if (result.status == CloudSyncStatus.synced &&
                   result.restoredRemoteBackup) {
-                await _refreshAfterRestore();
+                await refreshWorkspaceAfterRestoreContainer(container);
+                if (!mounted) {
+                  await restorePreviousWorkspace();
+                  return;
+                }
               }
             } else {
               final resolved = await _resolveConflict(conflict);
@@ -541,6 +552,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           !result.restoredRemoteBackup) {
         await container.read(appDatabaseProvider).markInitialCloudBackupPending();
         container.invalidate(initialCloudBackupPendingProvider);
+        if (!mounted) {
+          // The route was abandoned before first-run setup could be shown.
+          await restorePreviousWorkspace();
+          return;
+        }
         workspaceActivated = false;
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute<void>(builder: (_) => const StartupGate()),
