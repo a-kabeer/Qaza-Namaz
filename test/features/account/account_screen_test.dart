@@ -189,7 +189,10 @@ void main() {
       expect(find.text('Account'), findsOneWidget);
       expect(find.text('Continue with Google'), findsNothing);
       expect(find.text('Automatic backup'), findsNothing);
-      expect(find.text('Sign out'), findsNothing);
+      expect(
+        find.byKey(const Key('account_guest_sign_out')),
+        findsOneWidget,
+      );
     },
   );
 
