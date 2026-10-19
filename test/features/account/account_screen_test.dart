@@ -910,4 +910,49 @@ void main() {
       expect(find.byKey(const Key('account_daily_cloud_backup')), findsNothing);
     },
   );
+  testWidgets(
+    'connection discovery failure restores the prior Guest workspace',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          accountId: 'test-google-account-recovery',
+          displayName: 'Recovery Test',
+          email: 'recovery@example.com',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(
+          status: CloudSyncStatus.idle,
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      expect(manager.activeLocalAccountId, 'guest');
+
+      await tester.pumpWidget(
+        _app(container, const AccountScreen(autoConnect: true)),
+      );
+      await tester.pumpAndSettle();
+
+      expect(manager.activeLocalAccountId, 'guest');
+      expect(await database.hasPendingInitialCloudBackup(), isFalse);
+      expect(find.text('Account'), findsOneWidget);
+    },
+  );
+
 }
