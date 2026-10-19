@@ -641,7 +641,7 @@ class LocalBackupService {
           switch (table) {
             case 'qaza_records':
               row['id'] = remapQazaRecordId(row['id']);
-              row['addition_id'] = remapQazaAdditionId(row['addition_id']);
+              row['additionId'] = remapQazaAdditionId(row['additionId']);
               break;
             case 'qaza_additions':
               row['id'] = remapQazaAdditionId(row['id']);
