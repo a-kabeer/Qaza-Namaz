@@ -98,14 +98,12 @@ class ProfileOverview extends ConsumerWidget {
                 _ProfileDetailRow(
                   key: const Key('profile_overview_puberty_age'),
                   icon: Icons.timelapse_outlined,
-                  label: profile.isNewMuslim &&
-                          profile.pubertyInputMode ==
-                              ProfileInputMode.rememberedDate
+                  label: profile.pubertyInputMode ==
+                          ProfileInputMode.rememberedDate
                       ? l10n.profilePubertyDate
                       : l10n.profilePubertyAge,
-                  value: profile.isNewMuslim &&
-                          profile.pubertyInputMode ==
-                              ProfileInputMode.rememberedDate
+                  value: profile.pubertyInputMode ==
+                          ProfileInputMode.rememberedDate
                       ? profile.pubertyDate == null
                           ? '—'
                           : DateFormatters.formatGregorianFull(
@@ -114,8 +112,7 @@ class ProfileOverview extends ConsumerWidget {
                       : profile.pubertyAge == null
                           ? '—'
                           : l10n.profileAgeYears(profile.pubertyAge!),
-                  secondaryValue: profile.isNewMuslim &&
-                          profile.pubertyInputMode ==
+                  secondaryValue: profile.pubertyInputMode ==
                               ProfileInputMode.rememberedDate &&
                           profile.pubertyDate != null
                       ? l10n.formatHijriDate(profile.pubertyDate!)
@@ -123,7 +120,8 @@ class ProfileOverview extends ConsumerWidget {
                 ),
               ],
               const _DetailDivider(),
-              if (profile.isNewMuslim)
+              if (profile.startPrayingInputMode ==
+                  ProfileInputMode.rememberedDate)
                 _ProfileDetailRow(
                   key: const Key('profile_overview_start_date'),
                   icon: Icons.schedule_outlined,
