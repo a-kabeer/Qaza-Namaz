@@ -118,7 +118,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('home_daily_goals_details')), findsNothing);
-    final cardRect = tester.getRect(find.byKey(const Key('home_daily_goals_tap')));
+    final cardRect =
+        tester.getRect(find.byKey(const Key('home_daily_goals_tap')));
     await tester.tapAt(Offset(cardRect.center.dx, cardRect.top + 10));
     expect(tapped, isTrue);
   });
@@ -156,7 +157,6 @@ void main() {
     expect(chart.data.barGroups[4].barRods.single.toY, 5);
     expect(chart.data.maxY, 5);
   });
-
 
   testWidgets('press tooltip shows only the actual count, including zero',
       (tester) async {
@@ -253,7 +253,10 @@ void main() {
     );
     expect(chart.data.maxY, 2);
     expect(chart.data.barGroups[1].barRods.single.toY, 2);
-    expect(chart.data.barGroups[1].barRods.single.backDrawRodData.show, isFalse);
+    expect(
+      chart.data.barGroups[1].barRods.single.backDrawRodData.show,
+      isFalse,
+    );
   });
 
   testWidgets('chart colors follow the active dark theme', (tester) async {
@@ -290,8 +293,10 @@ void main() {
     final chart = tester.widget<BarChart>(
       find.byKey(const Key('home_daily_goals_chart')),
     );
-    expect(chart.data.barGroups.first.barRods.single.color,
-        darkTheme.colorScheme.primary);
+    expect(
+      chart.data.barGroups.first.barRods.single.color,
+      darkTheme.colorScheme.primary,
+    );
     expect(
       chart.data.barGroups.first.barRods.single.backDrawRodData.color,
       darkTheme.colorScheme.primaryContainer,
