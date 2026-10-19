@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 
 void main() {
@@ -102,6 +103,8 @@ void main() {
     addTearDown(database.close);
 
     expect(await database.hasPendingInitialCloudBackup(), isFalse);
+    // A durable initial-backup marker must be tied to an explicit workspace.
+    await AccountLocalStore(database: database).ensureLocalAccountActive();
     await database.markInitialCloudBackupPending();
     expect(await database.hasPendingInitialCloudBackup(), isTrue);
 
