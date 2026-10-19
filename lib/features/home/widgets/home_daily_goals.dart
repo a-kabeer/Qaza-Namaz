@@ -71,13 +71,13 @@ class _DailyGoalsContent extends StatelessWidget {
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
     final locale = Localizations.localeOf(context).languageCode;
-    final maxY = period.days.fold<double>(
-      1,
-      (current, day) => math.max(
-        current,
-        math.max(day.completed, day.target).toDouble(),
-      ),
-    );
+    final hasValidTarget = period.targetAvailable && period.dailyTarget > 0;
+    final maxY = hasValidTarget
+        ? period.dailyTarget.toDouble()
+        : period.days.fold<double>(
+            1,
+            (current, day) => math.max(current, day.completed.toDouble()),
+          );
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -135,8 +135,12 @@ class _DailyGoalsContent extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child:
-                  _DailyGoalsChart(period: period, locale: locale, maxY: maxY),
+              child: _DailyGoalsChart(
+                period: period,
+                locale: locale,
+                maxY: maxY,
+                hasValidTarget: hasValidTarget,
+              ),
             ),
           ],
         ),
@@ -145,98 +149,185 @@ class _DailyGoalsContent extends StatelessWidget {
   }
 }
 
-class _DailyGoalsChart extends StatelessWidget {
-  const _DailyGoalsChart(
-      {required this.period, required this.locale, required this.maxY});
+class _DailyGoalsChart extends StatefulWidget {
+  const _DailyGoalsChart({
+    required this.period,
+    required this.locale,
+    required this.maxY,
+    required this.hasValidTarget,
+  });
 
   final QazaActivityPeriod period;
   final String locale;
   final double maxY;
+  final bool hasValidTarget;
+
+  @override
+  State<_DailyGoalsChart> createState() => _DailyGoalsChartState();
+}
+
+class _DailyGoalsChartState extends State<_DailyGoalsChart> {
+  static const double _tooltipRowHeight = 18;
+
+  int? _pressedIndex;
 
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
+    final days = widget.period.days;
 
     return Semantics(
       container: true,
       label: _chartSemantics(context),
-      child: SizedBox(
-        height: 94,
-        child: BarChart(
-          key: const Key('home_daily_goals_chart'),
-          duration: Duration.zero,
-          BarChartData(
-            minY: 0,
-            maxY: maxY,
-            alignment: BarChartAlignment.spaceAround,
-            groupsSpace: 0,
-            gridData: const FlGridData(show: false),
-            borderData: FlBorderData(show: false),
-            titlesData: FlTitlesData(
-              leftTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              rightTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles:
-                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              bottomTitles: AxisTitles(
-                sideTitles: SideTitles(
-                  showTitles: true,
-                  interval: 1,
-                  reservedSize: 20,
-                  getTitlesWidget: (value, meta) {
-                    final index = value.toInt();
-                    if (index < 0 || index >= period.days.length) {
-                      return const SizedBox.shrink();
-                    }
-                    final label = DateFormat('EEEEE', locale)
-                        .format(period.days[index].date);
-                    return SideTitleWidget(
-                      meta: meta,
-                      child: Text(
-                        label,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                        style: Theme.of(context).textTheme.labelSmall,
-                      ),
-                    );
-                  },
+      child: LayoutBuilder(
+        builder: (context, constraints) => Listener(
+          behavior: HitTestBehavior.opaque,
+          onPointerDown: (event) {
+            if (days.isEmpty || constraints.maxWidth <= 0) return;
+            final index =
+                (event.localPosition.dx / constraints.maxWidth * days.length)
+                    .floor()
+                    .clamp(0, days.length - 1);
+            setState(() => _pressedIndex = index);
+          },
+          onPointerUp: (_) => _clearPressedIndex(),
+          onPointerCancel: (_) => _clearPressedIndex(),
+          child: GestureDetector(
+            key: const Key('home_daily_goals_chart_interaction'),
+            behavior: HitTestBehavior.opaque,
+            // Consume chart taps so the surrounding card does not navigate.
+            onTap: () {},
+            child: Column(
+              children: [
+                SizedBox(
+                  height: _tooltipRowHeight,
+                  child: Row(
+                    children: [
+                      for (var index = 0; index < days.length; index++)
+                        Expanded(
+                          child: Center(
+                            child: _pressedIndex == index
+                                ? Text(
+                                    '${days[index].completed}',
+                                    key: const Key('home_daily_goals_tooltip'),
+                                    maxLines: 1,
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .labelMedium
+                                        ?.copyWith(
+                                          color: scheme.onSurface,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                  )
+                                : const SizedBox.shrink(),
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
-              ),
-            ),
-            barTouchData: const BarTouchData(enabled: false),
-            barGroups: [
-              for (var index = 0; index < period.days.length; index++)
-                BarChartGroupData(
-                  x: index,
-                  barRods: [
-                    BarChartRodData(
-                      toY: period.days[index].completed.toDouble(),
-                      width: 10,
-                      color: scheme.primary,
-                      borderRadius: BorderRadius.circular(4),
-                      backDrawRodData: BackgroundBarChartRodData(
-                        show: period.days[index].target > 0,
-                        toY: period.days[index].target.toDouble(),
-                        color: scheme.primaryContainer,
+                SizedBox(
+                  height: 94,
+                  child: BarChart(
+                    key: const Key('home_daily_goals_chart'),
+                    duration: Duration.zero,
+                    BarChartData(
+                      minY: 0,
+                      maxY: widget.maxY,
+                      alignment: BarChartAlignment.spaceAround,
+                      groupsSpace: 0,
+                      gridData: const FlGridData(show: false),
+                      borderData: FlBorderData(show: false),
+                      titlesData: FlTitlesData(
+                        leftTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        rightTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        topTitles: const AxisTitles(
+                          sideTitles: SideTitles(showTitles: false),
+                        ),
+                        bottomTitles: AxisTitles(
+                          sideTitles: SideTitles(
+                            showTitles: true,
+                            interval: 1,
+                            reservedSize: 20,
+                            getTitlesWidget: (value, meta) {
+                              final index = value.toInt();
+                              if (index < 0 || index >= days.length) {
+                                return const SizedBox.shrink();
+                              }
+                              final label = DateFormat('EEEEE', widget.locale)
+                                  .format(days[index].date);
+                              return SideTitleWidget(
+                                meta: meta,
+                                child: Text(
+                                  label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  textAlign: TextAlign.center,
+                                  style: Theme.of(context).textTheme.labelSmall,
+                                ),
+                              );
+                            },
+                          ),
+                        ),
                       ),
+                      barTouchData: const BarTouchData(enabled: false),
+                      barGroups: [
+                        for (var index = 0; index < days.length; index++)
+                          BarChartGroupData(
+                            x: index,
+                            barRods: [
+                              BarChartRodData(
+                                toY: _visibleCompletion(index),
+                                width: 10,
+                                color: scheme.primary,
+                                borderRadius: BorderRadius.circular(4),
+                                backDrawRodData: BackgroundBarChartRodData(
+                                  show: widget.hasValidTarget &&
+                                      days[index].target > 0,
+                                  toY: widget.hasValidTarget
+                                      ? days[index].target.toDouble()
+                                      : 0,
+                                  color: scheme.primaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
+  double _visibleCompletion(int index) {
+    final day = widget.period.days[index];
+    if (!widget.hasValidTarget) return day.completed.toDouble();
+
+    final target = day.target > 0 ? day.target : widget.period.dailyTarget;
+    return math.min(day.completed, target).toDouble();
+  }
+
+  void _clearPressedIndex() {
+    if (_pressedIndex == null) return;
+    setState(() => _pressedIndex = null);
+  }
+
   String _chartSemantics(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).languageCode;
     return [
-      for (final day in period.days)
-        '${DateFormat.EEEE(locale).format(day.date)}: ${day.completed} ${l10n.homeCompleted}, ${day.target} ${l10n.homeDailyTarget}',
+      for (final day in widget.period.days)
+        widget.hasValidTarget
+            ? '${DateFormat.EEEE(locale).format(day.date)}: ${day.completed} ${l10n.homeCompleted}, ${day.target} ${l10n.homeDailyTarget}'
+            : '${DateFormat.EEEE(locale).format(day.date)}: ${day.completed} ${l10n.homeCompleted}',
     ].join(', ');
   }
 }
