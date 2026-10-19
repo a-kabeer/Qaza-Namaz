@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../app/providers.dart';
 import '../../l10n/app_localizations.dart';
 import '../home/home_screen.dart';
 import '../knowledge_base/presentation/knowledge_base_page.dart';
@@ -99,6 +100,20 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
+    final activeUserId = ref.watch(activeUserIdProvider);
+    ref.listen<String?>(activeUserIdProvider, (previous, next) {
+      if (previous == next) return;
+      ref.read(workspaceDestinationProvider.notifier).state =
+          WorkspaceDestination.home;
+      if (mounted) {
+        setState(() {
+          _mounted
+            ..clear()
+            ..add(0);
+        });
+      }
+    });
+
     final destination = ref.watch(workspaceDestinationProvider);
     final index = destination.index;
     // A destination stays mounted once visited, so returning to it keeps its
@@ -114,12 +129,18 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
         if (!didPop) _handleBack();
       },
       child: Scaffold(
-        body: IndexedStack(
-          index: index,
-          children: [
-            for (var i = 0; i < _pages.length; i++)
-              if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
-          ],
+        body: KeyedSubtree(
+          key: ValueKey<String?>('workspace:$activeUserId'),
+          child: IndexedStack(
+            index: index,
+            children: [
+              for (var i = 0; i < _pages.length; i++)
+                if (_mounted.contains(i))
+                  _pages[i]
+                else
+                  const SizedBox.shrink(),
+            ],
+          ),
         ),
         floatingActionButton: null,
         bottomNavigationBar: NavigationBar(

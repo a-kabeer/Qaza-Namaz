@@ -853,10 +853,21 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       );
     });
 
-    return [
-      for (final id in uniqueIds)
-        if (!existingIds.contains(id)) id,
-    ];
+    final insertedIds = <String>[];
+    for (var start = 0; start < uniqueIds.length; start += 400) {
+      final end =
+          start + 400 < uniqueIds.length ? start + 400 : uniqueIds.length;
+      final chunk = uniqueIds.sublist(start, end);
+      final rows = await (select(qazaRecords)
+            ..where(
+              (row) => row.userId.equals(userId) & row.id.isIn(chunk),
+            ))
+          .get();
+      for (final row in rows) {
+        if (!existingIds.contains(row.id)) insertedIds.add(row.id);
+      }
+    }
+    return insertedIds;
   }
 
   /// Inserts records atomically. Each row is still constrained by its own

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../app/workspace_refresh.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
@@ -653,6 +654,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     await ref.read(appDatabaseProvider).markReturningAccountChoicePending();
     widget.onAccountChanged(const CloudAccountSnapshot.disconnected());
     ref.invalidate(cloudAccountStartupRestoreProvider);
+    ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = false;
     ref.invalidate(returningAccountChoicePendingProvider);
     ref.invalidate(cloudSetupChoiceCompleteProvider);
     if (!mounted) return;
@@ -782,15 +784,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   }
 
   Future<void> _refreshAfterRestore() async {
-    // Import replaces the active-account/session rows as well as Qaza data.
-    // Reload the session before rebuilding profile and repository providers.
-    await ref.read(accountSessionManagerProvider).refresh();
-    ref.invalidate(appRouteProvider);
-    ref.invalidate(userProfileProvider);
-    ref.invalidate(progressSummaryProvider);
-    ref.invalidate(qazaRepositoryProvider);
-    ref.invalidate(qazaAdditionRepositoryProvider);
-    ref.invalidate(qazaPlanRevisionRepositoryProvider);
+    await refreshWorkspaceAfterRestore(ref);
   }
 
   Future<void> _toggleAutomaticBackup(bool enabled) async {

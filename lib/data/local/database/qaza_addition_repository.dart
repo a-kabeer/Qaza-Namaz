@@ -231,7 +231,8 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
     void Function(int processed, int total, int added)? onProgress,
   }) async {
     try {
-      return await database.transaction(() async {
+      return await database.transactionWithRevision<QazaAdditionMutationResult>(
+          () async {
         if (isCancellationRequested?.call() ?? false) {
           throw const _CancelledTransaction();
         }
@@ -273,7 +274,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           skippedCount: records.length - insertedIds.length,
           insertedRecordIds: List.unmodifiable(insertedIds),
         );
-      });
+      }, mutationPredicate: (result) => result.addedCount > 0);
     } on _CancelledTransaction {
       return const QazaAdditionMutationResult(cancelled: true);
     } on _NoInsertedRecords {
@@ -293,7 +294,8 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
     void Function(int processed, int total, int added)? onProgress,
   }) async {
     try {
-      return await database.transaction(() async {
+      return await database.transactionWithRevision<QazaAdditionMutationResult>(
+          () async {
         if (isCancellationRequested?.call() ?? false) {
           throw const _CancelledTransaction();
         }
@@ -424,7 +426,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           insertedRecordIds: List.unmodifiable(insertedIds),
           removedRecordIds: List.unmodifiable(removedIds),
         );
-      });
+      }, mutationPredicate: (result) => !result.cancelled);
     } on _CancelledTransaction {
       return const QazaAdditionMutationResult(cancelled: true);
     }
@@ -435,7 +437,7 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
     required String userId,
     required String additionId,
   }) =>
-      database.transaction(() async {
+      database.transactionWithRevision<QazaDeletionResult>(() async {
         final addition =
             await _getAdditionInsideTransaction(userId, additionId);
         if (addition == null) {
@@ -536,14 +538,14 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           deletedCount: deletedIds.length,
           protectedCount: protectedCount,
         );
-      });
+      }, mutationPredicate: (result) => result.createdAction);
 
   @override
   Future<QazaRestoreResult> restoreDeletionAction({
     required String userId,
     required String deletionActionId,
   }) =>
-      database.transaction(() async {
+      database.transactionWithRevision<QazaRestoreResult>(() async {
         final actions = await database.customSelect(
           '''SELECT id, resolved_at
              FROM qaza_deletion_actions
@@ -627,7 +629,9 @@ class DriftQazaAdditionRepository implements QazaAdditionRepository {
           restoredCount: restored,
           conflictCount: conflicts,
         );
-      });
+      },
+          mutationPredicate: (result) =>
+              result.restoredCount > 0 || result.conflictCount > 0);
 
   Future<void> _insertAddition(QazaAddition addition) => database.customInsert(
         '''INSERT INTO qaza_additions

@@ -1475,11 +1475,11 @@ class _FilterSheet extends ConsumerWidget {
     final state = ref.read(qazaTrackerControllerProvider(additionId));
     final controller =
         ref.read(qazaTrackerControllerProvider(additionId).notifier);
-    final now = DateTime.now();
+    final today = LocalDateService.today();
     final picked = await showDateRangePicker(
       context: context,
       firstDate: DateTime(1900),
-      lastDate: DateTime(now.year, now.month, now.day),
+      lastDate: today,
       initialDateRange: state.from != null && state.to != null
           ? DateTimeRange(start: state.from!, end: state.to!)
           : null,

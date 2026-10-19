@@ -50,6 +50,9 @@ jobs:
       - name: Phase 1 to Phase 2 boundary policy
         run: python3 tools/phase_boundary_check.py
 
+      - name: Dead code and dependency audit
+        run: python3 tools/dead_code_audit.py
+
       - name: Analyze
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 

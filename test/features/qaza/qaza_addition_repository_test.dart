@@ -669,4 +669,46 @@ void main() {
     expect(restoredReturnedToPending.status, QazaStatus.pending);
     expect(restoredReturnedToPending.recordVersion, greaterThan(1));
   });
+  test('addition mutations advance database revision only when persisted',
+      () async {
+    final date = DateTime(2026, 10, 1);
+    final a = addition('revision-addition', date);
+    final start = await db.readDbRevision();
+
+    final created = await repo.createAddition(
+      addition: a,
+      records: [record('revision-record', a.id, date)],
+    );
+    expect(created.addedCount, 1);
+    expect(await db.readDbRevision(), start + 1);
+
+    final edited = await repo.editAddition(
+      userId: 'u',
+      additionId: a.id,
+      expectedRevision: a.revision,
+      snapshot: a.currentInputSnapshot,
+      requestedKeys: {QazaRecordKey(date: date, prayerType: PrayerType.fajr)},
+      recordsToAdd: const [],
+    );
+    expect(edited.cancelled, isFalse);
+    expect(await db.readDbRevision(), start + 2);
+
+    final deleted = await repo.deleteAddition(userId: 'u', additionId: a.id);
+    expect(deleted.createdAction, isTrue);
+    expect(await db.readDbRevision(), start + 3);
+
+    final restored = await repo.restoreDeletionAction(
+      userId: 'u',
+      deletionActionId: deleted.deletionActionId!,
+    );
+    expect(restored.restoredCount, 1);
+    expect(await db.readDbRevision(), start + 4);
+
+    final alreadyRestored = await repo.restoreDeletionAction(
+      userId: 'u',
+      deletionActionId: deleted.deletionActionId!,
+    );
+    expect(alreadyRestored.alreadyResolved, isTrue);
+    expect(await db.readDbRevision(), start + 4);
+  });
 }

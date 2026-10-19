@@ -126,6 +126,8 @@ class _CloudSetupChoiceScreenState
     final database = ref.read(appDatabaseProvider);
     await database.clearReturningAccountChoicePending();
     await database.markCloudSetupChoiceComplete();
+    ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = true;
+    ref.invalidate(startupAccountWorkspaceRestoreProvider);
     ref.invalidate(returningAccountChoicePendingProvider);
     ref.invalidate(cloudSetupChoiceCompleteProvider);
   }

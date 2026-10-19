@@ -145,6 +145,7 @@ Future<_Harness> _createHarness({
   final useCase = SaveProfileUseCase(
     profileRepository: profiles,
     reconciliationService: reconciliation,
+    activeUserId: () => _userId,
     diagnostics: diagnostics,
   );
 

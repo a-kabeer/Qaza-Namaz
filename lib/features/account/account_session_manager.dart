@@ -36,6 +36,12 @@ class AccountSessionManager extends ChangeNotifier {
   }
 
   Future<void> _initializeLocalState() async {
+    // The initial state is already loading. Avoid a redundant synchronous
+    // notifyListeners() when initialize() is called from app initState, which
+    // can dirty ProviderScope while its widget subtree is still mounting.
+    if (_state.phase != AccountSessionPhase.loading) {
+      _setState(const AccountSessionState.loading());
+    }
     try {
       await _accountStore.ensureInitialized();
       final localAccountId = await _accountStore.ensureLocalAccountActive();
@@ -53,6 +59,7 @@ class AccountSessionManager extends ChangeNotifier {
       );
       _initialized = true;
     } catch (error) {
+      _initialized = false;
       _setState(
         AccountSessionState(
           phase: AccountSessionPhase.error,
@@ -88,6 +95,7 @@ class AccountSessionManager extends ChangeNotifier {
       );
       _initialized = true;
     } catch (error) {
+      _initialized = false;
       _setState(
         AccountSessionState(
           phase: AccountSessionPhase.error,
@@ -100,27 +108,46 @@ class AccountSessionManager extends ChangeNotifier {
     }
   }
 
+  Future<void> retry() async {
+    _initialized = false;
+    await initialize();
+  }
+
   Future<void> refresh() async {
-    final account = await _accountStore.activeAccount();
-    if (account == null) {
+    try {
+      final account = await _accountStore.activeAccount();
+      if (account == null) {
+        _initialized = false;
+        _setState(
+          const AccountSessionState(
+            phase: AccountSessionPhase.error,
+            activeLocalAccountId: null,
+            activeAccount: null,
+            message: 'The local device account could not be restored.',
+          ),
+        );
+        return;
+      }
+
       _setState(
-        const AccountSessionState(
+        AccountSessionState(
+          phase: AccountSessionPhase.ready,
+          activeLocalAccountId: account.localAccountId,
+          activeAccount: account,
+        ),
+      );
+      _initialized = true;
+    } catch (error) {
+      _initialized = false;
+      _setState(
+        AccountSessionState(
           phase: AccountSessionPhase.error,
           activeLocalAccountId: null,
           activeAccount: null,
-          message: 'The local device account could not be restored.',
+          message: error.toString(),
         ),
       );
-      return;
     }
-
-    _setState(
-      AccountSessionState(
-        phase: AccountSessionPhase.ready,
-        activeLocalAccountId: account.localAccountId,
-        activeAccount: account,
-      ),
-    );
   }
 
   void _setState(AccountSessionState next) {

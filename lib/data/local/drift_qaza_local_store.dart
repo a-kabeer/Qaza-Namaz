@@ -581,13 +581,46 @@ class DriftQazaLocalStore extends QazaLocalStore
 
   @override
   Future<void> retireUserData({required String userId}) async {
-    await _database.transactionWithRevision(() async {
-      final existing = await _database.qazaRecordsDao.getAll(userId: userId);
-      if (existing.isEmpty) {
-        return false;
-      }
+    await _database.transactionWithRevision<bool>(() async {
+      final owner = Variable.withString(userId);
+      final related = await _database.customSelect(
+        '''SELECT 1 FROM qaza_records WHERE user_id = ?
+           UNION ALL SELECT 1 FROM qaza_profile_plan_provenance WHERE user_id = ?
+           UNION ALL SELECT 1 FROM qaza_additions WHERE user_id = ?
+           UNION ALL SELECT 1 FROM qaza_deletion_actions WHERE user_id = ?
+           UNION ALL SELECT 1 FROM qaza_deletion_action_record_snapshots
+             WHERE user_id = ?
+           UNION ALL SELECT 1 FROM daily_salah_logs
+             WHERE user_id = ?
+               AND (linked_qaza_id IS NOT NULL
+                 OR tracker_created_qaza_id IS NOT NULL)
+           LIMIT 1''',
+        variables: [owner, owner, owner, owner, owner, owner],
+      ).get();
+      if (related.isEmpty) return false;
+
       await _database.qazaRecordsDao.deleteAllForUser(userId: userId);
+      await _database.customUpdate(
+        'DELETE FROM qaza_deletion_action_record_snapshots WHERE user_id = ?',
+        variables: [Variable.withString(userId)],
+      );
+      await _database.customUpdate(
+        'DELETE FROM qaza_deletion_actions WHERE user_id = ?',
+        variables: [Variable.withString(userId)],
+      );
+      await _database.customUpdate(
+        'DELETE FROM qaza_additions WHERE user_id = ?',
+        variables: [Variable.withString(userId)],
+      );
       await _deleteAllProfilePlanProvenance(userId);
+      await _database.customUpdate(
+        '''UPDATE daily_salah_logs
+           SET linked_qaza_id = NULL, tracker_created_qaza_id = NULL
+           WHERE user_id = ?
+             AND (linked_qaza_id IS NOT NULL
+               OR tracker_created_qaza_id IS NOT NULL)''',
+        variables: [Variable.withString(userId)],
+      );
       return true;
     });
   }
@@ -724,6 +757,8 @@ class DriftQazaLocalStore extends QazaLocalStore
         completionId: record.completionId == null
             ? const Value.absent()
             : Value(record.completionId),
+        additionId: Value(record.additionId),
+        recordVersion: Value(record.recordVersion),
         createdAt: record.createdAt,
         updatedAt: record.updatedAt,
       );

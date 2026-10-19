@@ -5,6 +5,7 @@ import '../../app/providers.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/local_account.dart';
 import '../../domain/services/profile_rules.dart';
+import '../../core/time/local_date_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
 import 'cloud_setup_choice_screen.dart';
@@ -39,8 +40,7 @@ class StartupGate extends ConsumerWidget {
     if (session.state.phase == AccountSessionPhase.error) {
       return StartupSessionErrorBoundary(
         message: session.state.message,
-        onRetry: () =>
-            ref.read(accountSessionManagerProvider.notifier).initialize(),
+        onRetry: () => ref.read(accountSessionManagerProvider.notifier).retry(),
       );
     }
 
@@ -131,7 +131,7 @@ class StartupGate extends ConsumerWidget {
 
             final validation = ProfileRules.validate(
               profile,
-              today: DateTime.now(),
+              today: LocalDateService.today(),
             );
             if (!profile.isComplete || !validation.isValid) {
               return ProfileSetupScreen(
@@ -186,7 +186,9 @@ class StartupSessionErrorBoundary extends StatelessWidget {
       body: SafeArea(
         child: ErrorState(
           title: l10n.startupProfileLoadErrorTitle,
-          message: l10n.startupProfileLoadErrorMessage,
+          message: message?.trim().isNotEmpty == true
+              ? message!.trim()
+              : l10n.startupProfileLoadErrorMessage,
           onRetry: onRetry,
           icon: Icons.storage_rounded,
         ),
