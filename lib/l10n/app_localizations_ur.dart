@@ -5791,4 +5791,32 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get dailySalahTrackingConfirmPrayedMessage =>
       'Is se namaz ka status Parhi ho jayega aur is se linked Qaza record mukammal ho jayega.';
+
+  @override
+  String qazaAdditionEditSummary(
+    int addedCount,
+    int removedCount,
+    int protectedCount,
+  ) =>
+      '$addedCount شامل، $removedCount ہٹائے گئے، $protectedCount محفوظ';
+
+  @override
+  String qazaAdditionMoreDates(int count) => 'مزید $count';
+
+  @override
+  String get cloudBackupFrequencyLabel => 'بیک اپ کی فریکوئنسی';
+  @override
+  String get cloudBackupFrequencyDaily => 'روزانہ';
+  @override
+  String get cloudBackupFrequencyWeekly => 'ہفتہ وار';
+  @override
+  String get cloudBackupFrequencyMonthly => 'ماہانہ';
+  @override
+  String get cloudBackupChecking => 'بیک اپ چیک کیا جا رہا ہے…';
+  @override
+  String get cloudBackupPreparing => 'بیک اپ تیار کیا جا رہا ہے…';
+  @override
+  String get cloudBackupCompleted => 'بیک اپ مکمل ہو گیا';
+  @override
+  String get cloudBackupUploading => 'گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے';
 }
