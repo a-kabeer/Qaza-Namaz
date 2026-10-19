@@ -5003,6 +5003,22 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will mark the prayer as prayed and complete its linked Qaza record.'**
   String get dailySalahTrackingConfirmPrayedMessage;
+  String qazaAdditionEditSummary(
+    int addedCount,
+    int removedCount,
+    int protectedCount,
+  );
+
+  String qazaAdditionMoreDates(int count);
+
+  String get cloudBackupFrequencyLabel;
+  String get cloudBackupFrequencyDaily;
+  String get cloudBackupFrequencyWeekly;
+  String get cloudBackupFrequencyMonthly;
+  String get cloudBackupChecking;
+  String get cloudBackupPreparing;
+  String get cloudBackupCompleted;
+  String get cloudBackupUploading;
 }
 
 class _AppLocalizationsDelegate
