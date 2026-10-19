@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../home/home_controller.dart';
 import '../../core/constants/prayer_types.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/confirmation_dialog.dart';
@@ -255,6 +256,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
     WidgetRef ref,
     String id,
   ) async {
+    final container = ProviderScope.containerOf(context, listen: false);
     final l10n = AppLocalizations.of(context);
     final confirmed = await confirmDestructive(
       context,
@@ -266,13 +268,18 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
 
     try {
       final result =
-          await ref.read(qazaAdditionRepositoryProvider).deleteAddition(
-                userId: ref.read(requiredUserIdProvider),
+          await container.read(qazaAdditionRepositoryProvider).deleteAddition(
+                userId: container.read(requiredUserIdProvider),
                 additionId: id,
               );
-      ref.invalidate(progressSummaryProvider);
-      ref.invalidate(qazaAdditionDetailProvider(id));
-      ref.invalidate(qazaAdditionHistoryControllerProvider);
+      container.invalidate(progressSummaryProvider);
+      container.invalidate(qazaAdditionDetailProvider(id));
+      container.invalidate(qazaAdditionHistoryControllerProvider);
+      container.invalidate(qazaTrackerControllerProvider(null));
+      container.read(homeControllerProvider).invalidateDashboard();
+      for (final prayer in PrayerType.values) {
+        container.invalidate(oldestPendingProvider(prayer));
+      }
       if (!context.mounted) return;
 
       if (!result.createdAction) {
@@ -287,8 +294,9 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
             actionLabel: l10n.qazaUndoAction,
             onUndo: () {
               unawaited(_restore(
-                context,
-                ref,
+                container,
+                l10n,
+                id,
                 result.deletionActionId!,
               ));
             },
@@ -300,22 +308,27 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
   }
 
   Future<void> _restore(
-    BuildContext context,
-    WidgetRef ref,
+    ProviderContainer container,
+    AppLocalizations l10n,
+    String restoredAdditionId,
     String actionId,
   ) async {
-    final l10n = AppLocalizations.of(context);
     try {
-      final result =
-          await ref.read(qazaAdditionRepositoryProvider).restoreDeletionAction(
-                userId: ref.read(requiredUserIdProvider),
-                deletionActionId: actionId,
-              );
-      ref.invalidate(progressSummaryProvider);
-      ref.invalidate(qazaAdditionDetailProvider(additionId));
-      ref.invalidate(qazaAdditionHistoryControllerProvider);
-      if (!context.mounted) return;
-      ref.read(appSnackbarServiceProvider).success(
+      final result = await container
+          .read(qazaAdditionRepositoryProvider)
+          .restoreDeletionAction(
+            userId: container.read(requiredUserIdProvider),
+            deletionActionId: actionId,
+          );
+      container.invalidate(progressSummaryProvider);
+      container.invalidate(qazaAdditionDetailProvider(restoredAdditionId));
+      container.invalidate(qazaAdditionHistoryControllerProvider);
+      container.invalidate(qazaTrackerControllerProvider(null));
+      container.read(homeControllerProvider).invalidateDashboard();
+      for (final prayer in PrayerType.values) {
+        container.invalidate(oldestPendingProvider(prayer));
+      }
+      container.read(appSnackbarServiceProvider).success(
             result.conflictCount == 0
                 ? l10n.qazaAdditionRestoredCount(result.restoredCount)
                 : l10n.qazaHistoryRestoreConflict(
@@ -324,8 +337,7 @@ class QazaAdditionDetailScreen extends ConsumerWidget {
                   ),
           );
     } catch (error) {
-      if (!context.mounted) return;
-      ref.read(appSnackbarServiceProvider).error(error.toString());
+      container.read(appSnackbarServiceProvider).error(error.toString());
     }
   }
 }
