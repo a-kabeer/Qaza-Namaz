@@ -180,22 +180,24 @@ class _DailyGoalsChartState extends State<_DailyGoalsChart> {
       container: true,
       label: _chartSemantics(context),
       child: LayoutBuilder(
-        builder: (context, constraints) => GestureDetector(
-          key: const Key('home_daily_goals_chart_interaction'),
+        builder: (context, constraints) => Listener(
           behavior: HitTestBehavior.opaque,
-          onTapDown: (details) {
+          onPointerDown: (event) {
             if (days.isEmpty || constraints.maxWidth <= 0) return;
             final index =
-                (details.localPosition.dx / constraints.maxWidth * days.length)
+                (event.localPosition.dx / constraints.maxWidth * days.length)
                     .floor()
                     .clamp(0, days.length - 1);
             setState(() => _pressedIndex = index);
           },
-          // Consume chart taps so the surrounding card does not navigate.
-          onTap: () {},
-          onTapUp: (_) => _clearPressedIndex(),
-          onTapCancel: _clearPressedIndex,
-          child: Column(
+          onPointerUp: (_) => _clearPressedIndex(),
+          onPointerCancel: (_) => _clearPressedIndex(),
+          child: GestureDetector(
+            key: const Key('home_daily_goals_chart_interaction'),
+            behavior: HitTestBehavior.opaque,
+            // Consume chart taps so the surrounding card does not navigate.
+            onTap: () {},
+            child: Column(
             children: [
               SizedBox(
                 height: _tooltipRowHeight,
@@ -298,6 +300,7 @@ class _DailyGoalsChartState extends State<_DailyGoalsChart> {
                 ),
               ),
             ],
+          ),
           ),
         ),
       ),
