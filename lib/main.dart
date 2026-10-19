@@ -3,12 +3,10 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 
 import 'app/app.dart';
 import 'app/providers.dart';
-import 'core/constants/prayer_types.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/fatal_error_screen.dart';
 import 'core/diagnostics/diagnostics.dart';
@@ -16,7 +14,6 @@ import 'core/licenses/app_license_registry.dart';
 import 'core/time/local_date_service.dart';
 import 'data/local/database/app_database.dart';
 import 'features/home/home_state.dart';
-import 'features/home/providers/home_providers.dart';
 
 const Duration _startupStepTimeout = Duration(seconds: 10);
 
@@ -54,12 +51,12 @@ Future<void> main() async {
   });
 
   final (initialThemeMode, initialPrimaryColor) =
-      await _loadInitialAppearance();
+      await loadInitialAppearance();
 
   try {
     await _initializeDatabase();
     final initialHomePrayerSelection =
-        await _loadInitialHomePrayerSelection();
+        await loadInitialHomePrayerSelection();
     runApp(
       _appRoot(
         themeMode: initialThemeMode,
@@ -82,7 +79,7 @@ Future<void> main() async {
           try {
             await _initializeDatabase();
             final initialHomePrayerSelection =
-                await _loadInitialHomePrayerSelection();
+                await loadInitialHomePrayerSelection();
             runApp(
               _appRoot(
                 themeMode: initialThemeMode,
@@ -121,64 +118,6 @@ Widget _appRoot({
     ],
     child: const QazaNamazApp(),
   );
-}
-
-Future<(AppThemeMode, AppPrimaryColor)> _loadInitialAppearance() async {
-  try {
-    final preferences = await SharedPreferences.getInstance();
-    final storedMode = preferences.getString(ThemeModeNotifier.storageKey);
-    final storedColor = preferences.getString(PrimaryColorNotifier.storageKey);
-    final mode = AppThemeMode.values.firstWhere(
-      (value) => value.name == storedMode,
-      orElse: () => AppThemeMode.system,
-    );
-    final color = AppPrimaryColor.values.firstWhere(
-      (value) => value.name == storedColor,
-      orElse: () => AppPrimaryColor.teal,
-    );
-    return (mode, color);
-  } catch (_) {
-    return (AppThemeMode.system, AppPrimaryColor.teal);
-  }
-}
-
-Future<HomePrayerSelectionState> _loadInitialHomePrayerSelection() async {
-  final database = AppDatabase();
-  try {
-    final rows = await database.customSelect(
-      "SELECT key, value FROM meta_store WHERE key IN ("
-      "'qaza_home_completion_mode', "
-      "'qaza_home_auto_sequence_prayer', "
-      "'qaza_home_selected_prayer')",
-    ).get();
-    final values = <String, String>{
-      for (final row in rows)
-        row.read<String>('key'): row.read<String>('value'),
-    };
-    final mode = HomePrayerSelectionMode.values.firstWhere(
-      (value) => value.name == values['qaza_home_completion_mode'],
-      orElse: () => HomePrayerSelectionMode.autoSequence,
-    );
-    final autoSequencePrayer = PrayerType.values.firstWhere(
-      (value) => value.name == values['qaza_home_auto_sequence_prayer'],
-      orElse: () => PrayerType.fajr,
-    );
-    final selectedPrayer = PrayerType.values.firstWhere(
-      (value) => value.name == values['qaza_home_selected_prayer'],
-      orElse: () => PrayerType.fajr,
-    );
-    return HomePrayerSelectionState(
-      mode: mode,
-      selectedPrayer: mode == HomePrayerSelectionMode.prayerSelection
-          ? selectedPrayer
-          : null,
-      autoSequencePrayer: autoSequencePrayer,
-    );
-  } catch (_) {
-    return const HomePrayerSelectionState();
-  } finally {
-    await database.close();
-  }
 }
 
 Future<void> _initializeDatabase() async {
