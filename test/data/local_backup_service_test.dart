@@ -278,6 +278,47 @@ void main() {
     await database.qazaRecordsDao.insertRecord(
       _record(guestRecordId, date),
     );
+    const additionId = 'guest_addition_adopt';
+    const deletionActionId = 'guest_delete_action_adopt';
+    final timestamp = DateTime.utc(2025, 1, 1).toIso8601String();
+    await database.customInsert(
+      '''INSERT INTO qaza_additions
+         (id, user_id, mode, input_snapshot, revision, created_at, updated_at)
+         VALUES (?, ?, 'single', '{}', 1, ?, ?)''',
+      variables: [
+        Variable.withString(additionId),
+        Variable.withString('guest'),
+        Variable.withString(timestamp),
+        Variable.withString(timestamp),
+      ],
+    );
+    await database.customInsert(
+      '''INSERT INTO qaza_deletion_actions
+         (id, user_id, addition_id, created_at, resolved_at, entity_version)
+         VALUES (?, ?, ?, ?, NULL, 1)''',
+      variables: [
+        Variable.withString(deletionActionId),
+        Variable.withString('guest'),
+        Variable.withString(additionId),
+        Variable.withString(timestamp),
+      ],
+    );
+    await database.customInsert(
+      '''INSERT INTO qaza_deletion_action_record_snapshots
+         (deletion_action_id, record_id, user_id, addition_id, prayer_type,
+          original_date, status, completed_at, completion_id, created_at,
+          updated_at, record_version)
+         VALUES (?, ?, ?, ?, 'fajr', '2025-01-01', 'pending', NULL, NULL,
+                 ?, ?, 1)''',
+      variables: [
+        Variable.withString(deletionActionId),
+        Variable.withString(guestRecordId),
+        Variable.withString('guest'),
+        Variable.withString(additionId),
+        Variable.withString(timestamp),
+        Variable.withString(timestamp),
+      ],
+    );
     await database.customInsert(
       '''INSERT INTO daily_salah_logs
          (user_id, prayer_date, prayer_type, status,
@@ -322,6 +363,31 @@ void main() {
       adoptedRecordId,
     );
     expect(links.single.read<String?>('linked_qaza_id'), adoptedRecordId);
+
+    const adoptedAdditionId = 'google:account-adopt_guest_addition_adopt';
+    const adoptedDeletionActionId =
+        'google:account-adopt_guest_delete_action_adopt';
+    final actions = await database.customSelect(
+      'SELECT id, addition_id FROM qaza_deletion_actions WHERE user_id = ?',
+      variables: [Variable.withString(googleId)],
+    ).get();
+    expect(actions, hasLength(1));
+    expect(actions.single.read<String>('id'), adoptedDeletionActionId);
+    expect(actions.single.read<String>('addition_id'), adoptedAdditionId);
+
+    final snapshots = await database.customSelect(
+      'SELECT record_id, user_id, deletion_action_id, addition_id '
+      'FROM qaza_deletion_action_record_snapshots WHERE user_id = ?',
+      variables: [Variable.withString(googleId)],
+    ).get();
+    expect(snapshots, hasLength(1));
+    expect(snapshots.single.read<String>('record_id'), adoptedRecordId);
+    expect(snapshots.single.read<String>('user_id'), googleId);
+    expect(
+      snapshots.single.read<String>('deletion_action_id'),
+      adoptedDeletionActionId,
+    );
+    expect(snapshots.single.read<String>('addition_id'), adoptedAdditionId);
   });
 
   test('backup preserves daily Salah links and the tracking preference',
