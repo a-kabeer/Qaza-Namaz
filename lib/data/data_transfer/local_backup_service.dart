@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/entities/user_profile.dart';
 import '../local/database/app_database.dart';
 
 const _appId = 'qaza_namaz_app';
