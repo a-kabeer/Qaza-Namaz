@@ -1013,6 +1013,18 @@
     }
   },
   "qazaAdditionUpdated": "قضا کا اضافہ اپ ڈیٹ ہو گیا",
+  "qazaAdditionEditSummary": "{addedCount} شامل، {removedCount} ہٹائے گئے، {protectedCount} محفوظ",
+  "@qazaAdditionEditSummary": {
+    "placeholders": {
+      "addedCount": { "type": "int" },
+      "removedCount": { "type": "int" },
+      "protectedCount": { "type": "int" }
+    }
+  },
+  "qazaAdditionMoreDates": "مزید {count}",
+  "@qazaAdditionMoreDates": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "qazaSelectedCount": "{count, plural, =1{1 منتخب} other{{count} منتخب}}",
   "@qazaSelectedCount": {
     "placeholders": {
