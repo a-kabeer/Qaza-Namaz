@@ -1237,6 +1237,18 @@
     }
   },
   "qazaAdditionUpdated": "تم تحديث إضافة القضاء",
+  "qazaAdditionEditSummary": "{addedCount} مضاف • {removedCount} محذوف • {protectedCount} محفوظ",
+  "@qazaAdditionEditSummary": {
+    "placeholders": {
+      "addedCount": { "type": "int" },
+      "removedCount": { "type": "int" },
+      "protectedCount": { "type": "int" }
+    }
+  },
+  "qazaAdditionMoreDates": "المزيد {count}",
+  "@qazaAdditionMoreDates": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "qazaSelectedCount": "{count, plural, =1{تم تحديد عنصر واحد} other{تم تحديد {count} عناصر}}",
   "@qazaSelectedCount": {
     "placeholders": {
