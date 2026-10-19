@@ -135,13 +135,12 @@ class _DailyGoalsContent extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child:
-                  _DailyGoalsChart(
-                    period: period,
-                    locale: locale,
-                    maxY: maxY,
-                    hasValidTarget: hasValidTarget,
-                  ),
+              child: _DailyGoalsChart(
+                period: period,
+                locale: locale,
+                maxY: maxY,
+                hasValidTarget: hasValidTarget,
+              ),
             ),
           ],
         ),
