@@ -102,7 +102,6 @@ Future<void> main() async {
     );
     return;
   }
-
 }
 
 Widget _appRoot({
