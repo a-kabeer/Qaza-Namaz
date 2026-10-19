@@ -355,7 +355,7 @@ void main() {
     },
   );
 
-  testWidgets('monthly frequency label stays concise in English and Urdu',
+  testWidgets('monthly frequency label is localized in English, Urdu and Arabic',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = await _createSession(database);
@@ -398,6 +398,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('ماہانہ'), findsOneWidget);
     expect(find.text('ماہانہ (ہر 30 دن)'), findsNothing);
+
+    await tester.pumpWidget(
+      _app(container, const AccountScreen(), locale: const Locale('ar')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('شهريًا'), findsOneWidget);
+    expect(find.text('وتيرة النسخ الاحتياطي'), findsOneWidget);
+    expect(find.text('Monthly'), findsNothing);
   });
 
   testWidgets('backup progress clears after success and failure',
