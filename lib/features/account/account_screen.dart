@@ -312,6 +312,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     };
   }
 
+  String _formatBackupMb(int bytes) => (bytes / 1000000).toStringAsFixed(2);
+
   void _publishBackupProgress(CloudBackupProgress progress) {
     if (!mounted) return;
     setState(() => _backupProgress = progress);
@@ -405,15 +407,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         });
         return;
       }
-      await ref
-          .read(accountSessionManagerProvider)
-          .activateGoogleAccount(stableAccountId);
       workspaceActivated = true;
+      await container.read(accountSessionManagerProvider)
+          .activateGoogleAccount(stableAccountId);
       final selectedWorkspaceId =
           container.read(accountSessionManagerProvider).activeLocalAccountId;
       googleWorkspaceWasUninitialized = selectedWorkspaceId == null ||
-          await ref
-                  .read(accountLocalStoreProvider)
+          await container.read(accountLocalStoreProvider)
                   .loadProfile(selectedWorkspaceId) ==
               null;
       container.invalidate(appRouteProvider);
@@ -428,9 +428,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         allowInteractive: false,
       );
       if (!mounted) {
-        if (googleWorkspaceWasUninitialized) {
-          await restorePreviousWorkspace();
-        }
+        await restorePreviousWorkspace();
         return;
       }
       CloudSyncSnapshot result;
@@ -440,8 +438,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               container.read(accountSessionManagerProvider).activeLocalAccountId;
           final profile = localAccountId == null
               ? null
-              : await ref
-                  .read(accountLocalStoreProvider)
+              : await container.read(accountLocalStoreProvider)
                   .loadProfile(localAccountId);
 
           if (profile == null) {
