@@ -591,6 +591,20 @@ class LocalBackupService {
       return '$target${value.substring(5)}';
     }
 
+    Object? remapQazaAdditionId(Object? value) {
+      if (!remapLegacyGuestRecordIds || value is! String || value.isEmpty) {
+        return value;
+      }
+      return '${target}_$value';
+    }
+
+    Object? remapDeletionActionId(Object? value) {
+      if (!remapLegacyGuestRecordIds || value is! String || value.isEmpty) {
+        return value;
+      }
+      return '${target}_$value';
+    }
+
     Map<String, dynamic> remapRevisionPayload(Map<String, dynamic> row) {
       if (!remapLegacyGuestRecordIds || row['payload_json'] is! String) {
         return row;
@@ -627,10 +641,23 @@ class LocalBackupService {
           switch (table) {
             case 'qaza_records':
               row['id'] = remapQazaRecordId(row['id']);
+              row['addition_id'] = remapQazaAdditionId(row['addition_id']);
+              break;
+            case 'qaza_additions':
+              row['id'] = remapQazaAdditionId(row['id']);
+              break;
+            case 'qaza_deletion_actions':
+              row['id'] = remapDeletionActionId(row['id']);
+              row['addition_id'] = remapQazaAdditionId(row['addition_id']);
               break;
             case 'qaza_profile_plan_provenance':
+              row['record_id'] = remapQazaRecordId(row['record_id']);
+              break;
             case 'qaza_deletion_action_record_snapshots':
               row['record_id'] = remapQazaRecordId(row['record_id']);
+              row['deletion_action_id'] =
+                  remapDeletionActionId(row['deletion_action_id']);
+              row['addition_id'] = remapQazaAdditionId(row['addition_id']);
               break;
             case 'daily_salah_logs':
               row['tracker_created_qaza_id'] =
