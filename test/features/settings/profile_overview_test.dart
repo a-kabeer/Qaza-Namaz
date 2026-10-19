@@ -63,6 +63,11 @@ void main() {
     (tester) async {
       final pubertyDate = DateTime(2003, 4, 5);
       final startPrayingDate = DateTime(2005, 6, 7);
+      tester.view.physicalSize = const Size(800, 1400);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
       final rememberedDateProfile = UserProfile(
         gender: Gender.female,
         madhab: Madhab.hanafi,
