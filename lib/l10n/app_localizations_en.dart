@@ -2876,4 +2876,32 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dailySalahTrackingConfirmPrayedMessage =>
       'This will mark the prayer as prayed and complete its linked Qaza record.';
+
+  @override
+  String qazaAdditionEditSummary(
+    int addedCount,
+    int removedCount,
+    int protectedCount,
+  ) =>
+      '$addedCount added • $removedCount removed • $protectedCount protected';
+
+  @override
+  String qazaAdditionMoreDates(int count) => '+ $count more';
+
+  @override
+  String get cloudBackupFrequencyLabel => 'Backup frequency';
+  @override
+  String get cloudBackupFrequencyDaily => 'Daily';
+  @override
+  String get cloudBackupFrequencyWeekly => 'Weekly';
+  @override
+  String get cloudBackupFrequencyMonthly => 'Monthly';
+  @override
+  String get cloudBackupChecking => 'Checking backup…';
+  @override
+  String get cloudBackupPreparing => 'Preparing backup…';
+  @override
+  String get cloudBackupCompleted => 'Backup completed';
+  @override
+  String get cloudBackupUploading => 'Uploading backup to Google Drive';
 }
