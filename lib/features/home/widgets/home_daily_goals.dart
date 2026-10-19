@@ -70,7 +70,10 @@ class _DailyGoalsContent extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
     final maxY = period.days.fold<double>(
       1,
       (current, day) => math.max(
@@ -233,7 +236,10 @@ class _DailyGoalsChart extends StatelessWidget {
 
   String _chartSemantics(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
     return [
       for (final day in period.days)
         '${DateFormat.EEEE(locale).format(day.date)}: ${day.completed} ${l10n.homeCompleted}, ${day.target} ${l10n.homeDailyTarget}',
