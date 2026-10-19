@@ -1576,6 +1576,16 @@ class LocalBackupService {
   }
 
   Future<void> _clearBusinessState() async {
+    // Workspace-scoped tracking settings are restored from the backup payload.
+    // Remove old values first so settings from workspaces absent in the backup
+    // cannot survive a full import and affect a later account recreation.
+    await database.customStatement(
+      "DELETE FROM meta_store WHERE key IN ("
+      "'daily_salah_tracking_enabled', "
+      "'daily_salah_tracking_setup_dismissed') "
+      "OR key LIKE 'daily_salah_tracking_enabled:%' "
+      "OR key LIKE 'daily_salah_tracking_setup_dismissed:%'",
+    );
     await database.customStatement('DELETE FROM daily_salah_logs');
     await database.customStatement(
       'DELETE FROM qaza_deletion_action_record_snapshots',
