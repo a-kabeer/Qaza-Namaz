@@ -870,11 +870,11 @@ class LocalBackupService {
         'Backup database schema version is invalid.',
       );
     }
-    // Schema 19 predates daily Salah tracking. Schema 20 has daily logs but
-    // predates their explicit Qaza link and completion-sync columns. Both are
-    // safe predecessors of schema 21 and are normalized below.
-    final compatibleLegacySchema = database.schemaVersion == 21 &&
-        (databaseSchema == 19 || databaseSchema == 20);
+    // Schemas 19–21 are supported predecessors of schema 22. Older
+    // payloads are normalized below, including missing Daily Salah rows and
+    // the link/completion-sync fields introduced after schema 20.
+    final compatibleLegacySchema =
+        databaseSchema >= 19 && databaseSchema <= 21;
     if (databaseSchema > database.schemaVersion) {
       throw LocalBackupException(
         'This backup uses newer database schema $databaseSchema. '
