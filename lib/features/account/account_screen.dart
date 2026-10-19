@@ -303,7 +303,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   String? _message;
   CloudBackupProgress? _backupProgress;
 
-  bool get _isUrdu => Localizations.localeOf(context).languageCode == 'ur';
+  bool get _isUrdu {
+    final locale = Localizations.localeOf(context);
+    return locale.languageCode == 'ur' &&
+        locale.scriptCode?.toLowerCase() != 'latn';
+  }
 
   String _frequencyLabel(CloudBackupFrequency frequency) {
     if (_isUrdu) {
