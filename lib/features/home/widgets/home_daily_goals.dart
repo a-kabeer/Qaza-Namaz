@@ -135,13 +135,12 @@ class _DailyGoalsContent extends StatelessWidget {
             ),
             const SizedBox(width: 8),
             Expanded(
-              child:
-                  _DailyGoalsChart(
-                    period: period,
-                    locale: locale,
-                    maxY: maxY,
-                    hasValidTarget: hasValidTarget,
-                  ),
+              child: _DailyGoalsChart(
+                period: period,
+                locale: locale,
+                maxY: maxY,
+                hasValidTarget: hasValidTarget,
+              ),
             ),
           ],
         ),
@@ -186,11 +185,10 @@ class _DailyGoalsChartState extends State<_DailyGoalsChart> {
           behavior: HitTestBehavior.opaque,
           onTapDown: (details) {
             if (days.isEmpty || constraints.maxWidth <= 0) return;
-            final index = (details.localPosition.dx /
-                    constraints.maxWidth *
-                    days.length)
-                .floor()
-                .clamp(0, days.length - 1);
+            final index =
+                (details.localPosition.dx / constraints.maxWidth * days.length)
+                    .floor()
+                    .clamp(0, days.length - 1);
             setState(() => _pressedIndex = index);
           },
           // Consume chart taps so the surrounding card does not navigate.

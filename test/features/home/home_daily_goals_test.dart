@@ -118,7 +118,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('home_daily_goals_details')), findsNothing);
-    final cardRect = tester.getRect(find.byKey(const Key('home_daily_goals_tap')));
+    final cardRect =
+        tester.getRect(find.byKey(const Key('home_daily_goals_tap')));
     await tester.tapAt(Offset(cardRect.center.dx, cardRect.top + 10));
     expect(tapped, isTrue);
   });
@@ -252,7 +253,8 @@ void main() {
     );
     expect(chart.data.maxY, 2);
     expect(chart.data.barGroups[1].barRods.single.toY, 2);
-    expect(chart.data.barGroups[1].barRods.single.backDrawRodData.show, isFalse);
+    expect(
+        chart.data.barGroups[1].barRods.single.backDrawRodData.show, isFalse);
   });
 
   testWidgets('chart colors follow the active dark theme', (tester) async {
