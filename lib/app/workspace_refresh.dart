@@ -36,3 +36,35 @@ Future<void> refreshWorkspaceAfterRestore(WidgetRef ref) async {
   ref.invalidate(homeQazaActivityDailyGoalsProvider);
   ref.invalidate(homeFallbackPendingProvider);
 }
+
+
+/// Container variant for recovery that may complete after its initiating route
+/// has been disposed. The application ProviderContainer remains alive.
+Future<void> refreshWorkspaceAfterRestoreContainer(
+  ProviderContainer container,
+) async {
+  await container.read(accountSessionManagerProvider).refresh();
+
+  container.invalidate(appRouteProvider);
+  container.invalidate(userProfileProvider);
+  container.invalidate(progressSummaryProvider);
+  container.invalidate(qazaRepositoryProvider);
+  container.invalidate(qazaAdditionRepositoryProvider);
+  container.invalidate(qazaPlanRevisionRepositoryProvider);
+  container.invalidate(qazaTrackerControllerProvider);
+  container.invalidate(qazaAdditionHistoryControllerProvider);
+  container.invalidate(prayerTimeControllerProvider);
+  container.invalidate(hijriDateAdjustmentProvider);
+  container.invalidate(homePrayerSelectionProvider);
+
+  container.invalidate(dailySalahTrackingEnabledProvider);
+  container.invalidate(dailySalahTrackingLogsProvider);
+  container.invalidate(enabledPrayerTypesProvider);
+  container.invalidate(effectiveWitrProvider);
+
+  container.read(homeControllerProvider).invalidateDashboard();
+  container.invalidate(homeDailyProgressProvider);
+  container.invalidate(homeQazaActivityCurrentWeekProvider);
+  container.invalidate(homeQazaActivityDailyGoalsProvider);
+  container.invalidate(homeFallbackPendingProvider);
+}
