@@ -365,6 +365,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     final previousWorkspaceId =
         container.read(accountSessionManagerProvider).activeLocalAccountId;
     var workspaceActivated = false;
+    var initialBackupPendingMarked = false;
     // Default to recoverable until the selected Google workspace is inspected.
     var googleWorkspaceWasUninitialized = true;
 
@@ -378,6 +379,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         } else if (session.activeLocalAccountId != previousWorkspaceId) {
           await session.activateLocalAccount(previousWorkspaceId);
           await refreshWorkspaceAfterRestoreContainer(container);
+        }
+        if (initialBackupPendingMarked) {
+          await container
+              .read(appDatabaseProvider)
+              .clearPendingInitialCloudBackup();
+          container.invalidate(initialCloudBackupPendingProvider);
+          initialBackupPendingMarked = false;
         }
       } finally {
         workspaceActivated = false;
@@ -447,6 +455,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
             // for a completed backup.
             final database = container.read(appDatabaseProvider);
             await database.markInitialCloudBackupPending();
+            initialBackupPendingMarked = true;
             container.invalidate(initialCloudBackupPendingProvider);
             result = await cloudSync.status();
             if (!mounted) {
@@ -551,6 +560,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           result.status == CloudSyncStatus.synced &&
           !result.restoredRemoteBackup) {
         await container.read(appDatabaseProvider).markInitialCloudBackupPending();
+        initialBackupPendingMarked = true;
         container.invalidate(initialCloudBackupPendingProvider);
         if (!mounted) {
           // The route was abandoned before first-run setup could be shown.
