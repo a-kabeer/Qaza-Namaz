@@ -136,9 +136,7 @@ class _CloudSetupChoiceScreenState
     final localAccountId =
         ref.read(accountSessionManagerProvider).activeLocalAccountId;
     final googleName = account.displayName?.trim();
-    if (localAccountId != null &&
-        googleName != null &&
-        googleName.isNotEmpty) {
+    if (localAccountId != null && googleName != null && googleName.isNotEmpty) {
       await ref.read(accountLocalStoreProvider).saveWorkspaceDisplayName(
             localAccountId,
             googleName,
@@ -200,9 +198,7 @@ class _CloudSetupChoiceScreenState
       case CloudBackupDiscoveryStatus.noBackup:
         setState(() => _discovery = result);
         var adoptedGuestWorkspace = false;
-        if (_accountConnected &&
-            mayAdoptGuest &&
-            targetWorkspaceId != null) {
+        if (_accountConnected && mayAdoptGuest && targetWorkspaceId != null) {
           final guests =
               await ref.read(accountLocalStoreProvider).listGuestWorkspaces();
           if (guests.isNotEmpty) {
@@ -232,8 +228,9 @@ class _CloudSetupChoiceScreenState
           await database.markInitialCloudBackupPending();
           ref.invalidate(initialCloudBackupPendingProvider);
           if (adoptedGuestWorkspace) {
-            ref.read(skipPendingInitialCloudBackupForSessionProvider
-                .notifier).state = false;
+            ref
+                .read(skipPendingInitialCloudBackupForSessionProvider.notifier)
+                .state = false;
             var uploaded = false;
             try {
               final backup = await ref.read(cloudSyncProvider).backupNow();
@@ -248,8 +245,10 @@ class _CloudSetupChoiceScreenState
             } else {
               // Home remains available; retain the pending marker for a later
               // account-scoped retry or app restart.
-              ref.read(skipPendingInitialCloudBackupForSessionProvider
-                  .notifier).state = false;
+              ref
+                  .read(
+                      skipPendingInitialCloudBackupForSessionProvider.notifier)
+                  .state = false;
             }
           }
         }
@@ -304,8 +303,8 @@ class _CloudSetupChoiceScreenState
                         : l10n.accountGuest,
                   ),
                   subtitle: Text(l10n.accountChoiceGuestDescription),
-                  onTap: () => Navigator.of(dialogContext)
-                      .pop(guest.localAccountId),
+                  onTap: () =>
+                      Navigator.of(dialogContext).pop(guest.localAccountId),
                 ),
             ],
           ),
@@ -313,8 +312,7 @@ class _CloudSetupChoiceScreenState
         actions: [
           TextButton(
             key: const Key('guest_workspace_start_fresh'),
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(_startFreshChoice),
+            onPressed: () => Navigator.of(dialogContext).pop(_startFreshChoice),
             child: const Text('Start Fresh'),
           ),
         ],
