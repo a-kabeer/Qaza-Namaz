@@ -1448,6 +1448,14 @@
       }
     }
   },
+  "cloudBackupFrequencyLabel": "Backup frequency",
+  "cloudBackupFrequencyDaily": "Daily",
+  "cloudBackupFrequencyWeekly": "Weekly",
+  "cloudBackupFrequencyMonthly": "Monthly",
+  "cloudBackupChecking": "Checking backup…",
+  "cloudBackupPreparing": "Preparing backup…",
+  "cloudBackupCompleted": "Backup completed",
+  "cloudBackupUploading": "Uploading backup to Google Drive",
   "cloudBackupTitle": "Cloud backup",
   "cloudBackupDescription": "Keep a separate backup of your Qaza progress in your Google Drive app data.",
   "cloudConnect": "Sign in with Google",
