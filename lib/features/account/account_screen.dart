@@ -376,7 +376,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     final previousWorkspaceId =
         ref.read(accountSessionManagerProvider).activeLocalAccountId;
     var workspaceActivated = false;
-    var googleWorkspaceWasUninitialized = false;
+    // Default to recoverable until the selected Google workspace is inspected.
+    var googleWorkspaceWasUninitialized = true;
 
     Future<void> restorePreviousWorkspace() async {
       if (!workspaceActivated || !mounted) return;
