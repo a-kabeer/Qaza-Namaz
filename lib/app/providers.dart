@@ -448,13 +448,6 @@ final latestPendingProvider =
       .latestPending(userId: userId, prayerType: prayer);
 });
 
-/// Values loaded before runApp so the first rendered frame uses saved styling.
-final initialThemeModeProvider =
-    Provider<AppThemeMode>((ref) => AppThemeMode.system);
-
-final initialPrimaryColorProvider =
-    Provider<AppPrimaryColor>((ref) => AppPrimaryColor.teal);
-
 class ThemeModeNotifier extends Notifier<AppThemeMode> {
   static const String storageKey = 'qaza_theme_mode';
   bool _selectionMade = false;
