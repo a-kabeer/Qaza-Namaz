@@ -1061,6 +1061,14 @@
       }
     }
   },
+  "cloudBackupFrequencyLabel": "Backup ki frequency",
+  "cloudBackupFrequencyDaily": "Rozana",
+  "cloudBackupFrequencyWeekly": "Haftawar",
+  "cloudBackupFrequencyMonthly": "Mahawarana",
+  "cloudBackupChecking": "Backup check ho raha hai…",
+  "cloudBackupPreparing": "Backup tayyar ho raha hai…",
+  "cloudBackupCompleted": "Backup mukammal ho gaya",
+  "cloudBackupUploading": "Google Drive par upload ho raha hai",
   "cloudBackupTitle": "Cloud backup app",
   "cloudBackupDescription": "Apni Qaza ki progress ka Google Drive app Data mein alg backup app mehfooz rkhin",
   "cloudConnect": "Google se sign in karein",
