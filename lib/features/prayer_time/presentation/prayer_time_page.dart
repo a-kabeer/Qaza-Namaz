@@ -336,15 +336,23 @@ class _PrayerTimeContent extends ConsumerWidget {
     final currentPrayer = current?.current;
     final nextPrayer = current?.next;
     final nextAt = current?.nextAt;
-    final nextRemaining = nextAt?.difference(localNow);
     final focusPrayer = current?.focusPrayer ?? currentPrayer ?? nextPrayer;
     final countdownPrayer = focusPrayer;
+    final countdownToSunrise = shouldUseSunriseCountdownTarget(
+      schedule: contentSchedule,
+      location: location,
+      now: localNow,
+    );
+    final DateTime? countdownTargetAt = countdownToSunrise
+        ? contentSchedule.localAstronomicalSunrise(location).toUtc()
+        : nextAt;
+    final countdownRemaining = countdownTargetAt?.difference(localNow);
+    final PrayerSlot? countdownTargetPrayer =
+        countdownToSunrise ? PrayerSlot.sunrise : nextPrayer;
     tz.TZDateTime restrictedTimelineDisplayAt(RestrictedTimeWindow window) =>
         window.timelineDisplayAt;
 
     final activeRestriction = restricted?.active;
-    final restrictedRemaining =
-        activeRestriction == null ? null : restricted?.remainingAt(localNow);
     final visibleRestrictions = restrictedCalculator.timelineWindowsForSchedule(
       schedule: contentSchedule,
       location: location,
@@ -439,31 +447,22 @@ class _PrayerTimeContent extends ConsumerWidget {
     IconData? focusIcon;
     String? focusCountdown;
 
-    if (activeRestriction != null && restrictedRemaining != null) {
-      focusName = _restrictedLabel(l10n, activeRestriction.type);
-      focusTime = _formatRestrictedRange(
-        context,
-        activeRestriction,
-        snapshot,
-      );
-      focusLabel = l10n.homeRemaining;
-      focusIcon = _restrictedIcon(activeRestriction.type);
-      focusCountdown = DateFormatters.formatDurationHhMmSs(restrictedRemaining);
-    } else if (countdownPrayer != null) {
+    if (countdownPrayer != null) {
       for (final item in timeline) {
         if (!item.isRestricted && item.prayer == countdownPrayer) {
           focusName = item.name;
-          focusLabel = nextPrayer == null
+          focusLabel = countdownTargetPrayer == null
               ? null
               : l10n.prayerTimeUpcomingPrayer(
-                  _prayerLabel(l10n, nextPrayer),
+                  _prayerLabel(l10n, countdownTargetPrayer),
                 );
-          focusTime =
-              nextAt == null ? null : _formatTime(context, nextAt, snapshot);
-          focusIcon = item.icon;
-          focusCountdown = nextRemaining == null
+          focusTime = countdownTargetAt == null
               ? null
-              : DateFormatters.formatDurationHhMmSs(nextRemaining);
+              : _formatTime(context, countdownTargetAt, snapshot);
+          focusIcon = item.icon;
+          focusCountdown = countdownRemaining == null
+              ? null
+              : DateFormatters.formatDurationHhMmSs(countdownRemaining);
           break;
         }
       }
