@@ -192,7 +192,7 @@ void main() {
       const UserProfile(onboardingCompleted: true),
     );
     await accounts.activate(googleId);
-    await database.setDailySalahTrackingEnabled(true);
+    await database.setDailySalahTrackingEnabled(true, userId: googleId);
     final remoteBackup = await service.exportJson(localAccountId: googleId);
 
     // Simulate a fresh local copy of the target workspace before restore.
@@ -202,7 +202,7 @@ void main() {
     );
     await accounts.activate(googleId);
     expect(await database.isOnboardingCompleted(), isFalse);
-    await database.setDailySalahTrackingEnabled(false);
+    await database.setDailySalahTrackingEnabled(false, userId: googleId);
 
     await service.importJson(
       remoteBackup,
@@ -210,7 +210,10 @@ void main() {
     );
 
     expect(await database.isOnboardingCompleted(), isTrue);
-    expect(await database.isDailySalahTrackingEnabled(), isTrue);
+    expect(
+      await database.isDailySalahTrackingEnabled(userId: googleId),
+      isTrue,
+    );
     final restored = await accounts.loadProfile(googleId);
     expect(restored?.onboardingCompleted, isTrue);
     expect(
