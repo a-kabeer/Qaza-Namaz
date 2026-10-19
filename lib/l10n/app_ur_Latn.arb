@@ -1013,6 +1013,18 @@
     }
   },
   "qazaAdditionUpdated": "Qaza ka izafa app date ho gaya",
+  "qazaAdditionEditSummary": "{addedCount} shamil • {removedCount} hataye gaye • {protectedCount} mehfooz",
+  "@qazaAdditionEditSummary": {
+    "placeholders": {
+      "addedCount": { "type": "int" },
+      "removedCount": { "type": "int" },
+      "protectedCount": { "type": "int" }
+    }
+  },
+  "qazaAdditionMoreDates": "mazeed {count}",
+  "@qazaAdditionMoreDates": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "qazaSelectedCount": "{count, plural, =1{1 muntakhab} other{{count} muntakhab}}",
   "@qazaSelectedCount": {
     "placeholders": {
