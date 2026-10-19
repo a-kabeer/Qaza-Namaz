@@ -52,6 +52,28 @@ class LocalBackupService {
         (a, b) => (a['id'] as String).compareTo(b['id'] as String),
       );
 
+      final accountIdRows = await database.customSelect(
+        'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
+      ).get();
+      final trackingEnabledByAccount = <String, bool>{};
+      final trackingSetupDismissedByAccount = <String, bool>{};
+      for (final row in accountIdRows) {
+        final accountId = row.read<String>('local_account_id');
+        trackingEnabledByAccount[accountId] =
+            await database.isDailySalahTrackingEnabled(userId: accountId);
+        trackingSetupDismissedByAccount[accountId] =
+            await database.isDailySalahTrackingSetupDismissed(userId: accountId);
+      }
+      final activeSessionRows = await database.customSelect(
+        'SELECT active_local_account_id FROM app_session_state ORDER BY id LIMIT 1',
+      ).get();
+      final activeAccountId = activeSessionRows.isEmpty
+          ? null
+          : activeSessionRows.first.read<String?>('active_local_account_id');
+      final preferenceAccountId = localAccountId?.trim().isNotEmpty == true
+          ? localAccountId!.trim()
+          : activeAccountId ?? 'guest';
+
       final document = <String, dynamic>{
         'metadata': {
           'app_id': _appId,
@@ -169,7 +191,17 @@ class LocalBackupService {
           'meta_store': {
             'is_onboarding_completed': await database.isOnboardingCompleted(),
             'daily_salah_tracking_enabled':
-                await database.isDailySalahTrackingEnabled(),
+                await database.isDailySalahTrackingEnabled(
+              userId: preferenceAccountId,
+            ),
+            'daily_salah_tracking_enabled_by_account':
+                trackingEnabledByAccount,
+            'daily_salah_tracking_setup_dismissed':
+                await database.isDailySalahTrackingSetupDismissed(
+              userId: preferenceAccountId,
+            ),
+            'daily_salah_tracking_setup_dismissed_by_account':
+                trackingSetupDismissedByAccount,
           },
         },
       };
@@ -241,6 +273,17 @@ class LocalBackupService {
         }
         final meta = data['meta_store'] as Map<String, dynamic>;
         meta['is_onboarding_completed'] = profileOnboardingCompleted;
+        for (final key in [
+          'daily_salah_tracking_enabled_by_account',
+          'daily_salah_tracking_setup_dismissed_by_account',
+        ]) {
+          final values = meta[key];
+          if (values is Map) {
+            meta[key] = <String, dynamic>{
+              normalized: values[normalized] == true,
+            };
+          }
+        }
       }
 
       return const JsonEncoder.withIndent('  ').convert(document);
@@ -406,9 +449,59 @@ class LocalBackupService {
       await database.setOnboardingCompletedInTransaction(
         meta['is_onboarding_completed'] == true,
       );
-      await database.setDailySalahTrackingEnabledInTransaction(
-        meta['daily_salah_tracking_enabled'] == true,
-      );
+
+      final sessionRows =
+          data['app_session_state'] as List<dynamic>? ?? const <dynamic>[];
+      final activeUserId = sessionRows.isEmpty
+          ? 'guest'
+          : ((sessionRows.first as Map)['active_local_account_id'] as String? ??
+              'guest');
+      final enabledByAccount = meta['daily_salah_tracking_enabled_by_account'];
+      if (enabledByAccount is Map) {
+        for (final entry in enabledByAccount.entries) {
+          if (entry.key is String && entry.value is bool) {
+            await database.setDailySalahTrackingEnabledInTransaction(
+              entry.value as bool,
+              userId: entry.key as String,
+            );
+          }
+        }
+        if (!enabledByAccount.containsKey(activeUserId)) {
+          await database.setDailySalahTrackingEnabledInTransaction(
+            meta['daily_salah_tracking_enabled'] == true,
+            userId: activeUserId,
+          );
+        }
+      } else {
+        await database.setDailySalahTrackingEnabledInTransaction(
+          meta['daily_salah_tracking_enabled'] == true,
+          userId: activeUserId,
+        );
+      }
+
+      final dismissedByAccount =
+          meta['daily_salah_tracking_setup_dismissed_by_account'];
+      if (dismissedByAccount is Map) {
+        for (final entry in dismissedByAccount.entries) {
+          if (entry.key is String && entry.value is bool) {
+            await database.setDailySalahTrackingSetupDismissedInTransaction(
+              entry.value as bool,
+              userId: entry.key as String,
+            );
+          }
+        }
+        if (!dismissedByAccount.containsKey(activeUserId)) {
+          await database.setDailySalahTrackingSetupDismissedInTransaction(
+            meta['daily_salah_tracking_setup_dismissed'] == true,
+            userId: activeUserId,
+          );
+        }
+      } else {
+        await database.setDailySalahTrackingSetupDismissedInTransaction(
+          meta['daily_salah_tracking_setup_dismissed'] == true,
+          userId: activeUserId,
+        );
+      }
       await database.setDbRevisionInTransaction(newRevision);
     });
 
@@ -635,15 +728,50 @@ class LocalBackupService {
         Map<String, dynamic>.from(localData['meta_store'] as Map);
     mergedMeta['is_onboarding_completed'] = activeOnboardingCompleted;
 
-    // Tracking is part of the selected workspace's restored daily-Salah
-    // history. Apply the remote preference only when restoring that active
-    // workspace; older backups without this key preserve the local setting.
+    // Tracking preferences belong to a workspace because the daily logs do.
+    // Keep device preferences (prayer cache, Hijri offset, Home targeting)
+    // unchanged, while adopting legacy scalar values for this target workspace.
     final remoteMeta = remoteData['meta_store'];
-    if (activeLocalAccountId == target &&
-        remoteMeta is Map &&
-        remoteMeta['daily_salah_tracking_enabled'] is bool) {
-      mergedMeta['daily_salah_tracking_enabled'] =
-          remoteMeta['daily_salah_tracking_enabled'];
+    if (activeLocalAccountId == target && remoteMeta is Map) {
+      final remoteEnabledByAccount =
+          remoteMeta['daily_salah_tracking_enabled_by_account'];
+      final remoteEnabled = remoteEnabledByAccount is Map &&
+              remoteEnabledByAccount[sourceAccountId] is bool
+          ? remoteEnabledByAccount[sourceAccountId] as bool
+          : remoteMeta['daily_salah_tracking_enabled'] is bool
+              ? remoteMeta['daily_salah_tracking_enabled'] as bool
+              : null;
+      if (remoteEnabled != null) {
+        mergedMeta['daily_salah_tracking_enabled'] = remoteEnabled;
+        final enabledByAccount = Map<String, dynamic>.from(
+          mergedMeta['daily_salah_tracking_enabled_by_account'] as Map? ??
+              const <String, dynamic>{},
+        );
+        enabledByAccount[target] = remoteEnabled;
+        mergedMeta['daily_salah_tracking_enabled_by_account'] =
+            enabledByAccount;
+      }
+
+      final remoteDismissedByAccount =
+          remoteMeta['daily_salah_tracking_setup_dismissed_by_account'];
+      final remoteDismissed = remoteDismissedByAccount is Map &&
+              remoteDismissedByAccount[sourceAccountId] is bool
+          ? remoteDismissedByAccount[sourceAccountId] as bool
+          : remoteMeta['daily_salah_tracking_setup_dismissed'] is bool
+              ? remoteMeta['daily_salah_tracking_setup_dismissed'] as bool
+              : null;
+      if (remoteDismissed != null) {
+        mergedMeta['daily_salah_tracking_setup_dismissed'] =
+            remoteDismissed;
+        final dismissedByAccount = Map<String, dynamic>.from(
+          mergedMeta['daily_salah_tracking_setup_dismissed_by_account']
+                  as Map? ??
+              const <String, dynamic>{},
+        );
+        dismissedByAccount[target] = remoteDismissed;
+        mergedMeta['daily_salah_tracking_setup_dismissed_by_account'] =
+            dismissedByAccount;
+      }
     }
     mergedData['meta_store'] = mergedMeta;
 
