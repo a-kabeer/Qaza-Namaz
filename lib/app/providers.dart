@@ -54,8 +54,7 @@ final initialThemeModeProvider =
 final initialPrimaryColorProvider =
     Provider<AppPrimaryColor>((ref) => AppPrimaryColor.teal);
 
-final initialHomePrayerSelectionProvider =
-    Provider<HomePrayerSelectionState>(
+final initialHomePrayerSelectionProvider = Provider<HomePrayerSelectionState>(
   (ref) => const HomePrayerSelectionState(),
 );
 
@@ -81,12 +80,14 @@ Future<(AppThemeMode, AppPrimaryColor)> loadInitialAppearance() async {
 Future<HomePrayerSelectionState> loadInitialHomePrayerSelection() async {
   final database = AppDatabase();
   try {
-    final rows = await database.customSelect(
-      "SELECT key, value FROM meta_store WHERE key IN ("
-      "'qaza_home_completion_mode', "
-      "'qaza_home_auto_sequence_prayer', "
-      "'qaza_home_selected_prayer')",
-    ).get();
+    final rows = await database
+        .customSelect(
+          "SELECT key, value FROM meta_store WHERE key IN ("
+          "'qaza_home_completion_mode', "
+          "'qaza_home_auto_sequence_prayer', "
+          "'qaza_home_selected_prayer')",
+        )
+        .get();
     final values = <String, String>{
       for (final row in rows)
         row.read<String>('key'): row.read<String>('value'),

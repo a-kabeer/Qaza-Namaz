@@ -616,12 +616,11 @@ class _ChangedAssumptions extends StatelessWidget {
     if (previousProfile.pubertyInputMode != newProfile.pubertyInputMode) {
       changes.add((
         label: l10n.profilePubertyDate,
-        oldValue: previousProfile.pubertyInputMode ==
-                ProfileInputMode.rememberedDate
-            ? l10n.profileRememberDate
-            : l10n.profileEstimateUsingAge,
-        newValue: newProfile.pubertyInputMode ==
-                ProfileInputMode.rememberedDate
+        oldValue:
+            previousProfile.pubertyInputMode == ProfileInputMode.rememberedDate
+                ? l10n.profileRememberDate
+                : l10n.profileEstimateUsingAge,
+        newValue: newProfile.pubertyInputMode == ProfileInputMode.rememberedDate
             ? l10n.profileRememberDate
             : l10n.profileEstimateUsingAge,
       ));
@@ -634,10 +633,10 @@ class _ChangedAssumptions extends StatelessWidget {
                 ProfileInputMode.rememberedDate
             ? l10n.profileRememberDate
             : l10n.profileEstimateUsingAge,
-        newValue: newProfile.startPrayingInputMode ==
-                ProfileInputMode.rememberedDate
-            ? l10n.profileRememberDate
-            : l10n.profileEstimateUsingAge,
+        newValue:
+            newProfile.startPrayingInputMode == ProfileInputMode.rememberedDate
+                ? l10n.profileRememberDate
+                : l10n.profileEstimateUsingAge,
       ));
     }
 

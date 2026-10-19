@@ -416,12 +416,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         return;
       }
       workspaceActivated = true;
-      await container.read(accountSessionManagerProvider)
+      await container
+          .read(accountSessionManagerProvider)
           .activateGoogleAccount(stableAccountId);
       final selectedWorkspaceId =
           container.read(accountSessionManagerProvider).activeLocalAccountId;
       googleWorkspaceWasUninitialized = selectedWorkspaceId == null ||
-          await container.read(accountLocalStoreProvider)
+          await container
+                  .read(accountLocalStoreProvider)
                   .loadProfile(selectedWorkspaceId) ==
               null;
       container.invalidate(appRouteProvider);
@@ -442,11 +444,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       CloudSyncSnapshot result;
       switch (discovery.status) {
         case CloudBackupDiscoveryStatus.noBackup:
-          final localAccountId =
-              container.read(accountSessionManagerProvider).activeLocalAccountId;
+          final localAccountId = container
+              .read(accountSessionManagerProvider)
+              .activeLocalAccountId;
           final profile = localAccountId == null
               ? null
-              : await container.read(accountLocalStoreProvider)
+              : await container
+                  .read(accountLocalStoreProvider)
                   .loadProfile(localAccountId);
 
           if (profile == null) {
@@ -503,8 +507,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           } else {
             final database = container.read(appDatabaseProvider);
             final fresh = await database.isFreshInstallationForCloudRestore(
-              localAccountId:
-                  container.read(accountSessionManagerProvider).activeLocalAccountId,
+              localAccountId: container
+                  .read(accountSessionManagerProvider)
+                  .activeLocalAccountId,
             );
             final revision = await database.readDbRevision();
             if (fresh && conflict.localRevision == revision) {
@@ -559,7 +564,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       if (googleWorkspaceWasUninitialized &&
           result.status == CloudSyncStatus.synced &&
           !result.restoredRemoteBackup) {
-        await container.read(appDatabaseProvider).markInitialCloudBackupPending();
+        await container
+            .read(appDatabaseProvider)
+            .markInitialCloudBackupPending();
         initialBackupPendingMarked = true;
         container.invalidate(initialCloudBackupPendingProvider);
         if (!mounted) {
@@ -1128,8 +1135,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                   key: const Key('account_cloud_backup_frequency'),
                   initialValue: _sync.backupFrequency,
                   decoration: InputDecoration(
-                    labelText:
-                        l10n.cloudBackupFrequencyLabel,
+                    labelText: l10n.cloudBackupFrequencyLabel,
                   ),
                   items: CloudBackupFrequency.values
                       .map(

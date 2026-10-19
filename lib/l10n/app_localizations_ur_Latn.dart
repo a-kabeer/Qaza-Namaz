@@ -2942,5 +2942,4 @@ class AppLocalizationsUrLatn extends AppLocalizations {
 
   @override
   String get cloudBackupUploading => 'Google Drive par upload ho raha hai';
-
 }

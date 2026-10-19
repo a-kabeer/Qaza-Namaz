@@ -172,7 +172,8 @@ void main() {
     );
   });
 
-  test('scoped restore restores onboarding and tracking settings for the active workspace',
+  test(
+      'scoped restore restores onboarding and tracking settings for the active workspace',
       () async {
     const googleId = 'google:account-onboarding';
     final now = DateTime.now().microsecondsSinceEpoch;
@@ -270,7 +271,8 @@ void main() {
     expect(activeSession.read<String>('active_local_account_id'), 'guest');
   });
 
-  test('legacy Guest cloud backup adoption remaps Qaza IDs and linked references',
+  test(
+      'legacy Guest cloud backup adoption remaps Qaza IDs and linked references',
       () async {
     const googleId = 'google:account-adopt';
     final date = DateTime(2025, 1, 1);
@@ -347,8 +349,8 @@ void main() {
     expect(googleRows.map((row) => row.id), contains(adoptedRecordId));
     expect(
       googleRows.map((row) => row.id).toSet().intersection(
-        guestRows.map((row) => row.id).toSet(),
-      ),
+            guestRows.map((row) => row.id).toSet(),
+          ),
       isEmpty,
     );
 

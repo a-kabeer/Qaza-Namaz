@@ -2516,6 +2516,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get qazaAdditionUpdated => 'Qaza addition updated';
 
   @override
+  String qazaAdditionEditSummary(
+      int addedCount, int removedCount, int protectedCount) {
+    return '$addedCount added • $removedCount removed • $protectedCount protected';
+  }
+
+  @override
+  String qazaAdditionMoreDates(int count) {
+    return '+ $count more';
+  }
+
+  @override
   String qazaSelectedCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2546,6 +2557,30 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dataLocalOnlyNote =>
       'Local backup only. Your Qaza data stays on this device unless you explicitly export it.';
+
+  @override
+  String get cloudBackupFrequencyLabel => 'Backup frequency';
+
+  @override
+  String get cloudBackupFrequencyDaily => 'Daily';
+
+  @override
+  String get cloudBackupFrequencyWeekly => 'Weekly';
+
+  @override
+  String get cloudBackupFrequencyMonthly => 'Monthly';
+
+  @override
+  String get cloudBackupChecking => 'Checking backup…';
+
+  @override
+  String get cloudBackupPreparing => 'Preparing backup…';
+
+  @override
+  String get cloudBackupCompleted => 'Backup completed';
+
+  @override
+  String get cloudBackupUploading => 'Uploading backup to Google Drive';
 
   @override
   String get cloudBackupTitle => 'Cloud backup';
@@ -2876,32 +2911,4 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dailySalahTrackingConfirmPrayedMessage =>
       'This will mark the prayer as prayed and complete its linked Qaza record.';
-
-  @override
-  String qazaAdditionEditSummary(
-    int addedCount,
-    int removedCount,
-    int protectedCount,
-  ) =>
-      '$addedCount added • $removedCount removed • $protectedCount protected';
-
-  @override
-  String qazaAdditionMoreDates(int count) => '+ $count more';
-
-  @override
-  String get cloudBackupFrequencyLabel => 'Backup frequency';
-  @override
-  String get cloudBackupFrequencyDaily => 'Daily';
-  @override
-  String get cloudBackupFrequencyWeekly => 'Weekly';
-  @override
-  String get cloudBackupFrequencyMonthly => 'Monthly';
-  @override
-  String get cloudBackupChecking => 'Checking backup…';
-  @override
-  String get cloudBackupPreparing => 'Preparing backup…';
-  @override
-  String get cloudBackupCompleted => 'Backup completed';
-  @override
-  String get cloudBackupUploading => 'Uploading backup to Google Drive';
 }

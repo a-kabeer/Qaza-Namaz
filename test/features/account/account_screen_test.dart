@@ -355,7 +355,8 @@ void main() {
     },
   );
 
-  testWidgets('monthly frequency label is localized in English, Urdu and Arabic',
+  testWidgets(
+      'monthly frequency label is localized in English, Urdu and Arabic',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = await _createSession(database);
@@ -954,5 +955,4 @@ void main() {
       expect(find.text('Account'), findsOneWidget);
     },
   );
-
 }

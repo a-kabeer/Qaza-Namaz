@@ -50,13 +50,11 @@ Future<void> main() async {
     LocalDateService.configureLocalTimezone(timezone.identifier);
   });
 
-  final (initialThemeMode, initialPrimaryColor) =
-      await loadInitialAppearance();
+  final (initialThemeMode, initialPrimaryColor) = await loadInitialAppearance();
 
   try {
     await _initializeDatabase();
-    final initialHomePrayerSelection =
-        await loadInitialHomePrayerSelection();
+    final initialHomePrayerSelection = await loadInitialHomePrayerSelection();
     runApp(
       _appRoot(
         themeMode: initialThemeMode,

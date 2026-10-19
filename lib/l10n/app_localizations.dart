@@ -4373,6 +4373,19 @@ abstract class AppLocalizations {
   /// **'Qaza addition updated'**
   String get qazaAdditionUpdated;
 
+  /// No description provided for @qazaAdditionEditSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'{addedCount} added • {removedCount} removed • {protectedCount} protected'**
+  String qazaAdditionEditSummary(
+      int addedCount, int removedCount, int protectedCount);
+
+  /// No description provided for @qazaAdditionMoreDates.
+  ///
+  /// In en, this message translates to:
+  /// **'+ {count} more'**
+  String qazaAdditionMoreDates(int count);
+
   /// No description provided for @qazaSelectedCount.
   ///
   /// In en, this message translates to:
@@ -4409,6 +4422,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Local backup only. Your Qaza data stays on this device unless you explicitly export it.'**
   String get dataLocalOnlyNote;
+
+  /// No description provided for @cloudBackupFrequencyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup frequency'**
+  String get cloudBackupFrequencyLabel;
+
+  /// No description provided for @cloudBackupFrequencyDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get cloudBackupFrequencyDaily;
+
+  /// No description provided for @cloudBackupFrequencyWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get cloudBackupFrequencyWeekly;
+
+  /// No description provided for @cloudBackupFrequencyMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly'**
+  String get cloudBackupFrequencyMonthly;
+
+  /// No description provided for @cloudBackupChecking.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking backup…'**
+  String get cloudBackupChecking;
+
+  /// No description provided for @cloudBackupPreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing backup…'**
+  String get cloudBackupPreparing;
+
+  /// No description provided for @cloudBackupCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup completed'**
+  String get cloudBackupCompleted;
+
+  /// No description provided for @cloudBackupUploading.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading backup to Google Drive'**
+  String get cloudBackupUploading;
 
   /// No description provided for @cloudBackupTitle.
   ///
@@ -5003,22 +5064,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will mark the prayer as prayed and complete its linked Qaza record.'**
   String get dailySalahTrackingConfirmPrayedMessage;
-  String qazaAdditionEditSummary(
-    int addedCount,
-    int removedCount,
-    int protectedCount,
-  );
-
-  String qazaAdditionMoreDates(int count);
-
-  String get cloudBackupFrequencyLabel;
-  String get cloudBackupFrequencyDaily;
-  String get cloudBackupFrequencyWeekly;
-  String get cloudBackupFrequencyMonthly;
-  String get cloudBackupChecking;
-  String get cloudBackupPreparing;
-  String get cloudBackupCompleted;
-  String get cloudBackupUploading;
 }
 
 class _AppLocalizationsDelegate

@@ -52,21 +52,25 @@ class LocalBackupService {
         (a, b) => (a['id'] as String).compareTo(b['id'] as String),
       );
 
-      final accountIdRows = await database.customSelect(
-        'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
-      ).get();
+      final accountIdRows = await database
+          .customSelect(
+            'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
+          )
+          .get();
       final trackingEnabledByAccount = <String, bool>{};
       final trackingSetupDismissedByAccount = <String, bool>{};
       for (final row in accountIdRows) {
         final accountId = row.read<String>('local_account_id');
         trackingEnabledByAccount[accountId] =
             await database.isDailySalahTrackingEnabled(userId: accountId);
-        trackingSetupDismissedByAccount[accountId] =
-            await database.isDailySalahTrackingSetupDismissed(userId: accountId);
+        trackingSetupDismissedByAccount[accountId] = await database
+            .isDailySalahTrackingSetupDismissed(userId: accountId);
       }
-      final activeSessionRows = await database.customSelect(
-        'SELECT active_local_account_id FROM app_session_state ORDER BY id LIMIT 1',
-      ).get();
+      final activeSessionRows = await database
+          .customSelect(
+            'SELECT active_local_account_id FROM app_session_state ORDER BY id LIMIT 1',
+          )
+          .get();
       final activeAccountId = activeSessionRows.isEmpty
           ? null
           : activeSessionRows.first.read<String?>('active_local_account_id');
@@ -194,8 +198,7 @@ class LocalBackupService {
                 await database.isDailySalahTrackingEnabled(
               userId: preferenceAccountId,
             ),
-            'daily_salah_tracking_enabled_by_account':
-                trackingEnabledByAccount,
+            'daily_salah_tracking_enabled_by_account': trackingEnabledByAccount,
             'daily_salah_tracking_setup_dismissed':
                 await database.isDailySalahTrackingSetupDismissed(
               userId: preferenceAccountId,
@@ -580,7 +583,7 @@ class LocalBackupService {
     // rewrite those IDs as well as every stored reference to them.
     final remapLegacyGuestRecordIds =
         sourceAccountId == UserProfile.localLedgerUserId &&
-        target != UserProfile.localLedgerUserId;
+            target != UserProfile.localLedgerUserId;
 
     Object? remapQazaRecordId(Object? value) {
       if (!remapLegacyGuestRecordIds ||
@@ -788,8 +791,7 @@ class LocalBackupService {
               ? remoteMeta['daily_salah_tracking_setup_dismissed'] as bool
               : null;
       if (remoteDismissed != null) {
-        mergedMeta['daily_salah_tracking_setup_dismissed'] =
-            remoteDismissed;
+        mergedMeta['daily_salah_tracking_setup_dismissed'] = remoteDismissed;
         final dismissedByAccount = Map<String, dynamic>.from(
           mergedMeta['daily_salah_tracking_setup_dismissed_by_account']
                   as Map? ??
@@ -873,8 +875,7 @@ class LocalBackupService {
     // Schemas 19–21 are supported predecessors of schema 22. Older
     // payloads are normalized below, including missing Daily Salah rows and
     // the link/completion-sync fields introduced after schema 20.
-    final compatibleLegacySchema =
-        databaseSchema >= 19 && databaseSchema <= 21;
+    final compatibleLegacySchema = databaseSchema >= 19 && databaseSchema <= 21;
     if (databaseSchema > database.schemaVersion) {
       throw LocalBackupException(
         'This backup uses newer database schema $databaseSchema. '

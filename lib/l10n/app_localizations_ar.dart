@@ -2504,6 +2504,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get qazaAdditionUpdated => 'تم تحديث إضافة القضاء';
 
   @override
+  String qazaAdditionEditSummary(
+      int addedCount, int removedCount, int protectedCount) {
+    return '$addedCount مضاف • $removedCount محذوف • $protectedCount محفوظ';
+  }
+
+  @override
+  String qazaAdditionMoreDates(int count) {
+    return 'المزيد $count';
+  }
+
+  @override
   String qazaSelectedCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2534,6 +2545,30 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dataLocalOnlyNote =>
       'نسخة احتياطية محلية فقط. تبقى بيانات القضاء على هذا الجهاز ما لم تصدّرها صراحةً.';
+
+  @override
+  String get cloudBackupFrequencyLabel => 'وتيرة النسخ الاحتياطي';
+
+  @override
+  String get cloudBackupFrequencyDaily => 'يوميًا';
+
+  @override
+  String get cloudBackupFrequencyWeekly => 'أسبوعيًا';
+
+  @override
+  String get cloudBackupFrequencyMonthly => 'شهريًا';
+
+  @override
+  String get cloudBackupChecking => 'جارٍ التحقق من النسخة الاحتياطية…';
+
+  @override
+  String get cloudBackupPreparing => 'جارٍ تجهيز النسخة الاحتياطية…';
+
+  @override
+  String get cloudBackupCompleted => 'اكتمل النسخ الاحتياطي';
+
+  @override
+  String get cloudBackupUploading => 'جارٍ الرفع إلى Google Drive';
 
   @override
   String get cloudBackupTitle => 'النسخ الاحتياطي السحابي';
@@ -2871,32 +2906,4 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dailySalahTrackingConfirmPrayedMessage =>
       'سيتم تسجيل الصلاة على أنها أُدّيت وإكمال سجل القضاء المرتبط بها.';
-
-  @override
-  String qazaAdditionEditSummary(
-    int addedCount,
-    int removedCount,
-    int protectedCount,
-  ) =>
-      '$addedCount مضاف • $removedCount محذوف • $protectedCount محفوظ';
-
-  @override
-  String qazaAdditionMoreDates(int count) => 'المزيد $count';
-
-  @override
-  String get cloudBackupFrequencyLabel => 'وتيرة النسخ الاحتياطي';
-  @override
-  String get cloudBackupFrequencyDaily => 'يوميًا';
-  @override
-  String get cloudBackupFrequencyWeekly => 'أسبوعيًا';
-  @override
-  String get cloudBackupFrequencyMonthly => 'شهريًا';
-  @override
-  String get cloudBackupChecking => 'جارٍ التحقق من النسخة الاحتياطية…';
-  @override
-  String get cloudBackupPreparing => 'جارٍ تجهيز النسخة الاحتياطية…';
-  @override
-  String get cloudBackupCompleted => 'اكتمل النسخ الاحتياطي';
-  @override
-  String get cloudBackupUploading => 'جارٍ الرفع إلى Google Drive';
 }

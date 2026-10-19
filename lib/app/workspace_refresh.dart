@@ -37,7 +37,6 @@ Future<void> refreshWorkspaceAfterRestore(WidgetRef ref) async {
   ref.invalidate(homeFallbackPendingProvider);
 }
 
-
 /// Container variant for recovery that may complete after its initiating route
 /// has been disposed. The application ProviderContainer remains alive.
 Future<void> refreshWorkspaceAfterRestoreContainer(

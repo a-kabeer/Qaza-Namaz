@@ -242,5 +242,4 @@ void main() {
       expect(find.text('1 June 2013'), findsOneWidget);
     },
   );
-
 }
