@@ -491,7 +491,7 @@ class _SummaryDatesState extends ConsumerState<_SummaryDates> {
                     if (remaining > 0) ...[
                       const SizedBox(height: 2),
                       Text(
-                        '+ $remaining more',
+                        widget.l10n.qazaAdditionMoreDates(remaining),
                         style: widget.textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
