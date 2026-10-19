@@ -377,6 +377,13 @@ final latestPendingProvider =
       .latestPending(userId: userId, prayerType: prayer);
 });
 
+/// Values loaded before runApp so the first rendered frame uses saved styling.
+final initialThemeModeProvider =
+    Provider<AppThemeMode>((ref) => AppThemeMode.system);
+
+final initialPrimaryColorProvider =
+    Provider<AppPrimaryColor>((ref) => AppPrimaryColor.teal);
+
 class ThemeModeNotifier extends Notifier<AppThemeMode> {
   static const String storageKey = 'qaza_theme_mode';
   bool _selectionMade = false;
@@ -384,7 +391,7 @@ class ThemeModeNotifier extends Notifier<AppThemeMode> {
   @override
   AppThemeMode build() {
     Future<void>.microtask(restore);
-    return AppThemeMode.system;
+    return ref.read(initialThemeModeProvider);
   }
 
   Future<void> restore() async {
@@ -427,7 +434,7 @@ class PrimaryColorNotifier extends Notifier<AppPrimaryColor> {
   @override
   AppPrimaryColor build() {
     Future<void>.microtask(restore);
-    return AppPrimaryColor.teal;
+    return ref.read(initialPrimaryColorProvider);
   }
 
   Future<void> restore() async {
