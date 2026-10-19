@@ -303,28 +303,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   String? _message;
   CloudBackupProgress? _backupProgress;
 
-  bool get _isUrdu {
-    final locale = Localizations.localeOf(context);
-    return locale.languageCode == 'ur' &&
-        locale.scriptCode?.toLowerCase() != 'latn';
-  }
-
   String _frequencyLabel(CloudBackupFrequency frequency) {
-    if (_isUrdu) {
-      return switch (frequency) {
-        CloudBackupFrequency.daily => 'روزانہ',
-        CloudBackupFrequency.weekly => 'ہفتہ وار',
-        CloudBackupFrequency.monthly => 'ماہانہ',
-      };
-    }
+    final l10n = AppLocalizations.of(context);
     return switch (frequency) {
-      CloudBackupFrequency.daily => 'Daily',
-      CloudBackupFrequency.weekly => 'Weekly',
-      CloudBackupFrequency.monthly => 'Monthly',
+      CloudBackupFrequency.daily => l10n.cloudBackupFrequencyDaily,
+      CloudBackupFrequency.weekly => l10n.cloudBackupFrequencyWeekly,
+      CloudBackupFrequency.monthly => l10n.cloudBackupFrequencyMonthly,
     };
   }
-
-  String _formatBackupMb(int bytes) => (bytes / 1000000).toStringAsFixed(2);
 
   void _publishBackupProgress(CloudBackupProgress progress) {
     if (!mounted) return;
@@ -365,7 +351,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
 
   Future<void> _connect() async {
     if (_busy || _settingsBusy || _backupBusy) return;
-    final accountProvider = ref.read(cloudAccountProvider);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final accountProvider = container.read(cloudAccountProvider);
     // Set the guard before opening the native picker to prevent duplicate
     // authentication dialogs from repeated taps.
     setState(() {
@@ -374,21 +361,21 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     });
 
     final previousWorkspaceId =
-        ref.read(accountSessionManagerProvider).activeLocalAccountId;
+        container.read(accountSessionManagerProvider).activeLocalAccountId;
     var workspaceActivated = false;
     // Default to recoverable until the selected Google workspace is inspected.
     var googleWorkspaceWasUninitialized = true;
 
     Future<void> restorePreviousWorkspace() async {
-      if (!workspaceActivated || !mounted) return;
+      if (!workspaceActivated) return;
       try {
-        final session = ref.read(accountSessionManagerProvider);
+        final session = container.read(accountSessionManagerProvider);
         if (previousWorkspaceId == null) {
           await session.activateGuest();
-          await refreshWorkspaceAfterRestore(ref);
+          await refreshWorkspaceAfterRestoreContainer(container);
         } else if (session.activeLocalAccountId != previousWorkspaceId) {
           await session.activateLocalAccount(previousWorkspaceId);
-          await refreshWorkspaceAfterRestore(ref);
+          await refreshWorkspaceAfterRestoreContainer(container);
         }
       } finally {
         workspaceActivated = false;
@@ -423,29 +410,34 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           .activateGoogleAccount(stableAccountId);
       workspaceActivated = true;
       final selectedWorkspaceId =
-          ref.read(accountSessionManagerProvider).activeLocalAccountId;
+          container.read(accountSessionManagerProvider).activeLocalAccountId;
       googleWorkspaceWasUninitialized = selectedWorkspaceId == null ||
           await ref
                   .read(accountLocalStoreProvider)
                   .loadProfile(selectedWorkspaceId) ==
               null;
-      ref.invalidate(appRouteProvider);
-      ref.invalidate(userProfileProvider);
-      ref.invalidate(progressSummaryProvider);
-      ref.invalidate(qazaRepositoryProvider);
-      ref.invalidate(qazaAdditionRepositoryProvider);
-      ref.invalidate(qazaPlanRevisionRepositoryProvider);
+      container.invalidate(appRouteProvider);
+      container.invalidate(userProfileProvider);
+      container.invalidate(progressSummaryProvider);
+      container.invalidate(qazaRepositoryProvider);
+      container.invalidate(qazaAdditionRepositoryProvider);
+      container.invalidate(qazaPlanRevisionRepositoryProvider);
 
-      final cloudSync = ref.read(cloudSyncProvider);
+      final cloudSync = container.read(cloudSyncProvider);
       final discovery = await cloudSync.discoverBackup(
         allowInteractive: false,
       );
-      if (!mounted) return;
+      if (!mounted) {
+        if (googleWorkspaceWasUninitialized) {
+          await restorePreviousWorkspace();
+        }
+        return;
+      }
       CloudSyncSnapshot result;
       switch (discovery.status) {
         case CloudBackupDiscoveryStatus.noBackup:
           final localAccountId =
-              ref.read(accountSessionManagerProvider).activeLocalAccountId;
+              container.read(accountSessionManagerProvider).activeLocalAccountId;
           final profile = localAccountId == null
               ? null
               : await ref
@@ -456,9 +448,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
             // A newly connected account needs onboarding before its first
             // cloud snapshot. Do not upload an empty workspace and mistake it
             // for a completed backup.
-            final database = ref.read(appDatabaseProvider);
+            final database = container.read(appDatabaseProvider);
             await database.markInitialCloudBackupPending();
-            ref.invalidate(initialCloudBackupPendingProvider);
+            container.invalidate(initialCloudBackupPendingProvider);
             result = await cloudSync.status();
             if (!mounted) return;
             setState(() {
@@ -500,10 +492,10 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                   AppLocalizations.of(context).cloudConnectionFailed,
             );
           } else {
-            final database = ref.read(appDatabaseProvider);
+            final database = container.read(appDatabaseProvider);
             final fresh = await database.isFreshInstallationForCloudRestore(
               localAccountId:
-                  ref.read(accountSessionManagerProvider).activeLocalAccountId,
+                  container.read(accountSessionManagerProvider).activeLocalAccountId,
             );
             final revision = await database.readDbRevision();
             if (fresh && conflict.localRevision == revision) {
@@ -550,8 +542,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       if (googleWorkspaceWasUninitialized &&
           result.status == CloudSyncStatus.synced &&
           !result.restoredRemoteBackup) {
-        await ref.read(appDatabaseProvider).markInitialCloudBackupPending();
-        ref.invalidate(initialCloudBackupPendingProvider);
+        await container.read(appDatabaseProvider).markInitialCloudBackupPending();
+        container.invalidate(initialCloudBackupPendingProvider);
         workspaceActivated = false;
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute<void>(builder: (_) => const StartupGate()),
@@ -1072,20 +1064,12 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                       children: [
                         Text(
                           checking
-                              ? (_isUrdu
-                                  ? 'بیک اپ چیک کیا جا رہا ہے…'
-                                  : 'Checking backup…')
+                              ? l10n.cloudBackupChecking
                               : preparing
-                                  ? (_isUrdu
-                                      ? 'بیک اپ تیار کیا جا رہا ہے…'
-                                      : 'Preparing backup…')
+                                  ? l10n.cloudBackupPreparing
                                   : completed
-                                      ? (_isUrdu
-                                          ? 'بیک اپ مکمل ہو گیا'
-                                          : 'Backup completed')
-                                      : (_isUrdu
-                                          ? 'گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے'
-                                          : 'Uploading backup to Google Drive'),
+                                      ? l10n.cloudBackupCompleted
+                                      : l10n.cloudBackupUploading,
                           style: Theme.of(context).textTheme.bodyMedium,
                         ),
                         const SizedBox(height: 6),
@@ -1122,7 +1106,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                   initialValue: _sync.backupFrequency,
                   decoration: InputDecoration(
                     labelText:
-                        _isUrdu ? 'بیک اپ کی فریکوئنسی' : 'Backup frequency',
+                        l10n.cloudBackupFrequencyLabel,
                   ),
                   items: CloudBackupFrequency.values
                       .map(
