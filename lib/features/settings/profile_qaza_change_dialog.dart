@@ -587,20 +587,26 @@ class _ChangedAssumptions extends StatelessWidget {
         newValue: _dateLabel(newProfile.islamAcceptanceDate),
       ));
     }
-    if (!_sameDate(
-      previousProfile.pubertyDateOverride,
-      newProfile.pubertyDateOverride,
-    )) {
+    if ((previousProfile.pubertyInputMode == ProfileInputMode.rememberedDate ||
+            newProfile.pubertyInputMode == ProfileInputMode.rememberedDate) &&
+        !_sameDate(
+          previousProfile.pubertyDateOverride,
+          newProfile.pubertyDateOverride,
+        )) {
       changes.add((
         label: l10n.profilePubertyDate,
         oldValue: _dateLabel(previousProfile.pubertyDateOverride),
         newValue: _dateLabel(newProfile.pubertyDateOverride),
       ));
     }
-    if (!_sameDate(
-      previousProfile.startPrayingDateOverride,
-      newProfile.startPrayingDateOverride,
-    )) {
+    if ((previousProfile.startPrayingInputMode ==
+                ProfileInputMode.rememberedDate ||
+            newProfile.startPrayingInputMode ==
+                ProfileInputMode.rememberedDate) &&
+        !_sameDate(
+          previousProfile.startPrayingDateOverride,
+          newProfile.startPrayingDateOverride,
+        )) {
       changes.add((
         label: l10n.profileStartPrayingDate,
         oldValue: _dateLabel(previousProfile.startPrayingDateOverride),
