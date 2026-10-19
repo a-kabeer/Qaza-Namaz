@@ -1021,7 +1021,7 @@
       "protectedCount": { "type": "int" }
     }
   },
-  "qazaAdditionMoreDates": "mazeed {count}",
+  "qazaAdditionMoreDates": "+ {count} mazeed",
   "@qazaAdditionMoreDates": {
     "placeholders": { "count": { "type": "int" } }
   },
