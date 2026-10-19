@@ -70,7 +70,10 @@ class _DailyGoalsContent extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
     final hasValidTarget = period.targetAvailable && period.dailyTarget > 0;
     final maxY = hasValidTarget
         ? period.dailyTarget.toDouble()
@@ -322,7 +325,10 @@ class _DailyGoalsChartState extends State<_DailyGoalsChart> {
 
   String _chartSemantics(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
     return [
       for (final day in widget.period.days)
         widget.hasValidTarget

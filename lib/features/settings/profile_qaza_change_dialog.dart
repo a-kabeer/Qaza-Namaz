@@ -566,6 +566,80 @@ class _ChangedAssumptions extends StatelessWidget {
         newValue: _ageLabel(l10n, newProfile.startPrayingAge),
       ));
     }
+    if (previousProfile.isNewMuslim != newProfile.isNewMuslim) {
+      changes.add((
+        label: l10n.profileIslamicBackground,
+        oldValue: previousProfile.isNewMuslim
+            ? l10n.profileAcceptedIslamLater
+            : l10n.profileMuslimFromChildhood,
+        newValue: newProfile.isNewMuslim
+            ? l10n.profileAcceptedIslamLater
+            : l10n.profileMuslimFromChildhood,
+      ));
+    }
+    if (!_sameDate(
+      previousProfile.islamAcceptanceDate,
+      newProfile.islamAcceptanceDate,
+    )) {
+      changes.add((
+        label: l10n.profileIslamAcceptanceDate,
+        oldValue: _dateLabel(previousProfile.islamAcceptanceDate),
+        newValue: _dateLabel(newProfile.islamAcceptanceDate),
+      ));
+    }
+    if ((previousProfile.pubertyInputMode == ProfileInputMode.rememberedDate ||
+            newProfile.pubertyInputMode == ProfileInputMode.rememberedDate) &&
+        !_sameDate(
+          previousProfile.pubertyDateOverride,
+          newProfile.pubertyDateOverride,
+        )) {
+      changes.add((
+        label: l10n.profilePubertyDate,
+        oldValue: _dateLabel(previousProfile.pubertyDateOverride),
+        newValue: _dateLabel(newProfile.pubertyDateOverride),
+      ));
+    }
+    if ((previousProfile.startPrayingInputMode ==
+                ProfileInputMode.rememberedDate ||
+            newProfile.startPrayingInputMode ==
+                ProfileInputMode.rememberedDate) &&
+        !_sameDate(
+          previousProfile.startPrayingDateOverride,
+          newProfile.startPrayingDateOverride,
+        )) {
+      changes.add((
+        label: l10n.profileStartPrayingDate,
+        oldValue: _dateLabel(previousProfile.startPrayingDateOverride),
+        newValue: _dateLabel(newProfile.startPrayingDateOverride),
+      ));
+    }
+    if (previousProfile.pubertyInputMode != newProfile.pubertyInputMode) {
+      changes.add((
+        label: l10n.profilePubertyDate,
+        oldValue:
+            previousProfile.pubertyInputMode == ProfileInputMode.rememberedDate
+                ? l10n.profileRememberDate
+                : l10n.profileEstimateUsingAge,
+        newValue: newProfile.pubertyInputMode == ProfileInputMode.rememberedDate
+            ? l10n.profileRememberDate
+            : l10n.profileEstimateUsingAge,
+      ));
+    }
+    if (previousProfile.startPrayingInputMode !=
+        newProfile.startPrayingInputMode) {
+      changes.add((
+        label: l10n.profileStartPrayingDate,
+        oldValue: previousProfile.startPrayingInputMode ==
+                ProfileInputMode.rememberedDate
+            ? l10n.profileRememberDate
+            : l10n.profileEstimateUsingAge,
+        newValue:
+            newProfile.startPrayingInputMode == ProfileInputMode.rememberedDate
+                ? l10n.profileRememberDate
+                : l10n.profileEstimateUsingAge,
+      ));
+    }
+
     if (ProfileRules.effectiveWitr(previousProfile) !=
         ProfileRules.effectiveWitr(newProfile)) {
       changes.add((

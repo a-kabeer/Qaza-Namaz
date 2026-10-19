@@ -97,12 +97,11 @@ class _ProfileSetupScreenState extends ConsumerState<ProfileSetupScreen> {
       return;
     }
 
-    // The onboarding profile was created/updated locally above, but the
-    // shared provider may still hold the pre-onboarding cached value. Refresh
-    // it before the Qaza import so the local repository activates the ledger.
-    ref.invalidate(userProfileProvider);
-    await ref.read(userProfileProvider.future);
-
+    // Keep StartupGate's cached route stable while the review dialog is open.
+    // Invalidating the incomplete profile here makes the root route rebuild
+    // into a second ProfileSetupScreen behind this pushed screen. The import
+    // uses the session-scoped Qaza repositories; refresh the profile provider
+    // after the onboarding transaction commits successfully.
     if (!mounted) return;
     final hijriOffset = await ref.read(hijriDateAdjustmentProvider.future);
     if (!mounted) return;

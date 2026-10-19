@@ -21,11 +21,13 @@ class _TestHomePrayerSelectionNotifier extends HomePrayerSelectionNotifier {
 }
 
 ProviderContainer _containerFor({
+  required AppDatabase database,
   required HomePrayerSelectionMode mode,
   required void Function() onDashboardActivityRead,
 }) {
   return ProviderContainer(
     overrides: [
+      appDatabaseProvider.overrideWithValue(database),
       enabledPrayerTypesProvider.overrideWith(
         (ref) => const [PrayerType.fajr],
       ),
@@ -116,7 +118,10 @@ void main() {
       'HomeController.refresh reads consolidated Home activity in ${mode.name}',
       () async {
         var dailyProgressReads = 0;
+        final database = AppDatabase(NativeDatabase.memory());
+        addTearDown(database.close);
         final container = _containerFor(
+          database: database,
           mode: mode,
           onDashboardActivityRead: () => dailyProgressReads++,
         );

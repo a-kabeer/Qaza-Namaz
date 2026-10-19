@@ -766,15 +766,16 @@ class QazaTrackerController
         );
       }
       state = state.copyWith(
-        records: state.records
-            .where((record) => !changedIds.contains(record.id))
-            .toList(growable: false),
         selected: const <String>{},
         selectionMode: false,
         clearSelectionScope: true,
       );
 
       if (changedIds.isNotEmpty) {
+        // Re-read the bounded page. Filtering changed rows in memory can
+        // leave an empty list with hasMore=true and no scroll event to fetch
+        // the remaining completed records.
+        await refresh();
         ref.read(homeControllerProvider).invalidateDashboard();
         ref.invalidate(progressSummaryProvider);
         final changedPrayers =

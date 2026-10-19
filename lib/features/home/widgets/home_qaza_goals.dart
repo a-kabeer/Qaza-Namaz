@@ -131,7 +131,10 @@ class HomeQazaGoals extends ConsumerWidget {
     DateTime start,
     DateTime end,
   ) {
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
     final sameYear = start.year == end.year;
     final formatter =
         sameYear ? DateFormat.MMMd(locale) : DateFormat.yMMMd(locale);

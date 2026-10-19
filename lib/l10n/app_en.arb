@@ -1400,6 +1400,18 @@
     }
   },
   "qazaAdditionUpdated": "Qaza addition updated",
+  "qazaAdditionEditSummary": "{addedCount} added • {removedCount} removed • {protectedCount} protected",
+  "@qazaAdditionEditSummary": {
+    "placeholders": {
+      "addedCount": { "type": "int" },
+      "removedCount": { "type": "int" },
+      "protectedCount": { "type": "int" }
+    }
+  },
+  "qazaAdditionMoreDates": "+ {count} more",
+  "@qazaAdditionMoreDates": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "qazaSelectedCount": "{count, plural, =1{1 selected} other{{count} selected}}",
   "@qazaSelectedCount": {
     "placeholders": {
@@ -1436,6 +1448,14 @@
       }
     }
   },
+  "cloudBackupFrequencyLabel": "Backup frequency",
+  "cloudBackupFrequencyDaily": "Daily",
+  "cloudBackupFrequencyWeekly": "Weekly",
+  "cloudBackupFrequencyMonthly": "Monthly",
+  "cloudBackupChecking": "Checking backup…",
+  "cloudBackupPreparing": "Preparing backup…",
+  "cloudBackupCompleted": "Backup completed",
+  "cloudBackupUploading": "Uploading backup to Google Drive",
   "cloudBackupTitle": "Cloud backup",
   "cloudBackupDescription": "Keep a separate backup of your Qaza progress in your Google Drive app data.",
   "cloudConnect": "Sign in with Google",

@@ -6,11 +6,14 @@ import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 
 import 'app/app.dart';
+import 'app/providers.dart';
+import 'core/theme/app_theme.dart';
 import 'core/widgets/fatal_error_screen.dart';
 import 'core/diagnostics/diagnostics.dart';
 import 'core/licenses/app_license_registry.dart';
 import 'core/time/local_date_service.dart';
 import 'data/local/database/app_database.dart';
+import 'features/home/home_state.dart';
 
 const Duration _startupStepTimeout = Duration(seconds: 10);
 
@@ -47,8 +50,18 @@ Future<void> main() async {
     LocalDateService.configureLocalTimezone(timezone.identifier);
   });
 
+  final (initialThemeMode, initialPrimaryColor) = await loadInitialAppearance();
+
   try {
     await _initializeDatabase();
+    final initialHomePrayerSelection = await loadInitialHomePrayerSelection();
+    runApp(
+      _appRoot(
+        themeMode: initialThemeMode,
+        primaryColor: initialPrimaryColor,
+        homePrayerSelection: initialHomePrayerSelection,
+      ),
+    );
   } catch (error, stack) {
     diagnostics.recordFailure(
       DiagnosticArea.databaseMigration,
@@ -63,7 +76,15 @@ Future<void> main() async {
         onRetry: () async {
           try {
             await _initializeDatabase();
-            runApp(const ProviderScope(child: QazaNamazApp()));
+            final initialHomePrayerSelection =
+                await loadInitialHomePrayerSelection();
+            runApp(
+              _appRoot(
+                themeMode: initialThemeMode,
+                primaryColor: initialPrimaryColor,
+                homePrayerSelection: initialHomePrayerSelection,
+              ),
+            );
           } catch (retryError, retryStack) {
             diagnostics.recordFailure(
               DiagnosticArea.databaseMigration,
@@ -79,8 +100,21 @@ Future<void> main() async {
     );
     return;
   }
+}
 
-  runApp(const ProviderScope(child: QazaNamazApp()));
+Widget _appRoot({
+  required AppThemeMode themeMode,
+  required AppPrimaryColor primaryColor,
+  required HomePrayerSelectionState homePrayerSelection,
+}) {
+  return ProviderScope(
+    overrides: [
+      initialThemeModeProvider.overrideWithValue(themeMode),
+      initialPrimaryColorProvider.overrideWithValue(primaryColor),
+      initialHomePrayerSelectionProvider.overrideWithValue(homePrayerSelection),
+    ],
+    child: const QazaNamazApp(),
+  );
 }
 
 Future<void> _initializeDatabase() async {

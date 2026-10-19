@@ -32,6 +32,7 @@ void main() {
     tracking = DailySalahTrackingService(
       database: database,
       qazaService: qazaService,
+      activeUserId: () => userId,
     );
     await tracking.setEnabled(true);
   });

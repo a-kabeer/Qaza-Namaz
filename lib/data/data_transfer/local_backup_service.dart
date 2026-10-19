@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/qaza_record.dart';
+import '../../domain/entities/user_profile.dart';
 import '../local/database/app_database.dart';
 
 const _appId = 'qaza_namaz_app';
@@ -50,6 +51,32 @@ class LocalBackupService {
       records.sort(
         (a, b) => (a['id'] as String).compareTo(b['id'] as String),
       );
+
+      final accountIdRows = await database
+          .customSelect(
+            'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
+          )
+          .get();
+      final trackingEnabledByAccount = <String, bool>{};
+      final trackingSetupDismissedByAccount = <String, bool>{};
+      for (final row in accountIdRows) {
+        final accountId = row.read<String>('local_account_id');
+        trackingEnabledByAccount[accountId] =
+            await database.isDailySalahTrackingEnabled(userId: accountId);
+        trackingSetupDismissedByAccount[accountId] = await database
+            .isDailySalahTrackingSetupDismissed(userId: accountId);
+      }
+      final activeSessionRows = await database
+          .customSelect(
+            'SELECT active_local_account_id FROM app_session_state ORDER BY id LIMIT 1',
+          )
+          .get();
+      final activeAccountId = activeSessionRows.isEmpty
+          ? null
+          : activeSessionRows.first.read<String?>('active_local_account_id');
+      final preferenceAccountId = localAccountId?.trim().isNotEmpty == true
+          ? localAccountId!.trim()
+          : activeAccountId ?? 'guest';
 
       final document = <String, dynamic>{
         'metadata': {
@@ -168,7 +195,16 @@ class LocalBackupService {
           'meta_store': {
             'is_onboarding_completed': await database.isOnboardingCompleted(),
             'daily_salah_tracking_enabled':
-                await database.isDailySalahTrackingEnabled(),
+                await database.isDailySalahTrackingEnabled(
+              userId: preferenceAccountId,
+            ),
+            'daily_salah_tracking_enabled_by_account': trackingEnabledByAccount,
+            'daily_salah_tracking_setup_dismissed':
+                await database.isDailySalahTrackingSetupDismissed(
+              userId: preferenceAccountId,
+            ),
+            'daily_salah_tracking_setup_dismissed_by_account':
+                trackingSetupDismissedByAccount,
           },
         },
       };
@@ -240,6 +276,17 @@ class LocalBackupService {
         }
         final meta = data['meta_store'] as Map<String, dynamic>;
         meta['is_onboarding_completed'] = profileOnboardingCompleted;
+        for (final key in [
+          'daily_salah_tracking_enabled_by_account',
+          'daily_salah_tracking_setup_dismissed_by_account',
+        ]) {
+          final values = meta[key];
+          if (values is Map) {
+            meta[key] = <String, dynamic>{
+              normalized: values[normalized] == true,
+            };
+          }
+        }
       }
 
       return const JsonEncoder.withIndent('  ').convert(document);
@@ -405,9 +452,59 @@ class LocalBackupService {
       await database.setOnboardingCompletedInTransaction(
         meta['is_onboarding_completed'] == true,
       );
-      await database.setDailySalahTrackingEnabledInTransaction(
-        meta['daily_salah_tracking_enabled'] == true,
-      );
+
+      final sessionRows =
+          data['app_session_state'] as List<dynamic>? ?? const <dynamic>[];
+      final activeUserId = sessionRows.isEmpty
+          ? 'guest'
+          : ((sessionRows.first as Map)['active_local_account_id'] as String? ??
+              'guest');
+      final enabledByAccount = meta['daily_salah_tracking_enabled_by_account'];
+      if (enabledByAccount is Map) {
+        for (final entry in enabledByAccount.entries) {
+          if (entry.key is String && entry.value is bool) {
+            await database.setDailySalahTrackingEnabledInTransaction(
+              entry.value as bool,
+              userId: entry.key as String,
+            );
+          }
+        }
+        if (!enabledByAccount.containsKey(activeUserId)) {
+          await database.setDailySalahTrackingEnabledInTransaction(
+            meta['daily_salah_tracking_enabled'] == true,
+            userId: activeUserId,
+          );
+        }
+      } else {
+        await database.setDailySalahTrackingEnabledInTransaction(
+          meta['daily_salah_tracking_enabled'] == true,
+          userId: activeUserId,
+        );
+      }
+
+      final dismissedByAccount =
+          meta['daily_salah_tracking_setup_dismissed_by_account'];
+      if (dismissedByAccount is Map) {
+        for (final entry in dismissedByAccount.entries) {
+          if (entry.key is String && entry.value is bool) {
+            await database.setDailySalahTrackingSetupDismissedInTransaction(
+              entry.value as bool,
+              userId: entry.key as String,
+            );
+          }
+        }
+        if (!dismissedByAccount.containsKey(activeUserId)) {
+          await database.setDailySalahTrackingSetupDismissedInTransaction(
+            meta['daily_salah_tracking_setup_dismissed'] == true,
+            userId: activeUserId,
+          );
+        }
+      } else {
+        await database.setDailySalahTrackingSetupDismissedInTransaction(
+          meta['daily_salah_tracking_setup_dismissed'] == true,
+          userId: activeUserId,
+        );
+      }
       await database.setDbRevisionInTransaction(newRevision);
     });
 
@@ -481,6 +578,58 @@ class LocalBackupService {
       );
     }
 
+    // Before account-scoped backups, Qaza primary keys included the owning
+    // workspace prefix. When adopting a legacy Guest backup into Google,
+    // rewrite those IDs as well as every stored reference to them.
+    final remapLegacyGuestRecordIds =
+        sourceAccountId == UserProfile.localLedgerUserId &&
+            target != UserProfile.localLedgerUserId;
+
+    Object? remapQazaRecordId(Object? value) {
+      if (!remapLegacyGuestRecordIds ||
+          value is! String ||
+          !value.startsWith('guest_')) {
+        return value;
+      }
+      return '$target${value.substring(5)}';
+    }
+
+    Object? remapQazaAdditionId(Object? value) {
+      if (!remapLegacyGuestRecordIds || value is! String || value.isEmpty) {
+        return value;
+      }
+      return '${target}_$value';
+    }
+
+    Object? remapDeletionActionId(Object? value) {
+      if (!remapLegacyGuestRecordIds || value is! String || value.isEmpty) {
+        return value;
+      }
+      return '${target}_$value';
+    }
+
+    Map<String, dynamic> remapRevisionPayload(Map<String, dynamic> row) {
+      if (!remapLegacyGuestRecordIds || row['payload_json'] is! String) {
+        return row;
+      }
+      try {
+        final decoded = jsonDecode(row['payload_json'] as String);
+        if (decoded is Map) {
+          final payload = Map<String, dynamic>.from(decoded);
+          if (payload['userId'] == sourceAccountId) {
+            payload['userId'] = target;
+          }
+          if (payload['user_id'] == sourceAccountId) {
+            payload['user_id'] = target;
+          }
+          row['payload_json'] = jsonEncode(payload);
+        }
+      } catch (_) {
+        // Validation below will reject malformed revision payloads.
+      }
+      return row;
+    }
+
     List<Map<String, dynamic>> remoteOwned(
       String table,
       String ownerColumn,
@@ -491,6 +640,38 @@ class LocalBackupService {
           .map((raw) {
         final row = Map<String, dynamic>.from(raw as Map);
         row[ownerColumn] = target;
+        if (remapLegacyGuestRecordIds) {
+          switch (table) {
+            case 'qaza_records':
+              row['id'] = remapQazaRecordId(row['id']);
+              row['additionId'] = remapQazaAdditionId(row['additionId']);
+              break;
+            case 'qaza_additions':
+              row['id'] = remapQazaAdditionId(row['id']);
+              break;
+            case 'qaza_deletion_actions':
+              row['id'] = remapDeletionActionId(row['id']);
+              row['addition_id'] = remapQazaAdditionId(row['addition_id']);
+              break;
+            case 'qaza_profile_plan_provenance':
+              row['record_id'] = remapQazaRecordId(row['record_id']);
+              break;
+            case 'qaza_deletion_action_record_snapshots':
+              row['record_id'] = remapQazaRecordId(row['record_id']);
+              row['deletion_action_id'] =
+                  remapDeletionActionId(row['deletion_action_id']);
+              row['addition_id'] = remapQazaAdditionId(row['addition_id']);
+              break;
+            case 'daily_salah_logs':
+              row['tracker_created_qaza_id'] =
+                  remapQazaRecordId(row['tracker_created_qaza_id']);
+              row['linked_qaza_id'] = remapQazaRecordId(row['linked_qaza_id']);
+              break;
+            case 'account_plan_revisions':
+              remapRevisionPayload(row);
+              break;
+          }
+        }
         return row;
       }).toList(growable: false);
     }
@@ -576,6 +757,51 @@ class LocalBackupService {
     final mergedMeta =
         Map<String, dynamic>.from(localData['meta_store'] as Map);
     mergedMeta['is_onboarding_completed'] = activeOnboardingCompleted;
+
+    // Tracking preferences belong to a workspace because the daily logs do.
+    // Keep device preferences (prayer cache, Hijri offset, Home targeting)
+    // unchanged, while adopting legacy scalar values for this target workspace.
+    final remoteMeta = remoteData['meta_store'];
+    if (activeLocalAccountId == target && remoteMeta is Map) {
+      final remoteEnabledByAccount =
+          remoteMeta['daily_salah_tracking_enabled_by_account'];
+      final remoteEnabled = remoteEnabledByAccount is Map &&
+              remoteEnabledByAccount[sourceAccountId] is bool
+          ? remoteEnabledByAccount[sourceAccountId] as bool
+          : remoteMeta['daily_salah_tracking_enabled'] is bool
+              ? remoteMeta['daily_salah_tracking_enabled'] as bool
+              : null;
+      if (remoteEnabled != null) {
+        mergedMeta['daily_salah_tracking_enabled'] = remoteEnabled;
+        final enabledByAccount = Map<String, dynamic>.from(
+          mergedMeta['daily_salah_tracking_enabled_by_account'] as Map? ??
+              const <String, dynamic>{},
+        );
+        enabledByAccount[target] = remoteEnabled;
+        mergedMeta['daily_salah_tracking_enabled_by_account'] =
+            enabledByAccount;
+      }
+
+      final remoteDismissedByAccount =
+          remoteMeta['daily_salah_tracking_setup_dismissed_by_account'];
+      final remoteDismissed = remoteDismissedByAccount is Map &&
+              remoteDismissedByAccount[sourceAccountId] is bool
+          ? remoteDismissedByAccount[sourceAccountId] as bool
+          : remoteMeta['daily_salah_tracking_setup_dismissed'] is bool
+              ? remoteMeta['daily_salah_tracking_setup_dismissed'] as bool
+              : null;
+      if (remoteDismissed != null) {
+        mergedMeta['daily_salah_tracking_setup_dismissed'] = remoteDismissed;
+        final dismissedByAccount = Map<String, dynamic>.from(
+          mergedMeta['daily_salah_tracking_setup_dismissed_by_account']
+                  as Map? ??
+              const <String, dynamic>{},
+        );
+        dismissedByAccount[target] = remoteDismissed;
+        mergedMeta['daily_salah_tracking_setup_dismissed_by_account'] =
+            dismissedByAccount;
+      }
+    }
     mergedData['meta_store'] = mergedMeta;
 
     final metadata = Map<String, dynamic>.from(remoteRoot['metadata'] as Map);
@@ -646,11 +872,10 @@ class LocalBackupService {
         'Backup database schema version is invalid.',
       );
     }
-    // Schema 19 predates daily Salah tracking. Schema 20 has daily logs but
-    // predates their explicit Qaza link and completion-sync columns. Both are
-    // safe predecessors of schema 21 and are normalized below.
-    final compatibleLegacySchema = database.schemaVersion == 21 &&
-        (databaseSchema == 19 || databaseSchema == 20);
+    // Schemas 19–21 are supported predecessors of schema 22. Older
+    // payloads are normalized below, including missing Daily Salah rows and
+    // the link/completion-sync fields introduced after schema 20.
+    final compatibleLegacySchema = databaseSchema >= 19 && databaseSchema <= 21;
     if (databaseSchema > database.schemaVersion) {
       throw LocalBackupException(
         'This backup uses newer database schema $databaseSchema. '
@@ -1379,6 +1604,16 @@ class LocalBackupService {
   }
 
   Future<void> _clearBusinessState() async {
+    // Workspace-scoped tracking settings are restored from the backup payload.
+    // Remove old values first so settings from workspaces absent in the backup
+    // cannot survive a full import and affect a later account recreation.
+    await database.customStatement(
+      "DELETE FROM meta_store WHERE key IN ("
+      "'daily_salah_tracking_enabled', "
+      "'daily_salah_tracking_setup_dismissed') "
+      "OR key GLOB 'daily_salah_tracking_enabled:*' "
+      "OR key GLOB 'daily_salah_tracking_setup_dismissed:*'",
+    );
     await database.customStatement('DELETE FROM daily_salah_logs');
     await database.customStatement(
       'DELETE FROM qaza_deletion_action_record_snapshots',

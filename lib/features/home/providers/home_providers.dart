@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:drift/drift.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timezone/timezone.dart' as tz;
 import '../../../app/providers.dart';
 import '../../../core/constants/prayer_types.dart';
 import '../../../domain/entities/qaza_activity.dart';
@@ -32,7 +33,13 @@ DateTime homeCurrentWeekEndExclusiveForDate(DateTime date) =>
     QazaActivityService.calendarWeekEndExclusiveForDate(date);
 
 final homeLocalDateProvider = Provider<DateTime>((ref) {
-  return homeLocalDateForInstant(ref.watch(homeNowProvider));
+  final instant = ref.watch(homeNowProvider);
+  final snapshot = ref.watch(prayerTimeControllerProvider).valueOrNull;
+  if (snapshot == null) return homeLocalDateForInstant(instant);
+
+  final location = tz.getLocation(snapshot.location.timezoneId);
+  final local = tz.TZDateTime.from(instant, location);
+  return DateTime(local.year, local.month, local.day);
 });
 
 final homeDailyProgressProvider =
@@ -323,7 +330,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   @override
   HomePrayerSelectionState build() {
     Future<void>.microtask(_restore);
-    return const HomePrayerSelectionState();
+    return ref.read(initialHomePrayerSelectionProvider);
   }
 
   /// Explicitly selects a prayer and switches to sticky Prayer Selection.

@@ -49,23 +49,38 @@ class DailySalahTrackingService {
   DailySalahTrackingService({
     required AppDatabase database,
     required QazaService qazaService,
+    String? Function()? activeUserId,
   })  : _database = database,
-        _qazaService = qazaService;
+        _qazaService = qazaService,
+        _activeUserId = activeUserId ?? (() => null);
 
   final AppDatabase _database;
   final QazaService _qazaService;
+  final String? Function() _activeUserId;
 
-  /// Reads the persisted user preference.
-  Future<bool> isEnabled() => _database.isDailySalahTrackingEnabled();
+  String get _workspaceId {
+    final value = _activeUserId()?.trim();
+    return value == null || value.isEmpty ? 'guest' : value;
+  }
+
+  /// Reads the enabled state for the currently active local workspace.
+  Future<bool> isEnabled() =>
+      _database.isDailySalahTrackingEnabled(userId: _workspaceId);
 
   Future<void> setEnabled(bool enabled) =>
-      _database.setDailySalahTrackingEnabled(enabled);
+      _database.setDailySalahTrackingEnabled(
+        enabled,
+        userId: _workspaceId,
+      );
 
   Future<bool> isSetupDismissed() =>
-      _database.isDailySalahTrackingSetupDismissed();
+      _database.isDailySalahTrackingSetupDismissed(userId: _workspaceId);
 
   Future<void> setSetupDismissed(bool dismissed) =>
-      _database.setDailySalahTrackingSetupDismissed(dismissed);
+      _database.setDailySalahTrackingSetupDismissed(
+        dismissed,
+        userId: _workspaceId,
+      );
 
   Future<Map<PrayerType, DailySalahLog>> logsForDate({
     required String userId,

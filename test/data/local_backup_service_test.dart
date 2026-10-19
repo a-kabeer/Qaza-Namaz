@@ -172,7 +172,8 @@ void main() {
     );
   });
 
-  test('scoped restore restores onboarding state for the active workspace',
+  test(
+      'scoped restore restores onboarding and tracking settings for the active workspace',
       () async {
     const googleId = 'google:account-onboarding';
     final now = DateTime.now().microsecondsSinceEpoch;
@@ -192,6 +193,7 @@ void main() {
       const UserProfile(onboardingCompleted: true),
     );
     await accounts.activate(googleId);
+    await database.setDailySalahTrackingEnabled(true, userId: googleId);
     final remoteBackup = await service.exportJson(localAccountId: googleId);
 
     // Simulate a fresh local copy of the target workspace before restore.
@@ -201,6 +203,7 @@ void main() {
     );
     await accounts.activate(googleId);
     expect(await database.isOnboardingCompleted(), isFalse);
+    await database.setDailySalahTrackingEnabled(false, userId: googleId);
 
     await service.importJson(
       remoteBackup,
@@ -208,6 +211,10 @@ void main() {
     );
 
     expect(await database.isOnboardingCompleted(), isTrue);
+    expect(
+      await database.isDailySalahTrackingEnabled(userId: googleId),
+      isTrue,
+    );
     final restored = await accounts.loadProfile(googleId);
     expect(restored?.onboardingCompleted, isTrue);
     expect(
@@ -262,6 +269,127 @@ void main() {
         )
         .getSingle();
     expect(activeSession.read<String>('active_local_account_id'), 'guest');
+  });
+
+  test(
+      'legacy Guest cloud backup adoption remaps Qaza IDs and linked references',
+      () async {
+    const googleId = 'google:account-adopt';
+    final date = DateTime(2025, 1, 1);
+    const guestRecordId = 'guest_fajr_2025-01-01';
+    await database.qazaRecordsDao.insertRecord(
+      _record(guestRecordId, date),
+    );
+    const additionId = 'guest_addition_adopt';
+    const deletionActionId = 'guest_delete_action_adopt';
+    final timestamp = DateTime.utc(2025, 1, 1).toIso8601String();
+    await database.customInsert(
+      '''INSERT INTO qaza_additions
+         (id, user_id, mode, input_snapshot, revision, created_at, updated_at)
+         VALUES (?, ?, 'single', '{}', 1, ?, ?)''',
+      variables: [
+        Variable.withString(additionId),
+        Variable.withString('guest'),
+        Variable.withString(timestamp),
+        Variable.withString(timestamp),
+      ],
+    );
+    await database.customInsert(
+      '''INSERT INTO qaza_deletion_actions
+         (id, user_id, addition_id, created_at, resolved_at, entity_version)
+         VALUES (?, ?, ?, ?, NULL, 1)''',
+      variables: [
+        Variable.withString(deletionActionId),
+        Variable.withString('guest'),
+        Variable.withString(additionId),
+        Variable.withString(timestamp),
+      ],
+    );
+    await database.customInsert(
+      '''INSERT INTO qaza_deletion_action_record_snapshots
+         (deletion_action_id, record_id, user_id, addition_id, prayer_type,
+          original_date, status, completed_at, completion_id, created_at,
+          updated_at, record_version)
+         VALUES (?, ?, ?, ?, 'fajr', '2025-01-01', 'pending', NULL, NULL,
+                 ?, ?, 1)''',
+      variables: [
+        Variable.withString(deletionActionId),
+        Variable.withString(guestRecordId),
+        Variable.withString('guest'),
+        Variable.withString(additionId),
+        Variable.withString(timestamp),
+        Variable.withString(timestamp),
+      ],
+    );
+    await database.customInsert(
+      '''INSERT INTO daily_salah_logs
+         (user_id, prayer_date, prayer_type, status,
+          tracker_created_qaza_id, linked_qaza_id, completion_sync_id,
+          updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)''',
+      variables: [
+        Variable.withString('guest'),
+        Variable.withString('2025-01-01'),
+        Variable.withString('fajr'),
+        Variable.withString('missed'),
+        Variable.withString(guestRecordId),
+        Variable.withString(guestRecordId),
+        Variable.withString('sync-adopt-1'),
+        Variable.withString(DateTime.utc(2025, 1, 1).toIso8601String()),
+      ],
+    );
+
+    final backup = await service.exportJson(localAccountId: 'guest');
+    await service.importJson(backup, targetLocalAccountId: googleId);
+
+    final guestRows = await database.qazaRecordsDao.getAll(userId: 'guest');
+    final googleRows = await database.qazaRecordsDao.getAll(userId: googleId);
+    const adoptedRecordId = 'google:account-adopt_fajr_2025-01-01';
+    expect(guestRows.map((row) => row.id), contains(guestRecordId));
+    expect(googleRows.map((row) => row.id), contains(adoptedRecordId));
+    expect(
+      googleRows.map((row) => row.id).toSet().intersection(
+            guestRows.map((row) => row.id).toSet(),
+          ),
+      isEmpty,
+    );
+
+    final links = await database.customSelect(
+      'SELECT tracker_created_qaza_id, linked_qaza_id FROM daily_salah_logs '
+      'WHERE user_id = ?',
+      variables: [Variable.withString(googleId)],
+    ).get();
+    expect(links, hasLength(1));
+    expect(
+      links.single.read<String?>('tracker_created_qaza_id'),
+      adoptedRecordId,
+    );
+    expect(links.single.read<String?>('linked_qaza_id'), adoptedRecordId);
+
+    const adoptedAdditionId = 'google:account-adopt_guest_addition_adopt';
+    const adoptedDeletionActionId =
+        'google:account-adopt_guest_delete_action_adopt';
+    final actions = await database.customSelect(
+      'SELECT id, addition_id FROM qaza_deletion_actions WHERE user_id = ?',
+      variables: [Variable.withString(googleId)],
+    ).get();
+    expect(actions, hasLength(1));
+    expect(actions.single.read<String>('id'), adoptedDeletionActionId);
+    expect(actions.single.read<String>('addition_id'), adoptedAdditionId);
+
+    final snapshots = await database.customSelect(
+      'SELECT record_id, user_id, deletion_action_id, addition_id '
+      'FROM qaza_deletion_action_record_snapshots WHERE user_id = ?',
+      variables: [Variable.withString(googleId)],
+    ).get();
+    expect(snapshots, hasLength(1));
+    expect(snapshots.single.read<String>('record_id'), adoptedRecordId);
+    expect(snapshots.single.read<String>('user_id'), googleId);
+    expect(
+      snapshots.single.read<String>('deletion_action_id'),
+      adoptedDeletionActionId,
+    );
+    expect(snapshots.single.read<String>('addition_id'), adoptedAdditionId);
   });
 
   test('backup preserves daily Salah links and the tracking preference',
@@ -334,7 +462,7 @@ void main() {
     expect(logs, isEmpty);
   });
 
-  test('schema 20 backups migrate daily Salah links to schema 21', () async {
+  test('schema 20 backups migrate Daily Salah links into schema 22', () async {
     await database.qazaRecordsDao.insertRecord(
       _record('guest_fajr_linked', DateTime(2025, 1, 1)),
     );
@@ -536,7 +664,7 @@ void main() {
     final decoded =
         jsonDecode(await service.exportJson()) as Map<String, dynamic>;
     (decoded['metadata'] as Map<String, dynamic>)['database_schema_version'] =
-        22;
+        23;
 
     expect(
       () => service.importJson(jsonEncode(decoded)),

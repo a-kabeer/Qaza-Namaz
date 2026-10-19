@@ -26,6 +26,7 @@ import '../data/local/qaza_local_store.dart';
 import '../data/local/database/qaza_addition_repository.dart';
 import '../data/repositories/offline_first_qaza_repository.dart';
 import '../domain/entities/qaza_record.dart';
+import '../features/home/home_state.dart';
 import '../domain/entities/qaza_addition.dart';
 import '../domain/entities/user_profile.dart';
 import '../domain/repositories/qaza_plan_revision_repository.dart';
@@ -45,6 +46,77 @@ import '../domain/services/save_profile_use_case.dart';
 final appSnackbarServiceProvider = Provider<AppSnackbarService>(
   (_) => AppSnackbarService(messengerKey: appScaffoldMessengerKey),
 );
+
+/// Startup values loaded before runApp to avoid a one-frame default-state flash.
+final initialThemeModeProvider =
+    Provider<AppThemeMode>((ref) => AppThemeMode.system);
+
+final initialPrimaryColorProvider =
+    Provider<AppPrimaryColor>((ref) => AppPrimaryColor.teal);
+
+final initialHomePrayerSelectionProvider = Provider<HomePrayerSelectionState>(
+  (ref) => const HomePrayerSelectionState(),
+);
+
+Future<(AppThemeMode, AppPrimaryColor)> loadInitialAppearance() async {
+  try {
+    final preferences = await SharedPreferences.getInstance();
+    final storedMode = preferences.getString(ThemeModeNotifier.storageKey);
+    final storedColor = preferences.getString(PrimaryColorNotifier.storageKey);
+    final mode = AppThemeMode.values.firstWhere(
+      (value) => value.name == storedMode,
+      orElse: () => AppThemeMode.system,
+    );
+    final color = AppPrimaryColor.values.firstWhere(
+      (value) => value.name == storedColor,
+      orElse: () => AppPrimaryColor.teal,
+    );
+    return (mode, color);
+  } catch (_) {
+    return (AppThemeMode.system, AppPrimaryColor.teal);
+  }
+}
+
+Future<HomePrayerSelectionState> loadInitialHomePrayerSelection() async {
+  final database = AppDatabase();
+  try {
+    final rows = await database
+        .customSelect(
+          "SELECT key, value FROM meta_store WHERE key IN ("
+          "'qaza_home_completion_mode', "
+          "'qaza_home_auto_sequence_prayer', "
+          "'qaza_home_selected_prayer')",
+        )
+        .get();
+    final values = <String, String>{
+      for (final row in rows)
+        row.read<String>('key'): row.read<String>('value'),
+    };
+    final mode = HomePrayerSelectionMode.values.firstWhere(
+      (value) => value.name == values['qaza_home_completion_mode'],
+      orElse: () => HomePrayerSelectionMode.autoSequence,
+    );
+    final autoSequencePrayer = PrayerType.values.firstWhere(
+      (value) => value.name == values['qaza_home_auto_sequence_prayer'],
+      orElse: () => PrayerType.fajr,
+    );
+    final selectedPrayer = PrayerType.values.firstWhere(
+      (value) => value.name == values['qaza_home_selected_prayer'],
+      orElse: () => PrayerType.fajr,
+    );
+    return HomePrayerSelectionState(
+      mode: mode,
+      selectedPrayer: mode == HomePrayerSelectionMode.prayerSelection
+          ? selectedPrayer
+          : null,
+      autoSequencePrayer: autoSequencePrayer,
+    );
+  } catch (_) {
+    return const HomePrayerSelectionState();
+  } finally {
+    await database.close();
+  }
+}
 
 /// Optional capabilities default to unavailable in the offline-only target.
 /// Cloud-enabled hosts override both providers from their composition root.
@@ -384,7 +456,7 @@ class ThemeModeNotifier extends Notifier<AppThemeMode> {
   @override
   AppThemeMode build() {
     Future<void>.microtask(restore);
-    return AppThemeMode.system;
+    return ref.read(initialThemeModeProvider);
   }
 
   Future<void> restore() async {
@@ -427,7 +499,7 @@ class PrimaryColorNotifier extends Notifier<AppPrimaryColor> {
   @override
   AppPrimaryColor build() {
     Future<void>.microtask(restore);
-    return AppPrimaryColor.teal;
+    return ref.read(initialPrimaryColorProvider);
   }
 
   Future<void> restore() async {

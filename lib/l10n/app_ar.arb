@@ -1237,6 +1237,18 @@
     }
   },
   "qazaAdditionUpdated": "تم تحديث إضافة القضاء",
+  "qazaAdditionEditSummary": "{addedCount} مضاف • {removedCount} محذوف • {protectedCount} محفوظ",
+  "@qazaAdditionEditSummary": {
+    "placeholders": {
+      "addedCount": { "type": "int" },
+      "removedCount": { "type": "int" },
+      "protectedCount": { "type": "int" }
+    }
+  },
+  "qazaAdditionMoreDates": "المزيد {count}",
+  "@qazaAdditionMoreDates": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "qazaSelectedCount": "{count, plural, =1{تم تحديد عنصر واحد} other{تم تحديد {count} عناصر}}",
   "@qazaSelectedCount": {
     "placeholders": {
@@ -1273,6 +1285,14 @@
   "dataImportOnboardingComplete": "مكتمل",
   "dataImportOnboardingIncomplete": "غير مكتمل",
   "dataLocalOnlyNote": "نسخة احتياطية محلية فقط. تبقى بيانات القضاء على هذا الجهاز ما لم تصدّرها صراحةً.",
+  "cloudBackupFrequencyLabel": "وتيرة النسخ الاحتياطي",
+  "cloudBackupFrequencyDaily": "يوميًا",
+  "cloudBackupFrequencyWeekly": "أسبوعيًا",
+  "cloudBackupFrequencyMonthly": "شهريًا",
+  "cloudBackupChecking": "جارٍ التحقق من النسخة الاحتياطية…",
+  "cloudBackupPreparing": "جارٍ تجهيز النسخة الاحتياطية…",
+  "cloudBackupCompleted": "اكتمل النسخ الاحتياطي",
+  "cloudBackupUploading": "جارٍ الرفع إلى Google Drive",
   "cloudBackupTitle": "النسخ الاحتياطي السحابي",
   "cloudBackupDescription": "احتفظ بنسخة احتياطية منفصلة من تقدم القضاء في بيانات تطبيقك على Google Drive.",
   "cloudConnect": "تسجيل الدخول باستخدام Google",

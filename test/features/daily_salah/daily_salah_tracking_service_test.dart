@@ -27,6 +27,7 @@ void main() {
     tracking = DailySalahTrackingService(
       database: database,
       qazaService: qazaService,
+      activeUserId: () => userId,
     );
   });
 
@@ -50,6 +51,34 @@ void main() {
     expect(await tracking.isEnabled(), isFalse);
     await tracking.setEnabled(true);
     expect(await tracking.isSetupDismissed(), isTrue);
+  });
+
+  test('Daily Salah enabled and setup-dismissed flags are workspace-scoped',
+      () async {
+    final guestTracking = DailySalahTrackingService(
+      database: database,
+      qazaService: qazaService,
+      activeUserId: () => 'guest',
+    );
+    final googleTracking = DailySalahTrackingService(
+      database: database,
+      qazaService: qazaService,
+      activeUserId: () => 'google:daily-salah-test',
+    );
+
+    await guestTracking.setEnabled(true);
+    await guestTracking.setSetupDismissed(true);
+    expect(await guestTracking.isEnabled(), isTrue);
+    expect(await guestTracking.isSetupDismissed(), isTrue);
+    expect(await googleTracking.isEnabled(), isFalse);
+    expect(await googleTracking.isSetupDismissed(), isFalse);
+
+    await googleTracking.setEnabled(true);
+    expect(await guestTracking.isEnabled(), isTrue);
+    expect(await googleTracking.isEnabled(), isTrue);
+    await guestTracking.setEnabled(false);
+    expect(await guestTracking.isEnabled(), isFalse);
+    expect(await googleTracking.isEnabled(), isTrue);
   });
 
   test('initial Prayed does not create a Qaza record', () async {

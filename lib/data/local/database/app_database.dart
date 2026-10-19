@@ -51,9 +51,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 21 adds explicit Qaza links and completion markers to Daily Salah logs.
+  /// Schema version 22 scopes Daily Salah preferences to the active workspace.
   @override
-  int get schemaVersion => 21;
+  int get schemaVersion => 22;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -131,6 +131,9 @@ class AppDatabase extends _$AppDatabase {
           if (from < 21) {
             await _ensureDailySalahTrackingLinkSchema();
           }
+          if (from < 22) {
+            await _migrateDailySalahTrackingPreferencesToWorkspaceScope();
+          }
         },
       );
 
@@ -155,14 +158,6 @@ class AppDatabase extends _$AppDatabase {
       "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
       "('db_revision', '1')",
     );
-    await customStatement(
-      "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
-      "('daily_salah_tracking_enabled', '0')",
-    );
-    await customStatement(
-      "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
-      "('daily_salah_tracking_setup_dismissed', '0')",
-    );
   }
 
   Future<void> _ensureDailySalahTrackingSchema() async {
@@ -185,10 +180,6 @@ class AppDatabase extends _$AppDatabase {
     await customStatement(
       'CREATE INDEX IF NOT EXISTS daily_salah_logs_user_date_idx '
       'ON daily_salah_logs (user_id, prayer_date)',
-    );
-    await customStatement(
-      "INSERT OR IGNORE INTO meta_store (key, value) "
-      "VALUES ('daily_salah_tracking_enabled', '0')",
     );
   }
 
@@ -214,62 +205,140 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Future<bool> isDailySalahTrackingEnabled() async {
+  String _workspacePreferenceKey(String name, String userId) {
+    final normalized = userId.trim().isEmpty ? 'guest' : userId.trim();
+    return '$name:$normalized';
+  }
+
+  /// Moves preferences from the former global keys to the workspace that was
+  /// active during the schema upgrade. The legacy keys are removed so a new
+  /// workspace cannot accidentally inherit another workspace's setting.
+  Future<void> _migrateDailySalahTrackingPreferencesToWorkspaceScope() async {
+    final sessionRows = await customSelect(
+      'SELECT active_local_account_id FROM app_session_state ORDER BY id LIMIT 1',
+    ).get();
+    final rawUserId = sessionRows.isEmpty
+        ? null
+        : sessionRows.first.read<String?>('active_local_account_id');
+    final userId = rawUserId == null || rawUserId.trim().isEmpty
+        ? 'guest'
+        : rawUserId.trim();
+
+    for (final name in [
+      'daily_salah_tracking_enabled',
+      'daily_salah_tracking_setup_dismissed',
+    ]) {
+      final legacyRows = await customSelect(
+        'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+        variables: [Variable.withString(name)],
+      ).get();
+      if (legacyRows.isEmpty) continue;
+
+      final scopedKey = _workspacePreferenceKey(name, userId);
+      await customUpdate(
+        'INSERT OR IGNORE INTO meta_store (key, value) VALUES (?, ?)',
+        variables: [
+          Variable.withString(scopedKey),
+          Variable.withString(legacyRows.first.read<String>('value')),
+        ],
+      );
+      await customUpdate(
+        'DELETE FROM meta_store WHERE key = ?',
+        variables: [Variable.withString(name)],
+      );
+    }
+  }
+
+  Future<bool> isDailySalahTrackingEnabled({String userId = 'guest'}) async {
     await _ensureMetaStoreSchema();
+    final key = _workspacePreferenceKey('daily_salah_tracking_enabled', userId);
     final rows = await customSelect(
-      "SELECT value FROM meta_store "
-      "WHERE key = 'daily_salah_tracking_enabled' LIMIT 1",
+      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+      variables: [Variable.withString(key)],
     ).get();
     return rows.isNotEmpty && rows.first.read<String>('value') == '1';
   }
 
-  Future<void> setDailySalahTrackingEnabled(bool enabled) async {
+  Future<void> setDailySalahTrackingEnabled(
+    bool enabled, {
+    String userId = 'guest',
+  }) async {
     await transactionWithRevision<bool>(
-      () => setDailySalahTrackingEnabledInTransaction(enabled),
+      () => setDailySalahTrackingEnabledInTransaction(
+        enabled,
+        userId: userId,
+      ),
       mutationPredicate: (changed) => changed,
     );
   }
 
   /// Persists the feature toggle within an existing database transaction.
   /// Used by backup restore as well as the normal settings control.
-  Future<bool> setDailySalahTrackingEnabledInTransaction(bool enabled) async {
-    final current = await isDailySalahTrackingEnabled();
+  Future<bool> setDailySalahTrackingEnabledInTransaction(
+    bool enabled, {
+    String userId = 'guest',
+  }) async {
+    final current = await isDailySalahTrackingEnabled(userId: userId);
     if (current == enabled) return false;
+    final key = _workspacePreferenceKey('daily_salah_tracking_enabled', userId);
     await customUpdate(
       '''INSERT INTO meta_store (key, value)
-         VALUES ('daily_salah_tracking_enabled', ?)
+         VALUES (?, ?)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-      variables: [Variable(enabled ? '1' : '0')],
+      variables: [
+        Variable.withString(key),
+        Variable(enabled ? '1' : '0'),
+      ],
     );
     return true;
   }
 
-  Future<bool> isDailySalahTrackingSetupDismissed() async {
+  Future<bool> isDailySalahTrackingSetupDismissed({
+    String userId = 'guest',
+  }) async {
     await _ensureMetaStoreSchema();
+    final key = _workspacePreferenceKey(
+      'daily_salah_tracking_setup_dismissed',
+      userId,
+    );
     final rows = await customSelect(
-      "SELECT value FROM meta_store "
-      "WHERE key = 'daily_salah_tracking_setup_dismissed' LIMIT 1",
+      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+      variables: [Variable.withString(key)],
     ).get();
     return rows.isNotEmpty && rows.first.read<String>('value') == '1';
   }
 
-  Future<void> setDailySalahTrackingSetupDismissed(bool dismissed) async {
+  Future<void> setDailySalahTrackingSetupDismissed(
+    bool dismissed, {
+    String userId = 'guest',
+  }) async {
     await transactionWithRevision<bool>(
-      () => setDailySalahTrackingSetupDismissedInTransaction(dismissed),
+      () => setDailySalahTrackingSetupDismissedInTransaction(
+        dismissed,
+        userId: userId,
+      ),
       mutationPredicate: (changed) => changed,
     );
   }
 
   Future<bool> setDailySalahTrackingSetupDismissedInTransaction(
-    bool dismissed,
-  ) async {
-    final current = await isDailySalahTrackingSetupDismissed();
+    bool dismissed, {
+    String userId = 'guest',
+  }) async {
+    final current = await isDailySalahTrackingSetupDismissed(userId: userId);
     if (current == dismissed) return false;
+    final key = _workspacePreferenceKey(
+      'daily_salah_tracking_setup_dismissed',
+      userId,
+    );
     await customUpdate(
       '''INSERT INTO meta_store (key, value)
-         VALUES ('daily_salah_tracking_setup_dismissed', ?)
+         VALUES (?, ?)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-      variables: [Variable(dismissed ? '1' : '0')],
+      variables: [
+        Variable.withString(key),
+        Variable(dismissed ? '1' : '0'),
+      ],
     );
     return true;
   }

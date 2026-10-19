@@ -1013,6 +1013,18 @@
     }
   },
   "qazaAdditionUpdated": "Qaza ka izafa app date ho gaya",
+  "qazaAdditionEditSummary": "{addedCount} shamil • {removedCount} hataye gaye • {protectedCount} mehfooz",
+  "@qazaAdditionEditSummary": {
+    "placeholders": {
+      "addedCount": { "type": "int" },
+      "removedCount": { "type": "int" },
+      "protectedCount": { "type": "int" }
+    }
+  },
+  "qazaAdditionMoreDates": "+ {count} mazeed",
+  "@qazaAdditionMoreDates": {
+    "placeholders": { "count": { "type": "int" } }
+  },
   "qazaSelectedCount": "{count, plural, =1{1 muntakhab} other{{count} muntakhab}}",
   "@qazaSelectedCount": {
     "placeholders": {
@@ -1049,6 +1061,14 @@
       }
     }
   },
+  "cloudBackupFrequencyLabel": "Backup ki frequency",
+  "cloudBackupFrequencyDaily": "Rozana",
+  "cloudBackupFrequencyWeekly": "Haftawar",
+  "cloudBackupFrequencyMonthly": "Mahawarana",
+  "cloudBackupChecking": "Backup check ho raha hai…",
+  "cloudBackupPreparing": "Backup tayyar ho raha hai…",
+  "cloudBackupCompleted": "Backup mukammal ho gaya",
+  "cloudBackupUploading": "Google Drive par upload ho raha hai",
   "cloudBackupTitle": "Cloud backup app",
   "cloudBackupDescription": "Apni Qaza ki progress ka Google Drive app Data mein alg backup app mehfooz rkhin",
   "cloudConnect": "Google se sign in karein",

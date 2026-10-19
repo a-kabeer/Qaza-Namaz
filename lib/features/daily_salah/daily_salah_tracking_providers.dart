@@ -10,9 +10,11 @@ import 'daily_salah_tracking_service.dart';
 
 final dailySalahTrackingServiceProvider =
     Provider<DailySalahTrackingService>((ref) {
+  final userId = ref.watch(activeUserIdProvider);
   return DailySalahTrackingService(
     database: ref.watch(appDatabaseProvider),
     qazaService: ref.watch(qazaServiceProvider),
+    activeUserId: () => userId,
   );
 });
 

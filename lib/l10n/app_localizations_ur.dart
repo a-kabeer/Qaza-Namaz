@@ -2517,6 +2517,17 @@ class AppLocalizationsUr extends AppLocalizations {
   String get qazaAdditionUpdated => 'قضا کا اضافہ اپ ڈیٹ ہو گیا';
 
   @override
+  String qazaAdditionEditSummary(
+      int addedCount, int removedCount, int protectedCount) {
+    return '$addedCount شامل، $removedCount ہٹائے گئے، $protectedCount محفوظ';
+  }
+
+  @override
+  String qazaAdditionMoreDates(int count) {
+    return 'مزید $count';
+  }
+
+  @override
   String qazaSelectedCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2547,6 +2558,30 @@ class AppLocalizationsUr extends AppLocalizations {
   @override
   String get dataLocalOnlyNote =>
       'صرف مقامی بیک اپ۔ آپ کا قضا ڈیٹا اسی ڈیوائس پر رہتا ہے، جب تک آپ اسے واضح طور پر برآمد نہ کریں۔';
+
+  @override
+  String get cloudBackupFrequencyLabel => 'بیک اپ کی فریکوئنسی';
+
+  @override
+  String get cloudBackupFrequencyDaily => 'روزانہ';
+
+  @override
+  String get cloudBackupFrequencyWeekly => 'ہفتہ وار';
+
+  @override
+  String get cloudBackupFrequencyMonthly => 'ماہانہ';
+
+  @override
+  String get cloudBackupChecking => 'بیک اپ چیک کیا جا رہا ہے…';
+
+  @override
+  String get cloudBackupPreparing => 'بیک اپ تیار کیا جا رہا ہے…';
+
+  @override
+  String get cloudBackupCompleted => 'بیک اپ مکمل ہو گیا';
+
+  @override
+  String get cloudBackupUploading => 'گوگل ڈرائیو پر اپ لوڈ ہو رہا ہے';
 
   @override
   String get cloudBackupTitle => 'کلاؤڈ بیک اپ';
@@ -5420,6 +5455,17 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get qazaAdditionUpdated => 'Qaza ka izafa app date ho gaya';
 
   @override
+  String qazaAdditionEditSummary(
+      int addedCount, int removedCount, int protectedCount) {
+    return '$addedCount shamil • $removedCount hataye gaye • $protectedCount mehfooz';
+  }
+
+  @override
+  String qazaAdditionMoreDates(int count) {
+    return '+ $count mazeed';
+  }
+
+  @override
   String qazaSelectedCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -5450,6 +5496,30 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get dataLocalOnlyNote =>
       'Sirf mqami backup ap aap ka Qaza Data isi device par rehta he jab tak aap usay wazeh tor par braamd na krin';
+
+  @override
+  String get cloudBackupFrequencyLabel => 'Backup ki frequency';
+
+  @override
+  String get cloudBackupFrequencyDaily => 'Rozana';
+
+  @override
+  String get cloudBackupFrequencyWeekly => 'Haftawar';
+
+  @override
+  String get cloudBackupFrequencyMonthly => 'Mahawarana';
+
+  @override
+  String get cloudBackupChecking => 'Backup check ho raha hai…';
+
+  @override
+  String get cloudBackupPreparing => 'Backup tayyar ho raha hai…';
+
+  @override
+  String get cloudBackupCompleted => 'Backup mukammal ho gaya';
+
+  @override
+  String get cloudBackupUploading => 'Google Drive par upload ho raha hai';
 
   @override
   String get cloudBackupTitle => 'Cloud backup app';

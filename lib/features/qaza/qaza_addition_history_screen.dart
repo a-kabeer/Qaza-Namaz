@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
+import '../../core/constants/prayer_types.dart';
+import '../home/home_controller.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_addition.dart';
 import '../../l10n/app_localizations.dart';
 import 'widgets/qaza_addition_date_summary.dart';
 import 'qaza_navigation.dart';
+import 'qaza_tracker_controller.dart';
 
 enum QazaAdditionHistoryTab { recent, deleted }
 
@@ -168,6 +171,11 @@ class QazaAdditionHistoryController
               deletionActionId: deletionActionId,
             );
     ref.invalidate(progressSummaryProvider);
+    ref.invalidate(qazaTrackerControllerProvider(null));
+    ref.read(homeControllerProvider).invalidateDashboard();
+    for (final prayer in PrayerType.values) {
+      ref.invalidate(oldestPendingProvider(prayer));
+    }
     await loadInitial();
     return result;
   }

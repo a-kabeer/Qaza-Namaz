@@ -302,7 +302,10 @@ class _HomeQazaActivityState extends ConsumerState<HomeQazaActivity> {
   }
 
   String _formatHeader(BuildContext context, DateTime anchor) {
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
 
     switch (_range) {
       case _ActivityRange.weekly:
@@ -733,7 +736,10 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
     final selectedMonth = widget.selectedMonth;
     final onSelectedMonth = widget.onSelectedMonth;
     final theme = Theme.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
     final maxCompleted = period.days.fold<int>(
       0,
       (maxValue, bucket) => math.max(maxValue, bucket.completed),
@@ -1026,7 +1032,10 @@ class _ActivityBarChartState extends State<_ActivityBarChart> {
 
   String _chartSemantics(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
     return [
       for (var index = 0; index < widget.period.days.length; index++)
         widget.labelsAreDates
@@ -1050,7 +1059,10 @@ class _InlineMonthlyDetail extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
     final normalizedMonth = DateTime(month.year, month.month);
     final periodAsync = ref.watch(
       homeQazaActivityMonthProvider(normalizedMonth),
@@ -1177,7 +1189,10 @@ class _ActivityMonthGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final locale = Localizations.localeOf(context).languageCode;
+    final localeInfo = Localizations.localeOf(context);
+    final locale = localeInfo.scriptCode?.toLowerCase() == 'latn'
+        ? 'en'
+        : localeInfo.languageCode;
     final theme = Theme.of(context);
     final first = period.days.first.date;
     final leading = first.weekday % 7;

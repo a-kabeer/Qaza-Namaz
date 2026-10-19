@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:timezone/timezone.dart' as tz;
 
 import '../../app/providers.dart';
 import '../../core/diagnostics/diagnostics.dart';
@@ -14,6 +15,7 @@ import '../daily_salah/daily_salah_tracking_screen.dart';
 import '../../l10n/app_localizations.dart';
 import '../qaza/qaza_import_controller.dart';
 import '../qaza/qaza_navigation.dart';
+import '../prayer_time/application/prayer_time_providers.dart';
 import 'home_controller.dart';
 import 'providers/home_providers.dart';
 import 'widgets/home_daily_goals.dart';
@@ -81,13 +83,25 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
     _midnightTimer?.cancel();
     if (!mounted) return;
 
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final nextMidnight = DateTime(today.year, today.month, today.day + 1);
-
-    // A second past the boundary, so the clock has unambiguously rolled over
-    // by the time the date is read again.
-    var wait = nextMidnight.difference(now) + const Duration(seconds: 1);
+    final instant = DateTime.now();
+    final snapshot = ref.read(prayerTimeControllerProvider).valueOrNull;
+    Duration wait;
+    if (snapshot != null) {
+      final location = tz.getLocation(snapshot.location.timezoneId);
+      final locationNow = tz.TZDateTime.from(instant, location);
+      final nextMidnight = tz.TZDateTime(
+        location,
+        locationNow.year,
+        locationNow.month,
+        locationNow.day + 1,
+      );
+      wait = nextMidnight.difference(locationNow) + const Duration(seconds: 1);
+    } else {
+      final today = DateTime(instant.year, instant.month, instant.day);
+      final nextMidnight = DateTime(today.year, today.month, today.day + 1);
+      wait = nextMidnight.difference(instant) + const Duration(seconds: 1);
+    }
+    // A second past the boundary ensures the selected local date has rolled.
     if (wait.isNegative) wait = const Duration(seconds: 1);
 
     _midnightTimer = Timer(wait, () {
@@ -120,6 +134,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
+    ref.listen(prayerTimeControllerProvider, (_, __) {
+      _refreshIfDayTurned();
+      _scheduleMidnight();
+    });
     final l10n = AppLocalizations.of(context);
     final importState = ref.watch(qazaImportProvider);
     final summaryAsync = ref.watch(progressSummaryProvider);
