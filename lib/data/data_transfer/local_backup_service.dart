@@ -540,7 +540,7 @@ class LocalBackupService {
           );
           await database.customStatement(
             'DELETE FROM meta_store WHERE key = ?',
-            variables: [Variable(oldKey)],
+            [Variable(oldKey)],
           );
         }
       }
