@@ -9,7 +9,6 @@ on:
       - 'reconcile/**'
       - 'feat/**'
       - 'fix/**'
-      - 'tp-gen/**'
   pull_request:
     branches:
       - main
