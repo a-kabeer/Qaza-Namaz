@@ -662,7 +662,7 @@ void main() {
     final decoded =
         jsonDecode(await service.exportJson()) as Map<String, dynamic>;
     (decoded['metadata'] as Map<String, dynamic>)['database_schema_version'] =
-        22;
+        23;
 
     expect(
       () => service.importJson(jsonEncode(decoded)),
