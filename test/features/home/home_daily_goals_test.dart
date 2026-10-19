@@ -157,7 +157,6 @@ void main() {
     expect(chart.data.maxY, 5);
   });
 
-
   testWidgets('press tooltip shows only the actual count, including zero',
       (tester) async {
     var detailsOpened = false;
