@@ -481,6 +481,44 @@ class LocalBackupService {
       );
     }
 
+    // Before account-scoped backups, Qaza primary keys included the owning
+    // workspace prefix. When adopting a legacy Guest backup into Google,
+    // rewrite those IDs as well as every stored reference to them.
+    final remapLegacyGuestRecordIds =
+        sourceAccountId == UserProfile.localLedgerUserId &&
+        target != UserProfile.localLedgerUserId;
+
+    Object? remapQazaRecordId(Object? value) {
+      if (!remapLegacyGuestRecordIds ||
+          value is! String ||
+          !value.startsWith('guest_')) {
+        return value;
+      }
+      return '$target${value.substring(5)}';
+    }
+
+    Map<String, dynamic> remapRevisionPayload(Map<String, dynamic> row) {
+      if (!remapLegacyGuestRecordIds || row['payload_json'] is! String) {
+        return row;
+      }
+      try {
+        final decoded = jsonDecode(row['payload_json'] as String);
+        if (decoded is Map) {
+          final payload = Map<String, dynamic>.from(decoded);
+          if (payload['userId'] == sourceAccountId) {
+            payload['userId'] = target;
+          }
+          if (payload['user_id'] == sourceAccountId) {
+            payload['user_id'] = target;
+          }
+          row['payload_json'] = jsonEncode(payload);
+        }
+      } catch (_) {
+        // Validation below will reject malformed revision payloads.
+      }
+      return row;
+    }
+
     List<Map<String, dynamic>> remoteOwned(
       String table,
       String ownerColumn,
@@ -491,6 +529,25 @@ class LocalBackupService {
           .map((raw) {
         final row = Map<String, dynamic>.from(raw as Map);
         row[ownerColumn] = target;
+        if (remapLegacyGuestRecordIds) {
+          switch (table) {
+            case 'qaza_records':
+              row['id'] = remapQazaRecordId(row['id']);
+              break;
+            case 'qaza_profile_plan_provenance':
+            case 'qaza_deletion_action_record_snapshots':
+              row['record_id'] = remapQazaRecordId(row['record_id']);
+              break;
+            case 'daily_salah_logs':
+              row['tracker_created_qaza_id'] =
+                  remapQazaRecordId(row['tracker_created_qaza_id']);
+              row['linked_qaza_id'] = remapQazaRecordId(row['linked_qaza_id']);
+              break;
+            case 'account_plan_revisions':
+              remapRevisionPayload(row);
+              break;
+          }
+        }
         return row;
       }).toList(growable: false);
     }
@@ -576,6 +633,17 @@ class LocalBackupService {
     final mergedMeta =
         Map<String, dynamic>.from(localData['meta_store'] as Map);
     mergedMeta['is_onboarding_completed'] = activeOnboardingCompleted;
+
+    // Tracking is part of the selected workspace's restored daily-Salah
+    // history. Apply the remote preference only when restoring that active
+    // workspace; older backups without this key preserve the local setting.
+    final remoteMeta = remoteData['meta_store'];
+    if (activeLocalAccountId == target &&
+        remoteMeta is Map &&
+        remoteMeta['daily_salah_tracking_enabled'] is bool) {
+      mergedMeta['daily_salah_tracking_enabled'] =
+          remoteMeta['daily_salah_tracking_enabled'];
+    }
     mergedData['meta_store'] = mergedMeta;
 
     final metadata = Map<String, dynamic>.from(remoteRoot['metadata'] as Map);
