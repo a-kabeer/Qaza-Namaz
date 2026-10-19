@@ -94,8 +94,7 @@ void main() {
     final manager = AccountSessionManager(accountStore: store);
     await manager.initialize();
 
-    final firstGuestId =
-        await store.createGuestWorkspace(displayName: 'Amina');
+    final firstGuestId = await store.createGuestWorkspace(displayName: 'Amina');
     await manager.activateLocalAccount(firstGuestId);
     await database.qazaRecordsDao.insertRecord(
       QazaRecordsCompanion.insert(
@@ -119,12 +118,14 @@ void main() {
       containsAll([firstGuestId, secondGuestId]),
     );
     expect(
-      guests.singleWhere((account) => account.localAccountId == firstGuestId)
+      guests
+          .singleWhere((account) => account.localAccountId == firstGuestId)
           .displayName,
       'Amina',
     );
     expect(
-      guests.singleWhere((account) => account.localAccountId == secondGuestId)
+      guests
+          .singleWhere((account) => account.localAccountId == secondGuestId)
           .displayName,
       'Bilal',
     );
@@ -144,7 +145,6 @@ void main() {
       ['first_guest_fajr'],
     );
   });
-
 
   test('sign-out fallback never tries to reactivate an archived legacy Guest',
       () async {
@@ -168,7 +168,6 @@ void main() {
         AccountLifecycleState.archived);
   });
 
-
   test('startup recovers if the persisted legacy Guest workspace is archived',
       () async {
     final database = AppDatabase(NativeDatabase.memory());
@@ -190,5 +189,4 @@ void main() {
     expect((await store.getAccount('guest'))?.lifecycleState,
         AccountLifecycleState.archived);
   });
-
 }
