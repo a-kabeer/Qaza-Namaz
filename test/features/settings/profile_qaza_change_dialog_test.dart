@@ -201,4 +201,46 @@ void main() {
       expect(find.byKey(const Key('profile_qaza_error_close')), findsOneWidget);
     },
   );
+  testWidgets(
+    'profile Qaza review lists changed remembered puberty and start-praying dates',
+    (tester) async {
+      final previousProfile = UserProfile(
+        gender: Gender.female,
+        madhab: Madhab.hanafi,
+        dateOfBirth: DateTime(1990, 1, 1),
+        isNewMuslim: false,
+        pubertyInputMode: ProfileInputMode.rememberedDate,
+        pubertyDateOverride: DateTime(2010, 5, 1),
+        startPrayingInputMode: ProfileInputMode.rememberedDate,
+        startPrayingDateOverride: DateTime(2012, 6, 1),
+        witrIncluded: true,
+        onboardingCompleted: true,
+      );
+      final newProfile = previousProfile.copyWith(
+        pubertyDateOverride: DateTime(2011, 5, 1),
+        startPrayingDateOverride: DateTime(2013, 6, 1),
+      );
+
+      await tester.pumpWidget(
+        _host(
+          _preview(),
+          previousProfile: previousProfile,
+          newProfile: newProfile,
+        ),
+      );
+      await tester.tap(find.text('Open'));
+      await tester.pumpAndSettle();
+
+      final l10n = AppLocalizations.of(
+        tester.element(find.byKey(const Key('profile_qaza_apply'))),
+      );
+      expect(find.text(l10n.profilePubertyDate), findsOneWidget);
+      expect(find.text(l10n.profileStartPrayingDate), findsOneWidget);
+      expect(find.text('1 May 2010'), findsOneWidget);
+      expect(find.text('1 May 2011'), findsOneWidget);
+      expect(find.text('1 June 2012'), findsOneWidget);
+      expect(find.text('1 June 2013'), findsOneWidget);
+    },
+  );
+
 }
