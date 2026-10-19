@@ -368,6 +368,28 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       _busy = true;
       _message = null;
     });
+
+    final previousWorkspaceId =
+        ref.read(accountSessionManagerProvider).activeLocalAccountId;
+    var workspaceActivated = false;
+    var googleWorkspaceWasUninitialized = false;
+
+    Future<void> restorePreviousWorkspace() async {
+      if (!workspaceActivated || !mounted) return;
+      try {
+        final session = ref.read(accountSessionManagerProvider);
+        if (previousWorkspaceId == null) {
+          await session.activateGuest();
+          await refreshWorkspaceAfterRestore(ref);
+        } else if (session.activeLocalAccountId != previousWorkspaceId) {
+          await session.activateLocalAccount(previousWorkspaceId);
+          await refreshWorkspaceAfterRestore(ref);
+        }
+      } finally {
+        workspaceActivated = false;
+      }
+    }
+
     try {
       final account = await accountProvider.signIn();
       if (!mounted || account.wasCancelled) return;
@@ -394,6 +416,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       await ref
           .read(accountSessionManagerProvider)
           .activateGoogleAccount(stableAccountId);
+      workspaceActivated = true;
+      final selectedWorkspaceId =
+          ref.read(accountSessionManagerProvider).activeLocalAccountId;
+      googleWorkspaceWasUninitialized = selectedWorkspaceId == null ||
+          await ref
+                  .read(accountLocalStoreProvider)
+                  .loadProfile(selectedWorkspaceId) ==
+              null;
       ref.invalidate(appRouteProvider);
       ref.invalidate(userProfileProvider);
       ref.invalidate(progressSummaryProvider);
@@ -431,6 +461,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               _message = null;
               _backupProgress = null;
             });
+            // This is an intentional transition into first-time setup rather
+            // than a failed connection; keep the newly selected workspace.
+            workspaceActivated = false;
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute<void>(builder: (_) => const StartupGate()),
               (_) => false,
@@ -443,8 +476,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           );
           if (result.status == CloudSyncStatus.conflict &&
               result.conflict != null) {
-            result = await _resolveConflict(result.conflict!) ??
-                await cloudSync.status();
+            final resolved = await _resolveConflict(result.conflict!);
+            if (resolved == null) {
+              if (googleWorkspaceWasUninitialized) {
+                await restorePreviousWorkspace();
+              }
+              return;
+            }
+            result = resolved;
           }
           break;
         case CloudBackupDiscoveryStatus.backupFound:
@@ -474,8 +513,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 await _refreshAfterRestore();
               }
             } else {
-              result =
-                  await _resolveConflict(conflict) ?? await cloudSync.status();
+              final resolved = await _resolveConflict(conflict);
+              if (resolved == null) {
+                if (googleWorkspaceWasUninitialized) {
+                  await restorePreviousWorkspace();
+                }
+                return;
+              }
+              result = resolved;
             }
           }
           break;
@@ -489,6 +534,26 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           );
           break;
       }
+
+      // A failed discovery must not leave the user inside a newly created,
+      // empty Google workspace. An explicit "keep local" decision instead
+      // enters that workspace's onboarding flow.
+      if (googleWorkspaceWasUninitialized &&
+          result.status == CloudSyncStatus.failed) {
+        await restorePreviousWorkspace();
+      }
+      if (googleWorkspaceWasUninitialized &&
+          result.status == CloudSyncStatus.synced &&
+          !result.restoredRemoteBackup) {
+        await ref.read(appDatabaseProvider).markInitialCloudBackupPending();
+        ref.invalidate(initialCloudBackupPendingProvider);
+        workspaceActivated = false;
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute<void>(builder: (_) => const StartupGate()),
+          (_) => false,
+        );
+        return;
+      }
       if (!mounted) return;
       setState(() {
         _sync = result;
@@ -498,6 +563,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 : account.message);
       });
     } catch (_) {
+      if (workspaceActivated && googleWorkspaceWasUninitialized) {
+        try {
+          await restorePreviousWorkspace();
+        } catch (_) {
+          // Preserve the original connection error if recovery also fails.
+        }
+      }
       if (mounted) {
         setState(() {
           _message = AppLocalizations.of(context).cloudConnectionFailed;
@@ -854,20 +926,25 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       _busy = true;
       _message = null;
     });
-    final result = await ref
-        .read(cloudSyncProvider)
-        .restoreLocalRecoverySnapshot(confirmed: true);
-    if (result.status == CloudSyncStatus.synced) {
-      await _refreshAfterRestore();
+    try {
+      final result = await ref
+          .read(cloudSyncProvider)
+          .restoreLocalRecoverySnapshot(confirmed: true);
+      if (result.status == CloudSyncStatus.synced) {
+        await _refreshAfterRestore();
+      }
       if (!mounted) return;
+      setState(() {
+        _sync = result;
+        _message = result.status == CloudSyncStatus.synced
+            ? l10n.cloudBackupSucceeded
+            : result.message;
+      });
+    } catch (error) {
+      if (mounted) setState(() => _message = error.toString());
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
-    setState(() {
-      _sync = result;
-      _message = result.status == CloudSyncStatus.synced
-          ? l10n.cloudBackupSucceeded
-          : result.message;
-      _busy = false;
-    });
   }
 
   @override
