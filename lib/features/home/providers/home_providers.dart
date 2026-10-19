@@ -317,6 +317,13 @@ final homeQazaActivityYearProvider = FutureProvider.autoDispose
       );
 });
 
+/// Preloaded during bootstrap to avoid flashing Auto Sequence before saved
+/// Home targeting preferences have been read from SQLite.
+final initialHomePrayerSelectionProvider =
+    Provider<HomePrayerSelectionState>(
+  (ref) => const HomePrayerSelectionState(),
+);
+
 class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   static const _modeStorageKey = 'qaza_home_completion_mode';
   static const _sequencePrayerStorageKey = 'qaza_home_auto_sequence_prayer';
@@ -330,7 +337,7 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
   @override
   HomePrayerSelectionState build() {
     Future<void>.microtask(_restore);
-    return const HomePrayerSelectionState();
+    return ref.read(initialHomePrayerSelectionProvider);
   }
 
   /// Explicitly selects a prayer and switches to sticky Prayer Selection.
