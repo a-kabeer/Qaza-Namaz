@@ -148,7 +148,7 @@ void main() {
       await tester.scrollUntilVisible(
         find.byKey(const Key('profile_submit')),
         500,
-        scrollable: find.byType(Scrollable),
+        scrollable: find.byType(Scrollable).first,
       );
       await tester.tap(find.byKey(const Key('profile_submit')));
       // ProfileForm keeps its saving indicator active while the review dialog
@@ -254,7 +254,7 @@ void main() {
       await tester.scrollUntilVisible(
         find.byKey(const Key('profile_submit')),
         500,
-        scrollable: find.byType(Scrollable),
+        scrollable: find.byType(Scrollable).first,
       );
       await tester.tap(find.byKey(const Key('profile_submit')));
       await tester.pump();
