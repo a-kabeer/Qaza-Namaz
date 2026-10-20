@@ -800,6 +800,131 @@ class LocalBackupService {
     return removed;
   }
 
+  /// Saves a validated remote workspace as a separate, non-active recovery
+  /// copy. A deterministic identity makes retries idempotent.
+  Future<String> saveCloudRecoveryCopyFromBackup({
+    required String phase1BackupJson,
+    required String googleAccountId,
+    required String remoteBackupId,
+    required String remoteVersion,
+    String? googleDisplayName,
+  }) async {
+    final stableGoogleId = googleAccountId.trim();
+    final backupId = remoteBackupId.trim();
+    if (stableGoogleId.isEmpty || backupId.isEmpty) {
+      throw ArgumentError('Verified Google ID and remote backup ID are required.');
+    }
+    String token(String value) =>
+        base64Url.encode(utf8.encode(value)).replaceAll('=', '');
+    final copyId =
+        'recovery_copy_${token(stableGoogleId)}_${token(backupId)}';
+    final validated = _decodeAndValidate(phase1BackupJson);
+    final remoteData = Map<String, dynamic>.from(validated['data'] as Map);
+    final remoteSession =
+        (remoteData['app_session_state'] as List<dynamic>?) ?? const [];
+    final remoteAccounts =
+        (remoteData['local_accounts'] as List<dynamic>?) ?? const [];
+    String? sourceAccountId;
+    if (remoteSession.isNotEmpty && remoteSession.first is Map) {
+      final value = (remoteSession.first as Map)['active_local_account_id'];
+      if (value is String && value.trim().isNotEmpty) {
+        sourceAccountId = value;
+      }
+    }
+    if (sourceAccountId == null &&
+        remoteAccounts.length == 1 &&
+        remoteAccounts.single is Map) {
+      final value = (remoteAccounts.single as Map)['local_account_id'];
+      if (value is String && value.trim().isNotEmpty) {
+        sourceAccountId = value;
+      }
+    }
+    if (sourceAccountId == null ||
+        !(sourceAccountId.startsWith('google:') ||
+            sourceAccountId.startsWith('google_')) ||
+        sourceAccountId.substring(7) != stableGoogleId ||
+        !remoteAccounts.any(
+          (row) => row is Map && row['local_account_id'] == sourceAccountId,
+        )) {
+      throw const LocalBackupException(
+        'The remote backup could not be tied to the verified Google identity.',
+      );
+    }
+
+    final existing = await database.customSelect(
+      'SELECT lifecycle_state FROM local_accounts '
+      'WHERE local_account_id = ? LIMIT 1',
+      variables: [Variable(copyId)],
+    ).get();
+    if (existing.isNotEmpty) {
+      final marker = await database.customSelect(
+        'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+        variables: [Variable('recovery_copy_source_backup:$copyId')],
+      ).get();
+      if (existing.single.read<String>('lifecycle_state') ==
+              'recovery_copy' &&
+          marker.isNotEmpty &&
+          marker.single.read<String>('value') == backupId) {
+        return copyId;
+      }
+      throw const LocalBackupException(
+        'A recovery copy with this identity already exists but could not be verified. '
+        'It was left unchanged to protect its data.',
+      );
+    }
+
+    await importJson(
+      phase1BackupJson,
+      targetLocalAccountId: copyId,
+      expectedGoogleAccountId: stableGoogleId,
+      targetWorkspaceLifecycleState: 'recovery_copy',
+    );
+
+    final originalName = googleDisplayName?.trim();
+    final displayName = originalName == null || originalName.isEmpty
+        ? 'Recovery copy — Google account'
+        : 'Recovery copy — $originalName';
+    await database.customInsert(
+      '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [
+        Variable('workspace_display_name:$copyId'),
+        Variable(displayName),
+      ],
+    );
+    await database.customInsert(
+      '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      variables: [
+        Variable('recovery_copy_source_backup:$copyId'),
+        Variable(backupId),
+      ],
+    );
+    await database.writeWorkspaceSyncState(
+      copyId,
+      'needs_sign_in',
+      localRevision: await database.readWorkspaceRevision(copyId),
+      lastSyncedRemoteVersion: remoteVersion,
+      conflictMarker: backupId,
+      remoteAccountId: stableGoogleId,
+    );
+    final expectedRecords =
+        ((remoteData['qaza_records'] as List<dynamic>?) ?? const <dynamic>[])
+            .where((row) => row is Map && row['userId'] == sourceAccountId)
+            .length;
+    final actualRows = await database.customSelect(
+      'SELECT COUNT(*) AS row_count FROM qaza_records WHERE user_id = ?',
+      variables: [Variable(copyId)],
+    ).get();
+    if (actualRows.single.read<int>('row_count') != expectedRecords) {
+      throw const LocalBackupException(
+        'The recovery copy did not pass row-count verification. '
+        'The copy was retained for inspection; the source data and cloud backup were not changed.',
+      );
+    }
+    return copyId;
+  }
+
   Future<LocalBackupAnalysis> analyzeImport(String jsonText) async {
     final decoded = _decodeAndValidate(jsonText);
     final metadata = decoded['metadata'] as Map<String, dynamic>;
@@ -818,7 +943,34 @@ class LocalBackupService {
   Future<LocalBackupAnalysis> importJson(
     String jsonText, {
     String? targetLocalAccountId,
+    String? expectedGoogleAccountId,
+    String targetWorkspaceLifecycleState = 'active',
   }) async {
+    if (targetWorkspaceLifecycleState != 'active' &&
+        targetWorkspaceLifecycleState != 'recovery_copy') {
+      throw ArgumentError.value(
+        targetWorkspaceLifecycleState,
+        'targetWorkspaceLifecycleState',
+      );
+    }
+    if (targetWorkspaceLifecycleState == 'recovery_copy' &&
+        (expectedGoogleAccountId == null ||
+            expectedGoogleAccountId.trim().isEmpty ||
+            targetLocalAccountId == null)) {
+      throw const LocalBackupException(
+        'A recovery copy requires a target workspace and verified Google identity.',
+      );
+    }
+    final preservedWorkspaceRevisions = <String, String>{};
+    if (targetLocalAccountId != null) {
+      final rows = await database.customSelect(
+        "SELECT key, value FROM meta_store WHERE key LIKE 'workspace_revision:%'",
+      ).get();
+      for (final row in rows) {
+        preservedWorkspaceRevisions[row.read<String>('key')] =
+            row.read<String>('value');
+      }
+    }
     var decoded = _decodeAndValidate(jsonText);
     if (targetLocalAccountId != null) {
       final localDocument = jsonDecode(await exportJson());
@@ -832,6 +984,8 @@ class LocalBackupService {
         decoded,
         localDecoded,
         targetLocalAccountId,
+        expectedGoogleAccountId: expectedGoogleAccountId,
+        targetWorkspaceLifecycleState: targetWorkspaceLifecycleState,
       );
     }
 
@@ -1031,6 +1185,24 @@ class LocalBackupService {
           userId: activeUserId,
         );
       }
+      // Import reconstructs the shared database from a merged payload.
+      // Restore revisions for every untouched workspace; otherwise their
+      // rows would appear dirty merely because the shared tables were rebuilt.
+      if (targetLocalAccountId != null) {
+        for (final entry in preservedWorkspaceRevisions.entries) {
+          if (entry.key == 'workspace_revision:$targetLocalAccountId') {
+            continue;
+          }
+          await database.customInsert(
+            '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+               ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+            variables: [
+              Variable(entry.key),
+              Variable(entry.value),
+            ],
+          );
+        }
+      }
       await database.setDbRevisionInTransaction(newRevision);
     });
 
@@ -1059,8 +1231,10 @@ class LocalBackupService {
   Map<String, dynamic> _mergeWorkspaceBackup(
     Map<String, dynamic> remoteRoot,
     Map<String, dynamic> localRoot,
-    String targetLocalAccountId,
-  ) {
+    String targetLocalAccountId, {
+    String? expectedGoogleAccountId,
+    String targetWorkspaceLifecycleState = 'active',
+  }) {
     final target = targetLocalAccountId.trim();
     if (target.isEmpty) {
       throw ArgumentError.value(targetLocalAccountId, 'targetLocalAccountId');
@@ -1096,13 +1270,29 @@ class LocalBackupService {
       );
     }
 
-    // Never silently attach a known, different Google workspace. Legacy
-    // backups labelled "guest" can be adopted by the verified target account.
-    if (sourceAccountId.startsWith('google:') && sourceAccountId != target) {
+    String? googleIdentityFromWorkspaceId(String workspaceId) {
+      if (workspaceId.startsWith('google:') ||
+          workspaceId.startsWith('google_')) {
+        return workspaceId.substring(7);
+      }
+      return null;
+    }
+
+    final sourceGoogleIdentity = googleIdentityFromWorkspaceId(sourceAccountId);
+    final targetGoogleIdentity = googleIdentityFromWorkspaceId(target);
+    if (expectedGoogleAccountId != null) {
+      if (sourceGoogleIdentity != expectedGoogleAccountId.trim()) {
+        throw const LocalBackupException(
+          'This backup does not belong to the verified Google account. Local data was not changed.',
+        );
+      }
+    } else if (sourceGoogleIdentity != null &&
+        sourceGoogleIdentity != targetGoogleIdentity) {
       throw const LocalBackupException(
         'This backup belongs to a different Google account. Local data was not changed.',
       );
     }
+    final remapRecoveryCopyIds = targetWorkspaceLifecycleState == 'recovery_copy';
 
     // Before account-scoped backups, Qaza primary keys included the owning
     // workspace prefix. When adopting a legacy Guest backup into Google,
@@ -1112,6 +1302,9 @@ class LocalBackupService {
             target != UserProfile.localLedgerUserId;
 
     Object? remapQazaRecordId(Object? value) {
+      if (remapRecoveryCopyIds && value is String && value.isNotEmpty) {
+        return '${target}_$value';
+      }
       if (!remapLegacyGuestRecordIds ||
           value is! String ||
           !value.startsWith('guest_')) {
@@ -1121,6 +1314,9 @@ class LocalBackupService {
     }
 
     Object? remapQazaAdditionId(Object? value) {
+      if (remapRecoveryCopyIds && value is String && value.isNotEmpty) {
+        return '${target}_$value';
+      }
       if (!remapLegacyGuestRecordIds || value is! String || value.isEmpty) {
         return value;
       }
@@ -1128,6 +1324,9 @@ class LocalBackupService {
     }
 
     Object? remapDeletionActionId(Object? value) {
+      if (remapRecoveryCopyIds && value is String && value.isNotEmpty) {
+        return '${target}_$value';
+      }
       if (!remapLegacyGuestRecordIds || value is! String || value.isEmpty) {
         return value;
       }
@@ -1135,7 +1334,8 @@ class LocalBackupService {
     }
 
     Map<String, dynamic> remapRevisionPayload(Map<String, dynamic> row) {
-      if (!remapLegacyGuestRecordIds || row['payload_json'] is! String) {
+      if ((!remapLegacyGuestRecordIds && !remapRecoveryCopyIds) ||
+          row['payload_json'] is! String) {
         return row;
       }
       try {
@@ -1166,7 +1366,7 @@ class LocalBackupService {
           .map((raw) {
         final row = Map<String, dynamic>.from(raw as Map);
         row[ownerColumn] = target;
-        if (remapLegacyGuestRecordIds) {
+        if (remapLegacyGuestRecordIds || remapRecoveryCopyIds) {
           switch (table) {
             case 'qaza_records':
               row['id'] = remapQazaRecordId(row['id']);
@@ -1193,6 +1393,7 @@ class LocalBackupService {
                   remapQazaRecordId(row['tracker_created_qaza_id']);
               row['linked_qaza_id'] = remapQazaRecordId(row['linked_qaza_id']);
               break;
+            case 'account_profiles':
             case 'account_plan_revisions':
               remapRevisionPayload(row);
               break;
@@ -1233,7 +1434,7 @@ class LocalBackupService {
       ...localOthers('local_accounts', 'local_account_id'),
       ...remoteOwned('local_accounts', 'local_account_id').map((row) {
         row['account_mode'] = 'local';
-        row['lifecycle_state'] = 'active';
+        row['lifecycle_state'] = targetWorkspaceLifecycleState;
         return row;
       }),
     ];
