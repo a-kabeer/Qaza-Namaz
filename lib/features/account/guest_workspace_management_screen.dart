@@ -260,7 +260,8 @@ class _GuestWorkspaceManagementScreenState
                     for (final workspace in _workspaces)
                       Card(
                         child: ListTile(
-                          key: Key('guest_workspace_${workspace.localAccountId}'),
+                          key: Key(
+                              'guest_workspace_${workspace.localAccountId}'),
                           onTap: () => _resumeWorkspace(workspace),
                           leading: const Icon(Icons.person_outline_rounded),
                           title: Text(

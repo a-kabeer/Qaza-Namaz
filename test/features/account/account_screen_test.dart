@@ -80,6 +80,7 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
       status: CloudSyncStatus.disconnected,
     ),
     this.discoverySnapshot = const CloudBackupDiscoverySnapshot.unavailable(),
+    this.backupResult,
   });
 
   CloudSyncSnapshot snapshot;
@@ -93,6 +94,7 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
     discoveryCalls++;
     return discoverySnapshot;
   }
+
   Completer<CloudSyncSnapshot>? backupCompleter;
   Completer<CloudSyncSnapshot>? settingsCompleter;
   Completer<CloudSyncSnapshot>? frequencyCompleter;

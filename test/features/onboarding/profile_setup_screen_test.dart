@@ -144,6 +144,14 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      // Guest onboarding requires the Name field (first field) to be filled
+      // before the form can be submitted.
+      await tester.enterText(
+        find.byKey(const Key('profile_guest_name')),
+        'Test User',
+      );
+      await tester.pump();
+
       await tester.tap(
         find.descendant(
           of: find.byKey(const Key('profile_gender')),
@@ -152,7 +160,11 @@ void main() {
       );
       await tester.pump();
 
-      await tester.ensureVisible(find.byKey(const Key('profile_submit')));
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_submit')),
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pump();
       await tester.tap(find.byKey(const Key('profile_submit')));
       // ProfileForm keeps its saving indicator active while the review dialog
@@ -260,7 +272,19 @@ void main() {
 
       expect(find.byType(ProfileSetupScreen), findsOneWidget);
 
-      await tester.ensureVisible(find.byKey(const Key('profile_submit')));
+      // Guest onboarding requires the Name field (first field) to be filled
+      // before the form can be submitted.
+      await tester.enterText(
+        find.byKey(const Key('profile_guest_name')),
+        'Test User',
+      );
+      await tester.pump();
+
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('profile_submit')),
+        500,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pump();
       await tester.tap(find.byKey(const Key('profile_submit')));
       await tester.pump();
