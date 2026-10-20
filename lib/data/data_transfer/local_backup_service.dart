@@ -1260,15 +1260,42 @@ class LocalBackupService {
     String targetWorkspaceLifecycleState = 'active',
   }) {
     final suppliedTarget = targetLocalAccountId.trim();
-    final target = suppliedTarget.startsWith('google:')
-        ? googleLocalWorkspaceId(suppliedTarget.substring('google:'.length))
-        : suppliedTarget;
-    if (target.isEmpty) {
+    if (suppliedTarget.isEmpty) {
       throw ArgumentError.value(targetLocalAccountId, 'targetLocalAccountId');
     }
 
     final remoteData = Map<String, dynamic>.from(remoteRoot['data'] as Map);
     final localData = Map<String, dynamic>.from(localRoot['data'] as Map);
+
+    // A Google workspace ID may be supplied in either its legacy
+    // 'google:<id>' form or its canonical 'google_<id>' form. Every
+    // comparison and row rewrite below matches against the ID exactly as
+    // stored locally, so resolve the supplied form to the stored form
+    // when the workspace already exists in the local document. A target
+    // with no local workspace yet uses the canonical form, which is how
+    // new workspaces are created.
+    var target = suppliedTarget.startsWith('google:')
+        ? googleLocalWorkspaceId(suppliedTarget.substring('google:'.length))
+        : suppliedTarget;
+    final equivalentTargets = <String>{suppliedTarget};
+    if (suppliedTarget.startsWith('google:')) {
+      equivalentTargets
+          .add(googleLocalWorkspaceId(suppliedTarget.substring(7)));
+    } else if (suppliedTarget.startsWith('google_')) {
+      equivalentTargets.add('google:${suppliedTarget.substring(7)}');
+    }
+    if (equivalentTargets.length > 1) {
+      final localAccounts =
+          (localData['local_accounts'] as List<dynamic>?) ?? const [];
+      for (final raw in localAccounts) {
+        if (raw is! Map) continue;
+        final storedId = raw['local_account_id'];
+        if (storedId is String && equivalentTargets.contains(storedId)) {
+          target = storedId;
+          break;
+        }
+      }
+    }
     final remoteSession =
         (remoteData['app_session_state'] as List<dynamic>?) ?? const [];
     final remoteAccounts =
