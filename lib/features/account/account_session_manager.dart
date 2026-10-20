@@ -84,7 +84,8 @@ class AccountSessionManager extends ChangeNotifier {
   Future<void> activateGuest() async {
     final legacyGuest =
         await _accountStore.getAccount(UserProfile.localLedgerUserId);
-    if (legacyGuest?.lifecycleState == AccountLifecycleState.archived) {
+    if (legacyGuest?.lifecycleState == AccountLifecycleState.archived ||
+        legacyGuest?.lifecycleState == AccountLifecycleState.deletedHold) {
       final freshGuestId = await _accountStore.createGuestWorkspace();
       await activateLocalAccount(freshGuestId);
       return;

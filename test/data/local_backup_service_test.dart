@@ -442,6 +442,66 @@ void main() {
     expect(snapshots.single.read<String>('addition_id'), adoptedAdditionId);
   });
 
+  test('Guest deletion is undoable and retains records during the hold', () async {
+    final store = AccountLocalStore(database: database);
+    final guestId = await store.createGuestWorkspace(displayName: 'Study Guest');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_retained_during_hold', DateTime(2025, 2, 1)),
+    );
+    final otherGuest = await store.createGuestWorkspace(displayName: 'Other Guest');
+    await store.activate(otherGuest);
+
+    final requested = DateTime(2026, 10, 1);
+    final expiry = await store.scheduleGuestWorkspaceDeletion(
+      guestId,
+      requestedAt: requested,
+    );
+    expect(expiry, requested.add(const Duration(days: 7)));
+    expect(await store.getAccount(guestId), isNotNull);
+    expect(await store.hasAnyAccountData(guestId), isTrue);
+    expect(
+      (await store.listGuestWorkspaces()).map((account) => account.localAccountId),
+      isNot(contains(guestId)),
+    );
+    expect(await store.undoGuestWorkspaceDeletion(guestId), isTrue);
+    expect(
+      (await store.getAccount(guestId))!.lifecycleState,
+      AccountLifecycleState.active,
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: guestId)).single.id,
+      'guest_retained_during_hold',
+    );
+  });
+
+  test('expired Guest deletion is purged only after seven days', () async {
+    final store = AccountLocalStore(database: database);
+    final guestId = await store.createGuestWorkspace(displayName: 'Expired Guest');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_expired_record', DateTime(2025, 2, 2)),
+    );
+    final otherGuest = await store.createGuestWorkspace(displayName: 'Keep Guest');
+    await store.activate(otherGuest);
+    final requested = DateTime(2026, 10, 1);
+    await store.scheduleGuestWorkspaceDeletion(guestId, requestedAt: requested);
+
+    expect(
+      await store.purgeExpiredGuestWorkspaceDeletions(
+        now: requested.add(const Duration(days: 6)),
+      ),
+      0,
+    );
+    expect(await store.getAccount(guestId), isNotNull);
+    expect(
+      await store.purgeExpiredGuestWorkspaceDeletions(
+        now: requested.add(const Duration(days: 8)),
+      ),
+      1,
+    );
+    expect(await store.getAccount(guestId), isNull);
+    expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
+  });
+
   test('backup preserves daily Salah links and the tracking preference',
       () async {
     await database.qazaRecordsDao.insertRecord(

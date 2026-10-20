@@ -4,7 +4,9 @@ enum AccountMode { local }
 /// The bare 'guest' ID is retained for compatibility with existing installs.
 bool isGuestLocalWorkspaceId(String? localAccountId) {
   final value = localAccountId?.trim();
-  return value == 'guest' || (value?.startsWith('guest:') ?? false);
+  return value == 'guest' ||
+      (value?.startsWith('guest:') ?? false) ||
+      (value?.startsWith('guest_') ?? false);
 }
 
 /// Stable local workspace key for a verified Google account.
@@ -19,7 +21,30 @@ String googleLocalWorkspaceId(String googleAccountId) {
   return 'google:$normalized';
 }
 
-enum AccountLifecycleState { active, archived }
+enum AccountLifecycleState {
+  active,
+  archived,
+  draft,
+  adopting,
+  restoring,
+  adoptedRecovery,
+  recoveryCopy,
+  deletedHold,
+}
+
+class LocalWorkspaceDeletionHold {
+  const LocalWorkspaceDeletionHold({
+    required this.localAccountId,
+    required this.requestedAt,
+    required this.expiresAt,
+    this.displayName,
+  });
+
+  final String localAccountId;
+  final DateTime requestedAt;
+  final DateTime expiresAt;
+  final String? displayName;
+}
 
 class LocalAccount {
   const LocalAccount({
