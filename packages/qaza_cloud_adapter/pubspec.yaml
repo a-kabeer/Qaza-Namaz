@@ -20,6 +20,7 @@ dependencies:
   workmanager: ^0.10.10
 
 dev_dependencies:
+  drift: ^2.35.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0

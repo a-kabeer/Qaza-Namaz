@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
-import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 

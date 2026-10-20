@@ -5,7 +5,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_cloud_adapter/src/phase1_backup_bridge.dart';
 import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
-import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 
 void main() {
   test('scoped Phase 1 validation rejects records owned by another workspace',
