@@ -442,7 +442,8 @@ void main() {
     expect(snapshots.single.read<String>('addition_id'), adoptedAdditionId);
   });
 
-  test('workspace sync block prevents cloud uploads after uncertain discovery', () async {
+  test('workspace sync block prevents cloud uploads after uncertain discovery',
+      () async {
     const googleWorkspace = 'google:account-unverified';
     await database.writeWorkspaceSyncState(
       googleWorkspace,
@@ -465,13 +466,16 @@ void main() {
     );
   });
 
-  test('Guest deletion is undoable and retains records during the hold', () async {
+  test('Guest deletion is undoable and retains records during the hold',
+      () async {
     final store = AccountLocalStore(database: database);
-    final guestId = await store.createGuestWorkspace(displayName: 'Study Guest');
+    final guestId =
+        await store.createGuestWorkspace(displayName: 'Study Guest');
     await database.qazaRecordsDao.insertRecord(
       _recordFor(guestId, 'guest_retained_during_hold', DateTime(2025, 2, 1)),
     );
-    final otherGuest = await store.createGuestWorkspace(displayName: 'Other Guest');
+    final otherGuest =
+        await store.createGuestWorkspace(displayName: 'Other Guest');
     await store.activate(otherGuest);
 
     final requested = DateTime(2026, 10, 1);
@@ -483,7 +487,8 @@ void main() {
     expect(await store.getAccount(guestId) != null, isTrue);
     expect(await store.hasAnyAccountData(guestId), isTrue);
     expect(
-      (await store.listGuestWorkspaces()).map((account) => account.localAccountId),
+      (await store.listGuestWorkspaces())
+          .map((account) => account.localAccountId),
       isNot(contains(guestId)),
     );
     expect(await store.undoGuestWorkspaceDeletion(guestId), isTrue);
@@ -499,11 +504,13 @@ void main() {
 
   test('expired Guest deletion is purged only after seven days', () async {
     final store = AccountLocalStore(database: database);
-    final guestId = await store.createGuestWorkspace(displayName: 'Expired Guest');
+    final guestId =
+        await store.createGuestWorkspace(displayName: 'Expired Guest');
     await database.qazaRecordsDao.insertRecord(
       _recordFor(guestId, 'guest_expired_record', DateTime(2025, 2, 2)),
     );
-    final otherGuest = await store.createGuestWorkspace(displayName: 'Keep Guest');
+    final otherGuest =
+        await store.createGuestWorkspace(displayName: 'Keep Guest');
     await store.activate(otherGuest);
     final requested = DateTime(2026, 10, 1);
     await store.scheduleGuestWorkspaceDeletion(guestId, requestedAt: requested);

@@ -237,7 +237,8 @@ class _GuestWorkspaceManagementScreenState
                                 value: 'rename',
                                 child: Text('Rename'),
                               ),
-                              if (workspace.localAccountId != _activeWorkspaceId)
+                              if (workspace.localAccountId !=
+                                  _activeWorkspaceId)
                                 PopupMenuItem(
                                   value: 'delete',
                                   child: Text(l10n.commonDelete),

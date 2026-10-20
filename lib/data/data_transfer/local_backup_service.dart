@@ -476,8 +476,10 @@ class LocalBackupService {
     ).get();
     bool sameSnapshotContent(String first, String second) {
       try {
-        final firstDecoded = Map<String, dynamic>.from(jsonDecode(first) as Map);
-        final secondDecoded = Map<String, dynamic>.from(jsonDecode(second) as Map);
+        final firstDecoded =
+            Map<String, dynamic>.from(jsonDecode(first) as Map);
+        final secondDecoded =
+            Map<String, dynamic>.from(jsonDecode(second) as Map);
         for (final root in [firstDecoded, secondDecoded]) {
           final metadata = Map<String, dynamic>.from(root['metadata'] as Map);
           metadata.remove('export_timestamp');
@@ -490,7 +492,8 @@ class LocalBackupService {
     }
 
     if (existingSnapshot.isNotEmpty) {
-      final savedSnapshot = existingSnapshot.single.read<String>('payload_json');
+      final savedSnapshot =
+          existingSnapshot.single.read<String>('payload_json');
       if (!sameSnapshotContent(savedSnapshot, recoveryJson)) {
         throw const LocalBackupException(
           'A previous adoption snapshot differs from the current Guest data. '
@@ -625,7 +628,10 @@ class LocalBackupService {
         '''UPDATE workspace_operation_journal
            SET phase = 'copied', updated_at = ?
            WHERE operation_id = ?''',
-        variables: [Variable(DateTime.now().microsecondsSinceEpoch), Variable(operationId)],
+        variables: [
+          Variable(DateTime.now().microsecondsSinceEpoch),
+          Variable(operationId)
+        ],
       );
 
       // Verify row-count parity inside the same transaction as the ownership
@@ -651,7 +657,10 @@ class LocalBackupService {
         '''UPDATE workspace_operation_journal
            SET phase = 'verified', updated_at = ?
            WHERE operation_id = ?''',
-        variables: [Variable(DateTime.now().microsecondsSinceEpoch), Variable(operationId)],
+        variables: [
+          Variable(DateTime.now().microsecondsSinceEpoch),
+          Variable(operationId)
+        ],
       );
 
       for (final setting in [
@@ -729,7 +738,10 @@ class LocalBackupService {
         '''UPDATE workspace_operation_journal
            SET phase = 'committed', updated_at = ?, error_message = NULL
            WHERE operation_id = ?''',
-        variables: [Variable(DateTime.now().microsecondsSinceEpoch), Variable(operationId)],
+        variables: [
+          Variable(DateTime.now().microsecondsSinceEpoch),
+          Variable(operationId)
+        ],
       );
       return true;
     }, mutationPredicate: (_) => true);
@@ -743,7 +755,8 @@ class LocalBackupService {
   }) async {
     final target = targetGoogleLocalAccountId.trim();
     if (target.isEmpty) {
-      throw ArgumentError.value(targetGoogleLocalAccountId, 'targetGoogleLocalAccountId');
+      throw ArgumentError.value(
+          targetGoogleLocalAccountId, 'targetGoogleLocalAccountId');
     }
     final timestamp = (verifiedAt ?? DateTime.now()).microsecondsSinceEpoch;
     await database.customUpdate(
@@ -812,12 +825,12 @@ class LocalBackupService {
     final stableGoogleId = googleAccountId.trim();
     final backupId = remoteBackupId.trim();
     if (stableGoogleId.isEmpty || backupId.isEmpty) {
-      throw ArgumentError('Verified Google ID and remote backup ID are required.');
+      throw ArgumentError(
+          'Verified Google ID and remote backup ID are required.');
     }
     String token(String value) =>
         base64Url.encode(utf8.encode(value)).replaceAll('=', '');
-    final copyId =
-        'recovery_copy_${token(stableGoogleId)}_${token(backupId)}';
+    final copyId = 'recovery_copy_${token(stableGoogleId)}_${token(backupId)}';
     final validated = _decodeAndValidate(phase1BackupJson);
     final remoteData = Map<String, dynamic>.from(validated['data'] as Map);
     final remoteSession =
@@ -861,8 +874,7 @@ class LocalBackupService {
         'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
         variables: [Variable('recovery_copy_source_backup:$copyId')],
       ).get();
-      if (existing.single.read<String>('lifecycle_state') ==
-              'recovery_copy' &&
+      if (existing.single.read<String>('lifecycle_state') == 'recovery_copy' &&
           marker.isNotEmpty &&
           marker.single.read<String>('value') == backupId) {
         return copyId;
@@ -963,9 +975,11 @@ class LocalBackupService {
     }
     final preservedWorkspaceRevisions = <String, String>{};
     if (targetLocalAccountId != null) {
-      final rows = await database.customSelect(
-        "SELECT key, value FROM meta_store WHERE key LIKE 'workspace_revision:%'",
-      ).get();
+      final rows = await database
+          .customSelect(
+            "SELECT key, value FROM meta_store WHERE key LIKE 'workspace_revision:%'",
+          )
+          .get();
       for (final row in rows) {
         preservedWorkspaceRevisions[row.read<String>('key')] =
             row.read<String>('value');
@@ -1292,7 +1306,8 @@ class LocalBackupService {
         'This backup belongs to a different Google account. Local data was not changed.',
       );
     }
-    final remapRecoveryCopyIds = targetWorkspaceLifecycleState == 'recovery_copy';
+    final remapRecoveryCopyIds =
+        targetWorkspaceLifecycleState == 'recovery_copy';
 
     // Before account-scoped backups, Qaza primary keys included the owning
     // workspace prefix. When adopting a legacy Guest backup into Google,

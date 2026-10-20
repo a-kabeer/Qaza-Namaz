@@ -281,7 +281,8 @@ class AccountLocalStore {
       throw ArgumentError.value(localAccountId, 'localAccountId');
     }
     final account = await getAccount(id);
-    if (account == null || account.lifecycleState != AccountLifecycleState.active) {
+    if (account == null ||
+        account.lifecycleState != AccountLifecycleState.active) {
       throw StateError('This Guest workspace is not available for deletion.');
     }
     final now = requestedAt ?? DateTime.now();
@@ -290,9 +291,11 @@ class AccountLocalStore {
     final expiresMicros = expires.microsecondsSinceEpoch;
 
     await database.transaction(() async {
-      final sessionRows = await database.customSelect(
-        'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
-      ).get();
+      final sessionRows = await database
+          .customSelect(
+            'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+          )
+          .get();
       final activeId = sessionRows.isEmpty
           ? null
           : sessionRows.single.read<String?>('active_local_account_id');
@@ -370,7 +373,8 @@ class AccountLocalStore {
     });
   }
 
-  Future<List<LocalWorkspaceDeletionHold>> listGuestWorkspaceDeletionHolds() async {
+  Future<List<LocalWorkspaceDeletionHold>>
+      listGuestWorkspaceDeletionHolds() async {
     final rows = await database.customSelect(
       '''SELECT h.local_account_id, h.requested_at, h.expires_at,
                 (SELECT value FROM meta_store
@@ -411,9 +415,11 @@ class AccountLocalStore {
         continue;
       }
       final removed = await database.transaction(() async {
-        final sessionRows = await database.customSelect(
-          'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
-        ).get();
+        final sessionRows = await database
+            .customSelect(
+              'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+            )
+            .get();
         final activeId = sessionRows.isEmpty
             ? null
             : sessionRows.single.read<String?>('active_local_account_id');
@@ -423,7 +429,8 @@ class AccountLocalStore {
           variables: [Variable(id)],
         ).get();
         if (accountRows.isEmpty ||
-            accountRows.single.read<String>('lifecycle_state') != 'deleted_hold') {
+            accountRows.single.read<String>('lifecycle_state') !=
+                'deleted_hold') {
           return false;
         }
         const ownedTables = <(String, String)>[
