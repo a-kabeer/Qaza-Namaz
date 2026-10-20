@@ -933,6 +933,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 Navigator.pop(context, CloudConflictChoice.keepLocal),
             child: Text(l10n.cloudKeepLocal),
           ),
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context, CloudConflictChoice.keepBoth),
+            child: const Text('Keep Both'),
+          ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(context, CloudConflictChoice.useRemote),
@@ -944,6 +949,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     if (choice == null || !mounted) return null;
 
     final useRemote = choice == CloudConflictChoice.useRemote;
+    final keepBoth = choice == CloudConflictChoice.keepBoth;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -952,11 +958,18 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               ? l10n.cloudUseRemoteConfirmTitle
               : l10n.cloudKeepLocalConfirmTitle,
         ),
-        content: Text(
-          useRemote
-              ? l10n.cloudUseRemoteConfirmMessage
-              : l10n.cloudKeepLocalConfirmMessage,
-        ),
+        content: keepBoth
+            ? const Text(
+                'The cloud version will first be saved as a separate local '
+                'Recovery Copy. Your current local workspace will remain active. '
+                'Only after the copy is verified will the local version be '
+                'uploaded to Drive.',
+              )
+            : Text(
+                useRemote
+                    ? l10n.cloudUseRemoteConfirmMessage
+                    : l10n.cloudKeepLocalConfirmMessage,
+              ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -797,6 +798,41 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         accountPinned = true;
       }
 
+      var adapterDecision = choice == CloudConflictChoice.useRemote
+          ? CloudConflictDecision.useRemote
+          : CloudConflictDecision.keepLocal;
+      if (choice == CloudConflictChoice.keepBoth) {
+        final googleId = operationAccountId;
+        if (googleId == null) {
+          throw CloudAdapterException(
+            'A verified Google account is required to save a recovery copy.',
+          );
+        }
+        final latest = await GoogleDriveAppDataStore(_gateway).latest(
+          allowInteractive: true,
+          onProgress: (progress) {
+            latestProgress = progress;
+            onProgress?.call(progress);
+          },
+        );
+        if (latest == null ||
+            latest.backup.lineage.backupId != conflict.remoteBackupId ||
+            latest.remoteVersion != conflict.remoteVersion) {
+          throw const CloudAdapterException(
+            'The cloud backup changed while the conflict was open. '
+            'Nothing was overwritten; refresh the comparison and try again.',
+          );
+        }
+        await LocalBackupService(_phase1.database)
+            .saveCloudRecoveryCopyFromBackup(
+          phase1BackupJson: latest.backup.phase1BackupJson,
+          googleAccountId: googleId,
+          remoteBackupId: conflict.remoteBackupId,
+          remoteVersion: conflict.remoteVersion,
+        );
+        // Upload local data only after the cloud copy is safely preserved.
+        adapterDecision = CloudConflictDecision.keepLocal;
+      }
       final result =
           await _engine(
             state: operationState,
@@ -805,9 +841,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
                 : googleLocalWorkspaceId(operationAccountId),
           ).resolveConflict(
             conflict: _toAdapterConflict(conflict),
-            decision: choice == CloudConflictChoice.keepLocal
-                ? CloudConflictDecision.keepLocal
-                : CloudConflictDecision.useRemote,
+            decision: adapterDecision,
             confirmed: confirmed,
             allowInteractive: true,
             onProgress: (progress) {
