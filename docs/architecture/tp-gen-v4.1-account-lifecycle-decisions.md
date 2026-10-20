@@ -12,19 +12,19 @@ Schema v23 introduces a monotonically increasing workspace_revision:<workspace-i
 
 ### D2. Workspace identifiers
 
-The target format for newly created workspaces is guest_<uuid> for Guest and google_<stableGoogleAccountId> for Google. Google identity must come from the verified stable Google account ID, never from email or display name. Existing guest, guest:<uuid>, and google:<id> IDs are legacy data and must be migrated without losing or merging records; identifier-format migration remains a gated schema task until row/reference parity tests pass.
+New workspace IDs are guest_<uuid> for Guest and google_<stableGoogleAccountId> for Google. Google identity must come from the verified stable Google account ID, never from email or display name. Schema 25 migrates legacy guest, guest:<uuid>, and google:<id> IDs in a transaction, remaps workspace-owned rows, account references, session pointers, revision/sync metadata, and backup markers. Guest ID collisions receive a fresh UUID rather than merging; a conflicting Google ID aborts the migration and leaves both sets unchanged.
 
 ### D3. Guest adoption and recovery
 
-Adoption must start only after Google identity is verified and Drive discovery has returned a definite, validated no-backup result. Save and read-back-verify a recovery snapshot before changing ownership; never overwrite an existing Google workspace. The desired operation journal is prepared → snapshotted → copied → verified → committed → cleaned, with an idempotency key based on source Guest ID plus verified Google ID. The current implementation has snapshot-before-transfer and a transactional ownership change, but the full resumable journal, parity verification, and retention/cleanup policy are still required.
+Adoption must start only after Google identity is verified and Drive discovery has returned a definite, validated no-backup result. Save and read-back-verify a recovery snapshot before changing ownership; never overwrite an existing Google workspace. The desired operation journal is prepared → snapshotted → copied → verified → committed → cleaned, with an idempotency key based on source Guest ID plus verified Google ID. Adoption saves and read-back-verifies a deterministic recovery snapshot, uses a deterministic operation ID, transfers ownership inside one SQLite transaction, checks per-table row-count parity before commit, and retains the snapshot until a verified cloud backup plus 30 days. The source becomes adopted_recovery and is hidden from Guest choices. The ownership remap is atomic, so copied and verified phases share the transaction and a crash rolls back to snapshotted.
 
 ### D4. Local/cloud conflict choice
 
-The user-facing choices are Keep Local, Keep Cloud, and Keep Both. Keep Both must preserve the local workspace and create a separately labelled recovery_copy workspace for the other version. Existing two-choice conflict handling is not yet complete against this decision.
+The user-facing choices are Keep Local, Keep Cloud, and Keep Both. Keep Both must preserve the local workspace and create a separately labelled recovery_copy workspace for the other version. The account conflict dialog offers Keep Local, Keep Cloud, and Keep Both. Keep Both re-fetches the current remote version, validates its backup ID/version are unchanged, and saves the cloud snapshot as a labeled recovery_copy before resolving the active conflict. CI and regression coverage are still needed to validate the full flow.
 
 ### D5. Recovery across process death
 
-Any multi-step adoption or restore must have durable journal state and be resumable or safely rolled back before the startup gate exposes the workspace. The existing single-transaction ownership transfer prevents partial row remapping, but the surrounding workflow still needs a durable journal and process-death tests.
+Any multi-step adoption or restore must have durable journal state and be resumable or safely rolled back before the startup gate exposes the workspace. Guest adoption has a durable prepared/snapshotted/committed journal; copied/verified owner moves commit atomically. Startup still needs a recovery-gate audit for persisted restore operations and explicit process-kill tests.
 
 ### D6. Deletion semantics — whole-workspace snapshots
 
@@ -34,7 +34,7 @@ The current cloud adapter synchronizes a versioned, whole-workspace snapshot and
 
 - [x] Phase 0: audit current shared-database ownership and record D1–D6 decisions.
 - [x] Phase 1 (partial): make scheduled cloud backup/restore workspace-scoped and add workspace-local revision tracking.
-- [ ] Phase 1: complete identifier migration, persisted lifecycle/sync metadata, and row/reference parity migration tests.
+- [x] Phase 1 implementation: schema 25 canonical ID migration, persisted lifecycle/sync metadata, and session generation field added. Migration parity/collision tests and green CI are still required for the checkpoint.
 - [x] Phase 2 (partial): distinct named Guest workspaces and onboarding flow exist.
 - [ ] Phase 2: draft resume, rename/delete with seven-day hold and Undo, and duplicate-name disambiguation.
 - [ ] Phase 3: fully reconcile existing, empty, legacy, and unknown/unverifiable Drive backups without treating an unknown result as no backup.

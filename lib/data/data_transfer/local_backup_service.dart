@@ -337,7 +337,7 @@ class LocalBackupService {
     final source = sourceLocalAccountId.trim();
     final target = targetGoogleLocalAccountId.trim();
     if (!isGuestLocalWorkspaceId(source) ||
-        !target.startsWith('google:') ||
+        !(target.startsWith('google_') || target.startsWith('google:')) ||
         source == target) {
       throw const LocalBackupException(
         'Only a Guest workspace can be adopted into a verified Google workspace.',
@@ -366,7 +366,7 @@ class LocalBackupService {
             row.read<String>('local_account_id'):
                 row.read<String>('lifecycle_state'),
         };
-        if (statesById[source] == 'archived' &&
+        if (statesById[source] == 'adopted_recovery' &&
             statesById[target] == 'active') {
           return;
         }
@@ -702,7 +702,7 @@ class LocalBackupService {
       }
       await database.customUpdate(
         '''UPDATE local_accounts
-           SET lifecycle_state = 'archived', updated_at = ?
+           SET lifecycle_state = 'adopted_recovery', updated_at = ?
            WHERE local_account_id = ?''',
         variables: [Variable(timestamp), Variable(source)],
       );
@@ -713,7 +713,7 @@ class LocalBackupService {
         variables: [Variable(timestamp), Variable(target)],
       );
       await database.customUpdate(
-        'UPDATE app_session_state SET active_local_account_id = ? WHERE id = 1',
+        'UPDATE app_session_state SET active_local_account_id = ?, generation = generation + 1 WHERE id = 1',
         variables: [Variable(target)],
       );
       final profileRows = await database.customSelect(
@@ -1006,6 +1006,7 @@ class LocalBackupService {
     final metadata = decoded['metadata'] as Map<String, dynamic>;
     final data = decoded['data'] as Map<String, dynamic>;
     final backupRevision = metadata['db_revision'] as int;
+    final sessionGenerationBeforeImport = await database.readSessionGeneration();
 
     await database.transaction(() async {
       // Read and advance the authoritative local revision under the same
@@ -1100,10 +1101,16 @@ class LocalBackupService {
         ],
         data['local_accounts'] as List<dynamic>,
       );
+      final importedSessionRows =
+          (data['app_session_state'] as List<dynamic>).map((raw) {
+        final row = Map<String, dynamic>.from(raw as Map);
+        row['generation'] = sessionGenerationBeforeImport + 1;
+        return row;
+      }).toList(growable: false);
       await _insertMaps(
         'app_session_state',
-        ['id', 'active_local_account_id'],
-        data['app_session_state'] as List<dynamic>,
+        ['id', 'active_local_account_id', 'generation'],
+        importedSessionRows,
       );
       await _insertMaps(
         'account_profiles',
@@ -1925,9 +1932,17 @@ class LocalBackupService {
           'Backup contains an invalid local account mode.',
         );
       }
-      if (map['lifecycle_state'] != 'active' &&
-          map['lifecycle_state'] != 'archived' &&
-          map['lifecycle_state'] != 'migrating') {
+      if (!const <String>{
+        'active',
+        'archived',
+        'migrating',
+        'draft',
+        'adopting',
+        'restoring',
+        'adopted_recovery',
+        'recovery_copy',
+        'deleted_hold',
+      }.contains(map['lifecycle_state'])) {
         throw const LocalBackupException(
           'Backup contains an invalid local account lifecycle state.',
         );

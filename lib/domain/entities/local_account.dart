@@ -18,7 +18,7 @@ String googleLocalWorkspaceId(String googleAccountId) {
   if (normalized.isEmpty) {
     throw ArgumentError.value(googleAccountId, 'googleAccountId');
   }
-  return 'google:$normalized';
+  return 'google_$normalized';
 }
 
 enum AccountLifecycleState {

@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -51,9 +53,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 24 persists workspace sync state and lifecycle operations.
+  /// Schema version 25 canonicalizes workspace identity and persists session generations.
   @override
-  int get schemaVersion => 24;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -69,6 +71,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensureLocalRecoverySnapshotSchema();
           await _ensureWorkspaceRevisionSchema();
           await _ensureWorkspaceLifecycleSchema();
+          await _ensureWorkspaceGenerationColumn();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -141,6 +144,10 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 24) {
             await _ensureWorkspaceLifecycleSchema();
+          }
+          if (from < 25) {
+            await _ensureWorkspaceGenerationColumn();
+            await _migrateWorkspaceIdentifiersInCurrentTransaction();
           }
         },
       );
@@ -786,7 +793,8 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TABLE IF NOT EXISTS app_session_state (
         id INTEGER NOT NULL PRIMARY KEY,
-        active_local_account_id TEXT
+        active_local_account_id TEXT,
+        generation INTEGER NOT NULL DEFAULT 1
       )
     ''');
 
@@ -942,6 +950,609 @@ class AppDatabase extends _$AppDatabase {
     return state == 'cloud_unverified' ||
         state == 'legacy_unverified' ||
         state == 'needs_sign_in';
+  }
+
+
+  Future<void> _ensureWorkspaceGenerationColumn() async {
+    final columns = await customSelect('PRAGMA table_info(app_session_state)').get();
+    if (columns.isEmpty) {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS app_session_state (
+          id INTEGER NOT NULL PRIMARY KEY,
+          active_local_account_id TEXT,
+          generation INTEGER NOT NULL DEFAULT 1
+        )
+      ''');
+      return;
+    }
+    if (!columns.any((row) => row.read<String>('name') == 'generation')) {
+      await customStatement(
+        'ALTER TABLE app_session_state ADD COLUMN generation INTEGER NOT NULL DEFAULT 1',
+      );
+    }
+  }
+
+  /// Idempotently canonicalizes legacy workspace IDs on normal startup as
+  /// well as during schema migration. Conflicts stop the migration rather than
+  /// silently combining workspaces that may contain different Qaza histories.
+  Future<void> ensureCanonicalWorkspaceIds() async {
+    await transaction(_migrateWorkspaceIdentifiersInCurrentTransaction);
+  }
+
+  Future<void> _migrateWorkspaceIdentifiersInCurrentTransaction() async {
+    final rows = await customSelect(
+      'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
+    ).get();
+    final existing = rows.map((row) => row.read<String>('local_account_id')).toSet();
+    final remap = <String, String>{};
+
+    for (final id in existing) {
+      if (id == 'guest') {
+        var target = 'guest_${_newWorkspaceUuid()}';
+        while (existing.contains(target) || remap.values.contains(target)) {
+          target = 'guest_${_newWorkspaceUuid()}';
+        }
+        remap[id] = target;
+      } else if (id.startsWith('guest:')) {
+        final suffix = id.substring('guest:'.length);
+        final isUuid = RegExp(
+          r'^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}
+    await customStatement('''
+      INSERT OR IGNORE INTO meta_store (key, value)
+      SELECT 'workspace_revision:' || local_account_id, '2'
+      FROM local_accounts
+    ''');
+
+    const ownerTables = <String, String>{
+      'local_accounts': 'local_account_id',
+      'qaza_records': 'user_id',
+      'daily_salah_logs': 'user_id',
+      'qaza_additions': 'user_id',
+      'qaza_deletion_actions': 'user_id',
+      'qaza_deletion_action_record_snapshots': 'user_id',
+      'qaza_profile_plan_provenance': 'user_id',
+      'account_profiles': 'local_account_id',
+      'account_plan_revisions': 'local_account_id',
+    };
+
+    for (final entry in ownerTables.entries) {
+      final table = entry.key;
+      final owner = entry.value;
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_insert
+        AFTER INSERT ON $table
+        BEGIN
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || NEW.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        END
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_update
+        AFTER UPDATE ON $table
+        BEGIN
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || OLD.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || NEW.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        END
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_delete
+        AFTER DELETE ON $table
+        BEGIN
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || OLD.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        END
+      ''');
+    }
+
+    // Workspace preferences and labels live in meta_store rather than owner
+    // tables, so these keys also advance the corresponding workspace.
+    const workspaceKeyPrefixes = <String>[
+      'workspace_display_name:',
+      'daily_salah_tracking_enabled:',
+      'daily_salah_tracking_setup_dismissed:',
+    ];
+    final when = workspaceKeyPrefixes
+        .map((prefix) => "NEW.key GLOB '${prefix}*'")
+        .join(' OR ');
+    final oldWhen = workspaceKeyPrefixes
+        .map((prefix) => "OLD.key GLOB '${prefix}*'")
+        .join(' OR ');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_insert
+      AFTER INSERT ON meta_store
+      WHEN $when
+      BEGIN
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(NEW.key, instr(NEW.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_update
+      AFTER UPDATE ON meta_store
+      WHEN ($oldWhen) OR ($when)
+      BEGIN
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(OLD.key, instr(OLD.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(NEW.key, instr(NEW.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_delete
+      AFTER DELETE ON meta_store
+      WHEN $oldWhen
+      BEGIN
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(OLD.key, instr(OLD.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+      END
+    ''');
+  }
+
+  Future<void> _removeLegacyQazaHistorySchema() async {
+    final statuses = await customSelect(
+      'SELECT DISTINCT status FROM qaza_records',
+    ).get();
+    for (final row in statuses) {
+      final status = row.read<String?>('status');
+      if (status != 'pending' && status != 'completed' && status != 'deleted') {
+        throw StateError(
+          'Unsupported legacy Qaza status during migration: $status',
+        );
+      }
+    }
+
+    // Permanently remove the old Recently Deleted records. They have no
+    // representation in the new ledger model.
+    await customStatement(
+      "DELETE FROM qaza_records WHERE status = 'deleted'",
+    );
+
+    // Rebuild the table so the obsolete operation_id column is physically
+    // removed. This is deliberately not implemented as an ALTER-only change.
+    await customStatement('''
+      CREATE TABLE qaza_records_new (
+        id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        prayer_type TEXT NOT NULL,
+        original_date INTEGER NOT NULL,
+        status TEXT NOT NULL,
+        completed_at INTEGER,
+        completion_id TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        PRIMARY KEY (id),
+        UNIQUE (user_id, prayer_type, original_date)
+      )
+    ''');
+    await customStatement('''
+      INSERT INTO qaza_records_new
+        (id, user_id, prayer_type, original_date, status, completed_at,
+         completion_id, created_at, updated_at)
+      SELECT
+        id, user_id, prayer_type, original_date, status, completed_at,
+        completion_id, created_at, updated_at
+      FROM qaza_records
+    ''');
+    await customStatement('DROP TABLE qaza_records');
+    await customStatement(
+      'ALTER TABLE qaza_records_new RENAME TO qaza_records',
+    );
+    await _ensurePerformanceIndexes();
+  }
+
+  Future<void> _ensureQazaAdditionSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS qaza_additions (
+        id TEXT NOT NULL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        mode TEXT NOT NULL,
+        input_snapshot TEXT NOT NULL,
+        revision INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS qaza_deletion_actions (
+        id TEXT NOT NULL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        addition_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        resolved_at TEXT,
+        entity_version INTEGER NOT NULL DEFAULT 1
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS qaza_deletion_action_record_snapshots (
+        deletion_action_id TEXT NOT NULL,
+        record_id TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        addition_id TEXT NOT NULL,
+        prayer_type TEXT NOT NULL,
+        original_date TEXT NOT NULL,
+        status TEXT NOT NULL,
+        completed_at TEXT,
+        completion_id TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        record_version INTEGER NOT NULL,
+        PRIMARY KEY (deletion_action_id, record_id)
+      )
+    ''');
+  }
+
+  Future<void> _ensureQazaProfilePlanProvenanceSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS qaza_profile_plan_provenance (
+        record_id TEXT NOT NULL PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        plan_revision_id TEXT NOT NULL,
+        plan_fingerprint TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _ensureDeletionActionVersionColumn() async {
+    final columns = await customSelect(
+      'PRAGMA table_info(qaza_deletion_actions)',
+    ).get();
+    final exists = columns.any(
+      (row) => row.read<String>('name') == 'entity_version',
+    );
+    if (!exists) {
+      await customStatement(
+        'ALTER TABLE qaza_deletion_actions '
+        'ADD COLUMN entity_version INTEGER NOT NULL DEFAULT 1',
+      );
+    }
+  }
+
+  Future<void> _ensurePerformanceIndexes() async {
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_date_idx '
+      'ON qaza_records (user_id, original_date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_prayer_date_idx '
+      'ON qaza_records (user_id, prayer_type, original_date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_prayer_status_date_idx '
+      'ON qaza_records '
+      '(user_id, prayer_type, status, original_date)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_status_completed_idx '
+      'ON qaza_records (user_id, status, completed_at)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_status_completed_id_idx '
+      'ON qaza_records (user_id, status, completed_at, id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_addition_date_idx '
+      'ON qaza_records (user_id, addition_id, original_date, id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_records_user_addition_status_idx '
+      'ON qaza_records (user_id, addition_id, status, record_version)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_profile_plan_provenance_user_idx '
+      'ON qaza_profile_plan_provenance (user_id, plan_revision_id, record_id)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_additions_user_created_idx '
+      'ON qaza_additions (user_id, created_at DESC, id DESC)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_deletion_actions_user_created_idx '
+      'ON qaza_deletion_actions (user_id, created_at DESC, id DESC)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_deletion_actions_user_resolved_created_idx '
+      'ON qaza_deletion_actions '
+      '(user_id, resolved_at, created_at DESC, id DESC)',
+    );
+    await customStatement(
+      'CREATE INDEX IF NOT EXISTS qaza_deletion_snapshots_action_idx '
+      'ON qaza_deletion_action_record_snapshots (deletion_action_id, record_id)',
+    );
+  }
+}
+,
+        ).hasMatch(suffix);
+        var target = isUuid && !existing.contains('guest_$suffix')
+            ? 'guest_$suffix'
+            : 'guest_${_newWorkspaceUuid()}';
+        while (existing.contains(target) || remap.values.contains(target)) {
+          target = 'guest_${_newWorkspaceUuid()}';
+        }
+        remap[id] = target;
+      } else if (id.startsWith('google:')) {
+        final stableId = id.substring('google:'.length);
+        if (stableId.isEmpty) {
+          await _markLegacyWorkspaceUnverified(id);
+          continue;
+        }
+        final target = 'google_$stableId';
+        if (existing.contains(target) || remap.values.contains(target)) {
+          throw StateError(
+            'Workspace migration found both "$id" and "$target". '
+            'No records were merged or deleted. Keep a copy of the local database and resolve the duplicate workspace before retrying.',
+          );
+        }
+        remap[id] = target;
+      }
+    }
+
+    if (remap.isEmpty) return;
+
+    const ownerTables = <(String, String)>[
+      ('qaza_records', 'user_id'),
+      ('daily_salah_logs', 'user_id'),
+      ('qaza_additions', 'user_id'),
+      ('qaza_deletion_actions', 'user_id'),
+      ('qaza_deletion_action_record_snapshots', 'user_id'),
+      ('qaza_profile_plan_provenance', 'user_id'),
+      ('account_profiles', 'local_account_id'),
+      ('account_plan_revisions', 'local_account_id'),
+    ];
+
+    for (final entry in remap.entries) {
+      final oldId = entry.key;
+      final newId = entry.value;
+
+      final revisions = await customSelect(
+        'SELECT revision_id, payload_json FROM account_plan_revisions WHERE local_account_id = ?',
+        variables: [Variable(oldId)],
+      ).get();
+      for (final row in revisions) {
+        final decoded = jsonDecode(row.read<String>('payload_json'));
+        if (decoded is! Map) {
+          throw StateError(
+            'Cannot safely migrate plan revision for workspace "$oldId": invalid JSON payload.',
+          );
+        }
+        final payload = Map<String, dynamic>.from(decoded);
+        if (payload['userId'] == oldId) payload['userId'] = newId;
+        if (payload['user_id'] == oldId) payload['user_id'] = newId;
+        await customUpdate(
+          'UPDATE account_plan_revisions SET payload_json = ? WHERE local_account_id = ? AND revision_id = ?',
+          variables: [
+            Variable(jsonEncode(payload)),
+            Variable(oldId),
+            Variable(row.read<String>('revision_id')),
+          ],
+        );
+      }
+
+      for (final (table, ownerColumn) in ownerTables) {
+        await customUpdate(
+          'UPDATE "$table" SET "$ownerColumn" = ? WHERE "$ownerColumn" = ?',
+          variables: [Variable(newId), Variable(oldId)],
+        );
+      }
+
+      await customUpdate(
+        'UPDATE app_session_state SET active_local_account_id = ?, generation = generation + 1 WHERE active_local_account_id = ?',
+        variables: [Variable(newId), Variable(oldId)],
+      );
+      await customUpdate(
+        'UPDATE workspace_sync_metadata SET local_account_id = ? WHERE local_account_id = ?',
+        variables: [Variable(newId), Variable(oldId)],
+      );
+      await customUpdate(
+        'UPDATE local_workspace_deletion_holds SET local_account_id = ? WHERE local_account_id = ?',
+        variables: [Variable(newId), Variable(oldId)],
+      );
+
+      final journals = await customSelect(
+        'SELECT operation_id, operation_type, source_local_account_id, target_local_account_id, snapshot_id FROM workspace_operation_journal WHERE source_local_account_id = ? OR target_local_account_id = ?',
+        variables: [Variable(oldId), Variable(oldId)],
+      ).get();
+      for (final journal in journals) {
+        final oldOperationId = journal.read<String>('operation_id');
+        final operationType = journal.read<String>('operation_type');
+        final oldSourceId = journal.read<String>('source_local_account_id');
+        final oldTargetId = journal.read<String>('target_local_account_id');
+        final newSourceId = oldSourceId == oldId ? newId : oldSourceId;
+        final newTargetId = oldTargetId == oldId ? newId : oldTargetId;
+        final oldSnapshotId = journal.read<String?>('snapshot_id');
+        final newOperationId = operationType == 'guest_adoption'
+            ? 'guest-adoption:$newSourceId=>$newTargetId'
+            : oldOperationId;
+        final newSnapshotId =
+            oldSnapshotId == oldOperationId ? newOperationId : oldSnapshotId;
+        if (newOperationId != oldOperationId) {
+          final collision = await customSelect(
+            'SELECT 1 FROM workspace_operation_journal WHERE operation_id = ? LIMIT 1',
+            variables: [Variable(newOperationId)],
+          ).get();
+          if (collision.isNotEmpty) {
+            throw StateError(
+              'Workspace migration found duplicate recovery-journal IDs. No local data was merged or deleted.',
+            );
+          }
+        }
+        await customUpdate(
+          'UPDATE workspace_operation_journal SET operation_id = ?, source_local_account_id = ?, target_local_account_id = ?, snapshot_id = ? WHERE operation_id = ?',
+          variables: [
+            Variable(newOperationId),
+            Variable(newSourceId),
+            Variable(newTargetId),
+            Variable(newSnapshotId),
+            Variable(oldOperationId),
+          ],
+        );
+        final snapshotTable = await customSelect(
+          "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'local_account_adoption_snapshots' LIMIT 1",
+        ).get();
+        if (snapshotTable.isNotEmpty && oldSnapshotId != null) {
+          await customUpdate(
+            'UPDATE local_account_adoption_snapshots SET snapshot_id = ?, source_local_account_id = ?, target_local_account_id = ? WHERE snapshot_id = ?',
+            variables: [
+              Variable(newSnapshotId),
+              Variable(newSourceId),
+              Variable(newTargetId),
+              Variable(oldSnapshotId),
+            ],
+          );
+        }
+      }
+
+      for (final prefix in [
+        'workspace_display_name:',
+        'workspace_revision:',
+        'daily_salah_tracking_enabled:',
+        'daily_salah_tracking_setup_dismissed:',
+        'initial_cloud_backup_pending:',
+      ]) {
+        final oldKey = '$prefix$oldId';
+        final newKey = '$prefix$newId';
+        final oldValueRows = await customSelect(
+          'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+          variables: [Variable(oldKey)],
+        ).get();
+        if (oldValueRows.isEmpty) continue;
+        final oldValue = oldValueRows.single.read<String>('value');
+        final newValueRows = await customSelect(
+          'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+          variables: [Variable(newKey)],
+        ).get();
+        if (newValueRows.isEmpty) {
+          await customInsert(
+            'INSERT INTO meta_store (key, value) VALUES (?, ?)',
+            variables: [Variable(newKey), Variable(oldValue)],
+          );
+        } else if (prefix == 'workspace_revision:') {
+          final oldRevision = int.tryParse(oldValue) ?? 1;
+          final newRevision =
+              int.tryParse(newValueRows.single.read<String>('value')) ?? 1;
+          await customUpdate(
+            'UPDATE meta_store SET value = ? WHERE key = ?',
+            variables: [
+              Variable((oldRevision > newRevision ? oldRevision : newRevision).toString()),
+              Variable(newKey),
+            ],
+          );
+        } else if (newValueRows.single.read<String>('value') != oldValue) {
+          throw StateError(
+            'Workspace migration found conflicting metadata for "$oldId". No data was merged or deleted.',
+          );
+        }
+        await customStatement('DELETE FROM meta_store WHERE key = ?', [Variable(oldKey)]);
+      }
+
+      final legacyPendingOwner = await customSelect(
+        "SELECT value FROM meta_store WHERE key = 'initial_cloud_backup_pending_account_id' LIMIT 1",
+      ).get();
+      if (legacyPendingOwner.isNotEmpty &&
+          legacyPendingOwner.single.read<String>('value') == oldId) {
+        await customUpdate(
+          "UPDATE meta_store SET value = ? WHERE key = 'initial_cloud_backup_pending_account_id'",
+          variables: [Variable(newId)],
+        );
+      }
+
+      await customUpdate(
+        'UPDATE local_accounts SET local_account_id = ? WHERE local_account_id = ?',
+        variables: [Variable(newId), Variable(oldId)],
+      );
+      if (oldId == 'guest') {
+        final name = await customSelect(
+          'SELECT 1 FROM meta_store WHERE key = ? LIMIT 1',
+          variables: [Variable('workspace_display_name:$newId')],
+        ).get();
+        if (name.isEmpty) {
+          await customInsert(
+            'INSERT INTO meta_store (key, value) VALUES (?, ?)',
+            variables: [
+              Variable('workspace_display_name:$newId'),
+              Variable('Guest'),
+            ],
+          );
+        }
+      }
+    }
+  }
+
+  String _newWorkspaceUuid() {
+    final random = Random.secure();
+    final bytes = List<int>.generate(16, (_) => random.nextInt(256));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    final hex = bytes.map((value) => value.toRadixString(16).padLeft(2, '0')).join();
+    return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
+  }
+
+  Future<void> _markLegacyWorkspaceUnverified(String localAccountId) async {
+    await customInsert(
+      '''INSERT INTO workspace_sync_metadata
+         (local_account_id, sync_state, local_revision, last_checked_at)
+         VALUES (?, 'legacy_unverified', 1, ?)
+         ON CONFLICT(local_account_id) DO UPDATE SET sync_state = 'legacy_unverified' ''',
+      variables: [
+        Variable(localAccountId),
+        Variable(DateTime.now().toUtc().toIso8601String()),
+      ],
+    );
+  }
+
+  Future<int> readSessionGeneration() async {
+    final rows = await customSelect(
+      'SELECT generation FROM app_session_state WHERE id = 1 LIMIT 1',
+    ).get();
+    if (rows.isEmpty) return 1;
+    final value = rows.single.read<int>('generation');
+    return value < 1 ? 1 : value;
+  }
+
+  Future<String?> readActiveLocalAccountId() async {
+    final rows = await customSelect(
+      'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+    ).get();
+    if (rows.isEmpty) return null;
+    final id = rows.single.read<String?>('active_local_account_id')?.trim();
+    return id == null || id.isEmpty ? null : id;
+  }
+
+  Future<bool> isCurrentWorkspaceGeneration({
+    required String localAccountId,
+    required int generation,
+  }) async {
+    return await readActiveLocalAccountId() == localAccountId &&
+        await readSessionGeneration() == generation;
   }
 
   Future<void> _ensureWorkspaceRevisionSchema() async {

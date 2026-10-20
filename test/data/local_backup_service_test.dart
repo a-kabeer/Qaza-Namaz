@@ -394,7 +394,7 @@ void main() {
 
     final guestRows = await database.qazaRecordsDao.getAll(userId: 'guest');
     final googleRows = await database.qazaRecordsDao.getAll(userId: googleId);
-    const adoptedRecordId = 'google:account-adopt_fajr_2025-01-01';
+    const adoptedRecordId = 'google_account-adopt_fajr_2025-01-01';
     expect(guestRows.map((row) => row.id), contains(guestRecordId));
     expect(googleRows.map((row) => row.id), contains(adoptedRecordId));
     expect(
@@ -416,7 +416,7 @@ void main() {
     );
     expect(links.single.read<String?>('linked_qaza_id'), adoptedRecordId);
 
-    const adoptedAdditionId = 'google:account-adopt_guest_addition_adopt';
+    const adoptedAdditionId = 'google_account-adopt_guest_addition_adopt';
     const adoptedDeletionActionId =
         'google:account-adopt_guest_delete_action_adopt';
     final actions = await database.customSelect(
@@ -944,7 +944,7 @@ void main() {
       ],
     );
 
-    const googleId = 'google:stable-adoption-account';
+    const googleId = 'google_stable-adoption-account';
     await store.ensureAccountActive(googleId);
     await service.adoptGuestWorkspace(
       sourceLocalAccountId: guestId,
@@ -959,7 +959,7 @@ void main() {
       ['guest_adoption_fajr'],
     );
     expect((await store.getAccount(guestId))?.lifecycleState,
-        AccountLifecycleState.archived);
+        AccountLifecycleState.adoptedRecovery);
     expect((await store.getAccount(googleId))?.displayName, 'Amina Google');
     expect(await store.hasAnyAccountData(guestId), isFalse);
     expect(await store.hasAnyAccountData(googleId), isTrue);
@@ -1025,6 +1025,120 @@ void main() {
       (await database.qazaRecordsDao.getAll(userId: googleId))
           .map((record) => record.id),
       ['google_existing_record'],
+    );
+  });
+
+  test('legacy workspace IDs migrate without losing owner rows or session', () async {
+    const legacyGuest = 'guest';
+    const legacyGoogle = 'google:stable-migration-account';
+    final now = DateTime(2025, 1, 1).microsecondsSinceEpoch;
+    for (final id in [legacyGuest, legacyGoogle]) {
+      await database.customInsert(
+        '''INSERT INTO local_accounts
+           (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+           VALUES (?, 'local', 'active', ?, ?)''',
+        variables: [Variable(id), Variable(now), Variable(now)],
+      );
+    }
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(legacyGuest, 'legacy_guest_record', DateTime(2025, 1, 1)),
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(legacyGoogle, 'legacy_google_record', DateTime(2025, 1, 2)),
+    );
+    await database.customInsert(
+      '''INSERT INTO app_session_state (id, active_local_account_id, generation)
+         VALUES (1, ?, 1)''',
+      variables: [Variable(legacyGoogle)],
+    );
+
+    await database.ensureCanonicalWorkspaceIds();
+
+    const canonicalGoogle = 'google_stable-migration-account';
+    expect(await database.readActiveLocalAccountId(), canonicalGoogle);
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalGoogle))
+          .map((record) => record.id),
+      ['legacy_google_record'],
+    );
+    final guestRows = await database.customSelect(
+      "SELECT local_account_id FROM local_accounts WHERE local_account_id LIKE 'guest_%' ORDER BY local_account_id",
+    ).get();
+    expect(guestRows, hasLength(1));
+    final canonicalGuest = guestRows.single.read<String>('local_account_id');
+    expect(canonicalGuest, matches(RegExp(r'^guest_[0-9a-f-]{36}
+    final store = AccountLocalStore(database: database);
+    await database.markInitialCloudBackupPending();
+
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
+    const googleId = 'google:independent-workspace';
+    await store.ensureAccountActive(googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isFalse);
+
+    await database.markInitialCloudBackupPending(localAccountId: googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
+    await store.activate('guest');
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
+    await store.activate(googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+    await database.clearPendingInitialCloudBackup(localAccountId: googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isFalse);
+
+    await store.activate('guest');
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+  });
+}
+)));
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalGuest))
+          .map((record) => record.id),
+      ['legacy_guest_record'],
+    );
+    expect(await database.readSessionGeneration(), greaterThan(1));
+
+    await database.ensureCanonicalWorkspaceIds();
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalGoogle))
+          .map((record) => record.id),
+      ['legacy_google_record'],
+    );
+  });
+
+  test('Google workspace ID migration fails closed on a collision', () async {
+    const oldId = 'google:duplicate-id';
+    const canonicalId = 'google_duplicate-id';
+    final now = DateTime(2025, 1, 1).microsecondsSinceEpoch;
+    for (final id in [oldId, canonicalId]) {
+      await database.customInsert(
+        '''INSERT INTO local_accounts
+           (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+           VALUES (?, 'local', 'active', ?, ?)''',
+        variables: [Variable(id), Variable(now), Variable(now)],
+      );
+    }
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(oldId, 'old_google_record', DateTime(2025, 1, 1)),
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(canonicalId, 'canonical_google_record', DateTime(2025, 1, 2)),
+    );
+
+    await expectLater(
+      database.ensureCanonicalWorkspaceIds(),
+      throwsA(isA<StateError>()),
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: oldId))
+          .map((record) => record.id),
+      ['old_google_record'],
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalId))
+          .map((record) => record.id),
+      ['canonical_google_record'],
     );
   });
 

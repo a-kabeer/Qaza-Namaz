@@ -18,11 +18,8 @@ class AccountLocalStore {
     await _ensureDeviceId();
     await _ensureLocalAccount();
     final persisted = await activeAccount();
-    final activeId = persisted != null &&
-            persisted.lifecycleState == AccountLifecycleState.active
-        ? persisted.localAccountId
-        : UserProfile.localLedgerUserId;
-    final profile = await loadProfile(activeId);
+    final activeId = persisted?.localAccountId;
+    final profile = activeId == null ? null : await loadProfile(activeId);
     await database.transaction(() async {
       await database.setOnboardingCompletedInTransaction(
         profile?.onboardingCompleted == true,
@@ -106,12 +103,26 @@ class AccountLocalStore {
     // workspace rather than retaining the previous user's value.
     final profile = await loadProfile(localAccountId);
     await database.transaction(() async {
-      await database.customUpdate(
-        '''UPDATE app_session_state
-           SET active_local_account_id = ?
-           WHERE id = 1''',
-        variables: [Variable(localAccountId)],
-      );
+      final sessionRows = await database.customSelect(
+        'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+      ).get();
+      if (sessionRows.isEmpty) {
+        await database.customInsert(
+          '''INSERT INTO app_session_state
+             (id, active_local_account_id, generation) VALUES (1, ?, 1)''',
+          variables: [Variable(localAccountId)],
+        );
+      } else {
+        final currentId = sessionRows.single.read<String?>('active_local_account_id');
+        if (currentId != localAccountId) {
+          await database.customUpdate(
+            '''UPDATE app_session_state
+               SET active_local_account_id = ?, generation = generation + 1
+               WHERE id = 1''',
+            variables: [Variable(localAccountId)],
+          );
+        }
+      }
       await database.setOnboardingCompletedInTransaction(
         profile?.onboardingCompleted == true,
       );
@@ -151,7 +162,8 @@ class AccountLocalStore {
   Future<String> ensureLocalAccountActive() async {
     final persisted = await activeAccount();
     if (persisted != null &&
-        persisted.lifecycleState == AccountLifecycleState.active) {
+        (persisted.lifecycleState == AccountLifecycleState.active ||
+            persisted.lifecycleState == AccountLifecycleState.draft)) {
       await activate(persisted.localAccountId);
       return persisted.localAccountId;
     }
@@ -836,48 +848,66 @@ class AccountLocalStore {
   }
 
   Future<void> _ensureLocalAccount() async {
-    final rows = await database.customSelect(
-      'SELECT local_account_id FROM local_accounts WHERE local_account_id = ?',
-      variables: [Variable(UserProfile.localLedgerUserId)],
-    ).get();
+    await database.ensureCanonicalWorkspaceIds();
 
-    if (rows.isEmpty) {
+    Future<String> insertGuestWorkspace() async {
+      final id = 'guest_${Uuid().v4()}';
       final now = DateTime.now().microsecondsSinceEpoch;
       await database.customInsert(
         '''INSERT INTO local_accounts
-           (local_account_id, account_mode, lifecycle_state,
-            created_at, updated_at)
+           (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
            VALUES (?, 'local', 'active', ?, ?)''',
-        variables: [
-          Variable(UserProfile.localLedgerUserId),
-          Variable(now),
-          Variable(now),
-        ],
+        variables: [Variable(id), Variable(now), Variable(now)],
       );
+      return id;
     }
 
-    final sessionRows = await database
-        .customSelect(
-          'SELECT id FROM app_session_state WHERE id = 1',
-        )
-        .get();
+    final existingRows = await database.customSelect(
+      'SELECT local_account_id FROM local_accounts LIMIT 1',
+    ).get();
+    if (existingRows.isEmpty) await insertGuestWorkspace();
 
-    if (sessionRows.isEmpty) {
-      await database.customInsert(
-        '''INSERT INTO app_session_state
-           (id, active_local_account_id)
-           VALUES (1, ?)''',
-        variables: [Variable(UserProfile.localLedgerUserId)],
-      );
-    } else {
-      await database.customUpdate(
-        '''UPDATE app_session_state
-           SET active_local_account_id = ?
-           WHERE id = 1
-             AND active_local_account_id IS NULL''',
-        variables: [Variable(UserProfile.localLedgerUserId)],
-      );
-    }
+    final sessions = await database.customSelect(
+      'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+    ).get();
+    final currentId = sessions.isEmpty
+        ? null
+        : sessions.single.read<String?>('active_local_account_id');
+    final currentRows = currentId == null
+        ? <dynamic>[]
+        : await database.customSelect(
+            'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+            variables: [Variable(currentId)],
+          ).get();
+    final currentState = currentRows.isEmpty
+        ? null
+        : currentRows.single.read<String>('lifecycle_state');
+    if (currentState == 'active' || currentState == 'draft') return;
+
+    final candidates = await database.customSelect(
+      '''SELECT local_account_id FROM local_accounts
+         WHERE lifecycle_state IN ('active', 'draft')
+         ORDER BY CASE lifecycle_state WHEN 'active' THEN 0 ELSE 1 END,
+                  updated_at DESC, local_account_id ASC LIMIT 1''',
+    ).get();
+    final nextId = candidates.isNotEmpty
+        ? candidates.single.read<String>('local_account_id')
+        : await insertGuestWorkspace();
+    await database.transaction(() async {
+      if (sessions.isEmpty) {
+        await database.customInsert(
+          '''INSERT INTO app_session_state (id, active_local_account_id, generation)
+             VALUES (1, ?, 1)''',
+          variables: [Variable(nextId)],
+        );
+      } else {
+        await database.customUpdate(
+          '''UPDATE app_session_state SET active_local_account_id = ?,
+             generation = generation + 1 WHERE id = 1''',
+          variables: [Variable(nextId)],
+        );
+      }
+    });
   }
 
   LocalAccount _mapAccount(QueryRow row) {
