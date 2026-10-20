@@ -568,12 +568,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           if (guestWorkspaceAdopted &&
               result.status == CloudSyncStatus.synced &&
               !result.hasPendingChanges) {
-            final adoptedGoogleWorkspaceId = initialBackupLocalAccountId;
-            if (adoptedGoogleWorkspaceId != null) {
-              await container
-                  .read(localBackupServiceProvider)
-                  .markGuestAdoptionBackupVerified(adoptedGoogleWorkspaceId);
-            }
+            await container
+                .read(localBackupServiceProvider)
+                .markGuestAdoptionBackupVerified(initialBackupLocalAccountId);
             await container
                 .read(appDatabaseProvider)
                 .clearPendingInitialCloudBackup(

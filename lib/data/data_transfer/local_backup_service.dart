@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/qaza_record.dart';
-import '../../domain/entities/user_profile.dart';
 import '../../domain/entities/local_account.dart';
 import '../local/database/app_database.dart';
 
@@ -1326,8 +1325,9 @@ class LocalBackupService {
     // Before account-scoped backups, Qaza primary keys included the owning
     // workspace prefix. When adopting a legacy Guest backup into Google,
     // rewrite those IDs as well as every stored reference to them.
+    final sourceWorkspaceId = sourceAccountId!;
     final remapLegacyGuestRecordIds =
-        isGuestLocalWorkspaceId(sourceAccountId) &&
+        isGuestLocalWorkspaceId(sourceWorkspaceId) &&
             !isGuestLocalWorkspaceId(target);
 
     Object? remapQazaRecordId(Object? value) {
@@ -1340,9 +1340,9 @@ class LocalBackupService {
       // Record IDs may be prefixed by the source workspace. Strip that exact
       // prefix so UUID-based Guest workspaces are adopted without cross-ID
       // collisions or rewriting unrelated IDs.
-      final sourcePrefix = '${sourceAccountId}_';
+      final sourcePrefix = '${sourceWorkspaceId}_';
       if (!value.startsWith(sourcePrefix)) return value;
-      return '$target${value.substring(sourceAccountId.length)}';
+      return '$target${value.substring(sourceWorkspaceId.length)}';
     }
 
     Object? remapQazaAdditionId(Object? value) {
