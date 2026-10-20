@@ -74,6 +74,70 @@ void main() {
     });
   });
 
+  group('CloudRemoteMetadata workspace verification', () {
+    const cursor = CloudSyncCursor(
+      lastSyncedLocalRevision: 10,
+      lastSyncedBackupId: 'backup-100',
+      lastSyncedRemoteVersion: '7',
+    );
+
+    test('legacy metadata cannot satisfy the cursor fast path', () {
+      const legacy = CloudRemoteMetadata(
+        fileId: 'file-legacy',
+        backupId: 'backup-100',
+        remoteVersion: '7',
+        modifiedAt: null,
+        hasAuthoritativeVersion: true,
+      );
+      expect(legacy.hasVerifiedWorkspaceMetadata, isFalse);
+      expect(legacy.matchesCursor(cursor), isFalse);
+    });
+
+    test('metadata with account, workspace, schema, and hash can match', () {
+      const verified = CloudRemoteMetadata(
+        fileId: 'file-current',
+        backupId: 'backup-100',
+        remoteVersion: '7',
+        modifiedAt: null,
+        hasAuthoritativeVersion: true,
+        googleAccountId: 'stable-account-A',
+        workspaceId: 'google_stable-account-A',
+        contentSha256:
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        databaseSchemaVersion: '25',
+      );
+      expect(verified.hasVerifiedWorkspaceMetadata, isTrue);
+      expect(verified.matchesCursor(cursor), isTrue);
+    });
+
+    test('workspace mismatch or missing hash rejects the fast path', () {
+      const wrongWorkspace = CloudRemoteMetadata(
+        fileId: 'file-wrong-workspace',
+        backupId: 'backup-100',
+        remoteVersion: '7',
+        modifiedAt: null,
+        hasAuthoritativeVersion: true,
+        googleAccountId: 'stable-account-A',
+        workspaceId: 'google_some-other-account',
+        contentSha256:
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        databaseSchemaVersion: '25',
+      );
+      const missingHash = CloudRemoteMetadata(
+        fileId: 'file-no-hash',
+        backupId: 'backup-100',
+        remoteVersion: '7',
+        modifiedAt: null,
+        hasAuthoritativeVersion: true,
+        googleAccountId: 'stable-account-A',
+        workspaceId: 'google_stable-account-A',
+        databaseSchemaVersion: '25',
+      );
+      expect(wrongWorkspace.matchesCursor(cursor), isFalse);
+      expect(missingHash.matchesCursor(cursor), isFalse);
+    });
+  });
+
   group('CloudSyncCursor', () {
     test('serializes the requested sync cursor fields', () {
       const cursor = CloudSyncCursor(

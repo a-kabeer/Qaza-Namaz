@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
@@ -129,6 +131,134 @@ void main() {
     });
   });
 
+  test('confirmed upload is read back and verified before success', () async {
+    final backup = CloudBackup(
+      lineage: CloudLineage(
+        deviceId: 'device-A',
+        backupId: 'backup-verified',
+        baseBackupId: 'backup-100',
+        dbRevision: 9,
+        createdAt: DateTime.utc(2026, 10, 14),
+      ),
+      phase1BackupJson:
+          '{"metadata":{"app_id":"qaza_namaz_app","db_revision":9,"database_schema_version":25},"data":{}}',
+    );
+    final bytes = utf8.encode(backup.toJsonString());
+    final hash = sha256.convert(bytes).toString();
+    final filename = '${cloudBackupFilePrefix}backup-verified.json';
+    var createAttempts = 0;
+    var readAttempts = 0;
+
+    final client = MockClient((request) async {
+      if (request.method == 'POST' && request.url.path.endsWith('/files')) {
+        createAttempts++;
+        return http.Response(
+          jsonEncode(<String, Object?>{
+            'id': 'file-verified',
+            'name': filename,
+            'modifiedTime': '2026-10-14T00:00:00.000Z',
+            'version': '3',
+            'appProperties': <String, String>{
+              'backup_id': 'backup-verified',
+              'device_id': 'device-A',
+              'base_backup_id': 'backup-100',
+              'db_revision': '9',
+              'google_account_id': 'test-google-account',
+              'workspace_id': 'google_test-google-account',
+              'content_sha256': hash,
+              'database_schema_version': '25',
+            },
+          }),
+          200,
+          headers: const <String, String>{'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'GET' &&
+          request.url.path.endsWith('/files/file-verified')) {
+        expect(request.url.queryParameters['alt'], 'media');
+        readAttempts++;
+        return http.Response(
+          backup.toJsonString(),
+          200,
+          headers: const <String, String>{'content-type': 'application/json'},
+        );
+      }
+      return http.Response('Unexpected request', 500);
+    });
+    final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+    final written = await store.write(backup, allowInteractive: false);
+
+    expect(createAttempts, 1);
+    expect(readAttempts, 1);
+    expect(written.fileId, 'file-verified');
+    expect(written.backup.toJsonString(), backup.toJsonString());
+    expect(written.backup.lineage.backupId, 'backup-verified');
+    client.close();
+  });
+
+  test('read-back rejects bytes that do not match the uploaded content hash',
+      () async {
+    final backup = CloudBackup(
+      lineage: CloudLineage(
+        deviceId: 'device-A',
+        backupId: 'backup-corrupt',
+        baseBackupId: null,
+        dbRevision: 10,
+        createdAt: DateTime.utc(2026, 10, 15),
+      ),
+      phase1BackupJson:
+          '{"metadata":{"app_id":"qaza_namaz_app","db_revision":10,"database_schema_version":25},"data":{}}',
+    );
+    final bytes = utf8.encode(backup.toJsonString());
+    final hash = sha256.convert(bytes).toString();
+    final filename = '${cloudBackupFilePrefix}backup-corrupt.json';
+    var readAttempts = 0;
+
+    final client = MockClient((request) async {
+      if (request.method == 'POST' && request.url.path.endsWith('/files')) {
+        return http.Response(
+          jsonEncode(<String, Object?>{
+            'id': 'file-corrupt',
+            'name': filename,
+            'modifiedTime': '2026-10-15T00:00:00.000Z',
+            'version': '4',
+            'appProperties': <String, String>{
+              'backup_id': 'backup-corrupt',
+              'device_id': 'device-A',
+              'base_backup_id': '',
+              'db_revision': '10',
+              'google_account_id': 'test-google-account',
+              'workspace_id': 'google_test-google-account',
+              'content_sha256': hash,
+              'database_schema_version': '25',
+            },
+          }),
+          200,
+          headers: const <String, String>{'content-type': 'application/json'},
+        );
+      }
+      if (request.method == 'GET' &&
+          request.url.path.endsWith('/files/file-corrupt')) {
+        readAttempts++;
+        return http.Response(
+          '{"tampered":true}',
+          200,
+          headers: const <String, String>{'content-type': 'application/json'},
+        );
+      }
+      return http.Response('Unexpected request', 500);
+    });
+    final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+    await expectLater(
+      store.write(backup, allowInteractive: false),
+      throwsA(isA<CloudRemoteFormatException>()),
+    );
+    expect(readAttempts, 1);
+    client.close();
+  });
+
   test('reconciles an ambiguous create without posting twice', () async {
     final backup = CloudBackup(
       lineage: CloudLineage(
@@ -139,7 +269,7 @@ void main() {
         createdAt: DateTime.utc(2026, 10, 12),
       ),
       phase1BackupJson:
-          '{"metadata":{"app_id":"qaza_namaz_app","db_revision":7},"data":{}}',
+          '{"metadata":{"app_id":"qaza_namaz_app","db_revision":7,"database_schema_version":25},"data":{}}',
     );
     final filename = '${cloudBackupFilePrefix}backup-ambiguous.json';
     var createAttempts = 0;
@@ -181,6 +311,12 @@ void main() {
                   'device_id': 'device-A',
                   'base_backup_id': 'backup-100',
                   'db_revision': '7',
+                  'google_account_id': 'test-google-account',
+                  'workspace_id': 'google_test-google-account',
+                  'content_sha256': sha256
+                      .convert(utf8.encode(backup.toJsonString()))
+                      .toString(),
+                  'database_schema_version': '25',
                 },
               },
             ],
@@ -217,7 +353,7 @@ void main() {
           createdAt: DateTime.utc(2026, 10, 13),
         ),
         phase1BackupJson:
-            '{"metadata":{"app_id":"qaza_namaz_app","db_revision":8},"data":{}}',
+            '{"metadata":{"app_id":"qaza_namaz_app","db_revision":8,"database_schema_version":25},"data":{}}',
       );
       var createAttempts = 0;
       final client = MockClient((request) async {
@@ -273,4 +409,7 @@ class _TestGateway extends GoogleSignInGateway {
   @override
   Future<http.Client?> authorizeDrive({required bool allowInteractive}) async =>
       client;
+
+  @override
+  Future<String?> accountIdForAuthorization() async => 'test-google-account';
 }

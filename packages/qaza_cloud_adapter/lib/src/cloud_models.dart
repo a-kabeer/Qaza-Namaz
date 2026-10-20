@@ -264,6 +264,11 @@ class CloudRemoteMetadata {
     required this.modifiedAt,
     required this.hasAuthoritativeVersion,
     this.sizeBytes,
+    this.googleAccountId,
+    this.workspaceId,
+    this.contentSha256,
+    this.databaseSchemaVersion,
+    this.contentMd5,
   });
 
   final String fileId;
@@ -275,8 +280,31 @@ class CloudRemoteMetadata {
   /// Content length reported by Google Drive, if available.
   final int? sizeBytes;
 
-  /// Unknown versions must never qualify for the metadata-only fast path.
+  /// Metadata introduced for workspace-safe, integrity-verified uploads.
+  /// Missing fields identify a legacy backup that requires full validation.
+  final String? googleAccountId;
+  final String? workspaceId;
+  final String? contentSha256;
+  final String? databaseSchemaVersion;
+  final String? contentMd5;
+
+  bool get hasVerifiedWorkspaceMetadata {
+    final accountId = googleAccountId?.trim();
+    final workspace = workspaceId?.trim();
+    final hash = contentSha256?.trim();
+    final schema = int.tryParse(databaseSchemaVersion ?? '');
+    return accountId != null &&
+        accountId.isNotEmpty &&
+        workspace == 'google_$accountId' &&
+        hash != null &&
+        RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(hash) &&
+        schema != null &&
+        schema > 0;
+  }
+
+  /// Unknown/legacy metadata must be downloaded and validated in full.
   bool matchesCursor(CloudSyncCursor cursor) =>
+      hasVerifiedWorkspaceMetadata &&
       hasAuthoritativeVersion &&
       backupId != null &&
       remoteVersion != null &&
