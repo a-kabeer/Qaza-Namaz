@@ -688,7 +688,6 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         }
         _gateway.pinAccountForOperation(operationAccountId);
         accountPinned = true;
-        final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
         if (await _phase1.database.isWorkspaceCloudUploadBlocked(
           localWorkspaceId,
         )) {
