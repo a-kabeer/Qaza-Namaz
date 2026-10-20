@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../domain/entities/local_account.dart';
+import 'guest_workspace_label.dart';
 import '../../l10n/app_localizations.dart';
 
 class GuestWorkspaceManagementScreen extends ConsumerStatefulWidget {
@@ -211,15 +212,19 @@ class _GuestWorkspaceManagementScreenState
                         child: ListTile(
                           leading: const Icon(Icons.person_outline_rounded),
                           title: Text(
-                            workspace.displayName?.trim().isNotEmpty == true
-                                ? workspace.displayName!.trim()
-                                : l10n.accountGuest,
+                            guestWorkspaceDisplayLabel(
+                              workspace,
+                              _workspaces,
+                              fallbackName: l10n.accountGuest,
+                            ),
                           ),
                           subtitle: Text(
-                            workspace.localAccountId == _activeWorkspaceId
-                                ? 'Current workspace · switch away before deleting'
-                                : 'Created '
-                                    '${MaterialLocalizations.of(context).formatMediumDate(workspace.createdAt)}',
+                            workspace.lifecycleState == AccountLifecycleState.draft
+                                ? 'Setup in progress · Resume to continue'
+                                : workspace.localAccountId == _activeWorkspaceId
+                                    ? 'Current workspace · switch away before deleting'
+                                    : 'Created '
+                                        '${MaterialLocalizations.of(context).formatMediumDate(workspace.createdAt)}',
                           ),
                           trailing: PopupMenuButton<String>(
                             tooltip: 'Manage Guest workspace',

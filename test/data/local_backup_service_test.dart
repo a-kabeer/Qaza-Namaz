@@ -467,6 +467,17 @@ void main() {
       await database.isWorkspaceCloudUploadBlocked(googleWorkspace),
       isFalse,
     );
+
+    await database.writeWorkspaceSyncState(
+      googleWorkspace,
+      'conflict',
+      localRevision: 4,
+      conflictMarker: 'remote-changed',
+    );
+    expect(
+      await database.isWorkspaceCloudUploadBlocked(googleWorkspace),
+      isTrue,
+    );
   });
 
   test('Guest deletion is undoable and retains records during the hold',

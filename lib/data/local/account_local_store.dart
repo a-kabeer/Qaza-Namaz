@@ -185,17 +185,26 @@ class AccountLocalStore {
 
   /// Creates a distinct Guest workspace. New Guest sessions never reuse the
   /// legacy fixed workspace that may contain years of existing Qaza records.
-  Future<String> createGuestWorkspace({String? displayName}) async {
+  Future<String> createGuestWorkspace({
+    String? displayName,
+    bool draft = false,
+  }) async {
     final id = 'guest_${Uuid().v4()}';
     final now = DateTime.now().microsecondsSinceEpoch;
     final normalizedName = displayName?.trim();
+    final lifecycleState = draft ? 'draft' : 'active';
     await database.transactionWithRevision(() async {
       await database.customInsert(
         '''INSERT INTO local_accounts
            (local_account_id, account_mode, lifecycle_state,
             created_at, updated_at)
-           VALUES (?, 'local', 'active', ?, ?)''',
-        variables: [Variable(id), Variable(now), Variable(now)],
+           VALUES (?, 'local', ?, ?, ?)''',
+        variables: [
+          Variable(id),
+          Variable(lifecycleState),
+          Variable(now),
+          Variable(now),
+        ],
       );
       if (normalizedName != null && normalizedName.isNotEmpty) {
         await database.customInsert(
@@ -272,13 +281,14 @@ class AccountLocalStore {
          WHERE (a.local_account_id = 'guest'
                 OR a.local_account_id GLOB 'guest:*'
                 OR a.local_account_id GLOB 'guest_*')
-           AND a.lifecycle_state = 'active'
+           AND a.lifecycle_state IN ('active', 'draft')
          ORDER BY a.created_at DESC''',
     ).get();
     final result = <LocalAccount>[];
     for (final row in rows) {
       final account = _mapAccount(row);
-      if (account.displayName?.trim().isNotEmpty == true ||
+      if (account.lifecycleState == AccountLifecycleState.draft ||
+          account.displayName?.trim().isNotEmpty == true ||
           await hasAnyAccountData(account.localAccountId)) {
         result.add(account);
       }
@@ -298,7 +308,8 @@ class AccountLocalStore {
     }
     final account = await getAccount(id);
     if (account == null ||
-        account.lifecycleState != AccountLifecycleState.active) {
+        (account.lifecycleState != AccountLifecycleState.active &&
+            account.lifecycleState != AccountLifecycleState.draft)) {
       throw StateError('This Guest workspace is not available for deletion.');
     }
     final now = requestedAt ?? DateTime.now();
@@ -328,13 +339,14 @@ class AccountLocalStore {
       await database.customUpdate(
         '''UPDATE local_accounts
            SET lifecycle_state = 'deleted_hold', updated_at = ?
-           WHERE local_account_id = ? AND lifecycle_state = 'active' ''',
+           WHERE local_account_id = ?
+             AND lifecycle_state IN ('active', 'draft') ''',
         variables: [Variable(requestedMicros), Variable(id)],
       );
       await database.customInsert(
         '''INSERT INTO local_workspace_deletion_holds
            (local_account_id, requested_at, expires_at, prior_lifecycle_state)
-           VALUES (?, ?, ?, 'active')
+           VALUES (?, ?, ?, ?)
            ON CONFLICT(local_account_id) DO UPDATE SET
              requested_at = excluded.requested_at,
              expires_at = excluded.expires_at,
@@ -343,6 +355,7 @@ class AccountLocalStore {
           Variable(id),
           Variable(requestedMicros),
           Variable(expiresMicros),
+          Variable(account.lifecycleState.name),
         ],
       );
     });
@@ -657,7 +670,7 @@ class AccountLocalStore {
         throw StateError('Local onboarding account does not exist.');
       }
       final lifecycle = accountRows.first.read<String>('lifecycle_state');
-      if (lifecycle == 'archived' || lifecycle == 'migrating') {
+      if (lifecycle != 'active' && lifecycle != 'draft') {
         throw StateError('Local onboarding account is not active.');
       }
       final now = DateTime.now().microsecondsSinceEpoch;
@@ -745,6 +758,13 @@ class AccountLocalStore {
           '$insertedTotal of ${records.length} records.',
         );
       }
+      // Promote a draft only as part of the transaction that commits the
+      // final profile, plan revision, and all planned Qaza rows.
+      await database.customUpdate(
+        '''UPDATE local_accounts SET lifecycle_state = 'active', updated_at = ?
+           WHERE local_account_id = ? AND lifecycle_state = 'draft' ''',
+        variables: [Variable(now), Variable(localAccountId)],
+      );
     });
   }
 

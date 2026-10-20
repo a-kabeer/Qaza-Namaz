@@ -945,6 +945,7 @@ class AppDatabase extends _$AppDatabase {
     final state = await readWorkspaceSyncState(localAccountId);
     return state == 'cloud_unverified' ||
         state == 'legacy_unverified' ||
+        state == 'conflict' ||
         state == 'needs_sign_in';
   }
 

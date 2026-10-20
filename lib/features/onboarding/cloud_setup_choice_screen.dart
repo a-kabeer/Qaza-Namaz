@@ -12,6 +12,7 @@ import '../../core/theme/app_theme_labels.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
 import '../../domain/entities/local_account.dart';
+import '../account/guest_workspace_label.dart';
 import '../../l10n/app_localizations.dart';
 
 class CloudSetupChoiceScreen extends ConsumerStatefulWidget {
@@ -321,11 +322,17 @@ class _CloudSetupChoiceScreenState
                   key: Key('guest_workspace_choice_${guest.localAccountId}'),
                   leading: const Icon(Icons.person_outline_rounded),
                   title: Text(
-                    guest.displayName?.trim().isNotEmpty == true
-                        ? guest.displayName!.trim()
-                        : l10n.accountGuest,
+                    guestWorkspaceDisplayLabel(
+                      guest,
+                      guests,
+                      fallbackName: l10n.accountGuest,
+                    ),
                   ),
-                  subtitle: Text(l10n.accountChoiceGuestDescription),
+                  subtitle: Text(
+                    guest.lifecycleState == AccountLifecycleState.draft
+                        ? 'Setup in progress · Continue this workspace'
+                        : l10n.accountChoiceGuestDescription,
+                  ),
                   onTap: () =>
                       Navigator.of(dialogContext).pop(guest.localAccountId),
                 ),
@@ -441,12 +448,12 @@ class _CloudSetupChoiceScreenState
       final guests = await accountStore.listGuestWorkspaces();
       String selectedGuestId;
       if (guests.isEmpty) {
-        selectedGuestId = await accountStore.createGuestWorkspace();
+        selectedGuestId = await accountStore.createGuestWorkspace(draft: true);
       } else {
         final choice = await _chooseGuestWorkspace(guests);
         if (!mounted || choice == null) return;
         selectedGuestId = choice == _startFreshChoice
-            ? await accountStore.createGuestWorkspace()
+            ? await accountStore.createGuestWorkspace(draft: true)
             : choice;
       }
       // AccountLocalStore creates workspaces durably; activate through the
