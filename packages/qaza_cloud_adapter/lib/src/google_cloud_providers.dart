@@ -823,8 +823,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
             'Nothing was overwritten; refresh the comparison and try again.',
           );
         }
-        await LocalBackupService(_phase1.database)
-            .saveCloudRecoveryCopyFromBackup(
+        await LocalBackupService(
+          _phase1.database,
+        ).saveCloudRecoveryCopyFromBackup(
           phase1BackupJson: latest.backup.phase1BackupJson,
           googleAccountId: googleId,
           remoteBackupId: conflict.remoteBackupId,
