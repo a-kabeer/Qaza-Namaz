@@ -104,9 +104,11 @@ class AccountLocalStore {
     // workspace rather than retaining the previous user's value.
     final profile = await loadProfile(localAccountId);
     await database.transaction(() async {
-      final sessionRows = await database.customSelect(
-        'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
-      ).get();
+      final sessionRows = await database
+          .customSelect(
+            'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+          )
+          .get();
       if (sessionRows.isEmpty) {
         await database.customInsert(
           '''INSERT INTO app_session_state
@@ -114,7 +116,8 @@ class AccountLocalStore {
           variables: [Variable(localAccountId)],
         );
       } else {
-        final currentId = sessionRows.single.read<String?>('active_local_account_id');
+        final currentId =
+            sessionRows.single.read<String?>('active_local_account_id');
         if (currentId != localAccountId) {
           await database.customUpdate(
             '''UPDATE app_session_state
@@ -863,14 +866,18 @@ class AccountLocalStore {
       return id;
     }
 
-    final existingRows = await database.customSelect(
-      'SELECT local_account_id FROM local_accounts LIMIT 1',
-    ).get();
+    final existingRows = await database
+        .customSelect(
+          'SELECT local_account_id FROM local_accounts LIMIT 1',
+        )
+        .get();
     if (existingRows.isEmpty) await insertGuestWorkspace();
 
-    final sessions = await database.customSelect(
-      'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
-    ).get();
+    final sessions = await database
+        .customSelect(
+          'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+        )
+        .get();
     final currentId = sessions.isEmpty
         ? null
         : sessions.single.read<String?>('active_local_account_id');

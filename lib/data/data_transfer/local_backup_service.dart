@@ -1006,7 +1006,8 @@ class LocalBackupService {
     final metadata = decoded['metadata'] as Map<String, dynamic>;
     final data = decoded['data'] as Map<String, dynamic>;
     final backupRevision = metadata['db_revision'] as int;
-    final sessionGenerationBeforeImport = await database.readSessionGeneration();
+    final sessionGenerationBeforeImport =
+        await database.readSessionGeneration();
 
     await database.transaction(() async {
       // Read and advance the authoritative local revision under the same

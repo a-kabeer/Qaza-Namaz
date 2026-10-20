@@ -1189,9 +1189,9 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-
   Future<void> _ensureWorkspaceGenerationColumn() async {
-    final columns = await customSelect('PRAGMA table_info(app_session_state)').get();
+    final columns =
+        await customSelect('PRAGMA table_info(app_session_state)').get();
     if (columns.isEmpty) {
       await customStatement('''
         CREATE TABLE IF NOT EXISTS app_session_state (

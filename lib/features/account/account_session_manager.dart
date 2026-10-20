@@ -82,9 +82,8 @@ class AccountSessionManager extends ChangeNotifier {
   /// chooser explicitly reopen a saved Guest account.
   Future<void> activateGuest() async {
     final currentId = activeLocalAccountId;
-    final current = currentId == null
-        ? null
-        : await _accountStore.getAccount(currentId);
+    final current =
+        currentId == null ? null : await _accountStore.getAccount(currentId);
     if (current != null &&
         isGuestLocalWorkspaceId(current.localAccountId) &&
         (current.lifecycleState == AccountLifecycleState.active ||

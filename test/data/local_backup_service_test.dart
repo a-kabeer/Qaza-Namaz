@@ -1029,9 +1029,8 @@ void main() {
     );
   });
 
-
-
-  test('legacy workspace IDs migrate without losing owner rows or session', () async {
+  test('legacy workspace IDs migrate without losing owner rows or session',
+      () async {
     const legacyGuest = 'guest';
     const legacyGoogle = 'google:stable-migration-account';
     final now = DateTime(2025, 1, 1).microsecondsSinceEpoch;
@@ -1061,9 +1060,11 @@ void main() {
           .map((record) => record.id),
       ['legacy_google_record'],
     );
-    final guestRows = await database.customSelect(
-      "SELECT local_account_id FROM local_accounts WHERE local_account_id LIKE 'guest_%' ORDER BY local_account_id",
-    ).get();
+    final guestRows = await database
+        .customSelect(
+          "SELECT local_account_id FROM local_accounts WHERE local_account_id LIKE 'guest_%' ORDER BY local_account_id",
+        )
+        .get();
     expect(guestRows, hasLength(1));
     final canonicalGuest = guestRows.single.read<String>('local_account_id');
     expect(canonicalGuest, matches(RegExp(r'^guest_[0-9a-f-]{36}$')));

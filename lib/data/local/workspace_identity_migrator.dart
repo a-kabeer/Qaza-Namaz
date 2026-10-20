@@ -16,9 +16,11 @@ class WorkspaceIdentityMigrator {
   }
 
   Future<void> _migrateInsideTransaction() async {
-    final rows = await database.customSelect(
-      'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
-    ).get();
+    final rows = await database
+        .customSelect(
+          'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
+        )
+        .get();
     final existing =
         rows.map((row) => row.read<String>('local_account_id')).toSet();
     final remap = <String, String>{};
@@ -44,8 +46,7 @@ class WorkspaceIdentityMigrator {
           continue;
         }
         final canonical = 'google_$stableId';
-        if (existing.contains(canonical) ||
-            remap.values.contains(canonical)) {
+        if (existing.contains(canonical) || remap.values.contains(canonical)) {
           throw StateError(
             'Workspace migration found both "$id" and "$canonical". '
             'No records were merged or deleted. Keep a copy of the local database and resolve the duplicate workspace before retrying.',
@@ -135,11 +136,12 @@ class WorkspaceIdentityMigrator {
     await _moveJournalReferences(oldId, newId);
     await _moveWorkspaceMeta(oldId, newId);
 
-    final oldOwner = await database.customSelect(
-      "SELECT value FROM meta_store WHERE key = 'initial_cloud_backup_pending_account_id' LIMIT 1",
-    ).get();
-    if (oldOwner.isNotEmpty &&
-        oldOwner.single.read<String>('value') == oldId) {
+    final oldOwner = await database
+        .customSelect(
+          "SELECT value FROM meta_store WHERE key = 'initial_cloud_backup_pending_account_id' LIMIT 1",
+        )
+        .get();
+    if (oldOwner.isNotEmpty && oldOwner.single.read<String>('value') == oldId) {
       await database.customUpdate(
         "UPDATE meta_store SET value = ? WHERE key = 'initial_cloud_backup_pending_account_id'",
         variables: [Variable(newId)],
@@ -159,7 +161,10 @@ class WorkspaceIdentityMigrator {
       if (displayNameRows.isEmpty) {
         await database.customInsert(
           'INSERT INTO meta_store (key, value) VALUES (?, ?)',
-          variables: [Variable('workspace_display_name:$newId'), Variable('Guest')],
+          variables: [
+            Variable('workspace_display_name:$newId'),
+            Variable('Guest')
+          ],
         );
       }
     }
@@ -207,9 +212,11 @@ class WorkspaceIdentityMigrator {
         ],
       );
 
-      final snapshotTable = await database.customSelect(
-        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'local_account_adoption_snapshots' LIMIT 1",
-      ).get();
+      final snapshotTable = await database
+          .customSelect(
+            "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'local_account_adoption_snapshots' LIMIT 1",
+          )
+          .get();
       if (snapshotTable.isNotEmpty && oldSnapshotId != null) {
         await database.customUpdate(
           'UPDATE local_account_adoption_snapshots SET snapshot_id = ?, source_local_account_id = ?, target_local_account_id = ? WHERE snapshot_id = ?',
@@ -257,7 +264,8 @@ class WorkspaceIdentityMigrator {
         await database.customUpdate(
           'UPDATE meta_store SET value = ? WHERE key = ?',
           variables: [
-            Variable((oldRevision > nextRevision ? oldRevision : nextRevision).toString()),
+            Variable((oldRevision > nextRevision ? oldRevision : nextRevision)
+                .toString()),
             Variable(newKey),
           ],
         );
