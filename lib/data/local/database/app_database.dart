@@ -569,8 +569,7 @@ class AppDatabase extends _$AppDatabase {
       "SELECT value FROM meta_store "
       "WHERE key = 'initial_cloud_backup_pending' LIMIT 1",
     ).get();
-    if (legacyRows.isEmpty ||
-        legacyRows.single.read<String>('value') != '1') {
+    if (legacyRows.isEmpty || legacyRows.single.read<String>('value') != '1') {
       return false;
     }
     return await _pendingInitialBackupAccount() == activeAccount;
@@ -606,7 +605,9 @@ class AppDatabase extends _$AppDatabase {
         '''INSERT INTO meta_store (key, value)
            VALUES ('initial_cloud_backup_pending_account_id', ?)
            ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-        variables: [Variable(key.substring('initial_cloud_backup_pending:'.length))],
+        variables: [
+          Variable(key.substring('initial_cloud_backup_pending:'.length))
+        ],
       );
     } else {
       // More than one workspace can be pending; the legacy scalar marker
