@@ -521,11 +521,13 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         allowInteractive: allowInteractive,
       );
       final accountId = verified.accountId;
-      final localWorkspaceId =
-          accountId == null ? null : googleLocalWorkspaceId(accountId);
+      final localWorkspaceId = accountId == null
+          ? null
+          : googleLocalWorkspaceId(accountId);
       final startGeneration = await _phase1.database.readSessionGeneration();
       if (localWorkspaceId != null &&
-          await _phase1.database.readActiveLocalAccountId() != localWorkspaceId) {
+          await _phase1.database.readActiveLocalAccountId() !=
+              localWorkspaceId) {
         return const CloudBackupDiscoverySnapshot.failed(
           'The selected Google workspace is not active. Reopen that account and retry discovery.',
         );
@@ -677,7 +679,8 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       final startGeneration = await _phase1.database.readSessionGeneration();
       if (operationAccountId != null) {
         final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
-        if (await _phase1.database.readActiveLocalAccountId() != localWorkspaceId) {
+        if (await _phase1.database.readActiveLocalAccountId() !=
+            localWorkspaceId) {
           return await _snapshot(
             CloudSyncStatus.failed,
             message:
@@ -724,7 +727,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           await _phase1.database.writeWorkspaceSyncState(
             localWorkspaceId,
             'pending',
-            localRevision: await _phase1.database.readWorkspaceRevision(localWorkspaceId),
+            localRevision: await _phase1.database.readWorkspaceRevision(
+              localWorkspaceId,
+            ),
             remoteAccountId: operationAccountId,
           );
           return await _snapshot(

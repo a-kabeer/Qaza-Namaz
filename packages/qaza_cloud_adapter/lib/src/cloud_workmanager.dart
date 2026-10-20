@@ -118,7 +118,9 @@ void initializeQazaCloudBackgroundDispatcher() {
         await appDatabase.writeWorkspaceSyncState(
           localWorkspaceId,
           'pending',
-          localRevision: await appDatabase.readWorkspaceRevision(localWorkspaceId),
+          localRevision: await appDatabase.readWorkspaceRevision(
+            localWorkspaceId,
+          ),
           remoteAccountId: accountId,
         );
         return true;
