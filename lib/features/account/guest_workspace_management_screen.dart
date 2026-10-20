@@ -6,6 +6,7 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../domain/entities/local_account.dart';
 import 'guest_workspace_label.dart';
 import '../../l10n/app_localizations.dart';
+import '../onboarding/startup_gate.dart';
 
 class GuestWorkspaceManagementScreen extends ConsumerStatefulWidget {
   const GuestWorkspaceManagementScreen({super.key});
@@ -56,6 +57,55 @@ class _GuestWorkspaceManagementScreenState
         _loadError = error;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _resumeWorkspace(LocalAccount workspace) async {
+    // A local workspace must not be presented as the active Google workspace.
+    // Ask the user to disconnect first; that sign-out flow preserves records
+    // and returns through StartupGate, where this saved Guest can be selected.
+    final cloudAccount = await ref.read(cloudAccountProvider).restore();
+    if (!mounted) return;
+    if (cloudAccount.isConnected) {
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('Sign out before switching Guest workspaces'),
+          content: const Text(
+            'Disconnect the Google account from Account settings first. '
+            'This keeps local Guest records separate from the Google workspace '
+            'and does not delete the Drive backup.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text(AppLocalizations.of(dialogContext).commonContinue),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    try {
+      await ref
+          .read(accountSessionManagerProvider)
+          .activateLocalAccount(workspace.localAccountId);
+      ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = true;
+      ref.invalidate(startupAccountWorkspaceRestoreProvider);
+      ref.invalidate(appRouteProvider);
+      ref.invalidate(userProfileProvider);
+      ref.invalidate(progressSummaryProvider);
+      ref.invalidate(qazaRepositoryProvider);
+      ref.invalidate(qazaAdditionRepositoryProvider);
+      ref.invalidate(qazaPlanRevisionRepositoryProvider);
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute<void>(builder: (_) => const StartupGate()),
+        (_) => false,
+      );
+    } catch (error) {
+      if (mounted) _showMessage(error.toString());
     }
   }
 
@@ -210,6 +260,8 @@ class _GuestWorkspaceManagementScreenState
                     for (final workspace in _workspaces)
                       Card(
                         child: ListTile(
+                          key: Key('guest_workspace_${workspace.localAccountId}'),
+                          onTap: () => _resumeWorkspace(workspace),
                           leading: const Icon(Icons.person_outline_rounded),
                           title: Text(
                             guestWorkspaceDisplayLabel(
