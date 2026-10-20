@@ -42,7 +42,9 @@ class LocalBackupService {
     String? localAccountId,
   }) async {
     return database.transaction(() async {
-      final dbRevision = await database.readDbRevision();
+      final dbRevision = localAccountId == null
+          ? await database.readDbRevision()
+          : await database.readWorkspaceRevision(localAccountId);
       final users = await database.qazaRecordsDao.userIds();
       final records = <Map<String, dynamic>>[];
       for (final userId in users) {

@@ -181,6 +181,47 @@ void main() {
     );
   });
 
+  test('workspace revisions ignore writes to other workspaces', () async {
+    const accountA = 'google:account-A';
+    const accountB = 'google:account-B';
+    final now = DateTime.now().microsecondsSinceEpoch;
+    for (final accountId in [accountA, accountB]) {
+      await database.customInsert(
+        '''INSERT INTO local_accounts
+           (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+           VALUES (?, 'local', 'active', ?, ?)''',
+        variables: [
+          Variable.withString(accountId),
+          Variable.withInt(now),
+          Variable.withInt(now),
+        ],
+      );
+    }
+
+    final beforeA = await database.readWorkspaceRevision(accountA);
+    final beforeB = await database.readWorkspaceRevision(accountB);
+    await database.transactionWithRevision(() async {
+      await database.qazaRecordsDao.insertRecord(
+        _recordFor(accountB, 'workspace_b_record', DateTime(2025, 1, 3)),
+      );
+      return true;
+    });
+
+    expect(await database.readWorkspaceRevision(accountA), beforeA);
+    expect(
+      await database.readWorkspaceRevision(accountB),
+      greaterThan(beforeB),
+    );
+
+    final decoded = jsonDecode(
+      await service.exportJson(localAccountId: accountA),
+    ) as Map<String, dynamic>;
+    expect(
+      (decoded['metadata'] as Map<String, dynamic>)['db_revision'],
+      beforeA,
+    );
+  });
+
   test(
       'scoped restore restores onboarding and tracking settings for the active workspace',
       () async {

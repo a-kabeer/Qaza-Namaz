@@ -51,9 +51,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 22 scopes Daily Salah preferences to the active workspace.
+  /// Schema version 23 adds workspace-scoped revisions for local-first cloud sync.
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 23;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +67,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensureDailySalahTrackingSchema();
           await _ensureCloudSetupChoiceSchema();
           await _ensureLocalRecoverySnapshotSchema();
+          await _ensureWorkspaceRevisionSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -133,6 +134,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 22) {
             await _migrateDailySalahTrackingPreferencesToWorkspaceScope();
+          }
+          if (from < 23) {
+            await _ensureWorkspaceRevisionSchema();
           }
         },
       );
@@ -491,6 +495,25 @@ class AppDatabase extends _$AppDatabase {
     return revision;
   }
 
+  /// Reads a monotonic revision for one workspace. Unrelated Guest/Google
+  /// writes must not make this workspace look dirty or race its restore.
+  Future<int> readWorkspaceRevision(String localAccountId) async {
+    final accountId = localAccountId.trim();
+    if (accountId.isEmpty) {
+      throw ArgumentError.value(localAccountId, 'localAccountId');
+    }
+    final rows = await customSelect(
+      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+      variables: [Variable('workspace_revision:$accountId')],
+    ).get();
+    if (rows.isEmpty) return 1;
+    final revision = int.tryParse(rows.first.read<String>('value'));
+    if (revision == null || revision < 1) {
+      throw StateError('The workspace revision is invalid.');
+    }
+    return revision;
+  }
+
   /// Returns the active workspace ID used to scope the durable initial-upload
   /// marker. This keeps one Google account's pending upload from appearing
   /// while an unrelated Guest or Google workspace is active.
@@ -730,6 +753,131 @@ class AppDatabase extends _$AppDatabase {
         created_at INTEGER NOT NULL,
         PRIMARY KEY (local_account_id, revision_id)
       )
+    ''');
+  }
+
+  /// Installs triggers that advance revisions only for the workspace touched
+  /// by a row write. Existing workspaces start dirty so the first cloud
+  /// connection cannot mistake an existing ledger for an empty install.
+  Future<void> _ensureWorkspaceRevisionSchema() async {
+    await customStatement('''
+      INSERT OR IGNORE INTO meta_store (key, value)
+      SELECT 'workspace_revision:' || local_account_id, '2'
+      FROM local_accounts
+    ''');
+
+    const ownerTables = <String, String>{
+      'local_accounts': 'local_account_id',
+      'qaza_records': 'user_id',
+      'daily_salah_logs': 'user_id',
+      'qaza_additions': 'user_id',
+      'qaza_deletion_actions': 'user_id',
+      'qaza_deletion_action_record_snapshots': 'user_id',
+      'qaza_profile_plan_provenance': 'user_id',
+      'account_profiles': 'local_account_id',
+      'account_plan_revisions': 'local_account_id',
+    };
+
+    for (final entry in ownerTables.entries) {
+      final table = entry.key;
+      final owner = entry.value;
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_insert
+        AFTER INSERT ON $table
+        BEGIN
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || NEW.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        END
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_update
+        AFTER UPDATE ON $table
+        BEGIN
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || OLD.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || NEW.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        END
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_delete
+        AFTER DELETE ON $table
+        BEGIN
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || OLD.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        END
+      ''');
+    }
+
+    // Workspace preferences and labels live in meta_store rather than owner
+    // tables, so these keys also advance the corresponding workspace.
+    const workspaceKeyPrefixes = <String>[
+      'workspace_display_name:',
+      'daily_salah_tracking_enabled:',
+      'daily_salah_tracking_setup_dismissed:',
+    ];
+    final when = workspaceKeyPrefixes
+        .map((prefix) => "NEW.key GLOB '${prefix}*'")
+        .join(' OR ');
+    final oldWhen = workspaceKeyPrefixes
+        .map((prefix) => "OLD.key GLOB '${prefix}*'")
+        .join(' OR ');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_insert
+      AFTER INSERT ON meta_store
+      WHEN $when
+      BEGIN
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(NEW.key, instr(NEW.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_update
+      AFTER UPDATE ON meta_store
+      WHEN ($oldWhen) OR ($when)
+      BEGIN
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(OLD.key, instr(OLD.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(NEW.key, instr(NEW.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_delete
+      AFTER DELETE ON meta_store
+      WHEN $oldWhen
+      BEGIN
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(OLD.key, instr(OLD.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+      END
     ''');
   }
 
