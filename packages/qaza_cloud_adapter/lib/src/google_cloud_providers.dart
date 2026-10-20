@@ -532,16 +532,18 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
             ? null
             : googleLocalWorkspaceId(accountId);
         if (localWorkspaceId != null) {
-          final workspaceRevision = await _phase1.database.readWorkspaceRevision(
-            localWorkspaceId,
-          );
+          final workspaceRevision = await _phase1.database
+              .readWorkspaceRevision(localWorkspaceId);
           final (syncState, conflictMarker) = switch (result.kind) {
             CloudBackupDiscoveryKind.noBackup => ('pending', null),
             CloudBackupDiscoveryKind.found => (
-                'conflict',
-                result.conflict?.remoteLineage.backupId,
-              ),
-            CloudBackupDiscoveryKind.invalidBackup => ('legacy_unverified', null),
+              'conflict',
+              result.conflict?.remoteLineage.backupId,
+            ),
+            CloudBackupDiscoveryKind.invalidBackup => (
+              'legacy_unverified',
+              null,
+            ),
             CloudBackupDiscoveryKind.failed => ('cloud_unverified', null),
           };
           await _phase1.database.writeWorkspaceSyncState(
@@ -661,7 +663,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         _gateway.pinAccountForOperation(operationAccountId);
         accountPinned = true;
         final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
-        if (await _phase1.database.isWorkspaceCloudUploadBlocked(localWorkspaceId)) {
+        if (await _phase1.database.isWorkspaceCloudUploadBlocked(
+          localWorkspaceId,
+        )) {
           return await _snapshot(
             CloudSyncStatus.failed,
             message:
@@ -699,8 +703,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         await _phase1.database.writeWorkspaceSyncState(
           localWorkspaceId,
           nextState,
-          localRevision:
-              await _phase1.database.readWorkspaceRevision(localWorkspaceId),
+          localRevision: await _phase1.database.readWorkspaceRevision(
+            localWorkspaceId,
+          ),
           remoteAccountId: operationAccountId,
           conflictMarker: result.conflict?.remoteLineage.backupId,
         );
