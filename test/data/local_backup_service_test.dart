@@ -1030,6 +1030,7 @@ void main() {
   });
 
 
+
   test('legacy workspace IDs migrate without losing owner rows or session', () async {
     const legacyGuest = 'guest';
     const legacyGoogle = 'google:stable-migration-account';
@@ -1124,84 +1125,6 @@ void main() {
     expect(await database.hasPendingInitialCloudBackup(), isTrue);
 
     const googleId = 'google_independent-workspace';
-    await store.ensureAccountActive(googleId);
-    expect(await database.hasPendingInitialCloudBackup(), isFalse);
-
-    await database.markInitialCloudBackupPending(localAccountId: googleId);
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
-
-    await store.activate('guest');
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
-
-    await store.activate(googleId);
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
-    await database.clearPendingInitialCloudBackup(localAccountId: googleId);
-    expect(await database.hasPendingInitialCloudBackup(), isFalse);
-
-    await store.activate('guest');
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
-  });
-
-}
-)));
-    expect(
-      (await database.qazaRecordsDao.getAll(userId: canonicalGuest))
-          .map((record) => record.id),
-      ['legacy_guest_record'],
-    );
-    expect(await database.readSessionGeneration(), greaterThan(1));
-
-    await WorkspaceIdentityMigrator(database).migrate();
-    expect(
-      (await database.qazaRecordsDao.getAll(userId: canonicalGoogle))
-          .map((record) => record.id),
-      ['legacy_google_record'],
-    );
-  });
-
-  test('Google workspace ID migration fails closed on a collision', () async {
-    const oldId = 'google:duplicate-id';
-    const canonicalId = 'google_duplicate-id';
-    final now = DateTime(2025, 1, 1).microsecondsSinceEpoch;
-    for (final id in [oldId, canonicalId]) {
-      await database.customInsert(
-        '''INSERT INTO local_accounts
-           (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
-           VALUES (?, 'local', 'active', ?, ?)''',
-        variables: [Variable(id), Variable(now), Variable(now)],
-      );
-    }
-    await database.qazaRecordsDao.insertRecord(
-      _recordFor(oldId, 'old_google_record', DateTime(2025, 1, 1)),
-    );
-    await database.qazaRecordsDao.insertRecord(
-      _recordFor(canonicalId, 'canonical_google_record', DateTime(2025, 1, 2)),
-    );
-
-    await expectLater(
-      database.ensureCanonicalWorkspaceIds(),
-      throwsA(isA<StateError>()),
-    );
-    expect(
-      (await database.qazaRecordsDao.getAll(userId: oldId))
-          .map((record) => record.id),
-      ['old_google_record'],
-    );
-    expect(
-      (await database.qazaRecordsDao.getAll(userId: canonicalId))
-          .map((record) => record.id),
-      ['canonical_google_record'],
-    );
-  });
-
-  test('initial cloud backup marker belongs to the workspace that created it',
-      () async {
-    final store = AccountLocalStore(database: database);
-    await database.markInitialCloudBackupPending();
-
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
-
-    const googleId = 'google:independent-workspace';
     await store.ensureAccountActive(googleId);
     expect(await database.hasPendingInitialCloudBackup(), isFalse);
 
