@@ -41,9 +41,11 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
   final LocalBackupService _backupService;
 
   @override
-  Future<int> readDbRevision() => localAccountId == null
-      ? database.readDbRevision()
-      : database.readWorkspaceRevision(localAccountId);
+  Future<int> readDbRevision() {
+    final accountId = localAccountId;
+    if (accountId == null) return database.readDbRevision();
+    return database.readWorkspaceRevision(accountId);
+  }
 
   @override
   Future<String> exportBackup() =>
