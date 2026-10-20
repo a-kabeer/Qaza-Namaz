@@ -33,14 +33,12 @@ The current cloud adapter synchronizes a versioned, whole-workspace snapshot and
 ## Phase gate checklist
 
 - [x] Phase 0: audit current shared-database ownership and record D1–D6 decisions.
-- [x] Phase 1 (partial): make scheduled cloud backup/restore workspace-scoped and add workspace-local revision tracking.
-- [x] Phase 1 implementation: schema 25 canonical ID migration, persisted lifecycle/sync metadata, and session generation field added. Migration parity/collision tests and green CI are still required for the checkpoint.
-- [x] Phase 2 (partial): distinct named Guest workspaces and onboarding flow exist.
-- [ ] Phase 2: draft resume, rename/delete with seven-day hold and Undo, and duplicate-name disambiguation.
-- [ ] Phase 3: fully reconcile existing, empty, legacy, and unknown/unverifiable Drive backups without treating an unknown result as no backup.
-- [ ] Phase 4: embedded Google identity + schema/workspace metadata, content hashes, Keep Both, and verified cloud write/readback.
-- [ ] Phase 5: finalize pending-backup online/offline sign-out branches without deleting or hiding local records.
-- [ ] Phase 6: all lifecycle regression scenarios, clean CI, and physical-device verification report.
+- [x] Phase 1 (implementation present): workspace-scoped scheduled/manual cloud operations, workspace revisions, schema-v25 canonical identity migration, persisted lifecycle/sync metadata, and session-generation guards. Regression verification and required CI remain a release gate.
+- [x] Phase 2 (implementation present): distinct named Guest workspaces, draft lifecycle persisted until onboarding commits, startup draft resume, rename, seven-day deletion hold + Undo, safe expiry purge, and duplicate-name disambiguation. Draft restart/promotion/Undo regression tests are included.
+- [ ] Phase 3: complete metadata/content verification and regression testing for no-backup, found, legacy, and unknown/unverifiable Drive states; unknown state must block restore/adoption and upload.
+- [ ] Phase 4: complete explicit Drive metadata validation (stable Google ID, workspace ID, schema and content hash), verified write/readback, Keep Both recovery-copy validation, and stale conflict handling.
+- [ ] Phase 5: complete online/offline pending-backup sign-out, account-switch, cancellation, and interruption recovery tests.
+- [ ] Phase 6: all lifecycle regression scenarios passing, required CI green, release artifact review, and physical-device verification report.
 
 ## Safety invariants
 

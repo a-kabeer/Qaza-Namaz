@@ -140,6 +140,34 @@ void main() {
     );
   });
 
+  test('draft Guest workspace survives startup and can resume onboarding',
+      () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final store = AccountLocalStore(database: database);
+    final manager = AccountSessionManager(accountStore: store);
+    await manager.initialize();
+
+    final draftId = await store.createGuestWorkspace(
+      displayName: 'Onboarding in progress',
+      draft: true,
+    );
+    expect((await store.getAccount(draftId))!.lifecycleState,
+        AccountLifecycleState.draft);
+
+    final restartedManager = AccountSessionManager(accountStore: store);
+    await restartedManager.initialize();
+
+    expect(restartedManager.state.phase, AccountSessionPhase.ready);
+    expect(restartedManager.activeLocalAccountId, draftId);
+    final saved = await store.listGuestWorkspaces();
+    expect(
+      saved.singleWhere((workspace) => workspace.localAccountId == draftId)
+          .lifecycleState,
+      AccountLifecycleState.draft,
+    );
+  });
+
   test('sign-out fallback never tries to reactivate an archived Guest',
       () async {
     final database = AppDatabase(NativeDatabase.memory());

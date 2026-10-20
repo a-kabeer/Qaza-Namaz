@@ -516,6 +516,37 @@ void main() {
     );
   });
 
+  test('deleting and undoing a draft restores its draft lifecycle', () async {
+    final store = AccountLocalStore(database: database);
+    final draftId = await store.createGuestWorkspace(
+      displayName: 'Incomplete setup',
+      draft: true,
+    );
+    final otherGuest = await store.createGuestWorkspace(
+      displayName: 'Other Guest',
+    );
+    await store.activate(otherGuest);
+
+    final requested = DateTime(2026, 10, 1);
+    await store.scheduleGuestWorkspaceDeletion(draftId, requestedAt: requested);
+    expect(
+      (await store.getAccount(draftId))!.lifecycleState,
+      AccountLifecycleState.deletedHold,
+    );
+
+    expect(await store.undoGuestWorkspaceDeletion(draftId), isTrue);
+    expect(
+      (await store.getAccount(draftId))!.lifecycleState,
+      AccountLifecycleState.draft,
+    );
+    expect(
+      (await store.listGuestWorkspaces())
+          .singleWhere((account) => account.localAccountId == draftId)
+          .lifecycleState,
+      AccountLifecycleState.draft,
+    );
+  });
+
   test('expired Guest deletion is purged only after seven days', () async {
     final store = AccountLocalStore(database: database);
     final guestId =

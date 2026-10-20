@@ -98,6 +98,13 @@ void main() {
   testWidgets(
     'profile onboarding imports Qaza after activating the saved local ledger',
     (tester) async {
+      final onboardingWorkspaceId = sessionManager.activeLocalAccountId!;
+      await database.customUpdate(
+        "UPDATE local_accounts SET lifecycle_state = 'draft' "
+        "WHERE local_account_id = ?",
+        variables: [Variable(onboardingWorkspaceId)],
+      );
+
       final initialProfile = UserProfile(
         languageCode: 'en',
         madhab: Madhab.hanafi,
@@ -185,6 +192,11 @@ void main() {
         ).get(),
         hasLength(5),
       );
+      final lifecycleRow = await database.customSelect(
+        'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ?',
+        variables: [Variable(onboardingWorkspaceId)],
+      ).getSingle();
+      expect(lifecycleRow.read<String>('lifecycle_state'), 'active');
     },
   );
 
