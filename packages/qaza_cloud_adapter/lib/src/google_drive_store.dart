@@ -378,8 +378,9 @@ class GoogleDriveAppDataStore
       final workspaceId = 'google_$normalizedGoogleId';
       final bytes = utf8.encode(backup.toJsonString());
       final contentSha256 = sha256.convert(bytes).toString();
-      final databaseSchemaVersion =
-          _databaseSchemaVersion(backup.phase1BackupJson);
+      final databaseSchemaVersion = _databaseSchemaVersion(
+        backup.phase1BackupJson,
+      );
       final fileName =
           cloudBackupFilePrefix + backup.lineage.backupId + '.json';
 
@@ -635,8 +636,8 @@ String _databaseSchemaVersion(String phase1BackupJson) {
   final version = rawVersion is int
       ? rawVersion
       : rawVersion is String
-          ? int.tryParse(rawVersion)
-          : null;
+      ? int.tryParse(rawVersion)
+      : null;
   if (version == null || version < 1) {
     throw const CloudRemoteFormatException(
       'The cloud backup payload is missing a valid database schema version.',

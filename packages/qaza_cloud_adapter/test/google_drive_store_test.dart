@@ -197,67 +197,69 @@ void main() {
     client.close();
   });
 
-  test('read-back rejects bytes that do not match the uploaded content hash',
-      () async {
-    final backup = CloudBackup(
-      lineage: CloudLineage(
-        deviceId: 'device-A',
-        backupId: 'backup-corrupt',
-        baseBackupId: null,
-        dbRevision: 10,
-        createdAt: DateTime.utc(2026, 10, 15),
-      ),
-      phase1BackupJson:
-          '{"metadata":{"app_id":"qaza_namaz_app","db_revision":10,"database_schema_version":25},"data":{}}',
-    );
-    final bytes = utf8.encode(backup.toJsonString());
-    final hash = sha256.convert(bytes).toString();
-    final filename = '${cloudBackupFilePrefix}backup-corrupt.json';
-    var readAttempts = 0;
+  test(
+    'read-back rejects bytes that do not match the uploaded content hash',
+    () async {
+      final backup = CloudBackup(
+        lineage: CloudLineage(
+          deviceId: 'device-A',
+          backupId: 'backup-corrupt',
+          baseBackupId: null,
+          dbRevision: 10,
+          createdAt: DateTime.utc(2026, 10, 15),
+        ),
+        phase1BackupJson:
+            '{"metadata":{"app_id":"qaza_namaz_app","db_revision":10,"database_schema_version":25},"data":{}}',
+      );
+      final bytes = utf8.encode(backup.toJsonString());
+      final hash = sha256.convert(bytes).toString();
+      final filename = '${cloudBackupFilePrefix}backup-corrupt.json';
+      var readAttempts = 0;
 
-    final client = MockClient((request) async {
-      if (request.method == 'POST' && request.url.path.endsWith('/files')) {
-        return http.Response(
-          jsonEncode(<String, Object?>{
-            'id': 'file-corrupt',
-            'name': filename,
-            'modifiedTime': '2026-10-15T00:00:00.000Z',
-            'version': '4',
-            'appProperties': <String, String>{
-              'backup_id': 'backup-corrupt',
-              'device_id': 'device-A',
-              'base_backup_id': '',
-              'db_revision': '10',
-              'google_account_id': 'test-google-account',
-              'workspace_id': 'google_test-google-account',
-              'content_sha256': hash,
-              'database_schema_version': '25',
-            },
-          }),
-          200,
-          headers: const <String, String>{'content-type': 'application/json'},
-        );
-      }
-      if (request.method == 'GET' &&
-          request.url.path.endsWith('/files/file-corrupt')) {
-        readAttempts++;
-        return http.Response(
-          '{"tampered":true}',
-          200,
-          headers: const <String, String>{'content-type': 'application/json'},
-        );
-      }
-      return http.Response('Unexpected request', 500);
-    });
-    final store = GoogleDriveAppDataStore(_TestGateway(client));
+      final client = MockClient((request) async {
+        if (request.method == 'POST' && request.url.path.endsWith('/files')) {
+          return http.Response(
+            jsonEncode(<String, Object?>{
+              'id': 'file-corrupt',
+              'name': filename,
+              'modifiedTime': '2026-10-15T00:00:00.000Z',
+              'version': '4',
+              'appProperties': <String, String>{
+                'backup_id': 'backup-corrupt',
+                'device_id': 'device-A',
+                'base_backup_id': '',
+                'db_revision': '10',
+                'google_account_id': 'test-google-account',
+                'workspace_id': 'google_test-google-account',
+                'content_sha256': hash,
+                'database_schema_version': '25',
+              },
+            }),
+            200,
+            headers: const <String, String>{'content-type': 'application/json'},
+          );
+        }
+        if (request.method == 'GET' &&
+            request.url.path.endsWith('/files/file-corrupt')) {
+          readAttempts++;
+          return http.Response(
+            '{"tampered":true}',
+            200,
+            headers: const <String, String>{'content-type': 'application/json'},
+          );
+        }
+        return http.Response('Unexpected request', 500);
+      });
+      final store = GoogleDriveAppDataStore(_TestGateway(client));
 
-    await expectLater(
-      store.write(backup, allowInteractive: false),
-      throwsA(isA<CloudRemoteFormatException>()),
-    );
-    expect(readAttempts, 1);
-    client.close();
-  });
+      await expectLater(
+        store.write(backup, allowInteractive: false),
+        throwsA(isA<CloudRemoteFormatException>()),
+      );
+      expect(readAttempts, 1);
+      client.close();
+    },
+  );
 
   test('reconciles an ambiguous create without posting twice', () async {
     final backup = CloudBackup(
