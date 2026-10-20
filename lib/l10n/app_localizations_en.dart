@@ -1463,8 +1463,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get accountGuestTitle => 'Guest workspaces';
 
   @override
-  String get accountGuestLocalDataSubtitle =>
-      'Manage saved Guest workspaces';
+  String get accountGuestLocalDataSubtitle => 'Manage saved Guest workspaces';
 
   @override
   String get accountNotConnectedGoogle => 'Not connected to Google';

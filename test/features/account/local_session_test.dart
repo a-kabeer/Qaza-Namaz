@@ -70,7 +70,8 @@ void main() {
     final signedOutGuestId = manager.activeLocalAccountId!;
     expect(signedOutGuestId, startsWith('guest_'));
     expect(signedOutGuestId, isNot(originalGuestId));
-    expect(await database.qazaRecordsDao.getAll(userId: signedOutGuestId), isEmpty);
+    expect(await database.qazaRecordsDao.getAll(userId: signedOutGuestId),
+        isEmpty);
     expect(
       (await database.qazaRecordsDao.getAll(userId: originalGuestId))
           .map((record) => record.id),
