@@ -219,7 +219,8 @@ class _GuestWorkspaceManagementScreenState
                             ),
                           ),
                           subtitle: Text(
-                            workspace.lifecycleState == AccountLifecycleState.draft
+                            workspace.lifecycleState ==
+                                    AccountLifecycleState.draft
                                 ? 'Setup in progress · Resume to continue'
                                 : workspace.localAccountId == _activeWorkspaceId
                                     ? 'Current workspace · switch away before deleting'

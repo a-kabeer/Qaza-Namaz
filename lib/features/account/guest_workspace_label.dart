@@ -15,8 +15,7 @@ String guestWorkspaceDisplayLabel(
   final base = baseName(workspace);
   final matches = workspaces
       .where(
-        (account) =>
-            baseName(account).toLowerCase() == base.toLowerCase(),
+        (account) => baseName(account).toLowerCase() == base.toLowerCase(),
       )
       .toList(growable: false);
   if (matches.length < 2) return base;
