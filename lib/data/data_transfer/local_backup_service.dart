@@ -442,7 +442,7 @@ class LocalBackupService {
       expectedCounts[table] = countRows.single.read<int>('row_count');
     }
 
-    final recoveryJson = await exportJson(localAccountId: source);
+    var recoveryJson = await exportJson(localAccountId: source);
     await analyzeImport(recoveryJson);
     final operationNow = DateTime.now().microsecondsSinceEpoch;
     await database.customInsert(
@@ -474,12 +474,31 @@ class LocalBackupService {
       'WHERE snapshot_id = ? LIMIT 1',
       variables: [Variable(snapshotId)],
     ).get();
-    if (existingSnapshot.isNotEmpty &&
-        existingSnapshot.single.read<String>('payload_json') != recoveryJson) {
-      throw const LocalBackupException(
-        'A previous adoption snapshot differs from the current Guest data. '
-        'The Guest workspace was left unchanged pending recovery.',
-      );
+    bool sameSnapshotContent(String first, String second) {
+      try {
+        final firstDecoded = Map<String, dynamic>.from(jsonDecode(first) as Map);
+        final secondDecoded = Map<String, dynamic>.from(jsonDecode(second) as Map);
+        for (final root in [firstDecoded, secondDecoded]) {
+          final metadata = Map<String, dynamic>.from(root['metadata'] as Map);
+          metadata.remove('export_timestamp');
+          root['metadata'] = metadata;
+        }
+        return jsonEncode(firstDecoded) == jsonEncode(secondDecoded);
+      } catch (_) {
+        return false;
+      }
+    }
+
+    if (existingSnapshot.isNotEmpty) {
+      final savedSnapshot = existingSnapshot.single.read<String>('payload_json');
+      if (!sameSnapshotContent(savedSnapshot, recoveryJson)) {
+        throw const LocalBackupException(
+          'A previous adoption snapshot differs from the current Guest data. '
+          'The Guest workspace was left unchanged pending recovery.',
+        );
+      }
+      // Preserve the exact persisted snapshot bytes for read-back verification.
+      recoveryJson = savedSnapshot;
     }
     if (existingSnapshot.isEmpty) {
       await database.transaction(() async {

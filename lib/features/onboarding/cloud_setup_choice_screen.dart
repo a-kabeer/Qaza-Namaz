@@ -240,7 +240,20 @@ class _CloudSetupChoiceScreenState
               // The local workspace and pending marker remain intact.
             }
             if (uploaded) {
-              await database.clearPendingInitialCloudBackup();
+              if (_connectedGoogleWorkspaceId != null) {
+                await ref
+                    .read(localBackupServiceProvider)
+                    .markGuestAdoptionBackupVerified(
+                      _connectedGoogleWorkspaceId!,
+                    );
+              }
+              await database.clearPendingInitialCloudBackup(
+                localAccountId: _connectedGoogleWorkspaceId == null
+                    ? null
+                    : googleLocalWorkspaceId(
+                        _connectedGoogleWorkspaceId!,
+                      ),
+              );
               ref.invalidate(initialCloudBackupPendingProvider);
             } else {
               // Home remains available; retain the pending marker for a later
