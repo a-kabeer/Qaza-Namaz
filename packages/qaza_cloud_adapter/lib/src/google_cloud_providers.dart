@@ -815,6 +815,25 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
               onProgress?.call(progress);
             },
           );
+      if (operationAccountId != null) {
+        final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
+        final syncState = switch (result.kind) {
+          CloudSyncResultKind.uploaded ||
+          CloudSyncResultKind.downloaded ||
+          CloudSyncResultKind.noOp => 'clean',
+          CloudSyncResultKind.conflict => 'conflict',
+          _ => await _phase1.database.readWorkspaceSyncState(localWorkspaceId),
+        };
+        await _phase1.database.writeWorkspaceSyncState(
+          localWorkspaceId,
+          syncState,
+          localRevision: await _phase1.database.readWorkspaceRevision(
+            localWorkspaceId,
+          ),
+          remoteAccountId: operationAccountId,
+          conflictMarker: result.conflict?.remoteLineage.backupId,
+        );
+      }
       final snapshot = await _snapshotFromResult(result, state: operationState);
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&
