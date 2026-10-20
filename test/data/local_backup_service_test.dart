@@ -480,7 +480,7 @@ void main() {
       requestedAt: requested,
     );
     expect(expiry, requested.add(const Duration(days: 7)));
-    expect(await store.getAccount(guestId), isNotNull);
+    expect(await store.getAccount(guestId) != null, isTrue);
     expect(await store.hasAnyAccountData(guestId), isTrue);
     expect(
       (await store.listGuestWorkspaces()).map((account) => account.localAccountId),
@@ -514,14 +514,14 @@ void main() {
       ),
       0,
     );
-    expect(await store.getAccount(guestId), isNotNull);
+    expect(await store.getAccount(guestId) != null, isTrue);
     expect(
       await store.purgeExpiredGuestWorkspaceDeletions(
         now: requested.add(const Duration(days: 8)),
       ),
       1,
     );
-    expect(await store.getAccount(guestId), isNull);
+    expect(await store.getAccount(guestId) == null, isTrue);
     expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
   });
 
