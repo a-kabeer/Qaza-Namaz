@@ -129,7 +129,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
               key: const Key('account_guest_workspace_management'),
               icon: Icons.manage_accounts_outlined,
               title: l10n.accountGuestTitle,
-              subtitle: l10n.accountGuestLocalDataSubtitle,
+              subtitle: null,
               onTap: () => open(const GuestWorkspaceManagementScreen()),
             ),
           ),

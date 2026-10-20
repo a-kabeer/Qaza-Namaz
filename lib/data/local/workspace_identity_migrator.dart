@@ -276,7 +276,7 @@ class WorkspaceIdentityMigrator {
       }
       await database.customStatement(
         'DELETE FROM meta_store WHERE key = ?',
-        [Variable(oldKey)],
+        [oldKey],
       );
     }
   }

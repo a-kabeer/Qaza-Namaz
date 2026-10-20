@@ -168,9 +168,7 @@ class _GuestWorkspaceManagementScreenState
   }
 
   void _showMessage(String message) {
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(SnackBar(content: Text(message)));
+    ref.read(appSnackbarServiceProvider).info(message);
   }
 
   @override

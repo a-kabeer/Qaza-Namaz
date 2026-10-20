@@ -245,7 +245,7 @@ class AccountLocalStore {
       if (normalized.isEmpty) {
         await database.customStatement(
           'DELETE FROM meta_store WHERE key = ?',
-          [Variable(key)],
+          [key],
         );
       } else {
         await database.customInsert(
@@ -383,7 +383,7 @@ class AccountLocalStore {
       );
       await database.customStatement(
         'DELETE FROM local_workspace_deletion_holds WHERE local_account_id = ?',
-        [Variable(id)],
+        [id],
       );
       return true;
     });
@@ -462,30 +462,30 @@ class AccountLocalStore {
         for (final (table, ownerColumn) in ownedTables) {
           await database.customStatement(
             'DELETE FROM "$table" WHERE "$ownerColumn" = ?',
-            [Variable(id)],
+            [id],
           );
         }
         await database.customStatement(
           '''DELETE FROM meta_store
              WHERE key IN (?, ?, ?, ?)''',
           [
-            Variable('workspace_display_name:$id'),
-            Variable('daily_salah_tracking_enabled:$id'),
-            Variable('daily_salah_tracking_setup_dismissed:$id'),
-            Variable('workspace_revision:$id'),
+            'workspace_display_name:$id',
+            'daily_salah_tracking_enabled:$id',
+            'daily_salah_tracking_setup_dismissed:$id',
+            'workspace_revision:$id',
           ],
         );
         await database.customStatement(
           'DELETE FROM workspace_sync_metadata WHERE local_account_id = ?',
-          [Variable(id)],
+          [id],
         );
         await database.customStatement(
           'DELETE FROM local_workspace_deletion_holds WHERE local_account_id = ?',
-          [Variable(id)],
+          [id],
         );
         await database.customStatement(
           'DELETE FROM local_accounts WHERE local_account_id = ?',
-          [Variable(id)],
+          [id],
         );
         return true;
       });

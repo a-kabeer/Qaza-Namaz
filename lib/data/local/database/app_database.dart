@@ -650,7 +650,7 @@ class AppDatabase extends _$AppDatabase {
     await transaction(() async {
       await customStatement(
         'DELETE FROM meta_store WHERE key = ?',
-        [Variable(_initialCloudBackupPendingKey(accountId))],
+        [_initialCloudBackupPendingKey(accountId)],
       );
 
       // Clear a legacy owner marker only if it belongs to this workspace.

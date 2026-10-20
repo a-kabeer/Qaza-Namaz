@@ -335,9 +335,12 @@ class LocalBackupService {
     required String googleDisplayName,
   }) async {
     final source = sourceLocalAccountId.trim();
-    final target = targetGoogleLocalAccountId.trim();
+    final suppliedTarget = targetGoogleLocalAccountId.trim();
+    final target = suppliedTarget.startsWith('google:')
+        ? googleLocalWorkspaceId(suppliedTarget.substring('google:'.length))
+        : suppliedTarget;
     if (!isGuestLocalWorkspaceId(source) ||
-        !(target.startsWith('google_') || target.startsWith('google:')) ||
+        !target.startsWith('google_') ||
         source == target) {
       throw const LocalBackupException(
         'Only a Guest workspace can be adopted into a verified Google workspace.',
@@ -684,7 +687,7 @@ class LocalBackupService {
           );
           await database.customStatement(
             'DELETE FROM meta_store WHERE key = ?',
-            [Variable(oldKey)],
+            [oldKey],
           );
         }
       }
@@ -795,7 +798,7 @@ class LocalBackupService {
         if (snapshotId != null) {
           await database.customStatement(
             'DELETE FROM local_account_adoption_snapshots WHERE snapshot_id = ?',
-            [Variable(snapshotId)],
+            [snapshotId],
           );
         }
         await database.customUpdate(
@@ -1257,7 +1260,10 @@ class LocalBackupService {
     String? expectedGoogleAccountId,
     String targetWorkspaceLifecycleState = 'active',
   }) {
-    final target = targetLocalAccountId.trim();
+    final suppliedTarget = targetLocalAccountId.trim();
+    final target = suppliedTarget.startsWith('google:')
+        ? googleLocalWorkspaceId(suppliedTarget.substring('google:'.length))
+        : suppliedTarget;
     if (target.isEmpty) {
       throw ArgumentError.value(targetLocalAccountId, 'targetLocalAccountId');
     }
@@ -1321,19 +1327,22 @@ class LocalBackupService {
     // workspace prefix. When adopting a legacy Guest backup into Google,
     // rewrite those IDs as well as every stored reference to them.
     final remapLegacyGuestRecordIds =
-        sourceAccountId == UserProfile.localLedgerUserId &&
-            target != UserProfile.localLedgerUserId;
+        isGuestLocalWorkspaceId(sourceAccountId) &&
+            !isGuestLocalWorkspaceId(target);
 
     Object? remapQazaRecordId(Object? value) {
       if (remapRecoveryCopyIds && value is String && value.isNotEmpty) {
         return '${target}_$value';
       }
-      if (!remapLegacyGuestRecordIds ||
-          value is! String ||
-          !value.startsWith('guest_')) {
+      if (!remapLegacyGuestRecordIds || value is! String) {
         return value;
       }
-      return '$target${value.substring(5)}';
+      // Record IDs may be prefixed by the source workspace. Strip that exact
+      // prefix so UUID-based Guest workspaces are adopted without cross-ID
+      // collisions or rewriting unrelated IDs.
+      final sourcePrefix = '${sourceAccountId}_';
+      if (!value.startsWith(sourcePrefix)) return value;
+      return '$target${value.substring(sourceAccountId.length)}';
     }
 
     Object? remapQazaAdditionId(Object? value) {
