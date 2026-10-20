@@ -8,6 +8,7 @@ import '../../domain/entities/qaza_plan_revision.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/user_profile.dart';
 import 'database/app_database.dart';
+import 'workspace_identity_migrator.dart';
 
 class AccountLocalStore {
   AccountLocalStore({required this.database});
@@ -848,7 +849,7 @@ class AccountLocalStore {
   }
 
   Future<void> _ensureLocalAccount() async {
-    await database.ensureCanonicalWorkspaceIds();
+    await WorkspaceIdentityMigrator(database).migrate();
 
     Future<String> insertGuestWorkspace() async {
       final id = 'guest_${Uuid().v4()}';

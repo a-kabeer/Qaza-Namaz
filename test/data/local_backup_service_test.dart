@@ -7,6 +7,7 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/data/local/account_local_store.dart';
+import 'package:qaza_namaz/data/local/workspace_identity_migrator.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/entities/local_account.dart';
@@ -1049,7 +1050,7 @@ void main() {
       variables: [Variable(legacyGoogle)],
     );
 
-    await database.ensureCanonicalWorkspaceIds();
+    await WorkspaceIdentityMigrator(database).migrate();
 
     const canonicalGoogle = 'google_stable-migration-account';
     expect(await database.readActiveLocalAccountId(), canonicalGoogle);
@@ -1096,7 +1097,7 @@ void main() {
     );
     expect(await database.readSessionGeneration(), greaterThan(1));
 
-    await database.ensureCanonicalWorkspaceIds();
+    await WorkspaceIdentityMigrator(database).migrate();
     expect(
       (await database.qazaRecordsDao.getAll(userId: canonicalGoogle))
           .map((record) => record.id),
