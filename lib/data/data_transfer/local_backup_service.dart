@@ -344,18 +344,58 @@ class LocalBackupService {
       );
     }
 
+    // The operation ID is deterministic for this Guest/Google pair. A process
+    // death can safely retry the same operation instead of creating a second
+    // snapshot or adopting the same records twice.
+    final operationId = 'guest-adoption:$source=>$target';
+    final priorOperation = await database.customSelect(
+      'SELECT phase FROM workspace_operation_journal '
+      'WHERE operation_id = ? LIMIT 1',
+      variables: [Variable(operationId)],
+    ).get();
+    if (priorOperation.isNotEmpty) {
+      final phase = priorOperation.first.read<String>('phase');
+      if (phase == 'committed' || phase == 'cleaned') {
+        final states = await database.customSelect(
+          '''SELECT local_account_id, lifecycle_state FROM local_accounts
+             WHERE local_account_id IN (?, ?)''',
+          variables: [Variable(source), Variable(target)],
+        ).get();
+        final statesById = <String, String>{
+          for (final row in states)
+            row.read<String>('local_account_id'):
+                row.read<String>('lifecycle_state'),
+        };
+        if (statesById[source] == 'archived' &&
+            statesById[target] == 'active') {
+          return;
+        }
+        throw const LocalBackupException(
+          'A previous Guest adoption is recorded but workspace state differs. '
+          'No automatic retry was attempted; keep both workspaces and contact support.',
+        );
+      }
+      if (phase != 'prepared' && phase != 'snapshotted') {
+        throw const LocalBackupException(
+          'A Guest adoption needs recovery before it can continue. '
+          'No workspace data was changed.',
+        );
+      }
+    }
+
+    const ownerTables = <(String, String)>[
+      ('qaza_records', 'user_id'),
+      ('daily_salah_logs', 'user_id'),
+      ('qaza_additions', 'user_id'),
+      ('qaza_deletion_actions', 'user_id'),
+      ('qaza_deletion_action_record_snapshots', 'user_id'),
+      ('qaza_profile_plan_provenance', 'user_id'),
+      ('account_profiles', 'local_account_id'),
+      ('account_plan_revisions', 'local_account_id'),
+    ];
+
     Future<bool> workspaceHasData(String id) async {
-      const ownedTables = <(String, String)>[
-        ('qaza_records', 'user_id'),
-        ('daily_salah_logs', 'user_id'),
-        ('qaza_additions', 'user_id'),
-        ('qaza_deletion_actions', 'user_id'),
-        ('qaza_deletion_action_record_snapshots', 'user_id'),
-        ('qaza_profile_plan_provenance', 'user_id'),
-        ('account_profiles', 'local_account_id'),
-        ('account_plan_revisions', 'local_account_id'),
-      ];
-      for (final (table, ownerColumn) in ownedTables) {
+      for (final (table, ownerColumn) in ownerTables) {
         final rows = await database.customSelect(
           'SELECT 1 FROM "$table" WHERE "$ownerColumn" = ? LIMIT 1',
           variables: [Variable(id)],
@@ -393,7 +433,31 @@ class LocalBackupService {
       );
     }
 
+    final expectedCounts = <String, int>{};
+    for (final (table, ownerColumn) in ownerTables) {
+      final countRows = await database.customSelect(
+        'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$ownerColumn" = ?',
+        variables: [Variable(source)],
+      ).get();
+      expectedCounts[table] = countRows.single.read<int>('row_count');
+    }
+
     final recoveryJson = await exportJson(localAccountId: source);
+    await analyzeImport(recoveryJson);
+    final operationNow = DateTime.now().microsecondsSinceEpoch;
+    await database.customInsert(
+      '''INSERT OR IGNORE INTO workspace_operation_journal
+         (operation_id, operation_type, source_local_account_id,
+          target_local_account_id, phase, created_at, updated_at)
+         VALUES (?, 'guest_adoption', ?, ?, 'prepared', ?, ?)''',
+      variables: [
+        Variable(operationId),
+        Variable(source),
+        Variable(target),
+        Variable(operationNow),
+        Variable(operationNow),
+      ],
+    );
     await analyzeImport(recoveryJson);
     await database.customStatement('''
       CREATE TABLE IF NOT EXISTS local_account_adoption_snapshots (
@@ -404,22 +468,36 @@ class LocalBackupService {
         payload_json TEXT NOT NULL
       )
     ''');
-    final snapshotId = 'adoption-${DateTime.now().microsecondsSinceEpoch}';
-    await database.transaction(() async {
-      await database.customInsert(
-        '''INSERT INTO local_account_adoption_snapshots
-           (snapshot_id, source_local_account_id, target_local_account_id,
-            created_at, payload_json)
-           VALUES (?, ?, ?, ?, ?)''',
-        variables: [
-          Variable(snapshotId),
-          Variable(source),
-          Variable(target),
-          Variable(DateTime.now().toUtc().toIso8601String()),
-          Variable(recoveryJson),
-        ],
+    final snapshotId = operationId;
+    final existingSnapshot = await database.customSelect(
+      'SELECT payload_json FROM local_account_adoption_snapshots '
+      'WHERE snapshot_id = ? LIMIT 1',
+      variables: [Variable(snapshotId)],
+    ).get();
+    if (existingSnapshot.isNotEmpty &&
+        existingSnapshot.single.read<String>('payload_json') != recoveryJson) {
+      throw const LocalBackupException(
+        'A previous adoption snapshot differs from the current Guest data. '
+        'The Guest workspace was left unchanged pending recovery.',
       );
-    });
+    }
+    if (existingSnapshot.isEmpty) {
+      await database.transaction(() async {
+        await database.customInsert(
+          '''INSERT INTO local_account_adoption_snapshots
+             (snapshot_id, source_local_account_id, target_local_account_id,
+              created_at, payload_json)
+             VALUES (?, ?, ?, ?, ?)''',
+          variables: [
+            Variable(snapshotId),
+            Variable(source),
+            Variable(target),
+            Variable(DateTime.now().toUtc().toIso8601String()),
+            Variable(recoveryJson),
+          ],
+        );
+      });
+    }
     final verifiedSnapshot = await database.customSelect(
       'SELECT payload_json FROM local_account_adoption_snapshots '
       'WHERE snapshot_id = ? LIMIT 1',
@@ -431,6 +509,17 @@ class LocalBackupService {
         'A recovery snapshot could not be verified. The Guest workspace was not changed.',
       );
     }
+    await database.customUpdate(
+      '''UPDATE workspace_operation_journal
+         SET phase = 'snapshotted', snapshot_id = ?, updated_at = ?,
+             error_message = NULL
+         WHERE operation_id = ? AND phase IN ('prepared', 'snapshotted')''',
+      variables: [
+        Variable(snapshotId),
+        Variable(DateTime.now().microsecondsSinceEpoch),
+        Variable(operationId),
+      ],
+    );
 
     final timestamp = DateTime.now().microsecondsSinceEpoch;
     final normalizedGoogleName = googleDisplayName.trim();
@@ -507,22 +596,44 @@ class LocalBackupService {
         );
       }
 
-      const ownerTables = <(String, String)>[
-        ('qaza_records', 'user_id'),
-        ('daily_salah_logs', 'user_id'),
-        ('qaza_additions', 'user_id'),
-        ('qaza_deletion_actions', 'user_id'),
-        ('qaza_deletion_action_record_snapshots', 'user_id'),
-        ('qaza_profile_plan_provenance', 'user_id'),
-        ('account_profiles', 'local_account_id'),
-        ('account_plan_revisions', 'local_account_id'),
-      ];
       for (final (table, ownerColumn) in ownerTables) {
         await database.customUpdate(
           'UPDATE "$table" SET "$ownerColumn" = ? WHERE "$ownerColumn" = ?',
           variables: [Variable(target), Variable(source)],
         );
       }
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'copied', updated_at = ?
+           WHERE operation_id = ?''',
+        variables: [Variable(DateTime.now().microsecondsSinceEpoch), Variable(operationId)],
+      );
+
+      // Verify row-count parity inside the same transaction as the ownership
+      // move. Any mismatch throws and rolls the complete transfer back.
+      for (final (table, ownerColumn) in ownerTables) {
+        final sourceCountRows = await database.customSelect(
+          'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$ownerColumn" = ?',
+          variables: [Variable(source)],
+        ).get();
+        final targetCountRows = await database.customSelect(
+          'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$ownerColumn" = ?',
+          variables: [Variable(target)],
+        ).get();
+        final sourceCount = sourceCountRows.single.read<int>('row_count');
+        final targetCount = targetCountRows.single.read<int>('row_count');
+        if (sourceCount != 0 || targetCount != expectedCounts[table]) {
+          throw LocalBackupException(
+            'Adoption validation failed for $table. No workspace data was moved.',
+          );
+        }
+      }
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'verified', updated_at = ?
+           WHERE operation_id = ?''',
+        variables: [Variable(DateTime.now().microsecondsSinceEpoch), Variable(operationId)],
+      );
 
       for (final setting in [
         'daily_salah_tracking_enabled',
@@ -595,8 +706,79 @@ class LocalBackupService {
         }
       }
       await database.setOnboardingCompletedInTransaction(onboardingCompleted);
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'committed', updated_at = ?, error_message = NULL
+           WHERE operation_id = ?''',
+        variables: [Variable(DateTime.now().microsecondsSinceEpoch), Variable(operationId)],
+      );
       return true;
     }, mutationPredicate: (_) => true);
+  }
+
+  /// Records the first verified cloud upload for a completed Guest adoption.
+  /// The recovery snapshot remains available for a further 30 days.
+  Future<void> markGuestAdoptionBackupVerified(
+    String targetGoogleLocalAccountId, {
+    DateTime? verifiedAt,
+  }) async {
+    final target = targetGoogleLocalAccountId.trim();
+    if (target.isEmpty) {
+      throw ArgumentError.value(targetGoogleLocalAccountId, 'targetGoogleLocalAccountId');
+    }
+    final timestamp = (verifiedAt ?? DateTime.now()).microsecondsSinceEpoch;
+    await database.customUpdate(
+      '''UPDATE workspace_operation_journal
+         SET backup_verified_at = COALESCE(backup_verified_at, ?),
+             updated_at = ?
+         WHERE operation_type = 'guest_adoption'
+           AND target_local_account_id = ?
+           AND phase IN ('committed', 'cleaned')''',
+      variables: [Variable(timestamp), Variable(timestamp), Variable(target)],
+    );
+    await purgeExpiredGuestAdoptionSnapshots(now: verifiedAt);
+  }
+
+  /// Removes an adoption snapshot only after a verified backup and the full
+  /// 30-day recovery window have elapsed. The committed journal stays as an
+  /// idempotency record, marked cleaned.
+  Future<int> purgeExpiredGuestAdoptionSnapshots({DateTime? now}) async {
+    final cutoff = (now ?? DateTime.now())
+        .subtract(const Duration(days: 30))
+        .microsecondsSinceEpoch;
+    final rows = await database.customSelect(
+      '''SELECT operation_id, snapshot_id
+         FROM workspace_operation_journal
+         WHERE operation_type = 'guest_adoption'
+           AND phase = 'committed'
+           AND backup_verified_at IS NOT NULL
+           AND backup_verified_at <= ?''',
+      variables: [Variable(cutoff)],
+    ).get();
+    var removed = 0;
+    for (final row in rows) {
+      final operationId = row.read<String>('operation_id');
+      final snapshotId = row.read<String?>('snapshot_id');
+      await database.transaction(() async {
+        if (snapshotId != null) {
+          await database.customStatement(
+            'DELETE FROM local_account_adoption_snapshots WHERE snapshot_id = ?',
+            [Variable(snapshotId)],
+          );
+        }
+        await database.customUpdate(
+          '''UPDATE workspace_operation_journal
+             SET phase = 'cleaned', updated_at = ?
+             WHERE operation_id = ? AND phase = 'committed' ''',
+          variables: [
+            Variable((now ?? DateTime.now()).microsecondsSinceEpoch),
+            Variable(operationId),
+          ],
+        );
+      });
+      removed++;
+    }
+    return removed;
   }
 
   Future<LocalBackupAnalysis> analyzeImport(String jsonText) async {
