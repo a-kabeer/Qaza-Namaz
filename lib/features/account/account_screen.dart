@@ -9,6 +9,7 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
 import '../data_management/qaza_data_management_screen.dart';
+import 'guest_workspace_management_screen.dart';
 import '../onboarding/startup_gate.dart';
 import '../settings/qaza_reset_controller.dart';
 
@@ -123,6 +124,16 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             ),
             const SizedBox(height: 12),
           ],
+          Card(
+            child: SettingsNavRow(
+              key: const Key('account_guest_workspace_management'),
+              icon: Icons.manage_accounts_outlined,
+              title: l10n.accountGuestTitle,
+              subtitle: l10n.accountGuestLocalDataSubtitle,
+              onTap: () => open(const GuestWorkspaceManagementScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
           Card(
             child: SettingsNavRow(
               key: const Key('account_data_management'),
