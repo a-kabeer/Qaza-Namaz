@@ -51,9 +51,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 23 adds workspace-scoped revisions for local-first cloud sync.
+  /// Schema version 24 persists workspace sync state and lifecycle operations.
   @override
-  int get schemaVersion => 23;
+  int get schemaVersion => 24;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -68,6 +68,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensureCloudSetupChoiceSchema();
           await _ensureLocalRecoverySnapshotSchema();
           await _ensureWorkspaceRevisionSchema();
+          await _ensureWorkspaceLifecycleSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -137,6 +138,9 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 23) {
             await _ensureWorkspaceRevisionSchema();
+          }
+          if (from < 24) {
+            await _ensureWorkspaceLifecycleSchema();
           }
         },
       );
@@ -759,6 +763,129 @@ class AppDatabase extends _$AppDatabase {
   /// Installs triggers that advance revisions only for the workspace touched
   /// by a row write. Existing workspaces start dirty so the first cloud
   /// connection cannot mistake an existing ledger for an empty install.
+  /// Durable operation journal, workspace sync metadata, and undoable Guest
+  /// deletion holds. These records remain local and are never restored from a
+  /// remote workspace payload.
+  Future<void> _ensureWorkspaceLifecycleSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS workspace_operation_journal (
+        operation_id TEXT NOT NULL PRIMARY KEY,
+        operation_type TEXT NOT NULL,
+        source_local_account_id TEXT NOT NULL,
+        target_local_account_id TEXT NOT NULL,
+        phase TEXT NOT NULL,
+        snapshot_id TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        backup_verified_at INTEGER,
+        error_message TEXT
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS local_workspace_deletion_holds (
+        local_account_id TEXT NOT NULL PRIMARY KEY,
+        requested_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        prior_lifecycle_state TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS workspace_sync_metadata (
+        local_account_id TEXT NOT NULL PRIMARY KEY,
+        sync_state TEXT NOT NULL DEFAULT 'pending',
+        local_revision INTEGER NOT NULL DEFAULT 1,
+        last_synced_revision INTEGER,
+        last_synced_local_hash TEXT,
+        last_synced_remote_version TEXT,
+        last_synced_remote_hash TEXT,
+        last_checked_at TEXT,
+        conflict_marker TEXT,
+        remote_account_id TEXT
+      )
+    ''');
+  }
+
+  Future<String> readWorkspaceSyncState(String localAccountId) async {
+    final accountId = localAccountId.trim();
+    if (accountId.isEmpty) {
+      throw ArgumentError.value(localAccountId, 'localAccountId');
+    }
+    final rows = await customSelect(
+      'SELECT sync_state FROM workspace_sync_metadata '
+      'WHERE local_account_id = ? LIMIT 1',
+      variables: [Variable(accountId)],
+    ).get();
+    if (rows.isEmpty) return 'pending';
+    return rows.first.read<String>('sync_state');
+  }
+
+  Future<void> writeWorkspaceSyncState(
+    String localAccountId,
+    String syncState, {
+    int? localRevision,
+    int? lastSyncedRevision,
+    String? lastSyncedLocalHash,
+    String? lastSyncedRemoteVersion,
+    String? lastSyncedRemoteHash,
+    String? lastCheckedAt,
+    String? conflictMarker,
+    String? remoteAccountId,
+  }) async {
+    const validStates = <String>{
+      'clean',
+      'pending',
+      'cloud_unverified',
+      'legacy_unverified',
+      'conflict',
+      'needs_sign_in',
+    };
+    final accountId = localAccountId.trim();
+    if (accountId.isEmpty) {
+      throw ArgumentError.value(localAccountId, 'localAccountId');
+    }
+    if (!validStates.contains(syncState)) {
+      throw ArgumentError.value(syncState, 'syncState');
+    }
+    await customInsert(
+      '''INSERT INTO workspace_sync_metadata
+         (local_account_id, sync_state, local_revision, last_synced_revision,
+          last_synced_local_hash, last_synced_remote_version,
+          last_synced_remote_hash, last_checked_at, conflict_marker,
+          remote_account_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(local_account_id) DO UPDATE SET
+           sync_state = excluded.sync_state,
+           local_revision = COALESCE(excluded.local_revision, workspace_sync_metadata.local_revision),
+           last_synced_revision = COALESCE(excluded.last_synced_revision, workspace_sync_metadata.last_synced_revision),
+           last_synced_local_hash = COALESCE(excluded.last_synced_local_hash, workspace_sync_metadata.last_synced_local_hash),
+           last_synced_remote_version = COALESCE(excluded.last_synced_remote_version, workspace_sync_metadata.last_synced_remote_version),
+           last_synced_remote_hash = COALESCE(excluded.last_synced_remote_hash, workspace_sync_metadata.last_synced_remote_hash),
+           last_checked_at = COALESCE(excluded.last_checked_at, workspace_sync_metadata.last_checked_at),
+           conflict_marker = excluded.conflict_marker,
+           remote_account_id = COALESCE(excluded.remote_account_id, workspace_sync_metadata.remote_account_id)''',
+      variables: [
+        Variable(accountId),
+        Variable(syncState),
+        Variable(localRevision ?? 1),
+        Variable(lastSyncedRevision),
+        Variable(lastSyncedLocalHash),
+        Variable(lastSyncedRemoteVersion),
+        Variable(lastSyncedRemoteHash),
+        Variable(lastCheckedAt ?? DateTime.now().toUtc().toIso8601String()),
+        Variable(conflictMarker),
+        Variable(remoteAccountId),
+      ],
+    );
+  }
+
+  Future<bool> isWorkspaceCloudUploadBlocked(String localAccountId) async {
+    final state = await readWorkspaceSyncState(localAccountId);
+    return state == 'cloud_unverified' ||
+        state == 'legacy_unverified' ||
+        state == 'needs_sign_in' ||
+        state == 'conflict';
+  }
+
   Future<void> _ensureWorkspaceRevisionSchema() async {
     await customStatement('''
       INSERT OR IGNORE INTO meta_store (key, value)
