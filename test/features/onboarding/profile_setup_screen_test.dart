@@ -145,11 +145,8 @@ void main() {
       );
       await tester.pump();
 
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('profile_submit')),
-        500,
-        scrollable: find.byType(Scrollable).first,
-      );
+      await tester.ensureVisible(find.byKey(const Key('profile_submit')));
+      await tester.pump();
       await tester.tap(find.byKey(const Key('profile_submit')));
       // ProfileForm keeps its saving indicator active while the review dialog
       // is open, so pumpAndSettle() would wait forever on that animation.
@@ -251,11 +248,8 @@ void main() {
 
       expect(find.byType(ProfileSetupScreen), findsOneWidget);
 
-      await tester.scrollUntilVisible(
-        find.byKey(const Key('profile_submit')),
-        500,
-        scrollable: find.byType(Scrollable).first,
-      );
+      await tester.ensureVisible(find.byKey(const Key('profile_submit')));
+      await tester.pump();
       await tester.tap(find.byKey(const Key('profile_submit')));
       await tester.pump();
 
