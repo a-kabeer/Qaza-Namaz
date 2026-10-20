@@ -1039,10 +1039,14 @@ void main() {
     await store.ensureAccountActive(googleId);
     expect(await database.hasPendingInitialCloudBackup(), isFalse);
 
+    await database.markInitialCloudBackupPending(localAccountId: googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
     await store.activate('guest');
     expect(await database.hasPendingInitialCloudBackup(), isTrue);
 
     await store.activate(googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
     await database.clearPendingInitialCloudBackup(localAccountId: googleId);
     expect(await database.hasPendingInitialCloudBackup(), isFalse);
 

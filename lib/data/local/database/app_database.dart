@@ -544,52 +544,45 @@ class AppDatabase extends _$AppDatabase {
   /// Durable marker for an initial upload, scoped to a local workspace.
   /// A legacy marker without an owner is ambiguous, so it is not assigned to
   /// whichever account happens to be active after an upgrade.
+  String _initialCloudBackupPendingKey(String accountId) =>
+      'initial_cloud_backup_pending:${accountId.trim()}';
+
   Future<bool> hasPendingInitialCloudBackup({String? localAccountId}) async {
-    final rows = await customSelect(
+    final activeAccount = localAccountId?.trim().isNotEmpty == true
+        ? localAccountId!.trim()
+        : await _activeAccountForInitialBackup();
+    if (activeAccount == null || activeAccount.isEmpty) return false;
+
+    // New markers are independent per workspace. A late upload callback for
+    // Google B must never clear or replace Google A's pending marker.
+    final scopedRows = await customSelect(
+      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+      variables: [Variable(_initialCloudBackupPendingKey(activeAccount))],
+    ).get();
+    if (scopedRows.isNotEmpty) {
+      return scopedRows.single.read<String>('value') == '1';
+    }
+
+    // Read legacy single-owner markers written by older app versions without
+    // assigning an ambiguous marker to whichever workspace is active now.
+    final legacyRows = await customSelect(
       "SELECT value FROM meta_store "
       "WHERE key = 'initial_cloud_backup_pending' LIMIT 1",
     ).get();
-    if (rows.isEmpty || rows.first.read<String>('value') != '1') return false;
-
-    final pendingAccount = await _pendingInitialBackupAccount();
-    if (pendingAccount == null) return false;
-    final activeAccount =
-        localAccountId ?? await _activeAccountForInitialBackup();
-    return activeAccount == pendingAccount;
+    if (legacyRows.isEmpty ||
+        legacyRows.single.read<String>('value') != '1') {
+      return false;
+    }
+    return await _pendingInitialBackupAccount() == activeAccount;
   }
 
-  Future<void> markInitialCloudBackupPending({String? localAccountId}) async {
-    final accountId = localAccountId ?? await _activeAccountForInitialBackup();
-    await transaction(() async {
-      await customInsert(
-        '''INSERT INTO meta_store (key, value)
-           VALUES ('initial_cloud_backup_pending', '1')
-           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-      );
-      if (accountId == null || accountId.trim().isEmpty) {
-        await customStatement(
-          "DELETE FROM meta_store "
-          "WHERE key = 'initial_cloud_backup_pending_account_id'",
-        );
-      } else {
-        await customInsert(
-          '''INSERT INTO meta_store (key, value)
-             VALUES ('initial_cloud_backup_pending_account_id', ?)
-             ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-          variables: [Variable(accountId.trim())],
-        );
-      }
-    });
-  }
-
-  Future<void> clearPendingInitialCloudBackup({String? localAccountId}) async {
-    final pendingAccount = await _pendingInitialBackupAccount();
-    final activeAccount =
-        localAccountId ?? await _activeAccountForInitialBackup();
-    // A late callback for workspace B must not clear workspace A's marker.
-    if (pendingAccount != null && activeAccount != pendingAccount) return;
-
-    await transaction(() async {
+  Future<void> _refreshLegacyInitialCloudBackupMarker() async {
+    final pendingRows = await customSelect(
+      "SELECT key FROM meta_store "
+      "WHERE key LIKE 'initial_cloud_backup_pending:%' AND value = '1' "
+      "ORDER BY key",
+    ).get();
+    if (pendingRows.isEmpty) {
       await customInsert(
         '''INSERT INTO meta_store (key, value)
            VALUES ('initial_cloud_backup_pending', '0')
@@ -599,6 +592,71 @@ class AppDatabase extends _$AppDatabase {
         "DELETE FROM meta_store "
         "WHERE key = 'initial_cloud_backup_pending_account_id'",
       );
+      return;
+    }
+
+    await customInsert(
+      '''INSERT INTO meta_store (key, value)
+         VALUES ('initial_cloud_backup_pending', '1')
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+    );
+    if (pendingRows.length == 1) {
+      final key = pendingRows.single.read<String>('key');
+      await customInsert(
+        '''INSERT INTO meta_store (key, value)
+           VALUES ('initial_cloud_backup_pending_account_id', ?)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+        variables: [Variable(key.substring('initial_cloud_backup_pending:'.length))],
+      );
+    } else {
+      // More than one workspace can be pending; the legacy scalar marker
+      // cannot represent that state, so deliberately leave it ownerless.
+      await customStatement(
+        "DELETE FROM meta_store "
+        "WHERE key = 'initial_cloud_backup_pending_account_id'",
+      );
+    }
+  }
+
+  Future<void> markInitialCloudBackupPending({String? localAccountId}) async {
+    final accountId = localAccountId?.trim().isNotEmpty == true
+        ? localAccountId!.trim()
+        : await _activeAccountForInitialBackup();
+    if (accountId == null || accountId.isEmpty) {
+      throw StateError(
+        'Cannot mark an initial cloud backup without a selected workspace.',
+      );
+    }
+    await transaction(() async {
+      await customInsert(
+        '''INSERT INTO meta_store (key, value) VALUES (?, '1')
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+        variables: [Variable(_initialCloudBackupPendingKey(accountId))],
+      );
+      await _refreshLegacyInitialCloudBackupMarker();
+    });
+  }
+
+  Future<void> clearPendingInitialCloudBackup({String? localAccountId}) async {
+    final accountId = localAccountId?.trim().isNotEmpty == true
+        ? localAccountId!.trim()
+        : await _activeAccountForInitialBackup();
+    if (accountId == null || accountId.isEmpty) return;
+
+    await transaction(() async {
+      await customStatement(
+        'DELETE FROM meta_store WHERE key = ?',
+        [Variable(_initialCloudBackupPendingKey(accountId))],
+      );
+
+      // Clear a legacy owner marker only if it belongs to this workspace.
+      if (await _pendingInitialBackupAccount() == accountId) {
+        await customStatement(
+          "DELETE FROM meta_store "
+          "WHERE key = 'initial_cloud_backup_pending_account_id'",
+        );
+      }
+      await _refreshLegacyInitialCloudBackupMarker();
     });
   }
 
