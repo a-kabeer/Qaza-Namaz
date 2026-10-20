@@ -394,7 +394,9 @@ void main() {
     await service.importJson(backup, targetLocalAccountId: googleId);
 
     final guestRows = await database.qazaRecordsDao.getAll(userId: 'guest');
-    final googleRows = await database.qazaRecordsDao.getAll(userId: googleId);
+    final googleRows = await database.qazaRecordsDao.getAll(
+      userId: 'google_account-adopt',
+    );
     const adoptedRecordId = 'google_account-adopt_fajr_2025-01-01';
     expect(guestRows.map((row) => row.id), contains(guestRecordId));
     expect(googleRows.map((row) => row.id), contains(adoptedRecordId));
@@ -408,7 +410,7 @@ void main() {
     final links = await database.customSelect(
       'SELECT tracker_created_qaza_id, linked_qaza_id FROM daily_salah_logs '
       'WHERE user_id = ?',
-      variables: [Variable.withString(googleId)],
+      variables: [Variable.withString('google_account-adopt')],
     ).get();
     expect(links, hasLength(1));
     expect(
@@ -419,10 +421,10 @@ void main() {
 
     const adoptedAdditionId = 'google_account-adopt_guest_addition_adopt';
     const adoptedDeletionActionId =
-        'google:account-adopt_guest_delete_action_adopt';
+        'google_account-adopt_guest_delete_action_adopt';
     final actions = await database.customSelect(
       'SELECT id, addition_id FROM qaza_deletion_actions WHERE user_id = ?',
-      variables: [Variable.withString(googleId)],
+      variables: [Variable.withString('google_account-adopt')],
     ).get();
     expect(actions, hasLength(1));
     expect(actions.single.read<String>('id'), adoptedDeletionActionId);
@@ -431,11 +433,11 @@ void main() {
     final snapshots = await database.customSelect(
       'SELECT record_id, user_id, deletion_action_id, addition_id '
       'FROM qaza_deletion_action_record_snapshots WHERE user_id = ?',
-      variables: [Variable.withString(googleId)],
+      variables: [Variable.withString('google_account-adopt')],
     ).get();
     expect(snapshots, hasLength(1));
     expect(snapshots.single.read<String>('record_id'), adoptedRecordId);
-    expect(snapshots.single.read<String>('user_id'), googleId);
+    expect(snapshots.single.read<String>('user_id'), 'google_account-adopt');
     expect(
       snapshots.single.read<String>('deletion_action_id'),
       adoptedDeletionActionId,
@@ -805,7 +807,7 @@ void main() {
     final decoded =
         jsonDecode(await service.exportJson()) as Map<String, dynamic>;
     (decoded['metadata'] as Map<String, dynamic>)['database_schema_version'] =
-        23;
+        database.schemaVersion + 1;
 
     expect(
       () => service.importJson(jsonEncode(decoded)),

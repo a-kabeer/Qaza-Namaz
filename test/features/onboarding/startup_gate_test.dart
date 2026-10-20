@@ -541,8 +541,10 @@ void main() {
     final database = AppDatabase(NativeDatabase.memory());
     final accountStore = AccountLocalStore(database: database);
     await accountStore.ensureInitialized();
+    final activeWorkspaceId =
+        (await accountStore.activeAccount())!.localAccountId;
     await accountStore.saveProfileLocalOnly(
-      UserProfile.localLedgerUserId,
+      activeWorkspaceId,
       const UserProfile(onboardingCompleted: true),
     );
     final container = await _container(

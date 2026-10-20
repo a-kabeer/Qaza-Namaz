@@ -1,17 +1,17 @@
+import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/entities/local_account.dart';
-import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 
 void main() {
   test('Google workspace IDs use the stable authenticated account ID', () {
     expect(
       googleLocalWorkspaceId('  stable-google-account-A  '),
-      'google:stable-google-account-A',
+      'google_stable-google-account-A',
     );
     expect(
       () => googleLocalWorkspaceId('  '),
@@ -29,20 +29,15 @@ void main() {
     await manager.initialize();
 
     expect(manager.state.phase, AccountSessionPhase.ready);
-    expect(
-      manager.activeLocalAccountId,
-      UserProfile.localLedgerUserId,
-    );
+    final initialWorkspaceId = manager.activeLocalAccountId!;
+    expect(initialWorkspaceId, startsWith('guest_'));
     expect(manager.activeAccount, isNotNull);
     expect(manager.activeAccount!.accountMode, AccountMode.local);
 
     await manager.refresh();
 
     expect(manager.state.phase, AccountSessionPhase.ready);
-    expect(
-      manager.activeLocalAccountId,
-      UserProfile.localLedgerUserId,
-    );
+    expect(manager.activeLocalAccountId, initialWorkspaceId);
   });
 
   test('Google and Guest sessions use separate persistent workspaces',
@@ -53,10 +48,11 @@ void main() {
     final store = AccountLocalStore(database: database);
     final manager = AccountSessionManager(accountStore: store);
     await manager.initialize();
+    final originalGuestId = manager.activeLocalAccountId!;
     await database.qazaRecordsDao.insertRecord(
       QazaRecordsCompanion.insert(
         id: 'guest_only_record',
-        userId: UserProfile.localLedgerUserId,
+        userId: originalGuestId,
         prayerType: 'fajr',
         originalDate: DateTime(2025, 1, 1),
         status: 'pending',
@@ -66,20 +62,17 @@ void main() {
     );
 
     await manager.activateGoogleAccount('stable-google-account-A');
-    expect(manager.activeLocalAccountId, 'google:stable-google-account-A');
-    expect(
-      await database.qazaRecordsDao.getAll(
-        userId: 'google:stable-google-account-A',
-      ),
-      isEmpty,
-    );
+    const googleId = 'google_stable-google-account-A';
+    expect(manager.activeLocalAccountId, googleId);
+    expect(await database.qazaRecordsDao.getAll(userId: googleId), isEmpty);
 
     await manager.activateGuest();
-    expect(manager.activeLocalAccountId, UserProfile.localLedgerUserId);
+    final signedOutGuestId = manager.activeLocalAccountId!;
+    expect(signedOutGuestId, startsWith('guest_'));
+    expect(signedOutGuestId, isNot(originalGuestId));
+    expect(await database.qazaRecordsDao.getAll(userId: signedOutGuestId), isEmpty);
     expect(
-      (await database.qazaRecordsDao.getAll(
-        userId: UserProfile.localLedgerUserId,
-      ))
+      (await database.qazaRecordsDao.getAll(userId: originalGuestId))
           .map((record) => record.id),
       contains('guest_only_record'),
     );
@@ -146,47 +139,52 @@ void main() {
     );
   });
 
-  test('sign-out fallback never tries to reactivate an archived legacy Guest',
+  test('sign-out fallback never tries to reactivate an archived Guest',
       () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final store = AccountLocalStore(database: database);
     final manager = AccountSessionManager(accountStore: store);
     await manager.initialize();
+    final archivedGuestId = manager.activeLocalAccountId!;
 
     await database.customUpdate(
       "UPDATE local_accounts SET lifecycle_state = 'archived' "
-      "WHERE local_account_id = 'guest'",
+      "WHERE local_account_id = ?",
+      variables: [Variable(archivedGuestId)],
     );
 
     await manager.activateGuest();
 
     expect(manager.state.phase, AccountSessionPhase.ready);
-    expect(manager.activeLocalAccountId, startsWith('guest:'));
-    expect(manager.activeLocalAccountId, isNot('guest'));
-    expect((await store.getAccount('guest'))?.lifecycleState,
+    expect(manager.activeLocalAccountId, startsWith('guest_'));
+    expect(manager.activeLocalAccountId, isNot(archivedGuestId));
+    expect((await store.getAccount(archivedGuestId))?.lifecycleState,
         AccountLifecycleState.archived);
   });
 
-  test('startup recovers if the persisted legacy Guest workspace is archived',
+  test('startup recovers if the persisted Guest workspace is archived',
       () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
     final store = AccountLocalStore(database: database);
     final initialManager = AccountSessionManager(accountStore: store);
     await initialManager.initialize();
+    final archivedGuestId = initialManager.activeLocalAccountId!;
 
     await database.customUpdate(
       "UPDATE local_accounts SET lifecycle_state = 'archived' "
-      "WHERE local_account_id = 'guest'",
+      "WHERE local_account_id = ?",
+      variables: [Variable(archivedGuestId)],
     );
 
     final restartedManager = AccountSessionManager(accountStore: store);
     await restartedManager.initialize();
 
     expect(restartedManager.state.phase, AccountSessionPhase.ready);
-    expect(restartedManager.activeLocalAccountId, startsWith('guest:'));
-    expect((await store.getAccount('guest'))?.lifecycleState,
+    expect(restartedManager.activeLocalAccountId, startsWith('guest_'));
+    expect(restartedManager.activeLocalAccountId, isNot(archivedGuestId));
+    expect((await store.getAccount(archivedGuestId))?.lifecycleState,
         AccountLifecycleState.archived);
   });
 }

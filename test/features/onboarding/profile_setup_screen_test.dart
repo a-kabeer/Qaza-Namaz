@@ -114,7 +114,7 @@ void main() {
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
             activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => UserProfile.localLedgerUserId,
+              (ref) => sessionManager.activeLocalAccountId!,
             ),
             qazaPlanServiceProvider.overrideWithValue(
               _OneDayQazaPlanService(),
@@ -167,7 +167,7 @@ void main() {
       final profileRows = await database.customSelect(
         '''SELECT payload_json FROM account_profiles
            WHERE local_account_id = ?''',
-        variables: [Variable(UserProfile.localLedgerUserId)],
+        variables: [Variable(sessionManager.activeLocalAccountId!)],
       ).get();
       expect(profileRows, hasLength(1));
       expect(
@@ -181,7 +181,7 @@ void main() {
       expect(
         await database.customSelect(
           '''SELECT id FROM qaza_records WHERE user_id = ?''',
-          variables: [Variable(UserProfile.localLedgerUserId)],
+          variables: [Variable(sessionManager.activeLocalAccountId!)],
         ).get(),
         hasLength(5),
       );
@@ -214,7 +214,7 @@ void main() {
           appDatabaseProvider.overrideWithValue(database),
           accountSessionManagerProvider.overrideWith((ref) => sessionManager),
           activeLocalAccountIdStateProvider.overrideWith(
-            (ref) => UserProfile.localLedgerUserId,
+            (ref) => sessionManager.activeLocalAccountId!,
           ),
           qazaPlanServiceProvider.overrideWithValue(
             const QazaPlanService(),
@@ -264,7 +264,7 @@ void main() {
       final profileRows = await database.customSelect(
         '''SELECT payload_json FROM account_profiles
            WHERE local_account_id = ?''',
-        variables: [Variable(UserProfile.localLedgerUserId)],
+        variables: [Variable(sessionManager.activeLocalAccountId!)],
       ).get();
       expect(profileRows, hasLength(1));
       expect(
@@ -280,7 +280,7 @@ void main() {
             .customSelect(
               '''SELECT COUNT(*) AS count FROM account_plan_revisions
              WHERE local_account_id = ?''',
-              variables: [Variable(UserProfile.localLedgerUserId)],
+              variables: [Variable(sessionManager.activeLocalAccountId!)],
             )
             .getSingle()
             .then((row) => row.read<int>('count')),
@@ -318,7 +318,7 @@ void main() {
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
             activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => UserProfile.localLedgerUserId,
+              (ref) => sessionManager.activeLocalAccountId!,
             ),
             userProfileRepositoryProvider.overrideWithValue(repository),
             progressSummaryProvider.overrideWith(
@@ -367,7 +367,7 @@ void main() {
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
             activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => UserProfile.localLedgerUserId,
+              (ref) => sessionManager.activeLocalAccountId!,
             ),
             userProfileRepositoryProvider.overrideWithValue(repository),
           ],

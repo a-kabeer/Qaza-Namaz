@@ -919,6 +919,8 @@ void main() {
     (tester) async {
       final database = AppDatabase(NativeDatabase.memory());
       final manager = await _createSession(database);
+      final priorGuestId = manager.activeLocalAccountId!;
+      expect(priorGuestId, startsWith('guest_'));
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
@@ -946,14 +948,14 @@ void main() {
       addTearDown(container.dispose);
       addTearDown(database.close);
 
-      expect(manager.activeLocalAccountId, 'guest');
+      expect(manager.activeLocalAccountId, priorGuestId);
 
       await tester.pumpWidget(
         _app(container, const AccountScreen(autoConnect: true)),
       );
       await tester.pumpAndSettle();
 
-      expect(manager.activeLocalAccountId, 'guest');
+      expect(manager.activeLocalAccountId, priorGuestId);
       expect(await database.hasPendingInitialCloudBackup(), isFalse);
       expect(find.text('Account'), findsOneWidget);
     },
