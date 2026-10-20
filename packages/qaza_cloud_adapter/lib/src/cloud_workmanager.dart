@@ -68,6 +68,13 @@ void initializeQazaCloudBackgroundDispatcher() {
     var accountPinned = false;
 
     try {
+      final localWorkspaceId = googleLocalWorkspaceId(accountId);
+      final startGeneration = await appDatabase.readSessionGeneration();
+      if (await appDatabase.readActiveLocalAccountId() != localWorkspaceId) {
+        // Scheduled runs must not sync an inactive Google workspace. The next
+        // activation can retry against that workspace's own pending revision.
+        return true;
+      }
       if (await gateway.accountIdForAuthorization() != accountId) {
         // A foreground account switch can temporarily change the persisted
         // identity binding. Stop without marking either account as broken.
@@ -102,6 +109,20 @@ void initializeQazaCloudBackgroundDispatcher() {
         state: operationState,
       );
       final result = await engine.sync(allowInteractive: false);
+      if (!await appDatabase.isCurrentWorkspaceGeneration(
+        localAccountId: localWorkspaceId,
+        generation: startGeneration,
+      )) {
+        // The remote may have accepted the captured snapshot while the user
+        // switched accounts. Do not mark it clean; reconcile by hash next time.
+        await appDatabase.writeWorkspaceSyncState(
+          localWorkspaceId,
+          'pending',
+          localRevision: await appDatabase.readWorkspaceRevision(localWorkspaceId),
+          remoteAccountId: accountId,
+        );
+        return true;
+      }
       if (result.kind == CloudSyncResultKind.uploaded ||
           result.kind == CloudSyncResultKind.downloaded) {
         await operationState.setLastSuccessfulSyncAt(DateTime.now().toUtc());

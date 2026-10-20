@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/local/account_local_store.dart';
 import '../../domain/entities/local_account.dart';
-import '../../domain/entities/user_profile.dart';
 
 class AccountSessionManager extends ChangeNotifier {
   AccountSessionManager({

@@ -521,6 +521,15 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         allowInteractive: allowInteractive,
       );
       final accountId = verified.accountId;
+      final localWorkspaceId =
+          accountId == null ? null : googleLocalWorkspaceId(accountId);
+      final startGeneration = await _phase1.database.readSessionGeneration();
+      if (localWorkspaceId != null &&
+          await _phase1.database.readActiveLocalAccountId() != localWorkspaceId) {
+        return const CloudBackupDiscoverySnapshot.failed(
+          'The selected Google workspace is not active. Reopen that account and retry discovery.',
+        );
+      }
       if (accountId != null) _gateway.pinAccountForOperation(accountId);
       try {
         final result = await _engine(
@@ -529,10 +538,15 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
               ? null
               : googleLocalWorkspaceId(accountId),
         ).discoverBackup(allowInteractive: allowInteractive);
-        final localWorkspaceId = accountId == null
-            ? null
-            : googleLocalWorkspaceId(accountId);
         if (localWorkspaceId != null) {
+          if (!await _phase1.database.isCurrentWorkspaceGeneration(
+            localAccountId: localWorkspaceId,
+            generation: startGeneration,
+          )) {
+            return const CloudBackupDiscoverySnapshot.failed(
+              'The active workspace changed during Drive discovery. No backup state was changed; retry when the intended account is active.',
+            );
+          }
           final workspaceRevision = await _phase1.database
               .readWorkspaceRevision(localWorkspaceId);
           final (syncState, conflictMarker) = switch (result.kind) {
@@ -660,7 +674,18 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       final verified = await _verifyAccountBeforeSync(allowInteractive: true);
       operationState = verified.state;
       operationAccountId = verified.accountId;
+      final startGeneration = await _phase1.database.readSessionGeneration();
       if (operationAccountId != null) {
+        final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
+        if (await _phase1.database.readActiveLocalAccountId() != localWorkspaceId) {
+          return await _snapshot(
+            CloudSyncStatus.failed,
+            message:
+                'The selected Google workspace is no longer active. No upload was started; reopen that account and retry.',
+            state: operationState,
+            includeAccountState: true,
+          );
+        }
         _gateway.pinAccountForOperation(operationAccountId);
         accountPinned = true;
         final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
@@ -691,6 +716,27 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
               onProgress?.call(progress);
             },
           );
+      if (operationAccountId != null) {
+        final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
+        if (!await _phase1.database.isCurrentWorkspaceGeneration(
+          localAccountId: localWorkspaceId,
+          generation: startGeneration,
+        )) {
+          await _phase1.database.writeWorkspaceSyncState(
+            localWorkspaceId,
+            'pending',
+            localRevision: await _phase1.database.readWorkspaceRevision(localWorkspaceId),
+            remoteAccountId: operationAccountId,
+          );
+          return await _snapshot(
+            CloudSyncStatus.failed,
+            message:
+                'The active workspace changed during backup. Local records remain safe; the result will be reconciled when that account is reopened.',
+            state: operationState,
+            includeAccountState: true,
+          );
+        }
+      }
       // Persist the successful-sync state before emitting 100% completion.
       if (operationAccountId != null) {
         final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);

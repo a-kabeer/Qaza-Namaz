@@ -1032,23 +1032,20 @@ void main() {
     const legacyGuest = 'guest';
     const legacyGoogle = 'google:stable-migration-account';
     final now = DateTime(2025, 1, 1).microsecondsSinceEpoch;
-    for (final id in [legacyGuest, legacyGoogle]) {
-      await database.customInsert(
-        '''INSERT INTO local_accounts
-           (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
-           VALUES (?, 'local', 'active', ?, ?)''',
-        variables: [Variable(id), Variable(now), Variable(now)],
-      );
-    }
+    await database.customInsert(
+      '''INSERT INTO local_accounts
+         (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+         VALUES (?, 'local', 'active', ?, ?)''',
+      variables: [Variable(legacyGoogle), Variable(now), Variable(now)],
+    );
     await database.qazaRecordsDao.insertRecord(
       _recordFor(legacyGuest, 'legacy_guest_record', DateTime(2025, 1, 1)),
     );
     await database.qazaRecordsDao.insertRecord(
       _recordFor(legacyGoogle, 'legacy_google_record', DateTime(2025, 1, 2)),
     );
-    await database.customInsert(
-      '''INSERT INTO app_session_state (id, active_local_account_id, generation)
-         VALUES (1, ?, 1)''',
+    await database.customUpdate(
+      'UPDATE app_session_state SET active_local_account_id = ? WHERE id = 1',
       variables: [Variable(legacyGoogle)],
     );
 
