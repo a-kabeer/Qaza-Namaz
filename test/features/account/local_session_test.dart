@@ -162,7 +162,8 @@ void main() {
     expect(restartedManager.activeLocalAccountId, draftId);
     final saved = await store.listGuestWorkspaces();
     expect(
-      saved.singleWhere((workspace) => workspace.localAccountId == draftId)
+      saved
+          .singleWhere((workspace) => workspace.localAccountId == draftId)
           .lifecycleState,
       AccountLifecycleState.draft,
     );
