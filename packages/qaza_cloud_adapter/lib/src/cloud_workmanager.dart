@@ -87,6 +87,14 @@ void initializeQazaCloudBackgroundDispatcher() {
 
       gateway.pinAccountForOperation(accountId);
       accountPinned = true;
+      if (await appDatabase.isWorkspaceCloudUploadBlocked(
+        googleLocalWorkspaceId(accountId),
+      )) {
+        // This account was left local-only because Drive state was uncertain.
+        // A scheduled job must never overwrite a backup before an explicit,
+        // successful foreground reconciliation has cleared the block.
+        return true;
+      }
       final remote = GoogleDriveAppDataStore(gateway);
       final engine = CloudSyncEngine(
         phase1: phase1,

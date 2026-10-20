@@ -160,7 +160,8 @@ class AccountLocalStore {
     // session pointing at an archived workspace. Recover into a fresh local
     // workspace instead of trying to reactivate the archived row.
     final legacyGuest = await getAccount(UserProfile.localLedgerUserId);
-    if (legacyGuest?.lifecycleState == AccountLifecycleState.archived) {
+    if (legacyGuest?.lifecycleState == AccountLifecycleState.archived ||
+        legacyGuest?.lifecycleState == AccountLifecycleState.deletedHold) {
       return createGuestWorkspace();
     }
     return ensureAccountActive(UserProfile.localLedgerUserId);

@@ -528,6 +528,30 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
               ? null
               : googleLocalWorkspaceId(accountId),
         ).discoverBackup(allowInteractive: allowInteractive);
+        final localWorkspaceId = accountId == null
+            ? null
+            : googleLocalWorkspaceId(accountId);
+        if (localWorkspaceId != null) {
+          final workspaceRevision = await _phase1.database.readWorkspaceRevision(
+            localWorkspaceId,
+          );
+          final (syncState, conflictMarker) = switch (result.kind) {
+            CloudBackupDiscoveryKind.noBackup => ('pending', null),
+            CloudBackupDiscoveryKind.found => (
+                'conflict',
+                result.conflict?.remoteLineage.backupId,
+              ),
+            CloudBackupDiscoveryKind.invalidBackup => ('legacy_unverified', null),
+            CloudBackupDiscoveryKind.failed => ('cloud_unverified', null),
+          };
+          await _phase1.database.writeWorkspaceSyncState(
+            localWorkspaceId,
+            syncState,
+            localRevision: workspaceRevision,
+            conflictMarker: conflictMarker,
+            remoteAccountId: accountId,
+          );
+        }
         switch (result.kind) {
           case CloudBackupDiscoveryKind.noBackup:
             return const CloudBackupDiscoverySnapshot.noBackup();
@@ -636,6 +660,16 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       if (operationAccountId != null) {
         _gateway.pinAccountForOperation(operationAccountId);
         accountPinned = true;
+        final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
+        if (await _phase1.database.isWorkspaceCloudUploadBlocked(localWorkspaceId)) {
+          return await _snapshot(
+            CloudSyncStatus.failed,
+            message:
+                'Drive backup status is not verified. Retry backup discovery first; local records have been kept and no upload was started.',
+            state: operationState,
+            includeAccountState: true,
+          );
+        }
       }
 
       final result =
@@ -653,6 +687,24 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
             },
           );
       // Persist the successful-sync state before emitting 100% completion.
+      if (operationAccountId != null) {
+        final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
+        final nextState = switch (result.kind) {
+          CloudSyncResultKind.uploaded ||
+          CloudSyncResultKind.downloaded ||
+          CloudSyncResultKind.noOp => 'clean',
+          CloudSyncResultKind.conflict => 'conflict',
+          _ => 'pending',
+        };
+        await _phase1.database.writeWorkspaceSyncState(
+          localWorkspaceId,
+          nextState,
+          localRevision:
+              await _phase1.database.readWorkspaceRevision(localWorkspaceId),
+          remoteAccountId: operationAccountId,
+          conflictMarker: result.conflict?.remoteLineage.backupId,
+        );
+      }
       final snapshot = await _snapshotFromResult(result, state: operationState);
       if (result.kind == CloudSyncResultKind.uploaded &&
           latestProgress != null &&

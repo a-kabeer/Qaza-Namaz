@@ -29,6 +29,8 @@ class _CloudSetupChoiceScreenState
   bool _working = false;
   bool _accountConnected = false;
   bool _cloudAttempted = false;
+  bool _driveDiscoveryUnverified = false;
+  bool _driveBackupInvalid = false;
   final List<_QueuedCloudErrorDialog> _queuedErrorDialogs = [];
   bool _errorDialogShowing = false;
   bool _errorDialogScheduled = false;
@@ -178,6 +180,8 @@ class _CloudSetupChoiceScreenState
     switch (result.status) {
       case CloudBackupDiscoveryStatus.unavailable:
       case CloudBackupDiscoveryStatus.failed:
+        _driveDiscoveryUnverified = true;
+        _driveBackupInvalid = false;
         setState(() => _discovery = null);
         _showFailure(
           error: result.message,
@@ -186,6 +190,8 @@ class _CloudSetupChoiceScreenState
         );
         return;
       case CloudBackupDiscoveryStatus.invalidBackup:
+        _driveDiscoveryUnverified = true;
+        _driveBackupInvalid = true;
         setState(() => _discovery = null);
         _showFailure(
           error: result.message,
@@ -196,6 +202,8 @@ class _CloudSetupChoiceScreenState
         );
         return;
       case CloudBackupDiscoveryStatus.noBackup:
+        _driveDiscoveryUnverified = false;
+        _driveBackupInvalid = false;
         setState(() => _discovery = result);
         var adoptedGuestWorkspace = false;
         if (_accountConnected && mayAdoptGuest && targetWorkspaceId != null) {
@@ -268,6 +276,8 @@ class _CloudSetupChoiceScreenState
         await _completeChoice();
         return;
       case CloudBackupDiscoveryStatus.backupFound:
+        _driveDiscoveryUnverified = false;
+        _driveBackupInvalid = false;
         setState(() {
           _discovery = result;
         });
@@ -393,9 +403,30 @@ class _CloudSetupChoiceScreenState
     setState(() => _working = true);
     try {
       await _persistSelectedLanguage();
-      // If Google was connected but discovery failed or the user declines a
-      // discovered backup, stop cloud scheduling and disconnect before routing
-      // to local onboarding. The remote backup is left untouched.
+      if (_accountConnected &&
+          _connectedGoogleWorkspaceId != null &&
+          _driveDiscoveryUnverified) {
+        // Drive failure is not proof that no backup exists. Keep the verified
+        // Google workspace local and usable, but persist a block that prevents
+        // both foreground and scheduled uploads until discovery succeeds.
+        final workspaceId = _connectedGoogleWorkspaceId!;
+        final database = ref.read(appDatabaseProvider);
+        await database.writeWorkspaceSyncState(
+          workspaceId,
+          _driveBackupInvalid ? 'legacy_unverified' : 'cloud_unverified',
+          localRevision: await database.readWorkspaceRevision(workspaceId),
+        );
+        ref.invalidate(appRouteProvider);
+        ref.invalidate(userProfileProvider);
+        ref.invalidate(progressSummaryProvider);
+        ref.invalidate(qazaRepositoryProvider);
+        ref.invalidate(qazaAdditionRepositoryProvider);
+        ref.invalidate(qazaPlanRevisionRepositoryProvider);
+        await _completeChoice();
+        return;
+      }
+      // A definite no-backup result or an explicit, resolved backup choice is
+      // required before leaving the verified Google workspace for Guest.
       if (_accountConnected || _cloudAttempted) {
         try {
           await ref.read(cloudAccountProvider).disconnect();

@@ -442,6 +442,29 @@ void main() {
     expect(snapshots.single.read<String>('addition_id'), adoptedAdditionId);
   });
 
+  test('workspace sync block prevents cloud uploads after uncertain discovery', () async {
+    const googleWorkspace = 'google:account-unverified';
+    await database.writeWorkspaceSyncState(
+      googleWorkspace,
+      'cloud_unverified',
+      localRevision: 4,
+    );
+    expect(
+      await database.isWorkspaceCloudUploadBlocked(googleWorkspace),
+      isTrue,
+    );
+
+    await database.writeWorkspaceSyncState(
+      googleWorkspace,
+      'pending',
+      localRevision: 4,
+    );
+    expect(
+      await database.isWorkspaceCloudUploadBlocked(googleWorkspace),
+      isFalse,
+    );
+  });
+
   test('Guest deletion is undoable and retains records during the hold', () async {
     final store = AccountLocalStore(database: database);
     final guestId = await store.createGuestWorkspace(displayName: 'Study Guest');
