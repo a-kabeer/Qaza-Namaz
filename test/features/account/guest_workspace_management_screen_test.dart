@@ -291,7 +291,6 @@ void main() {
     );
   });
 
-
   testWidgets(
     'switching to a saved Guest returns to the root workspace with navigation',
     (tester) async {
@@ -363,7 +362,9 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byKey(const Key('open_guest_workspace_management')));
+      await tester.tap(
+        find.byKey(const Key('open_guest_workspace_management')),
+      );
       await tester.pumpAndSettle();
       final tile = find.byKey(Key('guest_workspace_$manyRecordsId'));
       expect(tile, findsOneWidget);
@@ -382,7 +383,6 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
-
 
   test(
       'rename updates the listed display name without changing the '
