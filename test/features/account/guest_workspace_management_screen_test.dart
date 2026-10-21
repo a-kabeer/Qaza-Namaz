@@ -345,7 +345,7 @@ void main() {
                   ),
                 ],
               ),
-              bottomNavigationBar: const NavigationBar(
+              bottomNavigationBar: NavigationBar(
                 destinations: [
                   NavigationDestination(
                     icon: Icon(Icons.home_outlined),
