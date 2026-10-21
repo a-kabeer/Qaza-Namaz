@@ -749,6 +749,11 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           CloudSyncResultKind.downloaded ||
           CloudSyncResultKind.noOp => 'clean',
           CloudSyncResultKind.conflict => 'conflict',
+          // Drive rejected the authorization itself (expired/revoked
+          // token): park the workspace so uploads stay blocked until the
+          // user signs in again, instead of retrying a hopeless credential.
+          CloudSyncResultKind.failed when result.authorizationFailed =>
+            'needs_sign_in',
           _ => 'pending',
         };
         await _phase1.database.writeWorkspaceSyncState(
@@ -771,6 +776,22 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       }
       return snapshot;
     } catch (error) {
+      // A Drive 401 thrown mid-upload/download bypasses the engine's
+      // result mapping; park the workspace exactly like a failed result
+      // that carries the authorization flag.
+      if (error is CloudDriveRequestException &&
+          error.authorizationFailed &&
+          operationAccountId != null) {
+        final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
+        await _phase1.database.writeWorkspaceSyncState(
+          localWorkspaceId,
+          'needs_sign_in',
+          localRevision: await _phase1.database.readWorkspaceRevision(
+            localWorkspaceId,
+          ),
+          remoteAccountId: operationAccountId,
+        );
+      }
       return await _snapshot(
         CloudSyncStatus.failed,
         message: error.toString(),
@@ -1091,10 +1112,30 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     required CloudSyncStateStore state,
   }) async {
     final cursor = await state.readCursor();
-    final revision = await _phase1.readDbRevision();
+    final revision = await _cursorWorkspaceRevision(state);
     final localChanges = cursor.lastSyncedLocalRevision == null
         ? revision > 1
         : revision != cursor.lastSyncedLocalRevision;
     return localChanges || await state.readPendingConflict() != null;
+  }
+
+  /// The revision [CloudSyncCursor.lastSyncedLocalRevision] is compared
+  /// against. The sync engine writes that field from its workspace-scoped
+  /// backup source, so it lives in the workspace revision domain of the
+  /// account that owns the cursor — read the same workspace's revision, not
+  /// the global db_revision. When the owning account cannot be determined
+  /// (no active account, or a store without account scoping), fall back to
+  /// the global counter exactly as before.
+  Future<int> _cursorWorkspaceRevision(CloudSyncStateStore state) async {
+    if (state is CloudAccountScopedSyncStateStore) {
+      final accountId = await (state as CloudAccountScopedSyncStateStore)
+          .activeAccountId();
+      if (accountId != null && accountId.isNotEmpty) {
+        return _phase1.database.readWorkspaceRevision(
+          googleLocalWorkspaceId(accountId),
+        );
+      }
+    }
+    return _phase1.readDbRevision();
   }
 }

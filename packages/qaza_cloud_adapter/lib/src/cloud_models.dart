@@ -49,10 +49,20 @@ class CloudAccountIdentityMismatch extends CloudAuthorizationUnavailable {
 }
 
 class CloudDriveRequestException extends CloudAdapterException {
-  const CloudDriveRequestException(super.message, this.cause);
+  const CloudDriveRequestException(
+    super.message,
+    this.cause, {
+    this.authorizationFailed = false,
+  });
 
   /// Original exception retained for diagnostics; never displayed by default.
   final Object cause;
+
+  /// True when Drive itself rejected the request because the Google
+  /// authorization expired or was revoked (HTTP 401). Transient failures
+  /// (offline, rate limits, 5xx) leave this false so callers can keep them
+  /// retryable instead of parking the workspace in `needs_sign_in`.
+  final bool authorizationFailed;
 }
 
 class CloudRemoteFormatException extends CloudAdapterException {
@@ -531,6 +541,7 @@ class CloudSyncResult {
     this.conflict,
     this.message,
     this.backup,
+    this.authorizationFailed = false,
   });
 
   factory CloudSyncResult.noOp() =>
@@ -553,13 +564,25 @@ class CloudSyncResult {
   factory CloudSyncResult.skipped(String message) =>
       CloudSyncResult._(kind: CloudSyncResultKind.skipped, message: message);
 
-  factory CloudSyncResult.failed(String message) =>
-      CloudSyncResult._(kind: CloudSyncResultKind.failed, message: message);
+  factory CloudSyncResult.failed(
+    String message, {
+    bool authorizationFailed = false,
+  }) => CloudSyncResult._(
+    kind: CloudSyncResultKind.failed,
+    message: message,
+    authorizationFailed: authorizationFailed,
+  );
 
   final CloudSyncResultKind kind;
   final CloudConflict? conflict;
   final String? message;
   final CloudBackup? backup;
+
+  /// True when this failure is a Drive authorization rejection (HTTP 401:
+  /// token expired or revoked). Callers park the workspace in
+  /// `needs_sign_in` for this failure only; every other failure stays
+  /// retryable.
+  final bool authorizationFailed;
 
   bool get isSuccessful =>
       kind != CloudSyncResultKind.failed &&

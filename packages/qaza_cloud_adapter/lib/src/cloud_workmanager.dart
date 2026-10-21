@@ -125,6 +125,22 @@ void initializeQazaCloudBackgroundDispatcher() {
         );
         return true;
       }
+      if (result.authorizationFailed) {
+        // Drive rejected the stored authorization itself (HTTP 401). Park
+        // the workspace so the upload block at the top of this worker stops
+        // future scheduled runs, and ask the foreground to reconnect rather
+        // than letting WorkManager retry a hopeless credential.
+        await appDatabase.writeWorkspaceSyncState(
+          localWorkspaceId,
+          'needs_sign_in',
+          localRevision: await appDatabase.readWorkspaceRevision(
+            localWorkspaceId,
+          ),
+          remoteAccountId: accountId,
+        );
+        await operationState.setReconnectRequired(true);
+        return true;
+      }
       if (result.kind == CloudSyncResultKind.uploaded ||
           result.kind == CloudSyncResultKind.downloaded) {
         await operationState.setLastSuccessfulSyncAt(DateTime.now().toUtc());

@@ -309,6 +309,12 @@ class GoogleDriveAppDataStore
       return result;
     });
 
+    if (metadata.sizeBytes != null && bytes.length != metadata.sizeBytes) {
+      throw const CloudRemoteFormatException(
+        'The downloaded cloud backup size does not match its Drive metadata.',
+      );
+    }
+
     final actualSha256 = sha256.convert(bytes).toString();
     if (metadata.contentSha256 != null &&
         metadata.contentSha256!.toLowerCase() != actualSha256) {
@@ -611,7 +617,11 @@ class GoogleDriveAppDataStore
     } on CloudAdapterException {
       rethrow;
     } catch (error) {
-      throw CloudDriveRequestException(_friendlyDriveError(error), error);
+      throw CloudDriveRequestException(
+        _friendlyDriveError(error),
+        error,
+        authorizationFailed: _isAuthorizationFailure(error),
+      );
     } finally {
       retryingClient.close();
     }
@@ -678,6 +688,12 @@ bool _isTransientTransportFailure(Object error) =>
     error is http.ClientException ||
     error is IOException ||
     error is TimeoutException;
+
+/// Drive rejected the authorization itself (expired or revoked token).
+/// Other statuses stay retryable: 403 may be a permission or rate-limit
+/// response, and 408/429/5xx are transient by definition here.
+bool _isAuthorizationFailure(Object error) =>
+    error is drive.DetailedApiRequestError && error.status == 401;
 
 String _friendlyDriveError(Object error) {
   if (error is drive.DetailedApiRequestError) {
