@@ -6,7 +6,6 @@ import '../../core/widgets/app_scaffold.dart';
 import '../../domain/entities/local_account.dart';
 import 'guest_workspace_label.dart';
 import '../../l10n/app_localizations.dart';
-import '../onboarding/startup_gate.dart';
 
 class GuestWorkspaceManagementScreen extends ConsumerStatefulWidget {
   const GuestWorkspaceManagementScreen({super.key});
