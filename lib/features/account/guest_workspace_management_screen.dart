@@ -91,19 +91,36 @@ class _GuestWorkspaceManagementScreenState
       await ref
           .read(accountSessionManagerProvider)
           .activateLocalAccount(workspace.localAccountId);
+
+      // The selected workspace is now active. Keep the current root route and
+      // let its account-scoped providers settle before removing the settings
+      // routes. Pushing a second StartupGate while invalidating its async
+      // dependencies can strand the user on a blank/loading route with no
+      // workspace navigation.
       ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = true;
-      ref.invalidate(startupAccountWorkspaceRestoreProvider);
       ref.invalidate(appRouteProvider);
       ref.invalidate(userProfileProvider);
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(qazaRepositoryProvider);
       ref.invalidate(qazaAdditionRepositoryProvider);
       ref.invalidate(qazaPlanRevisionRepositoryProvider);
+
+      // These providers are used by StartupGate on the root route. Wait for
+      // the newly selected workspace's routing/profile state to finish loading
+      // while the Guest-management screen is still visible.
+      try {
+        await ref.read(appRouteProvider.future);
+      } catch (_) {
+        // StartupGate presents its retryable error boundary if this fails.
+      }
+      try {
+        await ref.read(userProfileProvider.future);
+      } catch (_) {
+        // Keep navigation recoverable; StartupGate presents profile-load errors.
+      }
+
       if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const StartupGate()),
-        (_) => false,
-      );
+      Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (error) {
       if (mounted) _showMessage(error.toString());
     }
