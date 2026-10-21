@@ -223,6 +223,65 @@ class AccountLocalStore {
     return id;
   }
 
+  /// Finds the most recently updated Guest draft that holds no user data or
+  /// entered values, if one exists.
+  ///
+  /// A draft counts as empty when nothing was ever saved into it: no profile
+  /// row, no Qaza or daily Salah records, no plan data, and not even a saved
+  /// workspace name. Any of those is user data, so such a draft is a real
+  /// saved Guest and is never reused.
+  Future<String?> findReusableEmptyGuestDraft() async {
+    final rows = await database.customSelect(
+      '''SELECT local_account_id FROM local_accounts
+         WHERE lifecycle_state = 'draft'
+           AND (local_account_id = 'guest'
+                OR local_account_id GLOB 'guest:*'
+                OR local_account_id GLOB 'guest_*')
+         ORDER BY updated_at DESC, local_account_id ASC''',
+    ).get();
+    for (final row in rows) {
+      final id = row.read<String>('local_account_id');
+      if (await loadWorkspaceDisplayName(id) != null) continue;
+      if (await hasAnyAccountData(id)) continue;
+      return id;
+    }
+    return null;
+  }
+
+  /// Opens the Guest workspace a "Start Fresh" action should use.
+  ///
+  /// An existing empty draft is resumed instead of creating another
+  /// workspace, so repeated cancelled onboarding attempts do not pile up
+  /// empty drafts. A draft holding any user data is left untouched and a
+  /// new draft is created, exactly as Start Fresh behaved before.
+  Future<String> startFreshGuestWorkspace() async {
+    final reusable = await findReusableEmptyGuestDraft();
+    if (reusable != null) {
+      await activate(reusable);
+      return reusable;
+    }
+    return createGuestWorkspace(draft: true);
+  }
+
+  /// Counts the records a workspace owns, so the delete confirmation can
+  /// show what will be lost: the profile plus these two record counts.
+  Future<GuestWorkspaceRecordCounts> countWorkspaceRecords(
+    String localAccountId,
+  ) async {
+    final qazaRows = await database.customSelect(
+      'SELECT COUNT(*) AS total FROM qaza_records WHERE user_id = ?',
+      variables: [Variable(localAccountId)],
+    ).get();
+    final salahRows = await database.customSelect(
+      'SELECT COUNT(*) AS total FROM daily_salah_logs WHERE user_id = ?',
+      variables: [Variable(localAccountId)],
+    ).get();
+    return GuestWorkspaceRecordCounts(
+      qazaRecords: qazaRows.first.read<int>('total'),
+      dailySalahRecords: salahRows.first.read<int>('total'),
+    );
+  }
+
   Future<String?> loadWorkspaceDisplayName(String localAccountId) async {
     final rows = await database.customSelect(
       'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
@@ -269,7 +328,14 @@ class AccountLocalStore {
   }
 
   /// Lists non-archived Guest workspaces that have a saved name or data.
-  /// Empty rows left behind by cancelled flows are intentionally hidden.
+  ///
+  /// A draft is listed only when it holds data (Scenario 18): an empty
+  /// draft — no saved name and no profile, records, logs, or plan data,
+  /// the same emptiness test [findReusableEmptyGuestDraft] uses — stays
+  /// hidden from the chooser and management lists, so abandoned onboarding
+  /// attempts do not pile up as visible workspaces. Hiding it here does
+  /// not affect resumability: startup resume follows the persisted
+  /// session, and Start Fresh finds the hidden draft directly.
   Future<List<LocalAccount>> listGuestWorkspaces() async {
     final rows = await database.customSelect(
       '''SELECT a.local_account_id, a.account_mode, a.lifecycle_state,
@@ -287,8 +353,7 @@ class AccountLocalStore {
     final result = <LocalAccount>[];
     for (final row in rows) {
       final account = _mapAccount(row);
-      if (account.lifecycleState == AccountLifecycleState.draft ||
-          account.displayName?.trim().isNotEmpty == true ||
+      if (account.displayName?.trim().isNotEmpty == true ||
           await hasAnyAccountData(account.localAccountId)) {
         result.add(account);
       }

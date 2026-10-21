@@ -257,11 +257,7 @@ class _CloudSetupChoiceScreenState
                     );
               }
               await database.clearPendingInitialCloudBackup(
-                localAccountId: _connectedGoogleWorkspaceId == null
-                    ? null
-                    : googleLocalWorkspaceId(
-                        _connectedGoogleWorkspaceId!,
-                      ),
+                localAccountId: _connectedGoogleWorkspaceId,
               );
               ref.invalidate(initialCloudBackupPendingProvider);
             } else {
@@ -448,12 +444,12 @@ class _CloudSetupChoiceScreenState
       final guests = await accountStore.listGuestWorkspaces();
       String selectedGuestId;
       if (guests.isEmpty) {
-        selectedGuestId = await accountStore.createGuestWorkspace(draft: true);
+        selectedGuestId = await accountStore.startFreshGuestWorkspace();
       } else {
         final choice = await _chooseGuestWorkspace(guests);
         if (!mounted || choice == null) return;
         selectedGuestId = choice == _startFreshChoice
-            ? await accountStore.createGuestWorkspace(draft: true)
+            ? await accountStore.startFreshGuestWorkspace()
             : choice;
       }
       // AccountLocalStore creates workspaces durably; activate through the

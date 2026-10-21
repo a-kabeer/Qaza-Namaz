@@ -110,36 +110,12 @@ class _GuestWorkspaceManagementScreenState
   }
 
   Future<void> _renameWorkspace(LocalAccount workspace) async {
-    final controller = TextEditingController(
-      text: workspace.displayName ?? '',
-    );
     final name = await showDialog<String>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Rename Guest workspace'),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 50,
-          textCapitalization: TextCapitalization.words,
-          decoration: const InputDecoration(
-            labelText: 'Workspace name',
-            hintText: 'Enter a name',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(AppLocalizations.of(dialogContext).commonCancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(dialogContext, controller.text),
-            child: Text(AppLocalizations.of(dialogContext).commonContinue),
-          ),
-        ],
+      builder: (_) => _RenameGuestWorkspaceDialog(
+        initialName: workspace.displayName ?? '',
       ),
     );
-    controller.dispose();
     if (name == null || !mounted) return;
     final trimmed = name.trim();
     if (trimmed.isEmpty || trimmed.length > 50) {
@@ -162,11 +138,26 @@ class _GuestWorkspaceManagementScreenState
       _showMessage('Switch to another workspace before deleting this one.');
       return;
     }
+    final GuestWorkspaceRecordCounts counts;
+    try {
+      counts = await ref
+          .read(accountLocalStoreProvider)
+          .countWorkspaceRecords(workspace.localAccountId);
+    } catch (error) {
+      if (mounted) _showMessage(error.toString());
+      return;
+    }
+    if (!mounted) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: const Text('Delete Guest workspace?'),
-        content: const Text(
+        content: Text(
+          'Deleting this workspace removes its profile, '
+          '${counts.qazaRecords} '
+          '${counts.qazaRecords == 1 ? 'Qaza record' : 'Qaza records'} and '
+          '${counts.dailySalahRecords} '
+          '${counts.dailySalahRecords == 1 ? 'daily Salah record' : 'daily Salah records'}. '
           'Its records will be kept for seven days. You can undo the deletion '
           'during that period. Afterward, records are permanently removed only '
           'when no backup is pending.',
@@ -336,6 +327,66 @@ class _GuestWorkspaceManagementScreenState
                     ],
                   ],
                 ),
+    );
+  }
+}
+
+/// Rename prompt that owns its [TextEditingController].
+///
+/// The controller must outlive the dialog's exit animation: disposing it as
+/// soon as the `showDialog` future resolves leaves the still-mounted
+/// [TextField] holding a disposed controller. Owning the controller in this
+/// widget's state ties disposal to the route's actual teardown.
+class _RenameGuestWorkspaceDialog extends StatefulWidget {
+  const _RenameGuestWorkspaceDialog({required this.initialName});
+
+  final String initialName;
+
+  @override
+  State<_RenameGuestWorkspaceDialog> createState() =>
+      _RenameGuestWorkspaceDialogState();
+}
+
+class _RenameGuestWorkspaceDialogState
+    extends State<_RenameGuestWorkspaceDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Rename Guest workspace'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        maxLength: 50,
+        textCapitalization: TextCapitalization.words,
+        decoration: const InputDecoration(
+          labelText: 'Workspace name',
+          hintText: 'Enter a name',
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text(AppLocalizations.of(context).commonCancel),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text),
+          child: Text(AppLocalizations.of(context).commonContinue),
+        ),
+      ],
     );
   }
 }

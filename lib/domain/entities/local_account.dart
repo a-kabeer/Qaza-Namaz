@@ -46,6 +46,18 @@ class LocalWorkspaceDeletionHold {
   final String? displayName;
 }
 
+/// Record counts owned by one workspace, shown in the delete confirmation
+/// so the user can see exactly what will be lost.
+class GuestWorkspaceRecordCounts {
+  const GuestWorkspaceRecordCounts({
+    required this.qazaRecords,
+    required this.dailySalahRecords,
+  });
+
+  final int qazaRecords;
+  final int dailySalahRecords;
+}
+
 class LocalAccount {
   const LocalAccount({
     required this.localAccountId,
