@@ -385,6 +385,398 @@ void main() {
       client.close();
     },
   );
+
+  // Hostile/corrupt responses on the download path (`_downloadBackup`,
+  // reached through `download` and `latest`): every case must fail with a
+  // typed CloudAdapterException and return no snapshot, so no partial or
+  // attacker-shaped data can be applied by callers.
+  group('GoogleDriveAppDataStore hostile downloads', () {
+    CloudBackup buildBackup() => CloudBackup(
+      lineage: CloudLineage(
+        deviceId: 'device-A',
+        backupId: 'backup-hostile',
+        baseBackupId: 'backup-100',
+        dbRevision: 9,
+        createdAt: DateTime.utc(2026, 10, 14),
+      ),
+      phase1BackupJson:
+          '{"metadata":{"app_id":"qaza_namaz_app","db_revision":9,"database_schema_version":25},"data":{}}',
+    );
+
+    CloudRemoteMetadata buildMetadata(
+      List<int> bytes, {
+      String? backupId = 'backup-hostile',
+      String? googleAccountId = 'test-google-account',
+      String? workspaceId = 'google_test-google-account',
+      String? databaseSchemaVersion = '25',
+      String? contentSha256,
+      bool includeSha256 = true,
+      String? contentMd5,
+      bool includeMd5 = true,
+      int? sizeBytes,
+    }) => CloudRemoteMetadata(
+      fileId: 'file-hostile',
+      backupId: backupId,
+      remoteVersion: '7',
+      modifiedAt: DateTime.utc(2026, 10, 14),
+      hasAuthoritativeVersion: true,
+      sizeBytes: sizeBytes ?? bytes.length,
+      googleAccountId: googleAccountId,
+      workspaceId: workspaceId,
+      contentSha256: includeSha256
+          ? (contentSha256 ?? sha256.convert(bytes).toString())
+          : null,
+      databaseSchemaVersion: databaseSchemaVersion,
+      contentMd5: includeMd5
+          ? (contentMd5 ?? md5.convert(bytes).toString())
+          : null,
+    );
+
+    MockClient downloadClient(List<int> body, {void Function()? onGet}) {
+      return MockClient((request) async {
+        if (request.method == 'GET' &&
+            request.url.path.endsWith('/files/file-hostile')) {
+          onGet?.call();
+          return http.Response.bytes(
+            body,
+            200,
+            headers: const <String, String>{'content-type': 'application/json'},
+          );
+        }
+        return http.Response('Unexpected request', 500);
+      });
+    }
+
+    test(
+      'download returns the snapshot when bytes match all metadata',
+      () async {
+        final bytes = utf8.encode(buildBackup().toJsonString());
+        final client = downloadClient(bytes);
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        final snapshot = await store.download(
+          buildMetadata(bytes),
+          allowInteractive: false,
+        );
+
+        expect(snapshot.fileId, 'file-hostile');
+        expect(snapshot.backup.lineage.backupId, 'backup-hostile');
+        expect(snapshot.backup.toJsonString(), buildBackup().toJsonString());
+        client.close();
+      },
+    );
+
+    test(
+      'download rejects a body whose length differs from the metadata size',
+      () async {
+        // The served bytes are fully self-consistent (hashes, lineage,
+        // account, workspace and schema all describe them exactly); only
+        // the Drive-reported size is larger, so the rejection must come
+        // from the delivered-length check, not a content check.
+        final bytes = utf8.encode(buildBackup().toJsonString());
+        final client = downloadClient(bytes);
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        await expectLater(
+          store.download(
+            buildMetadata(bytes, sizeBytes: bytes.length + 4096),
+            allowInteractive: false,
+          ),
+          throwsA(isA<CloudRemoteFormatException>()),
+        );
+        client.close();
+      },
+    );
+
+    test(
+      'download rejects bytes that fail the SHA-256 metadata check',
+      () async {
+        final bytes = utf8.encode(buildBackup().toJsonString());
+        final client = downloadClient(bytes);
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        await expectLater(
+          store.download(
+            buildMetadata(
+              bytes,
+              contentSha256: sha256
+                  .convert(utf8.encode('some other content'))
+                  .toString(),
+            ),
+            allowInteractive: false,
+          ),
+          throwsA(isA<CloudRemoteFormatException>()),
+        );
+        client.close();
+      },
+    );
+
+    test(
+      'download rejects bytes that fail the Drive MD5 metadata check',
+      () async {
+        final bytes = utf8.encode(buildBackup().toJsonString());
+        final client = downloadClient(bytes);
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        await expectLater(
+          store.download(
+            buildMetadata(
+              bytes,
+              includeSha256: false,
+              contentMd5: md5
+                  .convert(utf8.encode('some other content'))
+                  .toString(),
+            ),
+            allowInteractive: false,
+          ),
+          throwsA(isA<CloudRemoteFormatException>()),
+        );
+        client.close();
+      },
+    );
+
+    test(
+      'download rejects a body that is not a backup JSON envelope',
+      () async {
+        // The metadata hashes describe the served bytes exactly, so the
+        // rejection must come from envelope validation, not a hash check.
+        final bytes = utf8.encode('this is not a backup envelope');
+        final client = downloadClient(bytes);
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        await expectLater(
+          store.download(buildMetadata(bytes), allowInteractive: false),
+          throwsA(isA<CloudRemoteFormatException>()),
+        );
+        client.close();
+      },
+    );
+
+    test(
+      'download rejects an envelope with an unsupported schema version',
+      () async {
+        final decoded =
+            jsonDecode(buildBackup().toJsonString()) as Map<String, dynamic>;
+        decoded['cloud_schema_version'] = 999;
+        final bytes = utf8.encode(jsonEncode(decoded));
+        final client = downloadClient(bytes);
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        await expectLater(
+          store.download(buildMetadata(bytes), allowInteractive: false),
+          throwsA(isA<CloudRemoteFormatException>()),
+        );
+        client.close();
+      },
+    );
+
+    test('download rejects metadata naming a different backup ID than the '
+        'payload lineage', () async {
+      final bytes = utf8.encode(buildBackup().toJsonString());
+      final client = downloadClient(bytes);
+      final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+      await expectLater(
+        store.download(
+          buildMetadata(bytes, backupId: 'backup-other'),
+          allowInteractive: false,
+        ),
+        throwsA(isA<CloudRemoteFormatException>()),
+      );
+      client.close();
+    });
+
+    test(
+      'download rejects a backup owned by a different Google account',
+      () async {
+        final bytes = utf8.encode(buildBackup().toJsonString());
+        final client = downloadClient(bytes);
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        await expectLater(
+          store.download(
+            buildMetadata(
+              bytes,
+              googleAccountId: 'other-google-account',
+              workspaceId: 'google_other-google-account',
+            ),
+            allowInteractive: false,
+          ),
+          throwsA(isA<CloudAccountIdentityMismatch>()),
+        );
+        client.close();
+      },
+    );
+
+    test('download rejects metadata whose workspace does not match its '
+        'Google account', () async {
+      final bytes = utf8.encode(buildBackup().toJsonString());
+      final client = downloadClient(bytes);
+      final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+      await expectLater(
+        store.download(
+          buildMetadata(bytes, workspaceId: 'google_other-google-account'),
+          allowInteractive: false,
+        ),
+        throwsA(isA<CloudRemoteFormatException>()),
+      );
+      client.close();
+    });
+
+    test('download rejects metadata whose schema version differs from the '
+        'payload', () async {
+      final bytes = utf8.encode(buildBackup().toJsonString());
+      final client = downloadClient(bytes);
+      final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+      await expectLater(
+        store.download(
+          buildMetadata(bytes, databaseSchemaVersion: '24'),
+          allowInteractive: false,
+        ),
+        throwsA(isA<CloudRemoteFormatException>()),
+      );
+      client.close();
+    });
+
+    test(
+      'download surfaces an HTTP error as a typed, unretried failure',
+      () async {
+        var getAttempts = 0;
+        final client = MockClient((request) async {
+          if (request.method == 'GET' &&
+              request.url.path.endsWith('/files/file-hostile')) {
+            getAttempts++;
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'error': <String, Object?>{
+                  'code': 404,
+                  'message': 'File not found',
+                  'errors': <Object?>[
+                    <String, Object?>{
+                      'domain': 'global',
+                      'reason': 'notFound',
+                      'message': 'File not found',
+                    },
+                  ],
+                },
+              }),
+              404,
+            );
+          }
+          return http.Response('Unexpected request', 500);
+        });
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        await expectLater(
+          store.download(
+            buildMetadata(utf8.encode(buildBackup().toJsonString())),
+            allowInteractive: false,
+          ),
+          throwsA(isA<CloudDriveRequestException>()),
+        );
+        expect(getAttempts, 1);
+        client.close();
+      },
+    );
+
+    test(
+      'download retries a transient transport failure, then succeeds',
+      () async {
+        final bytes = utf8.encode(buildBackup().toJsonString());
+        var getAttempts = 0;
+        final client = MockClient((request) async {
+          if (request.method == 'GET' &&
+              request.url.path.endsWith('/files/file-hostile')) {
+            getAttempts++;
+            if (getAttempts == 1) {
+              throw http.ClientException(
+                'Connection closed before full header was received',
+                request.url,
+              );
+            }
+            return http.Response.bytes(
+              bytes,
+              200,
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
+            );
+          }
+          return http.Response('Unexpected request', 500);
+        });
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        final snapshot = await store.download(
+          buildMetadata(bytes),
+          allowInteractive: false,
+        );
+
+        expect(getAttempts, 2);
+        expect(snapshot.backup.lineage.backupId, 'backup-hostile');
+        client.close();
+      },
+    );
+
+    test(
+      'latest rejects a download whose bytes fail the listed SHA-256',
+      () async {
+        final servedBytes = utf8.encode(buildBackup().toJsonString());
+        final client = MockClient((request) async {
+          if (request.method == 'GET' &&
+              request.url.path.endsWith('/files/file-hostile')) {
+            return http.Response.bytes(
+              servedBytes,
+              200,
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
+            );
+          }
+          if (request.method == 'GET' && request.url.path.endsWith('/files')) {
+            return http.Response(
+              jsonEncode(<String, Object?>{
+                'files': <Object?>[
+                  <String, Object?>{
+                    'id': 'file-hostile',
+                    'name': '${cloudBackupFilePrefix}backup-hostile.json',
+                    'modifiedTime': '2026-10-14T00:00:00.000Z',
+                    'version': '7',
+                    'size': '${servedBytes.length}',
+                    // The MD5 describes the served bytes, so only the
+                    // SHA-256 app property can catch this substitution.
+                    'md5Checksum': md5.convert(servedBytes).toString(),
+                    'appProperties': <String, String>{
+                      'backup_id': 'backup-hostile',
+                      'google_account_id': 'test-google-account',
+                      'workspace_id': 'google_test-google-account',
+                      'content_sha256': sha256
+                          .convert(utf8.encode('the real backup content'))
+                          .toString(),
+                      'database_schema_version': '25',
+                    },
+                  },
+                ],
+              }),
+              200,
+              headers: const <String, String>{
+                'content-type': 'application/json',
+              },
+            );
+          }
+          return http.Response('Unexpected request', 500);
+        });
+        final store = GoogleDriveAppDataStore(_TestGateway(client));
+
+        await expectLater(
+          store.latest(allowInteractive: false),
+          throwsA(isA<CloudRemoteFormatException>()),
+        );
+        client.close();
+      },
+    );
+  });
 }
 
 http.Response _fileListResponse() => http.Response(

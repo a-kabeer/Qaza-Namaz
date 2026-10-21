@@ -577,6 +577,74 @@ void main() {
     expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
   });
 
+  test(
+      'Guest deletion is refused while its initial cloud backup is '
+      'still pending', () async {
+    final store = AccountLocalStore(database: database);
+    final guestId =
+        await store.createGuestWorkspace(displayName: 'Pending Backup');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_pending_backup_record', DateTime(2025, 2, 3)),
+    );
+    final otherGuest =
+        await store.createGuestWorkspace(displayName: 'Other Guest');
+    await store.activate(otherGuest);
+    await database.markInitialCloudBackupPending(localAccountId: guestId);
+
+    await expectLater(
+      store.scheduleGuestWorkspaceDeletion(guestId),
+      throwsA(isA<StateError>()),
+    );
+    // Nothing was scheduled and nothing was deleted.
+    expect(
+      (await store.getAccount(guestId))!.lifecycleState,
+      AccountLifecycleState.active,
+    );
+    expect(await store.listGuestWorkspaceDeletionHolds(), isEmpty);
+    expect(await store.hasAnyAccountData(guestId), isTrue);
+  });
+
+  test(
+      'expired Guest deletion is not purged while a backup is pending, '
+      'and purges once it clears', () async {
+    final store = AccountLocalStore(database: database);
+    final guestId = await store.createGuestWorkspace(displayName: 'Held Guest');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_held_record', DateTime(2025, 2, 4)),
+    );
+    final otherGuest =
+        await store.createGuestWorkspace(displayName: 'Keep Guest');
+    await store.activate(otherGuest);
+    final requested = DateTime(2026, 10, 1);
+    await store.scheduleGuestWorkspaceDeletion(
+      guestId,
+      requestedAt: requested,
+    );
+    await database.markInitialCloudBackupPending(localAccountId: guestId);
+
+    expect(
+      await store.purgeExpiredGuestWorkspaceDeletions(
+        now: requested.add(const Duration(days: 8)),
+      ),
+      0,
+    );
+    expect(await store.getAccount(guestId) != null, isTrue);
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: guestId)).single.id,
+      'guest_held_record',
+    );
+
+    await database.clearPendingInitialCloudBackup(localAccountId: guestId);
+    expect(
+      await store.purgeExpiredGuestWorkspaceDeletions(
+        now: requested.add(const Duration(days: 8)),
+      ),
+      1,
+    );
+    expect(await store.getAccount(guestId) == null, isTrue);
+    expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
+  });
+
   test('backup preserves daily Salah links and the tracking preference',
       () async {
     await database.qazaRecordsDao.insertRecord(
@@ -1124,6 +1192,95 @@ void main() {
       (await database.qazaRecordsDao.getAll(userId: canonicalGoogle))
           .map((record) => record.id),
       ['legacy_google_record'],
+    );
+  });
+
+  test(
+      'legacy guest migration supplies the default Guest name and keeps '
+      'the workspace active and listed with its data', () async {
+    final store = AccountLocalStore(database: database);
+    await database.qazaRecordsDao.insertRecord(
+      _record('legacy_named_guest_record', DateTime(2025, 1, 5)),
+    );
+
+    await WorkspaceIdentityMigrator(database).migrate();
+
+    final guestRows = await database
+        .customSelect(
+          "SELECT local_account_id FROM local_accounts "
+          "WHERE local_account_id LIKE 'guest_%'",
+        )
+        .get();
+    expect(guestRows, hasLength(1));
+    final canonicalGuest = guestRows.single.read<String>('local_account_id');
+    // Plan Section 9: the migration supplies the name "Guest", so the
+    // legacy profile does not fail the Name-required onboarding rule.
+    expect(await store.loadWorkspaceDisplayName(canonicalGuest), 'Guest');
+    expect(
+      (await store.getAccount(canonicalGuest))!.lifecycleState,
+      AccountLifecycleState.active,
+    );
+    // It holds data, so it stays listed for the chooser and management UI.
+    final listed = await store.listGuestWorkspaces();
+    final entry = listed.singleWhere(
+      (account) => account.localAccountId == canonicalGuest,
+    );
+    expect(entry.displayName, 'Guest');
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalGuest))
+          .map((record) => record.id),
+      ['legacy_named_guest_record'],
+    );
+  });
+
+  test(
+      'legacy Google workspace without a stable ID is bound '
+      'legacy_unverified and its uploads are blocked', () async {
+    const unverifiableGoogle = 'google:';
+    final now = DateTime(2025, 1, 1).microsecondsSinceEpoch;
+    await database.customInsert(
+      '''INSERT INTO local_accounts
+         (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+         VALUES (?, 'local', 'active', ?, ?)''',
+      variables: [Variable(unverifiableGoogle), Variable(now), Variable(now)],
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(
+        unverifiableGoogle,
+        'legacy_unverifiable_record',
+        DateTime(2025, 1, 6),
+      ),
+    );
+
+    await WorkspaceIdentityMigrator(database).migrate();
+
+    // The workspace is never renamed or merged without a stable Google
+    // ID; it is quarantined as legacy_unverified (plan Section 9), which
+    // blocks uploads until a foreground reconcile can verify it. Its
+    // records are kept untouched.
+    expect(
+      await database.readWorkspaceSyncState(unverifiableGoogle),
+      'legacy_unverified',
+    );
+    expect(
+      await database.isWorkspaceCloudUploadBlocked(unverifiableGoogle),
+      isTrue,
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: unverifiableGoogle))
+          .map((record) => record.id),
+      ['legacy_unverifiable_record'],
+    );
+    final accountRows = await database
+        .customSelect(
+          "SELECT local_account_id FROM local_accounts "
+          "WHERE local_account_id LIKE 'google%'",
+        )
+        .get();
+    expect(accountRows, hasLength(1));
+    expect(
+      accountRows.single.read<String>('local_account_id'),
+      unverifiableGoogle,
     );
   });
 
