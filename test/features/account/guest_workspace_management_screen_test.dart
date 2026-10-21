@@ -112,7 +112,7 @@ void main() {
     );
     addTearDown(container.dispose);
     await tester.pumpWidget(
-      _app(container, const GuestWorkspaceManagementScreen()),
+      _app(container, GuestWorkspaceManagementScreen()),
     );
     // The screen loads workspaces asynchronously; pump in bounded steps
     // until the seeded workspaces are listed.
@@ -338,7 +338,7 @@ void main() {
                     key: const Key('open_guest_workspace_management'),
                     onPressed: () => Navigator.of(context).push(
                       MaterialPageRoute<void>(
-                        builder: (_) => const GuestWorkspaceManagementScreen(),
+                        builder: (_) => GuestWorkspaceManagementScreen(),
                       ),
                     ),
                     child: const Text('Open Guest workspaces'),
