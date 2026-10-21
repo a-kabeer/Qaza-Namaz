@@ -126,7 +126,11 @@ class CloudSyncEngine {
     } on CloudAuthorizationUnavailable catch (error) {
       return CloudSyncResult.skipped(error.message);
     } on CloudAdapterException catch (error) {
-      return CloudSyncResult.failed(error.message);
+      return CloudSyncResult.failed(
+        error.message,
+        authorizationFailed:
+            error is CloudDriveRequestException && error.authorizationFailed,
+      );
     } catch (_) {
       return CloudSyncResult.failed(
         'Could not check Google Drive backup status. Check your connection and try again.',

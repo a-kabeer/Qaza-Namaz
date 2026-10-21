@@ -4,10 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../app/workspace_refresh.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
+import '../../domain/entities/local_account.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/settings_components.dart';
 import '../../l10n/app_localizations.dart';
 import '../data_management/qaza_data_management_screen.dart';
+import 'guest_workspace_management_screen.dart';
 import '../onboarding/startup_gate.dart';
 import '../settings/qaza_reset_controller.dart';
 
@@ -59,6 +61,17 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     setState(() => _accountSnapshot = AsyncData(account));
   }
 
+  Future<void> _signOutGuest() async {
+    await ref.read(appDatabaseProvider).markReturningAccountChoicePending();
+    ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = false;
+    ref.invalidate(returningAccountChoicePendingProvider);
+    if (!mounted) return;
+    Navigator.of(context).pushAndRemoveUntil(
+      MaterialPageRoute<void>(builder: (_) => const StartupGate()),
+      (_) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -74,6 +87,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
         const CloudAccountSnapshot.disconnected();
     final cloudSupported = ref.watch(cloudAccountProvider).isSupported &&
         ref.watch(cloudSyncProvider).isSupported;
+    final activeAccount =
+        ref.watch(accountSessionManagerProvider).activeAccount;
+    final isGuest = isGuestLocalWorkspaceId(activeAccount?.localAccountId);
+    // The cloud card owns Google sign-out when a Google identity is connected.
+    // Avoid showing two identical actions if startup is still reconciling the
+    // previously active Guest workspace.
+    final showGuestSignOut = isGuest && !account.isConnected;
 
     return AppScaffold(
       title: l10n.accountTitle,
@@ -92,6 +112,28 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
             ),
             const SizedBox(height: 16),
           ],
+          if (showGuestSignOut) ...[
+            Card(
+              child: ListTile(
+                key: const Key('account_guest_sign_out'),
+                leading: const Icon(Icons.logout_rounded),
+                title: Text(l10n.cloudDisconnect),
+                subtitle: Text(l10n.accountChoiceGuestDescription),
+                onTap: _signOutGuest,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
+          Card(
+            child: SettingsNavRow(
+              key: const Key('account_guest_workspace_management'),
+              icon: Icons.manage_accounts_outlined,
+              title: l10n.accountGuestTitle,
+              subtitle: null,
+              onTap: () => open(const GuestWorkspaceManagementScreen()),
+            ),
+          ),
+          const SizedBox(height: 12),
           Card(
             child: SettingsNavRow(
               key: const Key('account_data_management'),
@@ -366,11 +408,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         container.read(accountSessionManagerProvider).activeLocalAccountId;
     var workspaceActivated = false;
     var initialBackupPendingMarked = false;
-    // Default to recoverable until the selected Google workspace is inspected.
+    var guestWorkspaceAdopted = false;
+    String? initialBackupLocalAccountId;
+    var googleWorkspaceExistedBefore = false;
+    // This means the stable Google identity had no workspace before activation.
     var googleWorkspaceWasUninitialized = true;
 
     Future<void> restorePreviousWorkspace() async {
-      if (!workspaceActivated) return;
+      if (!workspaceActivated || guestWorkspaceAdopted) return;
       try {
         final session = container.read(accountSessionManagerProvider);
         if (previousWorkspaceId == null) {
@@ -383,7 +428,8 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         if (initialBackupPendingMarked) {
           await container
               .read(appDatabaseProvider)
-              .clearPendingInitialCloudBackup();
+              .clearPendingInitialCloudBackup(
+                  localAccountId: initialBackupLocalAccountId);
           container.invalidate(initialCloudBackupPendingProvider);
           initialBackupPendingMarked = false;
         }
@@ -415,17 +461,27 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         });
         return;
       }
+      final targetWorkspaceId = googleLocalWorkspaceId(stableAccountId);
+      initialBackupLocalAccountId = targetWorkspaceId;
+      googleWorkspaceExistedBefore = await container
+              .read(accountLocalStoreProvider)
+              .getAccount(targetWorkspaceId) !=
+          null;
       workspaceActivated = true;
       await container
           .read(accountSessionManagerProvider)
           .activateGoogleAccount(stableAccountId);
       final selectedWorkspaceId =
           container.read(accountSessionManagerProvider).activeLocalAccountId;
-      googleWorkspaceWasUninitialized = selectedWorkspaceId == null ||
-          await container
-                  .read(accountLocalStoreProvider)
-                  .loadProfile(selectedWorkspaceId) ==
-              null;
+      googleWorkspaceWasUninitialized = !googleWorkspaceExistedBefore;
+      final googleDisplayName = account.displayName?.trim();
+      if (selectedWorkspaceId != null &&
+          googleDisplayName != null &&
+          googleDisplayName.isNotEmpty) {
+        await container
+            .read(accountLocalStoreProvider)
+            .saveWorkspaceDisplayName(selectedWorkspaceId, googleDisplayName);
+      }
       container.invalidate(appRouteProvider);
       container.invalidate(userProfileProvider);
       container.invalidate(progressSummaryProvider);
@@ -444,6 +500,31 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       CloudSyncSnapshot result;
       switch (discovery.status) {
         case CloudBackupDiscoveryStatus.noBackup:
+          if (!googleWorkspaceExistedBefore &&
+              isGuestLocalWorkspaceId(previousWorkspaceId) &&
+              previousWorkspaceId != null) {
+            await container
+                .read(localBackupServiceProvider)
+                .adoptGuestWorkspace(
+                  sourceLocalAccountId: previousWorkspaceId,
+                  targetGoogleLocalAccountId: targetWorkspaceId,
+                  googleDisplayName: account.displayName?.trim() ?? '',
+                );
+            guestWorkspaceAdopted = true;
+            // The ownership transfer has committed; never revert to the
+            // now-archived Guest row just because an upload later fails.
+            googleWorkspaceWasUninitialized = false;
+            await container
+                .read(appDatabaseProvider)
+                .markInitialCloudBackupPending();
+            initialBackupPendingMarked = true;
+            container.invalidate(initialCloudBackupPendingProvider);
+            container
+                .read(skipPendingInitialCloudBackupForSessionProvider.notifier)
+                .state = true;
+            await refreshWorkspaceAfterRestoreContainer(container);
+          }
+
           final localAccountId = container
               .read(accountSessionManagerProvider)
               .activeLocalAccountId;
@@ -484,6 +565,22 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           result = await cloudSync.backupNow(
             onProgress: _publishBackupProgress,
           );
+          if (guestWorkspaceAdopted &&
+              result.status == CloudSyncStatus.synced &&
+              !result.hasPendingChanges) {
+            await container
+                .read(localBackupServiceProvider)
+                .markGuestAdoptionBackupVerified(initialBackupLocalAccountId);
+            await container
+                .read(appDatabaseProvider)
+                .clearPendingInitialCloudBackup(
+                    localAccountId: initialBackupLocalAccountId);
+            initialBackupPendingMarked = false;
+            container.invalidate(initialCloudBackupPendingProvider);
+            container
+                .read(skipPendingInitialCloudBackupForSessionProvider.notifier)
+                .state = false;
+          }
           if (result.status == CloudSyncStatus.conflict &&
               result.conflict != null) {
             final resolved = await _resolveConflict(result.conflict!);
@@ -603,6 +700,14 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         });
       }
     } finally {
+      if (guestWorkspaceAdopted) {
+        // The interactive backup attempt has finished. Let the account-scoped
+        // background retry take over only if its marker is still pending.
+        container
+            .read(skipPendingInitialCloudBackupForSessionProvider.notifier)
+            .state = false;
+        container.invalidate(initialCloudBackupRetryProvider);
+      }
       if (mounted) setState(() => _busy = false);
     }
   }
@@ -825,6 +930,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 Navigator.pop(context, CloudConflictChoice.keepLocal),
             child: Text(l10n.cloudKeepLocal),
           ),
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(context, CloudConflictChoice.keepBoth),
+            child: const Text('Keep Both'),
+          ),
           FilledButton(
             onPressed: () =>
                 Navigator.pop(context, CloudConflictChoice.useRemote),
@@ -836,6 +946,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     if (choice == null || !mounted) return null;
 
     final useRemote = choice == CloudConflictChoice.useRemote;
+    final keepBoth = choice == CloudConflictChoice.keepBoth;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -844,11 +955,18 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               ? l10n.cloudUseRemoteConfirmTitle
               : l10n.cloudKeepLocalConfirmTitle,
         ),
-        content: Text(
-          useRemote
-              ? l10n.cloudUseRemoteConfirmMessage
-              : l10n.cloudKeepLocalConfirmMessage,
-        ),
+        content: keepBoth
+            ? const Text(
+                'The cloud version will first be saved as a separate local '
+                'Recovery Copy. Your current local workspace will remain active. '
+                'Only after the copy is verified will the local version be '
+                'uploaded to Drive.',
+              )
+            : Text(
+                useRemote
+                    ? l10n.cloudUseRemoteConfirmMessage
+                    : l10n.cloudKeepLocalConfirmMessage,
+              ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),

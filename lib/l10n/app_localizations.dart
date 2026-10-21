@@ -2492,13 +2492,13 @@ abstract class AppLocalizations {
   /// No description provided for @accountGuestTitle.
   ///
   /// In en, this message translates to:
-  /// **'This device'**
+  /// **'Guest workspaces'**
   String get accountGuestTitle;
 
   /// No description provided for @accountGuestLocalDataSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your data is stored on this device'**
+  /// **'Manage saved Guest workspaces'**
   String get accountGuestLocalDataSubtitle;
 
   /// No description provided for @accountNotConnectedGoogle.

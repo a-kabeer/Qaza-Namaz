@@ -98,6 +98,13 @@ void main() {
   testWidgets(
     'profile onboarding imports Qaza after activating the saved local ledger',
     (tester) async {
+      final onboardingWorkspaceId = sessionManager.activeLocalAccountId!;
+      await database.customUpdate(
+        "UPDATE local_accounts SET lifecycle_state = 'draft' "
+        "WHERE local_account_id = ?",
+        variables: [Variable(onboardingWorkspaceId)],
+      );
+
       final initialProfile = UserProfile(
         languageCode: 'en',
         madhab: Madhab.hanafi,
@@ -114,7 +121,7 @@ void main() {
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
             activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => UserProfile.localLedgerUserId,
+              (ref) => sessionManager.activeLocalAccountId!,
             ),
             qazaPlanServiceProvider.overrideWithValue(
               _OneDayQazaPlanService(),
@@ -137,6 +144,14 @@ void main() {
 
       await tester.pumpAndSettle();
 
+      // Guest onboarding requires the Name field (first field) to be filled
+      // before the form can be submitted.
+      await tester.enterText(
+        find.byKey(const Key('profile_guest_name')),
+        'Test User',
+      );
+      await tester.pump();
+
       await tester.tap(
         find.descendant(
           of: find.byKey(const Key('profile_gender')),
@@ -148,8 +163,9 @@ void main() {
       await tester.scrollUntilVisible(
         find.byKey(const Key('profile_submit')),
         500,
-        scrollable: find.byType(Scrollable),
+        scrollable: find.byType(Scrollable).first,
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('profile_submit')));
       // ProfileForm keeps its saving indicator active while the review dialog
       // is open, so pumpAndSettle() would wait forever on that animation.
@@ -170,7 +186,7 @@ void main() {
       final profileRows = await database.customSelect(
         '''SELECT payload_json FROM account_profiles
            WHERE local_account_id = ?''',
-        variables: [Variable(UserProfile.localLedgerUserId)],
+        variables: [Variable(sessionManager.activeLocalAccountId!)],
       ).get();
       expect(profileRows, hasLength(1));
       expect(
@@ -184,10 +200,15 @@ void main() {
       expect(
         await database.customSelect(
           '''SELECT id FROM qaza_records WHERE user_id = ?''',
-          variables: [Variable(UserProfile.localLedgerUserId)],
+          variables: [Variable(sessionManager.activeLocalAccountId!)],
         ).get(),
         hasLength(5),
       );
+      final lifecycleRow = await database.customSelect(
+        'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ?',
+        variables: [Variable(onboardingWorkspaceId)],
+      ).getSingle();
+      expect(lifecycleRow.read<String>('lifecycle_state'), 'active');
     },
   );
 
@@ -217,7 +238,7 @@ void main() {
           appDatabaseProvider.overrideWithValue(database),
           accountSessionManagerProvider.overrideWith((ref) => sessionManager),
           activeLocalAccountIdStateProvider.overrideWith(
-            (ref) => UserProfile.localLedgerUserId,
+            (ref) => sessionManager.activeLocalAccountId!,
           ),
           qazaPlanServiceProvider.overrideWithValue(
             const QazaPlanService(),
@@ -251,11 +272,20 @@ void main() {
 
       expect(find.byType(ProfileSetupScreen), findsOneWidget);
 
+      // Guest onboarding requires the Name field (first field) to be filled
+      // before the form can be submitted.
+      await tester.enterText(
+        find.byKey(const Key('profile_guest_name')),
+        'Test User',
+      );
+      await tester.pump();
+
       await tester.scrollUntilVisible(
         find.byKey(const Key('profile_submit')),
         500,
-        scrollable: find.byType(Scrollable),
+        scrollable: find.byType(Scrollable).first,
       );
+      await tester.pump();
       await tester.tap(find.byKey(const Key('profile_submit')));
       await tester.pump();
 
@@ -270,7 +300,7 @@ void main() {
       final profileRows = await database.customSelect(
         '''SELECT payload_json FROM account_profiles
            WHERE local_account_id = ?''',
-        variables: [Variable(UserProfile.localLedgerUserId)],
+        variables: [Variable(sessionManager.activeLocalAccountId!)],
       ).get();
       expect(profileRows, hasLength(1));
       expect(
@@ -286,7 +316,7 @@ void main() {
             .customSelect(
               '''SELECT COUNT(*) AS count FROM account_plan_revisions
              WHERE local_account_id = ?''',
-              variables: [Variable(UserProfile.localLedgerUserId)],
+              variables: [Variable(sessionManager.activeLocalAccountId!)],
             )
             .getSingle()
             .then((row) => row.read<int>('count')),
@@ -324,7 +354,7 @@ void main() {
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
             activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => UserProfile.localLedgerUserId,
+              (ref) => sessionManager.activeLocalAccountId!,
             ),
             userProfileRepositoryProvider.overrideWithValue(repository),
             progressSummaryProvider.overrideWith(
@@ -373,7 +403,7 @@ void main() {
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
             activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => UserProfile.localLedgerUserId,
+              (ref) => sessionManager.activeLocalAccountId!,
             ),
             userProfileRepositoryProvider.overrideWithValue(repository),
           ],

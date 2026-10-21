@@ -49,10 +49,20 @@ class CloudAccountIdentityMismatch extends CloudAuthorizationUnavailable {
 }
 
 class CloudDriveRequestException extends CloudAdapterException {
-  const CloudDriveRequestException(super.message, this.cause);
+  const CloudDriveRequestException(
+    super.message,
+    this.cause, {
+    this.authorizationFailed = false,
+  });
 
   /// Original exception retained for diagnostics; never displayed by default.
   final Object cause;
+
+  /// True when Drive itself rejected the request because the Google
+  /// authorization expired or was revoked (HTTP 401). Transient failures
+  /// (offline, rate limits, 5xx) leave this false so callers can keep them
+  /// retryable instead of parking the workspace in `needs_sign_in`.
+  final bool authorizationFailed;
 }
 
 class CloudRemoteFormatException extends CloudAdapterException {
@@ -264,6 +274,11 @@ class CloudRemoteMetadata {
     required this.modifiedAt,
     required this.hasAuthoritativeVersion,
     this.sizeBytes,
+    this.googleAccountId,
+    this.workspaceId,
+    this.contentSha256,
+    this.databaseSchemaVersion,
+    this.contentMd5,
   });
 
   final String fileId;
@@ -275,8 +290,31 @@ class CloudRemoteMetadata {
   /// Content length reported by Google Drive, if available.
   final int? sizeBytes;
 
-  /// Unknown versions must never qualify for the metadata-only fast path.
+  /// Metadata introduced for workspace-safe, integrity-verified uploads.
+  /// Missing fields identify a legacy backup that requires full validation.
+  final String? googleAccountId;
+  final String? workspaceId;
+  final String? contentSha256;
+  final String? databaseSchemaVersion;
+  final String? contentMd5;
+
+  bool get hasVerifiedWorkspaceMetadata {
+    final accountId = googleAccountId?.trim();
+    final workspace = workspaceId?.trim();
+    final hash = contentSha256?.trim();
+    final schema = int.tryParse(databaseSchemaVersion ?? '');
+    return accountId != null &&
+        accountId.isNotEmpty &&
+        workspace == 'google_$accountId' &&
+        hash != null &&
+        RegExp(r'^[0-9a-fA-F]{64}$').hasMatch(hash) &&
+        schema != null &&
+        schema > 0;
+  }
+
+  /// Unknown/legacy metadata must be downloaded and validated in full.
   bool matchesCursor(CloudSyncCursor cursor) =>
+      hasVerifiedWorkspaceMetadata &&
       hasAuthoritativeVersion &&
       backupId != null &&
       remoteVersion != null &&
@@ -503,6 +541,7 @@ class CloudSyncResult {
     this.conflict,
     this.message,
     this.backup,
+    this.authorizationFailed = false,
   });
 
   factory CloudSyncResult.noOp() =>
@@ -525,13 +564,25 @@ class CloudSyncResult {
   factory CloudSyncResult.skipped(String message) =>
       CloudSyncResult._(kind: CloudSyncResultKind.skipped, message: message);
 
-  factory CloudSyncResult.failed(String message) =>
-      CloudSyncResult._(kind: CloudSyncResultKind.failed, message: message);
+  factory CloudSyncResult.failed(
+    String message, {
+    bool authorizationFailed = false,
+  }) => CloudSyncResult._(
+    kind: CloudSyncResultKind.failed,
+    message: message,
+    authorizationFailed: authorizationFailed,
+  );
 
   final CloudSyncResultKind kind;
   final CloudConflict? conflict;
   final String? message;
   final CloudBackup? backup;
+
+  /// True when this failure is a Drive authorization rejection (HTTP 401:
+  /// token expired or revoked). Callers park the workspace in
+  /// `needs_sign_in` for this failure only; every other failure stays
+  /// retryable.
+  final bool authorizationFailed;
 
   bool get isSuccessful =>
       kind != CloudSyncResultKind.failed &&

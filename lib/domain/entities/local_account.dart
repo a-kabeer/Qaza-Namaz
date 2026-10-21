@@ -1,5 +1,14 @@
 enum AccountMode { local }
 
+/// Whether a persisted local workspace represents a Guest session.
+/// The bare 'guest' ID is retained for compatibility with existing installs.
+bool isGuestLocalWorkspaceId(String? localAccountId) {
+  final value = localAccountId?.trim();
+  return value == 'guest' ||
+      (value?.startsWith('guest:') ?? false) ||
+      (value?.startsWith('guest_') ?? false);
+}
+
 /// Stable local workspace key for a verified Google account.
 ///
 /// The provider returns Google's stable account ID, not an email address.
@@ -9,10 +18,45 @@ String googleLocalWorkspaceId(String googleAccountId) {
   if (normalized.isEmpty) {
     throw ArgumentError.value(googleAccountId, 'googleAccountId');
   }
-  return 'google:$normalized';
+  return 'google_$normalized';
 }
 
-enum AccountLifecycleState { active, archived }
+enum AccountLifecycleState {
+  active,
+  archived,
+  draft,
+  adopting,
+  restoring,
+  adoptedRecovery,
+  recoveryCopy,
+  deletedHold,
+}
+
+class LocalWorkspaceDeletionHold {
+  const LocalWorkspaceDeletionHold({
+    required this.localAccountId,
+    required this.requestedAt,
+    required this.expiresAt,
+    this.displayName,
+  });
+
+  final String localAccountId;
+  final DateTime requestedAt;
+  final DateTime expiresAt;
+  final String? displayName;
+}
+
+/// Record counts owned by one workspace, shown in the delete confirmation
+/// so the user can see exactly what will be lost.
+class GuestWorkspaceRecordCounts {
+  const GuestWorkspaceRecordCounts({
+    required this.qazaRecords,
+    required this.dailySalahRecords,
+  });
+
+  final int qazaRecords;
+  final int dailySalahRecords;
+}
 
 class LocalAccount {
   const LocalAccount({
@@ -21,6 +65,7 @@ class LocalAccount {
     required this.lifecycleState,
     required this.createdAt,
     required this.updatedAt,
+    this.displayName,
   });
 
   final String localAccountId;
@@ -28,6 +73,7 @@ class LocalAccount {
   final AccountLifecycleState lifecycleState;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String? displayName;
 }
 
 enum AccountSessionPhase { loading, connecting, ready, error }

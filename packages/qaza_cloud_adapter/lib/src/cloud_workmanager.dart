@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
 
@@ -55,11 +56,25 @@ void initializeQazaCloudBackgroundDispatcher() {
     }
     final operationState = accountScopedState.scopedToAccount(accountId);
     final appDatabase = AppDatabase();
-    final phase1 = LocalPhase1BackupSource(appDatabase);
+    // A scheduled operation must only ever read or write the workspace
+    // owned by the verified Google identity captured above. Passing null here
+    // would export/import the entire shared database and could leak or replace
+    // unrelated Guest and Google workspaces in Drive.
+    final phase1 = LocalPhase1BackupSource(
+      appDatabase,
+      localAccountId: googleLocalWorkspaceId(accountId),
+    );
     final gateway = GoogleSignInGateway(serverClientId: serverClientId);
     var accountPinned = false;
 
     try {
+      final localWorkspaceId = googleLocalWorkspaceId(accountId);
+      final startGeneration = await appDatabase.readSessionGeneration();
+      if (await appDatabase.readActiveLocalAccountId() != localWorkspaceId) {
+        // Scheduled runs must not sync an inactive Google workspace. The next
+        // activation can retry against that workspace's own pending revision.
+        return true;
+      }
       if (await gateway.accountIdForAuthorization() != accountId) {
         // A foreground account switch can temporarily change the persisted
         // identity binding. Stop without marking either account as broken.
@@ -79,6 +94,14 @@ void initializeQazaCloudBackgroundDispatcher() {
 
       gateway.pinAccountForOperation(accountId);
       accountPinned = true;
+      if (await appDatabase.isWorkspaceCloudUploadBlocked(
+        googleLocalWorkspaceId(accountId),
+      )) {
+        // This account was left local-only because Drive state was uncertain.
+        // A scheduled job must never overwrite a backup before an explicit,
+        // successful foreground reconciliation has cleared the block.
+        return true;
+      }
       final remote = GoogleDriveAppDataStore(gateway);
       final engine = CloudSyncEngine(
         phase1: phase1,
@@ -86,6 +109,38 @@ void initializeQazaCloudBackgroundDispatcher() {
         state: operationState,
       );
       final result = await engine.sync(allowInteractive: false);
+      if (!await appDatabase.isCurrentWorkspaceGeneration(
+        localAccountId: localWorkspaceId,
+        generation: startGeneration,
+      )) {
+        // The remote may have accepted the captured snapshot while the user
+        // switched accounts. Do not mark it clean; reconcile by hash next time.
+        await appDatabase.writeWorkspaceSyncState(
+          localWorkspaceId,
+          'pending',
+          localRevision: await appDatabase.readWorkspaceRevision(
+            localWorkspaceId,
+          ),
+          remoteAccountId: accountId,
+        );
+        return true;
+      }
+      if (result.authorizationFailed) {
+        // Drive rejected the stored authorization itself (HTTP 401). Park
+        // the workspace so the upload block at the top of this worker stops
+        // future scheduled runs, and ask the foreground to reconnect rather
+        // than letting WorkManager retry a hopeless credential.
+        await appDatabase.writeWorkspaceSyncState(
+          localWorkspaceId,
+          'needs_sign_in',
+          localRevision: await appDatabase.readWorkspaceRevision(
+            localWorkspaceId,
+          ),
+          remoteAccountId: accountId,
+        );
+        await operationState.setReconnectRequired(true);
+        return true;
+      }
       if (result.kind == CloudSyncResultKind.uploaded ||
           result.kind == CloudSyncResultKind.downloaded) {
         await operationState.setLastSuccessfulSyncAt(DateTime.now().toUtc());

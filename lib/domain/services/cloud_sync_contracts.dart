@@ -186,7 +186,7 @@ typedef CloudBackupProgressCallback = void Function(
   CloudBackupProgress progress,
 );
 
-enum CloudConflictChoice { keepLocal, useRemote }
+enum CloudConflictChoice { keepLocal, useRemote, keepBoth }
 
 class CloudConflictInfo {
   const CloudConflictInfo({

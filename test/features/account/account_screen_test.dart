@@ -79,9 +79,22 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
     this.snapshot = const CloudSyncSnapshot(
       status: CloudSyncStatus.disconnected,
     ),
+    this.discoverySnapshot = const CloudBackupDiscoverySnapshot.unavailable(),
+    this.backupResult,
   });
 
   CloudSyncSnapshot snapshot;
+  CloudBackupDiscoverySnapshot discoverySnapshot;
+  int discoveryCalls = 0;
+
+  @override
+  Future<CloudBackupDiscoverySnapshot> discoverBackup({
+    bool allowInteractive = false,
+  }) async {
+    discoveryCalls++;
+    return discoverySnapshot;
+  }
+
   Completer<CloudSyncSnapshot>? backupCompleter;
   Completer<CloudSyncSnapshot>? settingsCompleter;
   Completer<CloudSyncSnapshot>? frequencyCompleter;
@@ -189,7 +202,10 @@ void main() {
       expect(find.text('Account'), findsOneWidget);
       expect(find.text('Continue with Google'), findsNothing);
       expect(find.text('Automatic backup'), findsNothing);
-      expect(find.text('Sign out'), findsNothing);
+      expect(
+        find.byKey(const Key('account_guest_sign_out')),
+        findsOneWidget,
+      );
     },
   );
 
@@ -788,6 +804,206 @@ void main() {
     },
   );
 
+  testWidgets(
+    'offline sign-out cancellation preserves the connected session and local Qaza',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final workspaceId = manager.activeLocalAccountId!;
+      await database.qazaRecordsDao.insertRecord(
+        QazaRecordsCompanion.insert(
+          id: '${workspaceId}_offline_signout_fajr',
+          userId: workspaceId,
+          prayerType: 'fajr',
+          originalDate: DateTime(2026, 10, 1),
+          status: 'pending',
+          createdAt: DateTime(2026, 10, 1),
+          updatedAt: DateTime(2026, 10, 1),
+        ),
+      );
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          accountId: 'test-google-account-A',
+          displayName: 'Connected User',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(
+          status: CloudSyncStatus.failed,
+          hasPendingChanges: true,
+        ),
+        discoverySnapshot: const CloudBackupDiscoverySnapshot.failed(
+          'offline',
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWith((ref) => database),
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign out'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Changes not backed up'), findsOneWidget);
+      expect(find.text('Sign Out Anyway'), findsOneWidget);
+      expect(find.text('Cancel'), findsOneWidget);
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(cloudAccount.snapshot.isConnected, isTrue);
+      expect(manager.activeLocalAccountId, workspaceId);
+      expect(
+        (await database.qazaRecordsDao.getAll(userId: workspaceId))
+            .map((record) => record.id),
+        ['${workspaceId}_offline_signout_fajr'],
+      );
+      expect(cloudSync.backupCalls, 0);
+    },
+  );
+
+  testWidgets(
+    'offline sign-out anyway disconnects but keeps local Qaza records',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final workspaceId = manager.activeLocalAccountId!;
+      await database.qazaRecordsDao.insertRecord(
+        QazaRecordsCompanion.insert(
+          id: '${workspaceId}_offline_signout_fajr',
+          userId: workspaceId,
+          prayerType: 'fajr',
+          originalDate: DateTime(2026, 10, 1),
+          status: 'pending',
+          createdAt: DateTime(2026, 10, 1),
+          updatedAt: DateTime(2026, 10, 1),
+        ),
+      );
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          accountId: 'test-google-account-A',
+          displayName: 'Connected User',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(
+          status: CloudSyncStatus.failed,
+          hasPendingChanges: true,
+        ),
+        discoverySnapshot: const CloudBackupDiscoverySnapshot.failed(
+          'offline',
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWith((ref) => database),
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign out'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign Out Anyway'));
+      await tester.pumpAndSettle();
+
+      expect(cloudAccount.snapshot.isConnected, isFalse);
+      expect(find.text('Welcome to Qaza Namaz'), findsOneWidget);
+      expect(
+        (await database.qazaRecordsDao.getAll(userId: workspaceId))
+            .map((record) => record.id),
+        ['${workspaceId}_offline_signout_fajr'],
+      );
+      expect(await database.hasReturningAccountChoicePending(), isTrue);
+    },
+  );
+
+  testWidgets(
+    'reachable Drive backs up pending changes before sign-out',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final workspaceId = manager.activeLocalAccountId!;
+      await database.qazaRecordsDao.insertRecord(
+        QazaRecordsCompanion.insert(
+          id: '${workspaceId}_online_signout_fajr',
+          userId: workspaceId,
+          prayerType: 'fajr',
+          originalDate: DateTime(2026, 10, 1),
+          status: 'pending',
+          createdAt: DateTime(2026, 10, 1),
+          updatedAt: DateTime(2026, 10, 1),
+        ),
+      );
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          accountId: 'test-google-account-A',
+          displayName: 'Connected User',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(
+          status: CloudSyncStatus.idle,
+          hasPendingChanges: true,
+        ),
+        discoverySnapshot: const CloudBackupDiscoverySnapshot.noBackup(),
+        backupResult: const CloudSyncSnapshot(
+          status: CloudSyncStatus.synced,
+          hasPendingChanges: false,
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWith((ref) => database),
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Sign out'));
+      await tester.pumpAndSettle();
+
+      expect(cloudSync.discoveryCalls, 1);
+      expect(cloudSync.backupCalls, 1);
+      expect(cloudAccount.snapshot.isConnected, isFalse);
+      expect(find.text('Welcome to Qaza Namaz'), findsOneWidget);
+      expect(
+        (await database.qazaRecordsDao.getAll(userId: workspaceId))
+            .map((record) => record.id),
+        ['${workspaceId}_online_signout_fajr'],
+      );
+    },
+  );
+
   testWidgets('guest profile supports Urdu RTL layout', (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = await _createSession(database);
@@ -916,6 +1132,8 @@ void main() {
     (tester) async {
       final database = AppDatabase(NativeDatabase.memory());
       final manager = await _createSession(database);
+      final priorGuestId = manager.activeLocalAccountId!;
+      expect(priorGuestId, startsWith('guest_'));
       final cloudAccount = _FakeCloudAccountProvider(
         snapshot: const CloudAccountSnapshot(
           status: CloudAccountStatus.connected,
@@ -943,14 +1161,14 @@ void main() {
       addTearDown(container.dispose);
       addTearDown(database.close);
 
-      expect(manager.activeLocalAccountId, 'guest');
+      expect(manager.activeLocalAccountId, priorGuestId);
 
       await tester.pumpWidget(
         _app(container, const AccountScreen(autoConnect: true)),
       );
       await tester.pumpAndSettle();
 
-      expect(manager.activeLocalAccountId, 'guest');
+      expect(manager.activeLocalAccountId, priorGuestId);
       expect(await database.hasPendingInitialCloudBackup(), isFalse);
       expect(find.text('Account'), findsOneWidget);
     },

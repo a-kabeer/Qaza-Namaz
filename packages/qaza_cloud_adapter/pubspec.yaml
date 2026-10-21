@@ -14,11 +14,13 @@ dependencies:
   google_sign_in: ^7.2.0
   extension_google_sign_in_as_googleapis_auth: ^3.0.0
   googleapis: ^17.0.0
+  crypto: ^3.0.7
   shared_preferences: ^2.2.3
   http: ^1.6.0
   workmanager: ^0.10.10
 
 dev_dependencies:
+  drift: ^2.35.0
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0

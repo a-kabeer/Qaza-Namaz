@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:googleapis/drive/v3.dart' as drive;
 import 'package:http/http.dart' as http;
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
@@ -227,7 +228,22 @@ class GoogleDriveAppDataStore
     );
     final files = response.files ?? const <drive.File>[];
     if (files.isEmpty) return null;
-    return _metadataFromFile(files.first);
+    final metadata = _metadataFromFile(files.first);
+    final metadataGoogleId = metadata.googleAccountId?.trim();
+    if (metadataGoogleId != null && metadataGoogleId.isNotEmpty) {
+      final actualGoogleId = await _auth.accountIdForAuthorization();
+      if (actualGoogleId == null || actualGoogleId.trim() != metadataGoogleId) {
+        throw const CloudAccountIdentityMismatch(
+          'The latest cloud backup belongs to a different Google account.',
+        );
+      }
+      if (metadata.workspaceId != 'google_$metadataGoogleId') {
+        throw const CloudRemoteFormatException(
+          'The latest cloud backup has an invalid workspace identity.',
+        );
+      }
+    }
+    return metadata;
   }
 
   CloudRemoteMetadata _metadataFromFile(drive.File file) {
@@ -250,6 +266,11 @@ class GoogleDriveAppDataStore
       modifiedAt: file.modifiedTime?.toUtc(),
       hasAuthoritativeVersion: version != null && version.isNotEmpty,
       sizeBytes: int.tryParse(file.size ?? ''),
+      googleAccountId: properties['google_account_id'],
+      workspaceId: properties['workspace_id'],
+      contentSha256: properties['content_sha256'],
+      databaseSchemaVersion: properties['database_schema_version'],
+      contentMd5: file.md5Checksum,
     );
   }
 
@@ -288,12 +309,53 @@ class GoogleDriveAppDataStore
       return result;
     });
 
+    if (metadata.sizeBytes != null && bytes.length != metadata.sizeBytes) {
+      throw const CloudRemoteFormatException(
+        'The downloaded cloud backup size does not match its Drive metadata.',
+      );
+    }
+
+    final actualSha256 = sha256.convert(bytes).toString();
+    if (metadata.contentSha256 != null &&
+        metadata.contentSha256!.toLowerCase() != actualSha256) {
+      throw const CloudRemoteFormatException(
+        'The downloaded cloud backup failed its SHA-256 content check.',
+      );
+    }
+    if (metadata.contentMd5 != null &&
+        metadata.contentMd5!.toLowerCase() != md5.convert(bytes).toString()) {
+      throw const CloudRemoteFormatException(
+        'The downloaded cloud backup failed Google Drive’s MD5 content check.',
+      );
+    }
+
     final backup = CloudBackup.fromJsonString(utf8.decode(bytes));
     if (metadata.backupId != null &&
         metadata.backupId != backup.lineage.backupId) {
       throw const CloudRemoteFormatException(
         'Drive backup metadata does not match the backup lineage.',
       );
+    }
+
+    final expectedGoogleId = metadata.googleAccountId?.trim();
+    if (expectedGoogleId != null && expectedGoogleId.isNotEmpty) {
+      final actualGoogleId = await _auth.accountIdForAuthorization();
+      if (actualGoogleId == null || actualGoogleId.trim() != expectedGoogleId) {
+        throw const CloudAccountIdentityMismatch(
+          'The backup metadata belongs to a different Google account. No local data was changed.',
+        );
+      }
+      if (metadata.workspaceId != 'google_$expectedGoogleId') {
+        throw const CloudRemoteFormatException(
+          'The cloud backup workspace identity does not match its Google account.',
+        );
+      }
+      if (metadata.databaseSchemaVersion !=
+          _databaseSchemaVersion(backup.phase1BackupJson)) {
+        throw const CloudRemoteFormatException(
+          'Cloud backup database schema metadata does not match its payload.',
+        );
+      }
     }
     return CloudRemoteSnapshot(
       fileId: metadata.fileId,
@@ -312,7 +374,19 @@ class GoogleDriveAppDataStore
   }) => _withDrive<CloudRemoteSnapshot>(
     allowInteractive: allowInteractive,
     action: (driveApi, client) async {
+      final googleAccountId = await _auth.accountIdForAuthorization();
+      if (googleAccountId == null || googleAccountId.trim().isEmpty) {
+        throw const CloudAccountIdentityMismatch(
+          'The Google account could not be verified before upload. No backup was written.',
+        );
+      }
+      final normalizedGoogleId = googleAccountId.trim();
+      final workspaceId = 'google_$normalizedGoogleId';
       final bytes = utf8.encode(backup.toJsonString());
+      final contentSha256 = sha256.convert(bytes).toString();
+      final databaseSchemaVersion = _databaseSchemaVersion(
+        backup.phase1BackupJson,
+      );
       final fileName =
           cloudBackupFilePrefix + backup.lineage.backupId + '.json';
 
@@ -324,6 +398,10 @@ class GoogleDriveAppDataStore
           backup: backup,
           fileName: fileName,
           bytes: bytes,
+          googleAccountId: normalizedGoogleId,
+          workspaceId: workspaceId,
+          contentSha256: contentSha256,
+          databaseSchemaVersion: databaseSchemaVersion,
           onProgress: onProgress,
         );
       } catch (error) {
@@ -332,6 +410,10 @@ class GoogleDriveAppDataStore
           driveApi,
           backup: backup,
           fileName: fileName,
+          googleAccountId: normalizedGoogleId,
+          workspaceId: workspaceId,
+          contentSha256: contentSha256,
+          databaseSchemaVersion: databaseSchemaVersion,
         );
         if (recovered != null) return recovered;
         throw CloudDriveRequestException(
@@ -346,6 +428,10 @@ class GoogleDriveAppDataStore
           driveApi,
           backup: backup,
           fileName: fileName,
+          googleAccountId: normalizedGoogleId,
+          workspaceId: workspaceId,
+          contentSha256: contentSha256,
+          databaseSchemaVersion: databaseSchemaVersion,
         );
         if (recovered != null) return recovered;
         throw CloudDriveRequestException(
@@ -355,14 +441,31 @@ class GoogleDriveAppDataStore
       }
 
       final metadata = _metadataFromFile(created);
-      return CloudRemoteSnapshot(
-        fileId: fileId,
-        remoteVersion:
-            metadata.remoteVersion ??
-            backup.lineage.createdAt.toIso8601String(),
-        modifiedAt: metadata.modifiedAt ?? backup.lineage.createdAt,
-        backup: backup,
+      if (!metadata.hasVerifiedWorkspaceMetadata ||
+          metadata.googleAccountId != normalizedGoogleId ||
+          metadata.workspaceId != workspaceId ||
+          metadata.contentSha256 != contentSha256 ||
+          metadata.databaseSchemaVersion != databaseSchemaVersion) {
+        throw const CloudRemoteFormatException(
+          'Google Drive did not confirm the backup identity, schema, and content-hash metadata. The local ledger was not changed.',
+        );
+      }
+
+      // A successful create response confirms acceptance, not that uploaded
+      // bytes can be read intact. Verify the exact envelope before advancing
+      // the sync cursor.
+      final verified = await _downloadBackup(
+        driveApi,
+        metadata,
+        onProgress: onProgress,
       );
+      if (!_sameLineage(verified.backup.lineage, backup.lineage) ||
+          verified.backup.toJsonString() != backup.toJsonString()) {
+        throw const CloudRemoteFormatException(
+          'Google Drive read-back verification did not match the uploaded backup. The local ledger was not changed.',
+        );
+      }
+      return verified;
     },
   );
 
@@ -372,6 +475,10 @@ class GoogleDriveAppDataStore
     required CloudBackup backup,
     required String fileName,
     required List<int> bytes,
+    required String googleAccountId,
+    required String workspaceId,
+    required String contentSha256,
+    required String databaseSchemaVersion,
     required CloudBackupProgressCallback? onProgress,
   }) async {
     final deadline = DateTime.now().add(_driveRetryBudget);
@@ -392,6 +499,10 @@ class GoogleDriveAppDataStore
                   'device_id': backup.lineage.deviceId,
                   'base_backup_id': backup.lineage.baseBackupId ?? '',
                   'db_revision': backup.lineage.dbRevision.toString(),
+                  'google_account_id': googleAccountId,
+                  'workspace_id': workspaceId,
+                  'content_sha256': contentSha256,
+                  'database_schema_version': databaseSchemaVersion,
                 },
               uploadMedia: drive.Media(
                 cloudUploadProgressStream(bytes, onProgress: onProgress),
@@ -416,6 +527,10 @@ class GoogleDriveAppDataStore
     drive.DriveApi driveApi, {
     required CloudBackup backup,
     required String fileName,
+    required String googleAccountId,
+    required String workspaceId,
+    required String contentSha256,
+    required String databaseSchemaVersion,
   }) async {
     // Never create a second snapshot until the exact prior write is reconciled.
     final response = await _retryReadAfterTransportFailure(
@@ -437,7 +552,11 @@ class GoogleDriveAppDataStore
           properties['device_id'] == backup.lineage.deviceId &&
           (properties['base_backup_id'] ?? '') ==
               (backup.lineage.baseBackupId ?? '') &&
-          properties['db_revision'] == backup.lineage.dbRevision.toString();
+          properties['db_revision'] == backup.lineage.dbRevision.toString() &&
+          properties['google_account_id'] == googleAccountId &&
+          properties['workspace_id'] == workspaceId &&
+          properties['content_sha256'] == contentSha256 &&
+          properties['database_schema_version'] == databaseSchemaVersion;
     }).toList();
 
     if (matches.length > 1) {
@@ -449,7 +568,8 @@ class GoogleDriveAppDataStore
 
     final metadata = _metadataFromFile(matches.single);
     final snapshot = await _downloadBackup(driveApi, metadata);
-    if (!_sameLineage(snapshot.backup.lineage, backup.lineage)) {
+    if (!_sameLineage(snapshot.backup.lineage, backup.lineage) ||
+        snapshot.backup.toJsonString() != backup.toJsonString()) {
       throw const CloudRemoteFormatException(
         'The uploaded backup could not be verified against its expected lineage.',
       );
@@ -497,11 +617,43 @@ class GoogleDriveAppDataStore
     } on CloudAdapterException {
       rethrow;
     } catch (error) {
-      throw CloudDriveRequestException(_friendlyDriveError(error), error);
+      throw CloudDriveRequestException(
+        _friendlyDriveError(error),
+        error,
+        authorizationFailed: _isAuthorizationFailure(error),
+      );
     } finally {
       retryingClient.close();
     }
   }
+}
+
+String _databaseSchemaVersion(String phase1BackupJson) {
+  dynamic decoded;
+  try {
+    decoded = jsonDecode(phase1BackupJson);
+  } catch (_) {
+    throw const CloudRemoteFormatException(
+      'The cloud backup payload is not valid JSON.',
+    );
+  }
+  if (decoded is! Map || decoded['metadata'] is! Map) {
+    throw const CloudRemoteFormatException(
+      'The cloud backup payload is missing metadata.',
+    );
+  }
+  final rawVersion = (decoded['metadata'] as Map)['database_schema_version'];
+  final version = rawVersion is int
+      ? rawVersion
+      : rawVersion is String
+      ? int.tryParse(rawVersion)
+      : null;
+  if (version == null || version < 1) {
+    throw const CloudRemoteFormatException(
+      'The cloud backup payload is missing a valid database schema version.',
+    );
+  }
+  return version.toString();
 }
 
 bool _sameLineage(CloudLineage a, CloudLineage b) =>
@@ -536,6 +688,12 @@ bool _isTransientTransportFailure(Object error) =>
     error is http.ClientException ||
     error is IOException ||
     error is TimeoutException;
+
+/// Drive rejected the authorization itself (expired or revoked token).
+/// Other statuses stay retryable: 403 may be a permission or rate-limit
+/// response, and 408/429/5xx are transient by definition here.
+bool _isAuthorizationFailure(Object error) =>
+    error is drive.DetailedApiRequestError && error.status == 401;
 
 String _friendlyDriveError(Object error) {
   if (error is drive.DetailedApiRequestError) {

@@ -9,7 +9,6 @@ import '../../core/time/local_date_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
 import 'cloud_setup_choice_screen.dart';
-import 'initial_cloud_backup_screen.dart';
 import 'language_selection_screen.dart';
 import 'profile_setup_screen.dart';
 import 'splash_screen.dart';
@@ -140,27 +139,12 @@ class StartupGate extends ConsumerWidget {
               );
             }
 
-            // Only the cloud-enabled host can own a pending initial upload.
-            // The offline host continues directly to Home without cloud work.
-            if (cloudEnabled &&
-                !ref.watch(skipPendingInitialCloudBackupForSessionProvider)) {
-              final pendingBackup =
-                  ref.watch(initialCloudBackupPendingProvider);
-              return pendingBackup.when(
-                loading: () => const SplashScreen(),
-                error: (_, __) => StartupProfileLoadErrorBoundary(
-                  key: const Key('startup_initial_backup_error'),
-                  onRetry: () =>
-                      ref.invalidate(initialCloudBackupPendingProvider),
-                ),
-                data: (pending) => pending
-                    ? const InitialCloudBackupScreen()
-                    : const WorkspaceShell(),
-              );
+            // A completed local profile always gets to Home. Initial upload is
+            // attempted in the background and its durable, account-scoped marker
+            // remains set if authorization, network, or Drive upload fails.
+            if (cloudEnabled) {
+              ref.watch(initialCloudBackupRetryProvider);
             }
-
-            // Local startup must not depend on resolving Google authentication.
-            // Cached account identity is read only when Account is opened.
             return const WorkspaceShell();
           },
         );

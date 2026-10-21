@@ -222,6 +222,11 @@ void main() {
             remoteVersion: '1',
             modifiedAt: null,
             hasAuthoritativeVersion: true,
+            googleAccountId: 'stable-account-A',
+            workspaceId: 'google_stable-account-A',
+            contentSha256:
+                'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            databaseSchemaVersion: '25',
           ),
         );
 
@@ -265,6 +270,11 @@ void main() {
             remoteVersion: '1',
             modifiedAt: null,
             hasAuthoritativeVersion: true,
+            googleAccountId: 'stable-account-A',
+            workspaceId: 'google_stable-account-A',
+            contentSha256:
+                'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+            databaseSchemaVersion: '25',
           ),
         );
 

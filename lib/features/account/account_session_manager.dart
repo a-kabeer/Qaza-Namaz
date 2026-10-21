@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import '../../data/local/account_local_store.dart';
 import '../../domain/entities/local_account.dart';
-import '../../domain/entities/user_profile.dart';
 
 class AccountSessionManager extends ChangeNotifier {
   AccountSessionManager({
@@ -75,9 +74,29 @@ class AccountSessionManager extends ChangeNotifier {
   Future<void> activateGoogleAccount(String googleAccountId) =>
       activateLocalAccount(googleLocalWorkspaceId(googleAccountId));
 
-  /// Returns to the existing Guest workspace without deleting any records.
-  Future<void> activateGuest() =>
-      activateLocalAccount(UserProfile.localLedgerUserId);
+  /// Returns to a safe local Guest workspace without deleting any records.
+  ///
+  /// Older installations may have adopted and archived the legacy `guest`
+  /// workspace. Never reactivate that archived workspace during sign-out;
+  /// create an empty temporary Guest workspace instead and let the account
+  /// chooser explicitly reopen a saved Guest account.
+  Future<void> activateGuest() async {
+    final currentId = activeLocalAccountId;
+    final current =
+        currentId == null ? null : await _accountStore.getAccount(currentId);
+    if (current != null &&
+        isGuestLocalWorkspaceId(current.localAccountId) &&
+        (current.lifecycleState == AccountLifecycleState.active ||
+            current.lifecycleState == AccountLifecycleState.draft)) {
+      await activateLocalAccount(current.localAccountId);
+      return;
+    }
+
+    // Signing out of Google must not silently reopen an unrelated saved Guest.
+    // The chooser lets the user select that workspace explicitly.
+    final freshGuestId = await _accountStore.createGuestWorkspace();
+    await activateLocalAccount(freshGuestId);
+  }
 
   Future<void> activateLocalAccount(String localAccountId) async {
     try {

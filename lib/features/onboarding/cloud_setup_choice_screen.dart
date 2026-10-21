@@ -11,6 +11,8 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_theme_labels.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
+import '../../domain/entities/local_account.dart';
+import '../account/guest_workspace_label.dart';
 import '../../l10n/app_localizations.dart';
 
 class CloudSetupChoiceScreen extends ConsumerStatefulWidget {
@@ -28,12 +30,18 @@ class _CloudSetupChoiceScreenState
   bool _working = false;
   bool _accountConnected = false;
   bool _cloudAttempted = false;
+  bool _driveDiscoveryUnverified = false;
+  bool _driveBackupInvalid = false;
   final List<_QueuedCloudErrorDialog> _queuedErrorDialogs = [];
   bool _errorDialogShowing = false;
   bool _errorDialogScheduled = false;
   CloudBackupDiscoverySnapshot? _discovery;
   bool _restoring = false;
   CloudBackupProgress? _restoreProgress;
+  bool _googleWorkspaceMayAdoptGuest = false;
+  String? _connectedGoogleWorkspaceId;
+  String _connectedGoogleDisplayName = '';
+  static const String _startFreshChoice = '__start_fresh__';
 
   @override
   void initState() {
@@ -74,9 +82,23 @@ class _CloudSetupChoiceScreenState
       final account = await ref.read(cloudAccountStartupRestoreProvider.future);
       if (!mounted) return;
       if (account.isConnected) {
+        final stableId = account.accountId?.trim();
+        final workspaceId = stableId == null || stableId.isEmpty
+            ? null
+            : googleLocalWorkspaceId(stableId);
+        final existed = workspaceId != null &&
+            await ref.read(accountLocalStoreProvider).getAccount(workspaceId) !=
+                null;
         await _activateGoogleWorkspace(account);
         _accountConnected = true;
-        await _discoverBackup();
+        _googleWorkspaceMayAdoptGuest = !existed;
+        _connectedGoogleWorkspaceId = workspaceId;
+        _connectedGoogleDisplayName = account.displayName?.trim() ?? '';
+        await _discoverBackup(
+          allowGuestAdoptionChoice: !existed,
+          googleWorkspaceId: workspaceId,
+          googleDisplayName: _connectedGoogleDisplayName,
+        );
       } else if (account.status == CloudAccountStatus.reconnectRequired) {
         // There is an existing cloud opt-in, even though this process has no
         // resolved account. If the user explicitly chooses local-only setup,
@@ -114,6 +136,15 @@ class _CloudSetupChoiceScreenState
     await ref
         .read(accountSessionManagerProvider)
         .activateGoogleAccount(stableAccountId);
+    final localAccountId =
+        ref.read(accountSessionManagerProvider).activeLocalAccountId;
+    final googleName = account.displayName?.trim();
+    if (localAccountId != null && googleName != null && googleName.isNotEmpty) {
+      await ref.read(accountLocalStoreProvider).saveWorkspaceDisplayName(
+            localAccountId,
+            googleName,
+          );
+    }
     ref.invalidate(appRouteProvider);
     ref.invalidate(userProfileProvider);
     ref.invalidate(progressSummaryProvider);
@@ -132,7 +163,16 @@ class _CloudSetupChoiceScreenState
     ref.invalidate(cloudSetupChoiceCompleteProvider);
   }
 
-  Future<void> _discoverBackup({bool allowInteractive = false}) async {
+  Future<void> _discoverBackup({
+    bool allowInteractive = false,
+    bool? allowGuestAdoptionChoice,
+    String? googleWorkspaceId,
+    String? googleDisplayName,
+  }) async {
+    final mayAdoptGuest =
+        allowGuestAdoptionChoice ?? _googleWorkspaceMayAdoptGuest;
+    final targetWorkspaceId = googleWorkspaceId ?? _connectedGoogleWorkspaceId;
+    final targetGoogleName = googleDisplayName ?? _connectedGoogleDisplayName;
     final result = await ref.read(cloudSyncProvider).discoverBackup(
           allowInteractive: allowInteractive,
         );
@@ -141,6 +181,8 @@ class _CloudSetupChoiceScreenState
     switch (result.status) {
       case CloudBackupDiscoveryStatus.unavailable:
       case CloudBackupDiscoveryStatus.failed:
+        _driveDiscoveryUnverified = true;
+        _driveBackupInvalid = false;
         setState(() => _discovery = null);
         _showFailure(
           error: result.message,
@@ -149,6 +191,8 @@ class _CloudSetupChoiceScreenState
         );
         return;
       case CloudBackupDiscoveryStatus.invalidBackup:
+        _driveDiscoveryUnverified = true;
+        _driveBackupInvalid = true;
         setState(() => _discovery = null);
         _showFailure(
           error: result.message,
@@ -159,17 +203,78 @@ class _CloudSetupChoiceScreenState
         );
         return;
       case CloudBackupDiscoveryStatus.noBackup:
+        _driveDiscoveryUnverified = false;
+        _driveBackupInvalid = false;
         setState(() => _discovery = result);
-        // Persist the intent before onboarding starts. StartupGate can retry
-        // the initial upload after a process death without asking the user to
-        // repeat profile/Qaza setup.
+        var adoptedGuestWorkspace = false;
+        if (_accountConnected && mayAdoptGuest && targetWorkspaceId != null) {
+          final guests =
+              await ref.read(accountLocalStoreProvider).listGuestWorkspaces();
+          if (guests.isNotEmpty) {
+            final choice = await _chooseGuestWorkspace(guests);
+            if (!mounted || choice == null) return;
+            if (choice != _startFreshChoice) {
+              await ref.read(localBackupServiceProvider).adoptGuestWorkspace(
+                    sourceLocalAccountId: choice,
+                    targetGoogleLocalAccountId: targetWorkspaceId,
+                    googleDisplayName: targetGoogleName,
+                  );
+              await ref.read(accountSessionManagerProvider).refresh();
+              ref.invalidate(appRouteProvider);
+              ref.invalidate(userProfileProvider);
+              ref.invalidate(progressSummaryProvider);
+              ref.invalidate(qazaRepositoryProvider);
+              ref.invalidate(qazaAdditionRepositoryProvider);
+              ref.invalidate(qazaPlanRevisionRepositoryProvider);
+              adoptedGuestWorkspace = true;
+            }
+          }
+        }
+        // A failed first upload must leave the adopted local workspace usable.
+        // Keep a durable retry marker, but do not block Home for this session.
         if (_accountConnected) {
-          await ref.read(appDatabaseProvider).markInitialCloudBackupPending();
+          final database = ref.read(appDatabaseProvider);
+          await database.markInitialCloudBackupPending();
           ref.invalidate(initialCloudBackupPendingProvider);
+          if (adoptedGuestWorkspace) {
+            ref
+                .read(skipPendingInitialCloudBackupForSessionProvider.notifier)
+                .state = false;
+            var uploaded = false;
+            try {
+              final backup = await ref.read(cloudSyncProvider).backupNow();
+              uploaded = backup.status == CloudSyncStatus.synced &&
+                  !backup.hasPendingChanges;
+            } catch (_) {
+              // The local workspace and pending marker remain intact.
+            }
+            if (uploaded) {
+              if (_connectedGoogleWorkspaceId != null) {
+                await ref
+                    .read(localBackupServiceProvider)
+                    .markGuestAdoptionBackupVerified(
+                      _connectedGoogleWorkspaceId!,
+                    );
+              }
+              await database.clearPendingInitialCloudBackup(
+                localAccountId: _connectedGoogleWorkspaceId,
+              );
+              ref.invalidate(initialCloudBackupPendingProvider);
+            } else {
+              // Home remains available; retain the pending marker for a later
+              // account-scoped retry or app restart.
+              ref
+                  .read(
+                      skipPendingInitialCloudBackupForSessionProvider.notifier)
+                  .state = false;
+            }
+          }
         }
         await _completeChoice();
         return;
       case CloudBackupDiscoveryStatus.backupFound:
+        _driveDiscoveryUnverified = false;
+        _driveBackupInvalid = false;
         setState(() {
           _discovery = result;
         });
@@ -191,6 +296,54 @@ class _CloudSetupChoiceScreenState
         }
         return;
     }
+  }
+
+  Future<String?> _chooseGuestWorkspace(
+    List<LocalAccount> guests,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.accountTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.accountChoiceGuestDescription),
+              const SizedBox(height: 8),
+              for (final guest in guests)
+                ListTile(
+                  key: Key('guest_workspace_choice_${guest.localAccountId}'),
+                  leading: const Icon(Icons.person_outline_rounded),
+                  title: Text(
+                    guestWorkspaceDisplayLabel(
+                      guest,
+                      guests,
+                      fallbackName: l10n.accountGuest,
+                    ),
+                  ),
+                  subtitle: Text(
+                    guest.lifecycleState == AccountLifecycleState.draft
+                        ? 'Setup in progress · Continue this workspace'
+                        : l10n.accountChoiceGuestDescription,
+                  ),
+                  onTap: () =>
+                      Navigator.of(dialogContext).pop(guest.localAccountId),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            key: const Key('guest_workspace_start_fresh'),
+            onPressed: () => Navigator.of(dialogContext).pop(_startFreshChoice),
+            child: const Text('Start Fresh'),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _connectGoogle() async {
@@ -215,11 +368,26 @@ class _CloudSetupChoiceScreenState
         );
         return;
       }
+      final stableId = account.accountId?.trim();
+      final workspaceId = stableId == null || stableId.isEmpty
+          ? null
+          : googleLocalWorkspaceId(stableId);
+      final existed = workspaceId != null &&
+          await ref.read(accountLocalStoreProvider).getAccount(workspaceId) !=
+              null;
       await _activateGoogleWorkspace(account);
       _accountConnected = true;
-      // This follows the explicit "Use Google" tap; automatic restoration
-      // never requests Drive consent.
-      await _discoverBackup(allowInteractive: true);
+      _googleWorkspaceMayAdoptGuest = !existed;
+      _connectedGoogleWorkspaceId = workspaceId;
+      _connectedGoogleDisplayName = account.displayName?.trim() ?? '';
+      // The explicit Google action establishes the identity. Backup discovery
+      // then decides whether to adopt Guest data, restore, or start fresh.
+      await _discoverBackup(
+        allowInteractive: true,
+        allowGuestAdoptionChoice: !existed,
+        googleWorkspaceId: workspaceId,
+        googleDisplayName: _connectedGoogleDisplayName,
+      );
     } catch (error) {
       if (mounted) {
         _showFailure(
@@ -238,9 +406,30 @@ class _CloudSetupChoiceScreenState
     setState(() => _working = true);
     try {
       await _persistSelectedLanguage();
-      // If Google was connected but discovery failed or the user declines a
-      // discovered backup, stop cloud scheduling and disconnect before routing
-      // to local onboarding. The remote backup is left untouched.
+      if (_accountConnected &&
+          _connectedGoogleWorkspaceId != null &&
+          _driveDiscoveryUnverified) {
+        // Drive failure is not proof that no backup exists. Keep the verified
+        // Google workspace local and usable, but persist a block that prevents
+        // both foreground and scheduled uploads until discovery succeeds.
+        final workspaceId = _connectedGoogleWorkspaceId!;
+        final database = ref.read(appDatabaseProvider);
+        await database.writeWorkspaceSyncState(
+          workspaceId,
+          _driveBackupInvalid ? 'legacy_unverified' : 'cloud_unverified',
+          localRevision: await database.readWorkspaceRevision(workspaceId),
+        );
+        ref.invalidate(appRouteProvider);
+        ref.invalidate(userProfileProvider);
+        ref.invalidate(progressSummaryProvider);
+        ref.invalidate(qazaRepositoryProvider);
+        ref.invalidate(qazaAdditionRepositoryProvider);
+        ref.invalidate(qazaPlanRevisionRepositoryProvider);
+        await _completeChoice();
+        return;
+      }
+      // A definite no-backup result or an explicit, resolved backup choice is
+      // required before leaving the verified Google workspace for Guest.
       if (_accountConnected || _cloudAttempted) {
         try {
           await ref.read(cloudAccountProvider).disconnect();
@@ -251,13 +440,32 @@ class _CloudSetupChoiceScreenState
         }
         _accountConnected = false;
       }
-      await ref.read(accountSessionManagerProvider).activateGuest();
+      final accountStore = ref.read(accountLocalStoreProvider);
+      final guests = await accountStore.listGuestWorkspaces();
+      String selectedGuestId;
+      if (guests.isEmpty) {
+        selectedGuestId = await accountStore.startFreshGuestWorkspace();
+      } else {
+        final choice = await _chooseGuestWorkspace(guests);
+        if (!mounted || choice == null) return;
+        selectedGuestId = choice == _startFreshChoice
+            ? await accountStore.startFreshGuestWorkspace()
+            : choice;
+      }
+      // AccountLocalStore creates workspaces durably; activate through the
+      // session manager too so Riverpod and every workspace-scoped provider
+      // receive the new identity before StartupGate renders a destination.
+      await ref
+          .read(accountSessionManagerProvider)
+          .activateLocalAccount(selectedGuestId);
       ref.invalidate(appRouteProvider);
       ref.invalidate(userProfileProvider);
       ref.invalidate(progressSummaryProvider);
       ref.invalidate(qazaRepositoryProvider);
       ref.invalidate(qazaAdditionRepositoryProvider);
       ref.invalidate(qazaPlanRevisionRepositoryProvider);
+      ref.read(skipPendingInitialCloudBackupForSessionProvider.notifier).state =
+          false;
       await _completeChoice();
     } catch (error) {
       if (mounted) {

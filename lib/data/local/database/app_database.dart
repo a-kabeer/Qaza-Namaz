@@ -51,9 +51,9 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 22 scopes Daily Salah preferences to the active workspace.
+  /// Schema version 25 persists session generations for stale async-work guards.
   @override
-  int get schemaVersion => 22;
+  int get schemaVersion => 25;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +67,8 @@ class AppDatabase extends _$AppDatabase {
           await _ensureDailySalahTrackingSchema();
           await _ensureCloudSetupChoiceSchema();
           await _ensureLocalRecoverySnapshotSchema();
+          await _ensureWorkspaceRevisionSchema();
+          await _ensureWorkspaceLifecycleSchema();
         },
         onUpgrade: (Migrator m, int from, int to) async {
           if (from < 2) {
@@ -133,6 +135,15 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 22) {
             await _migrateDailySalahTrackingPreferencesToWorkspaceScope();
+          }
+          if (from < 23) {
+            await _ensureWorkspaceRevisionSchema();
+          }
+          if (from < 24) {
+            await _ensureWorkspaceLifecycleSchema();
+          }
+          if (from < 25) {
+            await _ensureWorkspaceGenerationColumn();
           }
         },
       );
@@ -491,30 +502,166 @@ class AppDatabase extends _$AppDatabase {
     return revision;
   }
 
-  /// Durable marker for an initial cloud backup that must be retried if the
-  /// process exits after local onboarding commits.
-  Future<bool> hasPendingInitialCloudBackup() async {
+  /// Reads a monotonic revision for one workspace. Unrelated Guest/Google
+  /// writes must not make this workspace look dirty or race its restore.
+  Future<int> readWorkspaceRevision(String localAccountId) async {
+    final accountId = localAccountId.trim();
+    if (accountId.isEmpty) {
+      throw ArgumentError.value(localAccountId, 'localAccountId');
+    }
     final rows = await customSelect(
+      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+      variables: [Variable('workspace_revision:$accountId')],
+    ).get();
+    if (rows.isEmpty) return 1;
+    final revision = int.tryParse(rows.first.read<String>('value'));
+    if (revision == null || revision < 1) {
+      throw StateError('The workspace revision is invalid.');
+    }
+    return revision;
+  }
+
+  /// Returns the active workspace ID used to scope the durable initial-upload
+  /// marker. This keeps one Google account's pending upload from appearing
+  /// while an unrelated Guest or Google workspace is active.
+  Future<String?> _activeAccountForInitialBackup() async {
+    final rows = await customSelect(
+      'SELECT active_local_account_id FROM app_session_state '
+      'WHERE id = 1 LIMIT 1',
+    ).get();
+    if (rows.isEmpty) return null;
+    final id = rows.first.read<String?>('active_local_account_id')?.trim();
+    return id == null || id.isEmpty ? null : id;
+  }
+
+  Future<String?> _pendingInitialBackupAccount() async {
+    final rows = await customSelect(
+      "SELECT value FROM meta_store "
+      "WHERE key = 'initial_cloud_backup_pending_account_id' LIMIT 1",
+    ).get();
+    if (rows.isEmpty) return null;
+    final id = rows.first.read<String>('value').trim();
+    return id.isEmpty ? null : id;
+  }
+
+  /// Durable marker for an initial upload, scoped to a local workspace.
+  /// A legacy marker without an owner is ambiguous, so it is not assigned to
+  /// whichever account happens to be active after an upgrade.
+  String _initialCloudBackupPendingKey(String accountId) =>
+      'initial_cloud_backup_pending:${accountId.trim()}';
+
+  Future<bool> hasPendingInitialCloudBackup({String? localAccountId}) async {
+    final activeAccount = localAccountId?.trim().isNotEmpty == true
+        ? localAccountId!.trim()
+        : await _activeAccountForInitialBackup();
+    if (activeAccount == null || activeAccount.isEmpty) return false;
+
+    // New markers are independent per workspace. A late upload callback for
+    // Google B must never clear or replace Google A's pending marker.
+    final scopedRows = await customSelect(
+      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+      variables: [Variable(_initialCloudBackupPendingKey(activeAccount))],
+    ).get();
+    if (scopedRows.isNotEmpty) {
+      return scopedRows.single.read<String>('value') == '1';
+    }
+
+    // Read legacy single-owner markers written by older app versions without
+    // assigning an ambiguous marker to whichever workspace is active now.
+    final legacyRows = await customSelect(
       "SELECT value FROM meta_store "
       "WHERE key = 'initial_cloud_backup_pending' LIMIT 1",
     ).get();
-    return rows.isNotEmpty && rows.first.read<String>('value') == '1';
+    if (legacyRows.isEmpty || legacyRows.single.read<String>('value') != '1') {
+      return false;
+    }
+    return await _pendingInitialBackupAccount() == activeAccount;
   }
 
-  Future<void> markInitialCloudBackupPending() async {
-    await customUpdate(
+  Future<void> _refreshLegacyInitialCloudBackupMarker() async {
+    final pendingRows = await customSelect(
+      "SELECT key FROM meta_store "
+      "WHERE key LIKE 'initial_cloud_backup_pending:%' AND value = '1' "
+      "ORDER BY key",
+    ).get();
+    if (pendingRows.isEmpty) {
+      await customInsert(
+        '''INSERT INTO meta_store (key, value)
+           VALUES ('initial_cloud_backup_pending', '0')
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      );
+      await customStatement(
+        "DELETE FROM meta_store "
+        "WHERE key = 'initial_cloud_backup_pending_account_id'",
+      );
+      return;
+    }
+
+    await customInsert(
       '''INSERT INTO meta_store (key, value)
          VALUES ('initial_cloud_backup_pending', '1')
          ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
     );
+    if (pendingRows.length == 1) {
+      final key = pendingRows.single.read<String>('key');
+      await customInsert(
+        '''INSERT INTO meta_store (key, value)
+           VALUES ('initial_cloud_backup_pending_account_id', ?)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+        variables: [
+          Variable(key.substring('initial_cloud_backup_pending:'.length))
+        ],
+      );
+    } else {
+      // More than one workspace can be pending; the legacy scalar marker
+      // cannot represent that state, so deliberately leave it ownerless.
+      await customStatement(
+        "DELETE FROM meta_store "
+        "WHERE key = 'initial_cloud_backup_pending_account_id'",
+      );
+    }
   }
 
-  Future<void> clearPendingInitialCloudBackup() async {
-    await customUpdate(
-      '''INSERT INTO meta_store (key, value)
-         VALUES ('initial_cloud_backup_pending', '0')
-         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-    );
+  Future<void> markInitialCloudBackupPending({String? localAccountId}) async {
+    final accountId = localAccountId?.trim().isNotEmpty == true
+        ? localAccountId!.trim()
+        : await _activeAccountForInitialBackup();
+    if (accountId == null || accountId.isEmpty) {
+      throw StateError(
+        'Cannot mark an initial cloud backup without a selected workspace.',
+      );
+    }
+    await transaction(() async {
+      await customInsert(
+        '''INSERT INTO meta_store (key, value) VALUES (?, '1')
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+        variables: [Variable(_initialCloudBackupPendingKey(accountId))],
+      );
+      await _refreshLegacyInitialCloudBackupMarker();
+    });
+  }
+
+  Future<void> clearPendingInitialCloudBackup({String? localAccountId}) async {
+    final accountId = localAccountId?.trim().isNotEmpty == true
+        ? localAccountId!.trim()
+        : await _activeAccountForInitialBackup();
+    if (accountId == null || accountId.isEmpty) return;
+
+    await transaction(() async {
+      await customStatement(
+        'DELETE FROM meta_store WHERE key = ?',
+        [_initialCloudBackupPendingKey(accountId)],
+      );
+
+      // Clear a legacy owner marker only if it belongs to this workspace.
+      if (await _pendingInitialBackupAccount() == accountId) {
+        await customStatement(
+          "DELETE FROM meta_store "
+          "WHERE key = 'initial_cloud_backup_pending_account_id'",
+        );
+      }
+      await _refreshLegacyInitialCloudBackupMarker();
+    });
   }
 
   /// Returns true only when the database is still a genuinely fresh install.
@@ -642,7 +789,8 @@ class AppDatabase extends _$AppDatabase {
     await customStatement('''
       CREATE TABLE IF NOT EXISTS app_session_state (
         id INTEGER NOT NULL PRIMARY KEY,
-        active_local_account_id TEXT
+        active_local_account_id TEXT,
+        generation INTEGER NOT NULL DEFAULT 1
       )
     ''');
 
@@ -672,6 +820,254 @@ class AppDatabase extends _$AppDatabase {
         created_at INTEGER NOT NULL,
         PRIMARY KEY (local_account_id, revision_id)
       )
+    ''');
+  }
+
+  /// Installs triggers that advance revisions only for the workspace touched
+  /// by a row write. Existing workspaces start dirty so the first cloud
+  /// connection cannot mistake an existing ledger for an empty install.
+  /// Durable operation journal, workspace sync metadata, and undoable Guest
+  /// deletion holds. These records remain local and are never restored from a
+  /// remote workspace payload.
+  Future<void> _ensureWorkspaceLifecycleSchema() async {
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS workspace_operation_journal (
+        operation_id TEXT NOT NULL PRIMARY KEY,
+        operation_type TEXT NOT NULL,
+        source_local_account_id TEXT NOT NULL,
+        target_local_account_id TEXT NOT NULL,
+        phase TEXT NOT NULL,
+        snapshot_id TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        backup_verified_at INTEGER,
+        error_message TEXT
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS local_workspace_deletion_holds (
+        local_account_id TEXT NOT NULL PRIMARY KEY,
+        requested_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL,
+        prior_lifecycle_state TEXT NOT NULL
+      )
+    ''');
+    await customStatement('''
+      CREATE TABLE IF NOT EXISTS workspace_sync_metadata (
+        local_account_id TEXT NOT NULL PRIMARY KEY,
+        sync_state TEXT NOT NULL DEFAULT 'pending',
+        local_revision INTEGER NOT NULL DEFAULT 1,
+        last_synced_revision INTEGER,
+        last_synced_local_hash TEXT,
+        last_synced_remote_version TEXT,
+        last_synced_remote_hash TEXT,
+        last_checked_at TEXT,
+        conflict_marker TEXT,
+        remote_account_id TEXT
+      )
+    ''');
+  }
+
+  Future<String> readWorkspaceSyncState(String localAccountId) async {
+    final accountId = localAccountId.trim();
+    if (accountId.isEmpty) {
+      throw ArgumentError.value(localAccountId, 'localAccountId');
+    }
+    final rows = await customSelect(
+      'SELECT sync_state FROM workspace_sync_metadata '
+      'WHERE local_account_id = ? LIMIT 1',
+      variables: [Variable(accountId)],
+    ).get();
+    if (rows.isEmpty) return 'pending';
+    return rows.first.read<String>('sync_state');
+  }
+
+  Future<void> writeWorkspaceSyncState(
+    String localAccountId,
+    String syncState, {
+    int? localRevision,
+    int? lastSyncedRevision,
+    String? lastSyncedLocalHash,
+    String? lastSyncedRemoteVersion,
+    String? lastSyncedRemoteHash,
+    String? lastCheckedAt,
+    String? conflictMarker,
+    String? remoteAccountId,
+  }) async {
+    const validStates = <String>{
+      'clean',
+      'pending',
+      'cloud_unverified',
+      'legacy_unverified',
+      'conflict',
+      'needs_sign_in',
+    };
+    final accountId = localAccountId.trim();
+    if (accountId.isEmpty) {
+      throw ArgumentError.value(localAccountId, 'localAccountId');
+    }
+    if (!validStates.contains(syncState)) {
+      throw ArgumentError.value(syncState, 'syncState');
+    }
+    await customInsert(
+      '''INSERT INTO workspace_sync_metadata
+         (local_account_id, sync_state, local_revision, last_synced_revision,
+          last_synced_local_hash, last_synced_remote_version,
+          last_synced_remote_hash, last_checked_at, conflict_marker,
+          remote_account_id)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(local_account_id) DO UPDATE SET
+           sync_state = excluded.sync_state,
+           local_revision = COALESCE(excluded.local_revision, workspace_sync_metadata.local_revision),
+           last_synced_revision = COALESCE(excluded.last_synced_revision, workspace_sync_metadata.last_synced_revision),
+           last_synced_local_hash = COALESCE(excluded.last_synced_local_hash, workspace_sync_metadata.last_synced_local_hash),
+           last_synced_remote_version = COALESCE(excluded.last_synced_remote_version, workspace_sync_metadata.last_synced_remote_version),
+           last_synced_remote_hash = COALESCE(excluded.last_synced_remote_hash, workspace_sync_metadata.last_synced_remote_hash),
+           last_checked_at = COALESCE(excluded.last_checked_at, workspace_sync_metadata.last_checked_at),
+           conflict_marker = excluded.conflict_marker,
+           remote_account_id = COALESCE(excluded.remote_account_id, workspace_sync_metadata.remote_account_id)''',
+      variables: [
+        Variable(accountId),
+        Variable(syncState),
+        Variable(localRevision ?? 1),
+        Variable(lastSyncedRevision),
+        Variable(lastSyncedLocalHash),
+        Variable(lastSyncedRemoteVersion),
+        Variable(lastSyncedRemoteHash),
+        Variable(lastCheckedAt ?? DateTime.now().toUtc().toIso8601String()),
+        Variable(conflictMarker),
+        Variable(remoteAccountId),
+      ],
+    );
+  }
+
+  Future<bool> isWorkspaceCloudUploadBlocked(String localAccountId) async {
+    final state = await readWorkspaceSyncState(localAccountId);
+    return state == 'cloud_unverified' ||
+        state == 'legacy_unverified' ||
+        state == 'conflict' ||
+        state == 'needs_sign_in';
+  }
+
+  Future<void> _ensureWorkspaceRevisionSchema() async {
+    await customStatement('''
+      INSERT OR IGNORE INTO meta_store (key, value)
+      SELECT 'workspace_revision:' || local_account_id, '2'
+      FROM local_accounts
+    ''');
+
+    const ownerTables = <String, String>{
+      'local_accounts': 'local_account_id',
+      'qaza_records': 'user_id',
+      'daily_salah_logs': 'user_id',
+      'qaza_additions': 'user_id',
+      'qaza_deletion_actions': 'user_id',
+      'qaza_deletion_action_record_snapshots': 'user_id',
+      'qaza_profile_plan_provenance': 'user_id',
+      'account_profiles': 'local_account_id',
+      'account_plan_revisions': 'local_account_id',
+    };
+
+    for (final entry in ownerTables.entries) {
+      final table = entry.key;
+      final owner = entry.value;
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_insert
+        AFTER INSERT ON $table
+        BEGIN
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || NEW.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        END
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_update
+        AFTER UPDATE ON $table
+        BEGIN
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || OLD.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || NEW.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        END
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_delete
+        AFTER DELETE ON $table
+        BEGIN
+          INSERT INTO meta_store (key, value)
+          VALUES ('workspace_revision:' || OLD.$owner, '2')
+          ON CONFLICT(key) DO UPDATE SET
+            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        END
+      ''');
+    }
+
+    // Workspace preferences and labels live in meta_store rather than owner
+    // tables, so these keys also advance the corresponding workspace.
+    const workspaceKeyPrefixes = <String>[
+      'workspace_display_name:',
+      'daily_salah_tracking_enabled:',
+      'daily_salah_tracking_setup_dismissed:',
+    ];
+    final when = workspaceKeyPrefixes
+        .map((prefix) => "NEW.key GLOB '${prefix}*'")
+        .join(' OR ');
+    final oldWhen = workspaceKeyPrefixes
+        .map((prefix) => "OLD.key GLOB '${prefix}*'")
+        .join(' OR ');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_insert
+      AFTER INSERT ON meta_store
+      WHEN $when
+      BEGIN
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(NEW.key, instr(NEW.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_update
+      AFTER UPDATE ON meta_store
+      WHEN ($oldWhen) OR ($when)
+      BEGIN
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(OLD.key, instr(OLD.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(NEW.key, instr(NEW.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_delete
+      AFTER DELETE ON meta_store
+      WHEN $oldWhen
+      BEGIN
+        INSERT INTO meta_store (key, value)
+        VALUES (
+          'workspace_revision:' || substr(OLD.key, instr(OLD.key, ':') + 1),
+          '2'
+        )
+        ON CONFLICT(key) DO UPDATE SET
+          value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+      END
     ''');
   }
 
@@ -792,6 +1188,52 @@ class AppDatabase extends _$AppDatabase {
         'ADD COLUMN entity_version INTEGER NOT NULL DEFAULT 1',
       );
     }
+  }
+
+  Future<void> _ensureWorkspaceGenerationColumn() async {
+    final columns =
+        await customSelect('PRAGMA table_info(app_session_state)').get();
+    if (columns.isEmpty) {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS app_session_state (
+          id INTEGER NOT NULL PRIMARY KEY,
+          active_local_account_id TEXT,
+          generation INTEGER NOT NULL DEFAULT 1
+        )
+      ''');
+      return;
+    }
+    if (!columns.any((row) => row.read<String>('name') == 'generation')) {
+      await customStatement(
+        'ALTER TABLE app_session_state ADD COLUMN generation INTEGER NOT NULL DEFAULT 1',
+      );
+    }
+  }
+
+  Future<int> readSessionGeneration() async {
+    final rows = await customSelect(
+      'SELECT generation FROM app_session_state WHERE id = 1 LIMIT 1',
+    ).get();
+    if (rows.isEmpty) return 1;
+    final value = rows.single.read<int>('generation');
+    return value < 1 ? 1 : value;
+  }
+
+  Future<String?> readActiveLocalAccountId() async {
+    final rows = await customSelect(
+      'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+    ).get();
+    if (rows.isEmpty) return null;
+    final id = rows.single.read<String?>('active_local_account_id')?.trim();
+    return id == null || id.isEmpty ? null : id;
+  }
+
+  Future<bool> isCurrentWorkspaceGeneration({
+    required String localAccountId,
+    required int generation,
+  }) async {
+    return await readActiveLocalAccountId() == localAccountId &&
+        await readSessionGeneration() == generation;
   }
 
   Future<void> _ensurePerformanceIndexes() async {

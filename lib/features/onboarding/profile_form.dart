@@ -18,6 +18,9 @@ class ProfileForm extends StatefulWidget {
     this.showIntro = true,
     this.showDailyQazaTarget = false,
     this.hijriOffsetDays = 0,
+    this.showGuestName = false,
+    this.initialGuestName,
+    this.onGuestNameChanged,
   });
 
   final UserProfile initialProfile;
@@ -28,6 +31,9 @@ class ProfileForm extends StatefulWidget {
   final bool showIntro;
   final bool showDailyQazaTarget;
   final int hijriOffsetDays;
+  final bool showGuestName;
+  final String? initialGuestName;
+  final Future<void> Function(String name)? onGuestNameChanged;
 
   @override
   State<ProfileForm> createState() => _ProfileFormState();
@@ -41,11 +47,39 @@ class _ProfileFormState extends State<ProfileForm> {
   bool _islamAcceptanceExpanded = false;
   bool _pubertyDateExpanded = false;
   bool _startPrayingDateExpanded = false;
+  late final TextEditingController _guestNameController;
+  Future<void> _guestNameSaveQueue = Future<void>.value();
+  String? _guestNameError;
 
   @override
   void initState() {
     super.initState();
     _profile = ProfileRules.normalize(widget.initialProfile);
+    _guestNameController =
+        TextEditingController(text: widget.initialGuestName ?? '');
+    _guestNameController.addListener(_queueGuestNameSave);
+  }
+
+  @override
+  void dispose() {
+    _guestNameController
+      ..removeListener(_queueGuestNameSave)
+      ..dispose();
+    super.dispose();
+  }
+
+  void _queueGuestNameSave() {
+    if (!widget.showGuestName) return;
+    final name = _guestNameController.text.trim();
+    if (_guestNameError != null) {
+      setState(() => _guestNameError = null);
+    }
+    final save = widget.onGuestNameChanged;
+    if (save == null) return;
+    _guestNameSaveQueue = _guestNameSaveQueue.then(
+      (_) => save(name),
+      onError: (Object _) => save(name),
+    );
   }
 
   void _update(UserProfile profile) {
@@ -110,6 +144,18 @@ class _ProfileFormState extends State<ProfileForm> {
   }
 
   Future<void> _submit() async {
+    if (widget.showGuestName) {
+      final name = _guestNameController.text.trim();
+      if (name.isEmpty) {
+        setState(() => _guestNameError = 'Please enter your name.');
+        return;
+      }
+      // Ensure the most recent name is durably written before onboarding
+      // commits the profile and Qaza plan.
+      await _guestNameSaveQueue;
+      final save = widget.onGuestNameChanged;
+      if (save != null) await save(name);
+    }
     final validation = ProfileRules.validate(
       _profile,
       today: LocalDateService.today(),
@@ -185,6 +231,19 @@ class _ProfileFormState extends State<ProfileForm> {
           Text(
             l10n.profileIntro,
             style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          const SizedBox(height: 20),
+        ],
+        if (widget.showGuestName) ...[
+          TextField(
+            key: const Key('profile_guest_name'),
+            controller: _guestNameController,
+            textCapitalization: TextCapitalization.words,
+            textInputAction: TextInputAction.next,
+            decoration: InputDecoration(
+              labelText: 'Name',
+              errorText: _guestNameError,
+            ),
           ),
           const SizedBox(height: 20),
         ],

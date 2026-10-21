@@ -7,8 +7,10 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/data/local/account_local_store.dart';
+import 'package:qaza_namaz/data/local/workspace_identity_migrator.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
+import 'package:qaza_namaz/domain/entities/local_account.dart';
 
 QazaRecordsCompanion _record(String id, DateTime date) =>
     _recordFor('guest', id, date);
@@ -154,6 +156,10 @@ void main() {
     await database.qazaRecordsDao.insertRecord(
       _recordFor(googleId, 'google_record', DateTime(2025, 1, 2)),
     );
+    await AccountLocalStore(database: database).saveWorkspaceDisplayName(
+      googleId,
+      'Google Account A',
+    );
 
     final decoded = jsonDecode(
       await service.exportJson(localAccountId: googleId),
@@ -169,6 +175,51 @@ void main() {
     expect(
       decoded['data']['app_session_state'].single['active_local_account_id'],
       googleId,
+    );
+    expect(
+      decoded['data']['meta_store']['workspace_display_names_by_account'],
+      {googleId: 'Google Account A'},
+    );
+  });
+
+  test('workspace revisions ignore writes to other workspaces', () async {
+    const accountA = 'google:account-A';
+    const accountB = 'google:account-B';
+    final now = DateTime.now().microsecondsSinceEpoch;
+    for (final accountId in [accountA, accountB]) {
+      await database.customInsert(
+        '''INSERT INTO local_accounts
+           (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+           VALUES (?, 'local', 'active', ?, ?)''',
+        variables: [
+          Variable.withString(accountId),
+          Variable.withInt(now),
+          Variable.withInt(now),
+        ],
+      );
+    }
+
+    final beforeA = await database.readWorkspaceRevision(accountA);
+    final beforeB = await database.readWorkspaceRevision(accountB);
+    await database.transactionWithRevision(() async {
+      await database.qazaRecordsDao.insertRecord(
+        _recordFor(accountB, 'workspace_b_record', DateTime(2025, 1, 3)),
+      );
+      return true;
+    });
+
+    expect(await database.readWorkspaceRevision(accountA), beforeA);
+    expect(
+      await database.readWorkspaceRevision(accountB),
+      greaterThan(beforeB),
+    );
+
+    final decoded = jsonDecode(
+      await service.exportJson(localAccountId: accountA),
+    ) as Map<String, dynamic>;
+    expect(
+      (decoded['metadata'] as Map<String, dynamic>)['db_revision'],
+      beforeA,
     );
   });
 
@@ -343,8 +394,10 @@ void main() {
     await service.importJson(backup, targetLocalAccountId: googleId);
 
     final guestRows = await database.qazaRecordsDao.getAll(userId: 'guest');
-    final googleRows = await database.qazaRecordsDao.getAll(userId: googleId);
-    const adoptedRecordId = 'google:account-adopt_fajr_2025-01-01';
+    final googleRows = await database.qazaRecordsDao.getAll(
+      userId: 'google_account-adopt',
+    );
+    const adoptedRecordId = 'google_account-adopt_fajr_2025-01-01';
     expect(guestRows.map((row) => row.id), contains(guestRecordId));
     expect(googleRows.map((row) => row.id), contains(adoptedRecordId));
     expect(
@@ -357,7 +410,7 @@ void main() {
     final links = await database.customSelect(
       'SELECT tracker_created_qaza_id, linked_qaza_id FROM daily_salah_logs '
       'WHERE user_id = ?',
-      variables: [Variable.withString(googleId)],
+      variables: [Variable.withString('google_account-adopt')],
     ).get();
     expect(links, hasLength(1));
     expect(
@@ -366,12 +419,12 @@ void main() {
     );
     expect(links.single.read<String?>('linked_qaza_id'), adoptedRecordId);
 
-    const adoptedAdditionId = 'google:account-adopt_guest_addition_adopt';
+    const adoptedAdditionId = 'google_account-adopt_guest_addition_adopt';
     const adoptedDeletionActionId =
-        'google:account-adopt_guest_delete_action_adopt';
+        'google_account-adopt_guest_delete_action_adopt';
     final actions = await database.customSelect(
       'SELECT id, addition_id FROM qaza_deletion_actions WHERE user_id = ?',
-      variables: [Variable.withString(googleId)],
+      variables: [Variable.withString('google_account-adopt')],
     ).get();
     expect(actions, hasLength(1));
     expect(actions.single.read<String>('id'), adoptedDeletionActionId);
@@ -380,16 +433,216 @@ void main() {
     final snapshots = await database.customSelect(
       'SELECT record_id, user_id, deletion_action_id, addition_id '
       'FROM qaza_deletion_action_record_snapshots WHERE user_id = ?',
-      variables: [Variable.withString(googleId)],
+      variables: [Variable.withString('google_account-adopt')],
     ).get();
     expect(snapshots, hasLength(1));
     expect(snapshots.single.read<String>('record_id'), adoptedRecordId);
-    expect(snapshots.single.read<String>('user_id'), googleId);
+    expect(snapshots.single.read<String>('user_id'), 'google_account-adopt');
     expect(
       snapshots.single.read<String>('deletion_action_id'),
       adoptedDeletionActionId,
     );
     expect(snapshots.single.read<String>('addition_id'), adoptedAdditionId);
+  });
+
+  test('workspace sync block prevents cloud uploads after uncertain discovery',
+      () async {
+    const googleWorkspace = 'google:account-unverified';
+    await database.writeWorkspaceSyncState(
+      googleWorkspace,
+      'cloud_unverified',
+      localRevision: 4,
+    );
+    expect(
+      await database.isWorkspaceCloudUploadBlocked(googleWorkspace),
+      isTrue,
+    );
+
+    await database.writeWorkspaceSyncState(
+      googleWorkspace,
+      'pending',
+      localRevision: 4,
+    );
+    expect(
+      await database.isWorkspaceCloudUploadBlocked(googleWorkspace),
+      isFalse,
+    );
+
+    await database.writeWorkspaceSyncState(
+      googleWorkspace,
+      'conflict',
+      localRevision: 4,
+      conflictMarker: 'remote-changed',
+    );
+    expect(
+      await database.isWorkspaceCloudUploadBlocked(googleWorkspace),
+      isTrue,
+    );
+  });
+
+  test('Guest deletion is undoable and retains records during the hold',
+      () async {
+    final store = AccountLocalStore(database: database);
+    final guestId =
+        await store.createGuestWorkspace(displayName: 'Study Guest');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_retained_during_hold', DateTime(2025, 2, 1)),
+    );
+    final otherGuest =
+        await store.createGuestWorkspace(displayName: 'Other Guest');
+    await store.activate(otherGuest);
+
+    final requested = DateTime(2026, 10, 1);
+    final expiry = await store.scheduleGuestWorkspaceDeletion(
+      guestId,
+      requestedAt: requested,
+    );
+    expect(expiry, requested.add(const Duration(days: 7)));
+    expect(await store.getAccount(guestId) != null, isTrue);
+    expect(await store.hasAnyAccountData(guestId), isTrue);
+    expect(
+      (await store.listGuestWorkspaces())
+          .map((account) => account.localAccountId),
+      isNot(contains(guestId)),
+    );
+    expect(await store.undoGuestWorkspaceDeletion(guestId), isTrue);
+    expect(
+      (await store.getAccount(guestId))!.lifecycleState,
+      AccountLifecycleState.active,
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: guestId)).single.id,
+      'guest_retained_during_hold',
+    );
+  });
+
+  test('deleting and undoing a draft restores its draft lifecycle', () async {
+    final store = AccountLocalStore(database: database);
+    final draftId = await store.createGuestWorkspace(
+      displayName: 'Incomplete setup',
+      draft: true,
+    );
+    final otherGuest = await store.createGuestWorkspace(
+      displayName: 'Other Guest',
+    );
+    await store.activate(otherGuest);
+
+    final requested = DateTime(2026, 10, 1);
+    await store.scheduleGuestWorkspaceDeletion(draftId, requestedAt: requested);
+    expect(
+      (await store.getAccount(draftId))!.lifecycleState,
+      AccountLifecycleState.deletedHold,
+    );
+
+    expect(await store.undoGuestWorkspaceDeletion(draftId), isTrue);
+    expect(
+      (await store.getAccount(draftId))!.lifecycleState,
+      AccountLifecycleState.draft,
+    );
+    expect(
+      (await store.listGuestWorkspaces())
+          .singleWhere((account) => account.localAccountId == draftId)
+          .lifecycleState,
+      AccountLifecycleState.draft,
+    );
+  });
+
+  test('expired Guest deletion is purged only after seven days', () async {
+    final store = AccountLocalStore(database: database);
+    final guestId =
+        await store.createGuestWorkspace(displayName: 'Expired Guest');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_expired_record', DateTime(2025, 2, 2)),
+    );
+    final otherGuest =
+        await store.createGuestWorkspace(displayName: 'Keep Guest');
+    await store.activate(otherGuest);
+    final requested = DateTime(2026, 10, 1);
+    await store.scheduleGuestWorkspaceDeletion(guestId, requestedAt: requested);
+
+    expect(
+      await store.purgeExpiredGuestWorkspaceDeletions(
+        now: requested.add(const Duration(days: 6)),
+      ),
+      0,
+    );
+    expect(await store.getAccount(guestId) != null, isTrue);
+    expect(
+      await store.purgeExpiredGuestWorkspaceDeletions(
+        now: requested.add(const Duration(days: 8)),
+      ),
+      1,
+    );
+    expect(await store.getAccount(guestId) == null, isTrue);
+    expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
+  });
+
+  test(
+      'Guest deletion is refused while its initial cloud backup is '
+      'still pending', () async {
+    final store = AccountLocalStore(database: database);
+    final guestId =
+        await store.createGuestWorkspace(displayName: 'Pending Backup');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_pending_backup_record', DateTime(2025, 2, 3)),
+    );
+    final otherGuest =
+        await store.createGuestWorkspace(displayName: 'Other Guest');
+    await store.activate(otherGuest);
+    await database.markInitialCloudBackupPending(localAccountId: guestId);
+
+    await expectLater(
+      store.scheduleGuestWorkspaceDeletion(guestId),
+      throwsA(isA<StateError>()),
+    );
+    // Nothing was scheduled and nothing was deleted.
+    expect(
+      (await store.getAccount(guestId))!.lifecycleState,
+      AccountLifecycleState.active,
+    );
+    expect(await store.listGuestWorkspaceDeletionHolds(), isEmpty);
+    expect(await store.hasAnyAccountData(guestId), isTrue);
+  });
+
+  test(
+      'expired Guest deletion is not purged while a backup is pending, '
+      'and purges once it clears', () async {
+    final store = AccountLocalStore(database: database);
+    final guestId = await store.createGuestWorkspace(displayName: 'Held Guest');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_held_record', DateTime(2025, 2, 4)),
+    );
+    final otherGuest =
+        await store.createGuestWorkspace(displayName: 'Keep Guest');
+    await store.activate(otherGuest);
+    final requested = DateTime(2026, 10, 1);
+    await store.scheduleGuestWorkspaceDeletion(
+      guestId,
+      requestedAt: requested,
+    );
+    await database.markInitialCloudBackupPending(localAccountId: guestId);
+
+    expect(
+      await store.purgeExpiredGuestWorkspaceDeletions(
+        now: requested.add(const Duration(days: 8)),
+      ),
+      0,
+    );
+    expect(await store.getAccount(guestId) != null, isTrue);
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: guestId)).single.id,
+      'guest_held_record',
+    );
+
+    await database.clearPendingInitialCloudBackup(localAccountId: guestId);
+    expect(
+      await store.purgeExpiredGuestWorkspaceDeletions(
+        now: requested.add(const Duration(days: 8)),
+      ),
+      1,
+    );
+    expect(await store.getAccount(guestId) == null, isTrue);
+    expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
   });
 
   test('backup preserves daily Salah links and the tracking preference',
@@ -664,7 +917,7 @@ void main() {
     final decoded =
         jsonDecode(await service.exportJson()) as Map<String, dynamic>;
     (decoded['metadata'] as Map<String, dynamic>)['database_schema_version'] =
-        23;
+        database.schemaVersion + 1;
 
     expect(
       () => service.importJson(jsonEncode(decoded)),
@@ -769,5 +1022,326 @@ void main() {
 
     final decoded = jsonDecode(backup) as Map<String, dynamic>;
     expect(jsonEncode(decoded['data']).contains('device-local-test'), isFalse);
+  });
+
+  test(
+      'Guest adoption is recoverable, atomic, and remaps plan owner references',
+      () async {
+    final store = AccountLocalStore(database: database);
+    final guestId = await store.createGuestWorkspace(displayName: 'Amina');
+    final profile = UserProfile(
+      gender: Gender.male,
+      madhab: Madhab.hanafi,
+      dateOfBirth: DateTime(1990, 1, 1),
+      pubertyAge: 12,
+      startPrayingAge: 15,
+      witrIncluded: true,
+      onboardingCompleted: true,
+    );
+    await store.saveProfile(guestId, profile);
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_adoption_fajr', DateTime(2025, 1, 1)),
+    );
+    await database.customInsert(
+      '''INSERT INTO account_plan_revisions
+         (local_account_id, revision_id, payload_json, created_at)
+         VALUES (?, ?, ?, ?)''',
+      variables: [
+        Variable(guestId),
+        Variable('guest-plan-revision'),
+        Variable(jsonEncode({
+          'userId': guestId,
+          'revisionId': 'guest-plan-revision',
+        })),
+        Variable(DateTime(2025, 1, 1).microsecondsSinceEpoch),
+      ],
+    );
+
+    const googleId = 'google_stable-adoption-account';
+    await store.ensureAccountActive(googleId);
+    await service.adoptGuestWorkspace(
+      sourceLocalAccountId: guestId,
+      targetGoogleLocalAccountId: googleId,
+      googleDisplayName: 'Amina Google',
+    );
+
+    expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: googleId))
+          .map((record) => record.id),
+      ['guest_adoption_fajr'],
+    );
+    expect((await store.getAccount(guestId))?.lifecycleState,
+        AccountLifecycleState.adoptedRecovery);
+    expect((await store.getAccount(googleId))?.displayName, 'Amina Google');
+    expect(await store.hasAnyAccountData(guestId), isFalse);
+    expect(await store.hasAnyAccountData(googleId), isTrue);
+
+    final revisionRows = await database.customSelect(
+      'SELECT payload_json FROM account_plan_revisions '
+      'WHERE local_account_id = ?',
+      variables: [Variable(googleId)],
+    ).get();
+    expect(revisionRows, hasLength(1));
+    expect(
+      jsonDecode(revisionRows.single.read<String>('payload_json'))['userId'],
+      googleId,
+    );
+
+    final snapshots = await database.customSelect(
+      'SELECT payload_json FROM local_account_adoption_snapshots '
+      'WHERE source_local_account_id = ? AND target_local_account_id = ?',
+      variables: [Variable(guestId), Variable(googleId)],
+    ).get();
+    expect(snapshots, hasLength(1));
+    final recovery = jsonDecode(snapshots.single.read<String>('payload_json'));
+    expect(
+      recovery['data']['local_accounts'].single['local_account_id'],
+      guestId,
+    );
+    expect(recovery['data']['qaza_records'], hasLength(1));
+    final activeRows = await database
+        .customSelect(
+          'SELECT active_local_account_id FROM app_session_state WHERE id = 1',
+        )
+        .get();
+    expect(activeRows.single.read<String>('active_local_account_id'), googleId);
+  });
+
+  test('Guest adoption refuses to overwrite an existing Google workspace',
+      () async {
+    final store = AccountLocalStore(database: database);
+    final guestId = await store.createGuestWorkspace(displayName: 'Amina');
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(guestId, 'guest_must_survive', DateTime(2025, 1, 2)),
+    );
+    const googleId = 'google:existing-workspace';
+    await store.ensureAccountActive(googleId);
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(googleId, 'google_existing_record', DateTime(2025, 1, 3)),
+    );
+
+    await expectLater(
+      service.adoptGuestWorkspace(
+        sourceLocalAccountId: guestId,
+        targetGoogleLocalAccountId: googleId,
+        googleDisplayName: 'Amina Google',
+      ),
+      throwsA(isA<LocalBackupException>()),
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: guestId))
+          .map((record) => record.id),
+      ['guest_must_survive'],
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: googleId))
+          .map((record) => record.id),
+      ['google_existing_record'],
+    );
+  });
+
+  test('legacy workspace IDs migrate without losing owner rows or session',
+      () async {
+    const legacyGuest = 'guest';
+    const legacyGoogle = 'google:stable-migration-account';
+    final now = DateTime(2025, 1, 1).microsecondsSinceEpoch;
+    await database.customInsert(
+      '''INSERT INTO local_accounts
+         (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+         VALUES (?, 'local', 'active', ?, ?)''',
+      variables: [Variable(legacyGoogle), Variable(now), Variable(now)],
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(legacyGuest, 'legacy_guest_record', DateTime(2025, 1, 1)),
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(legacyGoogle, 'legacy_google_record', DateTime(2025, 1, 2)),
+    );
+    await database.customUpdate(
+      'UPDATE app_session_state SET active_local_account_id = ? WHERE id = 1',
+      variables: [Variable(legacyGoogle)],
+    );
+
+    await WorkspaceIdentityMigrator(database).migrate();
+
+    const canonicalGoogle = 'google_stable-migration-account';
+    expect(await database.readActiveLocalAccountId(), canonicalGoogle);
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalGoogle))
+          .map((record) => record.id),
+      ['legacy_google_record'],
+    );
+    final guestRows = await database
+        .customSelect(
+          "SELECT local_account_id FROM local_accounts WHERE local_account_id LIKE 'guest_%' ORDER BY local_account_id",
+        )
+        .get();
+    expect(guestRows, hasLength(1));
+    final canonicalGuest = guestRows.single.read<String>('local_account_id');
+    expect(canonicalGuest, matches(RegExp(r'^guest_[0-9a-f-]{36}$')));
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalGuest))
+          .map((record) => record.id),
+      ['legacy_guest_record'],
+    );
+    expect(await database.readSessionGeneration(), greaterThan(1));
+
+    await WorkspaceIdentityMigrator(database).migrate();
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalGoogle))
+          .map((record) => record.id),
+      ['legacy_google_record'],
+    );
+  });
+
+  test(
+      'legacy guest migration supplies the default Guest name and keeps '
+      'the workspace active and listed with its data', () async {
+    final store = AccountLocalStore(database: database);
+    await database.qazaRecordsDao.insertRecord(
+      _record('legacy_named_guest_record', DateTime(2025, 1, 5)),
+    );
+
+    await WorkspaceIdentityMigrator(database).migrate();
+
+    final guestRows = await database
+        .customSelect(
+          "SELECT local_account_id FROM local_accounts "
+          "WHERE local_account_id LIKE 'guest_%'",
+        )
+        .get();
+    expect(guestRows, hasLength(1));
+    final canonicalGuest = guestRows.single.read<String>('local_account_id');
+    // Plan Section 9: the migration supplies the name "Guest", so the
+    // legacy profile does not fail the Name-required onboarding rule.
+    expect(await store.loadWorkspaceDisplayName(canonicalGuest), 'Guest');
+    expect(
+      (await store.getAccount(canonicalGuest))!.lifecycleState,
+      AccountLifecycleState.active,
+    );
+    // It holds data, so it stays listed for the chooser and management UI.
+    final listed = await store.listGuestWorkspaces();
+    final entry = listed.singleWhere(
+      (account) => account.localAccountId == canonicalGuest,
+    );
+    expect(entry.displayName, 'Guest');
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalGuest))
+          .map((record) => record.id),
+      ['legacy_named_guest_record'],
+    );
+  });
+
+  test(
+      'legacy Google workspace without a stable ID is bound '
+      'legacy_unverified and its uploads are blocked', () async {
+    const unverifiableGoogle = 'google:';
+    final now = DateTime(2025, 1, 1).microsecondsSinceEpoch;
+    await database.customInsert(
+      '''INSERT INTO local_accounts
+         (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+         VALUES (?, 'local', 'active', ?, ?)''',
+      variables: [Variable(unverifiableGoogle), Variable(now), Variable(now)],
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(
+        unverifiableGoogle,
+        'legacy_unverifiable_record',
+        DateTime(2025, 1, 6),
+      ),
+    );
+
+    await WorkspaceIdentityMigrator(database).migrate();
+
+    // The workspace is never renamed or merged without a stable Google
+    // ID; it is quarantined as legacy_unverified (plan Section 9), which
+    // blocks uploads until a foreground reconcile can verify it. Its
+    // records are kept untouched.
+    expect(
+      await database.readWorkspaceSyncState(unverifiableGoogle),
+      'legacy_unverified',
+    );
+    expect(
+      await database.isWorkspaceCloudUploadBlocked(unverifiableGoogle),
+      isTrue,
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: unverifiableGoogle))
+          .map((record) => record.id),
+      ['legacy_unverifiable_record'],
+    );
+    final accountRows = await database
+        .customSelect(
+          "SELECT local_account_id FROM local_accounts "
+          "WHERE local_account_id LIKE 'google%'",
+        )
+        .get();
+    expect(accountRows, hasLength(1));
+    expect(
+      accountRows.single.read<String>('local_account_id'),
+      unverifiableGoogle,
+    );
+  });
+
+  test('Google workspace ID migration fails closed on a collision', () async {
+    const oldId = 'google:duplicate-id';
+    const canonicalId = 'google_duplicate-id';
+    final now = DateTime(2025, 1, 1).microsecondsSinceEpoch;
+    for (final id in [oldId, canonicalId]) {
+      await database.customInsert(
+        '''INSERT INTO local_accounts
+           (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
+           VALUES (?, 'local', 'active', ?, ?)''',
+        variables: [Variable(id), Variable(now), Variable(now)],
+      );
+    }
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(oldId, 'old_google_record', DateTime(2025, 1, 1)),
+    );
+    await database.qazaRecordsDao.insertRecord(
+      _recordFor(canonicalId, 'canonical_google_record', DateTime(2025, 1, 2)),
+    );
+
+    await expectLater(
+      WorkspaceIdentityMigrator(database).migrate(),
+      throwsA(isA<StateError>()),
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: oldId))
+          .map((record) => record.id),
+      ['old_google_record'],
+    );
+    expect(
+      (await database.qazaRecordsDao.getAll(userId: canonicalId))
+          .map((record) => record.id),
+      ['canonical_google_record'],
+    );
+  });
+
+  test('initial cloud backup marker belongs to the workspace that created it',
+      () async {
+    final store = AccountLocalStore(database: database);
+    await database.markInitialCloudBackupPending();
+
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
+    const googleId = 'google_independent-workspace';
+    await store.ensureAccountActive(googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isFalse);
+
+    await database.markInitialCloudBackupPending(localAccountId: googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
+    await store.activate('guest');
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+
+    await store.activate(googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
+    await database.clearPendingInitialCloudBackup(localAccountId: googleId);
+    expect(await database.hasPendingInitialCloudBackup(), isFalse);
+
+    await store.activate('guest');
+    expect(await database.hasPendingInitialCloudBackup(), isTrue);
   });
 }

@@ -2,11 +2,13 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:drift/drift.dart';
+import 'package:uuid/uuid.dart';
 import '../../domain/entities/local_account.dart';
 import '../../domain/entities/qaza_plan_revision.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/user_profile.dart';
 import 'database/app_database.dart';
+import 'workspace_identity_migrator.dart';
 
 class AccountLocalStore {
   AccountLocalStore({required this.database});
@@ -16,7 +18,9 @@ class AccountLocalStore {
   Future<void> ensureInitialized() async {
     await _ensureDeviceId();
     await _ensureLocalAccount();
-    final profile = await loadProfile(UserProfile.localLedgerUserId);
+    final persisted = await activeAccount();
+    final activeId = persisted?.localAccountId;
+    final profile = activeId == null ? null : await loadProfile(activeId);
     await database.transaction(() async {
       await database.setOnboardingCompletedInTransaction(
         profile?.onboardingCompleted == true,
@@ -52,10 +56,13 @@ class AccountLocalStore {
 
   Future<LocalAccount?> getAccount(String localAccountId) async {
     final rows = await database.customSelect(
-      '''SELECT local_account_id, account_mode, lifecycle_state,
-                created_at, updated_at
-         FROM local_accounts
-         WHERE local_account_id = ?
+      '''SELECT a.local_account_id, a.account_mode, a.lifecycle_state,
+                a.created_at, a.updated_at,
+                (SELECT value FROM meta_store
+                 WHERE key = 'workspace_display_name:' || a.local_account_id
+                 LIMIT 1) AS display_name
+         FROM local_accounts a
+         WHERE a.local_account_id = ?
          LIMIT 1''',
       variables: [Variable(localAccountId)],
     ).get();
@@ -65,7 +72,10 @@ class AccountLocalStore {
   Future<LocalAccount?> activeAccount() async {
     final rows = await database.customSelect(
       '''SELECT a.local_account_id, a.account_mode, a.lifecycle_state,
-                a.created_at, a.updated_at
+                a.created_at, a.updated_at,
+                (SELECT value FROM meta_store
+                 WHERE key = 'workspace_display_name:' || a.local_account_id
+                 LIMIT 1) AS display_name
          FROM app_session_state s
          LEFT JOIN local_accounts a
            ON a.local_account_id = s.active_local_account_id
@@ -83,20 +93,40 @@ class AccountLocalStore {
     if (account == null) {
       throw StateError('Local account not found: $localAccountId');
     }
-    if (account.lifecycleState == AccountLifecycleState.archived) {
-      throw StateError('Archived local account cannot become active.');
+    if (account.lifecycleState == AccountLifecycleState.archived ||
+        account.lifecycleState == AccountLifecycleState.deletedHold ||
+        account.lifecycleState == AccountLifecycleState.adoptedRecovery ||
+        account.lifecycleState == AccountLifecycleState.recoveryCopy) {
+      throw StateError('This local workspace cannot become active.');
     }
 
     // The onboarding flag is global metadata, so it must follow the active
     // workspace rather than retaining the previous user's value.
     final profile = await loadProfile(localAccountId);
     await database.transaction(() async {
-      await database.customUpdate(
-        '''UPDATE app_session_state
-           SET active_local_account_id = ?
-           WHERE id = 1''',
-        variables: [Variable(localAccountId)],
-      );
+      final sessionRows = await database
+          .customSelect(
+            'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+          )
+          .get();
+      if (sessionRows.isEmpty) {
+        await database.customInsert(
+          '''INSERT INTO app_session_state
+             (id, active_local_account_id, generation) VALUES (1, ?, 1)''',
+          variables: [Variable(localAccountId)],
+        );
+      } else {
+        final currentId =
+            sessionRows.single.read<String?>('active_local_account_id');
+        if (currentId != localAccountId) {
+          await database.customUpdate(
+            '''UPDATE app_session_state
+               SET active_local_account_id = ?, generation = generation + 1
+               WHERE id = 1''',
+            variables: [Variable(localAccountId)],
+          );
+        }
+      }
       await database.setOnboardingCompletedInTransaction(
         profile?.onboardingCompleted == true,
       );
@@ -131,8 +161,416 @@ class AccountLocalStore {
     return normalized;
   }
 
-  Future<String> ensureLocalAccountActive() =>
-      ensureAccountActive(UserProfile.localLedgerUserId);
+  /// Keeps the last persisted workspace selected across process restarts.
+  /// The legacy Guest workspace remains the fallback for older installations.
+  Future<String> ensureLocalAccountActive() async {
+    final persisted = await activeAccount();
+    if (persisted != null &&
+        (persisted.lifecycleState == AccountLifecycleState.active ||
+            persisted.lifecycleState == AccountLifecycleState.draft)) {
+      await activate(persisted.localAccountId);
+      return persisted.localAccountId;
+    }
+
+    // A migration or an interrupted older sign-out can leave the legacy Guest
+    // session pointing at an archived workspace. Recover into a fresh local
+    // workspace instead of trying to reactivate the archived row.
+    final legacyGuest = await getAccount(UserProfile.localLedgerUserId);
+    if (legacyGuest?.lifecycleState == AccountLifecycleState.archived ||
+        legacyGuest?.lifecycleState == AccountLifecycleState.deletedHold) {
+      return createGuestWorkspace();
+    }
+    return ensureAccountActive(UserProfile.localLedgerUserId);
+  }
+
+  /// Creates a distinct Guest workspace. New Guest sessions never reuse the
+  /// legacy fixed workspace that may contain years of existing Qaza records.
+  Future<String> createGuestWorkspace({
+    String? displayName,
+    bool draft = false,
+  }) async {
+    final id = 'guest_${Uuid().v4()}';
+    final now = DateTime.now().microsecondsSinceEpoch;
+    final normalizedName = displayName?.trim();
+    final lifecycleState = draft ? 'draft' : 'active';
+    await database.transactionWithRevision(() async {
+      await database.customInsert(
+        '''INSERT INTO local_accounts
+           (local_account_id, account_mode, lifecycle_state,
+            created_at, updated_at)
+           VALUES (?, 'local', ?, ?, ?)''',
+        variables: [
+          Variable(id),
+          Variable(lifecycleState),
+          Variable(now),
+          Variable(now),
+        ],
+      );
+      if (normalizedName != null && normalizedName.isNotEmpty) {
+        await database.customInsert(
+          '''INSERT INTO meta_store (key, value)
+             VALUES (?, ?)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+          variables: [
+            Variable('workspace_display_name:$id'),
+            Variable(normalizedName),
+          ],
+        );
+      }
+      return true;
+    });
+    await activate(id);
+    return id;
+  }
+
+  /// Finds the most recently updated Guest draft that holds no user data or
+  /// entered values, if one exists.
+  ///
+  /// A draft counts as empty when nothing was ever saved into it: no profile
+  /// row, no Qaza or daily Salah records, no plan data, and not even a saved
+  /// workspace name. Any of those is user data, so such a draft is a real
+  /// saved Guest and is never reused.
+  Future<String?> findReusableEmptyGuestDraft() async {
+    final rows = await database.customSelect(
+      '''SELECT local_account_id FROM local_accounts
+         WHERE lifecycle_state = 'draft'
+           AND (local_account_id = 'guest'
+                OR local_account_id GLOB 'guest:*'
+                OR local_account_id GLOB 'guest_*')
+         ORDER BY updated_at DESC, local_account_id ASC''',
+    ).get();
+    for (final row in rows) {
+      final id = row.read<String>('local_account_id');
+      if (await loadWorkspaceDisplayName(id) != null) continue;
+      if (await hasAnyAccountData(id)) continue;
+      return id;
+    }
+    return null;
+  }
+
+  /// Opens the Guest workspace a "Start Fresh" action should use.
+  ///
+  /// An existing empty draft is resumed instead of creating another
+  /// workspace, so repeated cancelled onboarding attempts do not pile up
+  /// empty drafts. A draft holding any user data is left untouched and a
+  /// new draft is created, exactly as Start Fresh behaved before.
+  Future<String> startFreshGuestWorkspace() async {
+    final reusable = await findReusableEmptyGuestDraft();
+    if (reusable != null) {
+      await activate(reusable);
+      return reusable;
+    }
+    return createGuestWorkspace(draft: true);
+  }
+
+  /// Counts the records a workspace owns, so the delete confirmation can
+  /// show what will be lost: the profile plus these two record counts.
+  Future<GuestWorkspaceRecordCounts> countWorkspaceRecords(
+    String localAccountId,
+  ) async {
+    final qazaRows = await database.customSelect(
+      'SELECT COUNT(*) AS total FROM qaza_records WHERE user_id = ?',
+      variables: [Variable(localAccountId)],
+    ).get();
+    final salahRows = await database.customSelect(
+      'SELECT COUNT(*) AS total FROM daily_salah_logs WHERE user_id = ?',
+      variables: [Variable(localAccountId)],
+    ).get();
+    return GuestWorkspaceRecordCounts(
+      qazaRecords: qazaRows.first.read<int>('total'),
+      dailySalahRecords: salahRows.first.read<int>('total'),
+    );
+  }
+
+  Future<String?> loadWorkspaceDisplayName(String localAccountId) async {
+    final rows = await database.customSelect(
+      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+      variables: [Variable('workspace_display_name:$localAccountId')],
+    ).get();
+    if (rows.isEmpty) return null;
+    final value = rows.first.read<String>('value').trim();
+    return value.isEmpty ? null : value;
+  }
+
+  Future<void> saveWorkspaceDisplayName(
+    String localAccountId,
+    String displayName,
+  ) async {
+    final account = await getAccount(localAccountId);
+    if (account == null ||
+        account.lifecycleState == AccountLifecycleState.archived) {
+      throw StateError('The selected local workspace is not available.');
+    }
+    final normalized = displayName.trim();
+    final key = 'workspace_display_name:$localAccountId';
+    await database.transactionWithRevision(() async {
+      final rows = await database.customSelect(
+        'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+        variables: [Variable(key)],
+      ).get();
+      final current = rows.isEmpty ? null : rows.first.read<String>('value');
+      if ((current ?? '') == normalized) return false;
+      if (normalized.isEmpty) {
+        await database.customStatement(
+          'DELETE FROM meta_store WHERE key = ?',
+          [key],
+        );
+      } else {
+        await database.customInsert(
+          '''INSERT INTO meta_store (key, value)
+             VALUES (?, ?)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+          variables: [Variable(key), Variable(normalized)],
+        );
+      }
+      return true;
+    });
+  }
+
+  /// Lists non-archived Guest workspaces that have a saved name or data.
+  ///
+  /// A draft is listed only when it holds data (Scenario 18): an empty
+  /// draft — no saved name and no profile, records, logs, or plan data,
+  /// the same emptiness test [findReusableEmptyGuestDraft] uses — stays
+  /// hidden from the chooser and management lists, so abandoned onboarding
+  /// attempts do not pile up as visible workspaces. Hiding it here does
+  /// not affect resumability: startup resume follows the persisted
+  /// session, and Start Fresh finds the hidden draft directly.
+  Future<List<LocalAccount>> listGuestWorkspaces() async {
+    final rows = await database.customSelect(
+      '''SELECT a.local_account_id, a.account_mode, a.lifecycle_state,
+                a.created_at, a.updated_at,
+                (SELECT value FROM meta_store
+                 WHERE key = 'workspace_display_name:' || a.local_account_id
+                 LIMIT 1) AS display_name
+         FROM local_accounts a
+         WHERE (a.local_account_id = 'guest'
+                OR a.local_account_id GLOB 'guest:*'
+                OR a.local_account_id GLOB 'guest_*')
+           AND a.lifecycle_state IN ('active', 'draft')
+         ORDER BY a.created_at DESC''',
+    ).get();
+    final result = <LocalAccount>[];
+    for (final row in rows) {
+      final account = _mapAccount(row);
+      if (account.displayName?.trim().isNotEmpty == true ||
+          await hasAnyAccountData(account.localAccountId)) {
+        result.add(account);
+      }
+    }
+    return result;
+  }
+
+  /// Places a non-active Guest workspace into a seven-day deletion hold.
+  /// Records stay in SQLite until the hold expires and purge safety checks pass.
+  Future<DateTime> scheduleGuestWorkspaceDeletion(
+    String localAccountId, {
+    DateTime? requestedAt,
+  }) async {
+    final id = localAccountId.trim();
+    if (!isGuestLocalWorkspaceId(id)) {
+      throw ArgumentError.value(localAccountId, 'localAccountId');
+    }
+    final account = await getAccount(id);
+    if (account == null ||
+        (account.lifecycleState != AccountLifecycleState.active &&
+            account.lifecycleState != AccountLifecycleState.draft)) {
+      throw StateError('This Guest workspace is not available for deletion.');
+    }
+    final now = requestedAt ?? DateTime.now();
+    final requestedMicros = now.microsecondsSinceEpoch;
+    final expires = now.add(const Duration(days: 7));
+    final expiresMicros = expires.microsecondsSinceEpoch;
+
+    await database.transaction(() async {
+      final sessionRows = await database
+          .customSelect(
+            'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+          )
+          .get();
+      final activeId = sessionRows.isEmpty
+          ? null
+          : sessionRows.single.read<String?>('active_local_account_id');
+      if (activeId == id) {
+        throw StateError(
+          'Switch to another workspace before deleting this Guest workspace.',
+        );
+      }
+      if (await database.hasPendingInitialCloudBackup(localAccountId: id)) {
+        throw StateError(
+          'This workspace has a backup waiting to finish. Keep it until the backup is resolved.',
+        );
+      }
+      await database.customUpdate(
+        '''UPDATE local_accounts
+           SET lifecycle_state = 'deleted_hold', updated_at = ?
+           WHERE local_account_id = ?
+             AND lifecycle_state IN ('active', 'draft') ''',
+        variables: [Variable(requestedMicros), Variable(id)],
+      );
+      await database.customInsert(
+        '''INSERT INTO local_workspace_deletion_holds
+           (local_account_id, requested_at, expires_at, prior_lifecycle_state)
+           VALUES (?, ?, ?, ?)
+           ON CONFLICT(local_account_id) DO UPDATE SET
+             requested_at = excluded.requested_at,
+             expires_at = excluded.expires_at,
+             prior_lifecycle_state = excluded.prior_lifecycle_state''',
+        variables: [
+          Variable(id),
+          Variable(requestedMicros),
+          Variable(expiresMicros),
+          Variable(account.lifecycleState.name),
+        ],
+      );
+    });
+    return expires;
+  }
+
+  Future<bool> undoGuestWorkspaceDeletion(String localAccountId) async {
+    final id = localAccountId.trim();
+    if (!isGuestLocalWorkspaceId(id)) {
+      throw ArgumentError.value(localAccountId, 'localAccountId');
+    }
+    return database.transaction(() async {
+      final rows = await database.customSelect(
+        'SELECT prior_lifecycle_state FROM local_workspace_deletion_holds '
+        'WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable(id)],
+      ).get();
+      if (rows.isEmpty) return false;
+      final account = await database.customSelect(
+        'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable(id)],
+      ).get();
+      if (account.isEmpty ||
+          account.single.read<String>('lifecycle_state') != 'deleted_hold') {
+        throw StateError(
+          'The Guest workspace has changed state and cannot be restored automatically.',
+        );
+      }
+      await database.customUpdate(
+        '''UPDATE local_accounts
+           SET lifecycle_state = ?, updated_at = ?
+           WHERE local_account_id = ?''',
+        variables: [
+          Variable(rows.single.read<String>('prior_lifecycle_state')),
+          Variable(DateTime.now().microsecondsSinceEpoch),
+          Variable(id),
+        ],
+      );
+      await database.customStatement(
+        'DELETE FROM local_workspace_deletion_holds WHERE local_account_id = ?',
+        [id],
+      );
+      return true;
+    });
+  }
+
+  Future<List<LocalWorkspaceDeletionHold>>
+      listGuestWorkspaceDeletionHolds() async {
+    final rows = await database.customSelect(
+      '''SELECT h.local_account_id, h.requested_at, h.expires_at,
+                (SELECT value FROM meta_store
+                 WHERE key = 'workspace_display_name:' || h.local_account_id
+                 LIMIT 1) AS display_name
+         FROM local_workspace_deletion_holds h
+         ORDER BY h.expires_at ASC''',
+    ).get();
+    return rows.map((row) {
+      final rawName = row.read<String?>('display_name')?.trim();
+      return LocalWorkspaceDeletionHold(
+        localAccountId: row.read<String>('local_account_id'),
+        requestedAt: DateTime.fromMicrosecondsSinceEpoch(
+          row.read<int>('requested_at'),
+        ),
+        expiresAt: DateTime.fromMicrosecondsSinceEpoch(
+          row.read<int>('expires_at'),
+        ),
+        displayName: rawName == null || rawName.isEmpty ? null : rawName,
+      );
+    }).toList(growable: false);
+  }
+
+  /// Permanently removes only Guest workspaces whose seven-day hold expired.
+  /// Active workspaces and workspaces with a pending backup are never purged.
+  Future<int> purgeExpiredGuestWorkspaceDeletions({DateTime? now}) async {
+    final cutoff = (now ?? DateTime.now()).microsecondsSinceEpoch;
+    final holds = await database.customSelect(
+      '''SELECT local_account_id FROM local_workspace_deletion_holds
+         WHERE expires_at <= ? ORDER BY expires_at ASC''',
+      variables: [Variable(cutoff)],
+    ).get();
+    var purged = 0;
+    for (final hold in holds) {
+      final id = hold.read<String>('local_account_id');
+      if (!isGuestLocalWorkspaceId(id) ||
+          await database.hasPendingInitialCloudBackup(localAccountId: id)) {
+        continue;
+      }
+      final removed = await database.transaction(() async {
+        final sessionRows = await database
+            .customSelect(
+              'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+            )
+            .get();
+        final activeId = sessionRows.isEmpty
+            ? null
+            : sessionRows.single.read<String?>('active_local_account_id');
+        if (activeId == id) return false;
+        final accountRows = await database.customSelect(
+          'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+          variables: [Variable(id)],
+        ).get();
+        if (accountRows.isEmpty ||
+            accountRows.single.read<String>('lifecycle_state') !=
+                'deleted_hold') {
+          return false;
+        }
+        const ownedTables = <(String, String)>[
+          ('qaza_records', 'user_id'),
+          ('daily_salah_logs', 'user_id'),
+          ('qaza_additions', 'user_id'),
+          ('qaza_deletion_actions', 'user_id'),
+          ('qaza_deletion_action_record_snapshots', 'user_id'),
+          ('qaza_profile_plan_provenance', 'user_id'),
+          ('account_profiles', 'local_account_id'),
+          ('account_plan_revisions', 'local_account_id'),
+        ];
+        for (final (table, ownerColumn) in ownedTables) {
+          await database.customStatement(
+            'DELETE FROM "$table" WHERE "$ownerColumn" = ?',
+            [id],
+          );
+        }
+        await database.customStatement(
+          '''DELETE FROM meta_store
+             WHERE key IN (?, ?, ?, ?)''',
+          [
+            'workspace_display_name:$id',
+            'daily_salah_tracking_enabled:$id',
+            'daily_salah_tracking_setup_dismissed:$id',
+            'workspace_revision:$id',
+          ],
+        );
+        await database.customStatement(
+          'DELETE FROM workspace_sync_metadata WHERE local_account_id = ?',
+          [id],
+        );
+        await database.customStatement(
+          'DELETE FROM local_workspace_deletion_holds WHERE local_account_id = ?',
+          [id],
+        );
+        await database.customStatement(
+          'DELETE FROM local_accounts WHERE local_account_id = ?',
+          [id],
+        );
+        return true;
+      });
+      if (removed) purged++;
+    }
+    return purged;
+  }
 
   Future<bool> hasAnyAccountData(String localAccountId) async {
     const queries = [
@@ -297,7 +735,7 @@ class AccountLocalStore {
         throw StateError('Local onboarding account does not exist.');
       }
       final lifecycle = accountRows.first.read<String>('lifecycle_state');
-      if (lifecycle == 'archived' || lifecycle == 'migrating') {
+      if (lifecycle != 'active' && lifecycle != 'draft') {
         throw StateError('Local onboarding account is not active.');
       }
       final now = DateTime.now().microsecondsSinceEpoch;
@@ -385,6 +823,13 @@ class AccountLocalStore {
           '$insertedTotal of ${records.length} records.',
         );
       }
+      // Promote a draft only as part of the transaction that commits the
+      // final profile, plan revision, and all planned Qaza rows.
+      await database.customUpdate(
+        '''UPDATE local_accounts SET lifecycle_state = 'active', updated_at = ?
+           WHERE local_account_id = ? AND lifecycle_state = 'draft' ''',
+        variables: [Variable(now), Variable(localAccountId)],
+      );
     });
   }
 
@@ -492,62 +937,98 @@ class AccountLocalStore {
   }
 
   Future<void> _ensureLocalAccount() async {
-    final rows = await database.customSelect(
-      'SELECT local_account_id FROM local_accounts WHERE local_account_id = ?',
-      variables: [Variable(UserProfile.localLedgerUserId)],
-    ).get();
+    await WorkspaceIdentityMigrator(database).migrate();
 
-    if (rows.isEmpty) {
+    Future<String> insertGuestWorkspace() async {
+      final id = 'guest_${Uuid().v4()}';
       final now = DateTime.now().microsecondsSinceEpoch;
       await database.customInsert(
         '''INSERT INTO local_accounts
-           (local_account_id, account_mode, lifecycle_state,
-            created_at, updated_at)
+           (local_account_id, account_mode, lifecycle_state, created_at, updated_at)
            VALUES (?, 'local', 'active', ?, ?)''',
-        variables: [
-          Variable(UserProfile.localLedgerUserId),
-          Variable(now),
-          Variable(now),
-        ],
+        variables: [Variable(id), Variable(now), Variable(now)],
       );
+      return id;
     }
 
-    final sessionRows = await database
+    final existingRows = await database
         .customSelect(
-          'SELECT id FROM app_session_state WHERE id = 1',
+          'SELECT local_account_id FROM local_accounts LIMIT 1',
         )
         .get();
+    if (existingRows.isEmpty) await insertGuestWorkspace();
 
-    if (sessionRows.isEmpty) {
-      await database.customInsert(
-        '''INSERT INTO app_session_state
-           (id, active_local_account_id)
-           VALUES (1, ?)''',
-        variables: [Variable(UserProfile.localLedgerUserId)],
-      );
-    } else {
-      await database.customUpdate(
-        '''UPDATE app_session_state
-           SET active_local_account_id = ?
-           WHERE id = 1
-             AND active_local_account_id IS NULL''',
-        variables: [Variable(UserProfile.localLedgerUserId)],
-      );
-    }
+    final sessions = await database
+        .customSelect(
+          'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+        )
+        .get();
+    final currentId = sessions.isEmpty
+        ? null
+        : sessions.single.read<String?>('active_local_account_id');
+    final currentRows = currentId == null
+        ? <dynamic>[]
+        : await database.customSelect(
+            'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+            variables: [Variable(currentId)],
+          ).get();
+    final currentState = currentRows.isEmpty
+        ? null
+        : currentRows.single.read<String>('lifecycle_state');
+    if (currentState == 'active' || currentState == 'draft') return;
+
+    final candidates = await database.customSelect(
+      '''SELECT local_account_id FROM local_accounts
+         WHERE lifecycle_state IN ('active', 'draft')
+         ORDER BY CASE lifecycle_state WHEN 'active' THEN 0 ELSE 1 END,
+                  updated_at DESC, local_account_id ASC LIMIT 1''',
+    ).get();
+    final nextId = candidates.isNotEmpty
+        ? candidates.single.read<String>('local_account_id')
+        : await insertGuestWorkspace();
+    await database.transaction(() async {
+      if (sessions.isEmpty) {
+        await database.customInsert(
+          '''INSERT INTO app_session_state (id, active_local_account_id, generation)
+             VALUES (1, ?, 1)''',
+          variables: [Variable(nextId)],
+        );
+      } else {
+        await database.customUpdate(
+          '''UPDATE app_session_state SET active_local_account_id = ?,
+             generation = generation + 1 WHERE id = 1''',
+          variables: [Variable(nextId)],
+        );
+      }
+    });
   }
 
   LocalAccount _mapAccount(QueryRow row) {
     return LocalAccount(
       localAccountId: row.read<String>('local_account_id'),
       accountMode: AccountMode.local,
-      lifecycleState: AccountLifecycleState.values
-          .byName(row.read<String>('lifecycle_state')),
+      lifecycleState: _parseLifecycleState(
+        row.read<String>('lifecycle_state'),
+      ),
       createdAt:
           DateTime.fromMicrosecondsSinceEpoch(row.read<int>('created_at')),
       updatedAt:
           DateTime.fromMicrosecondsSinceEpoch(row.read<int>('updated_at')),
+      displayName: row.read<String?>('display_name'),
     );
   }
+
+  AccountLifecycleState _parseLifecycleState(String value) => switch (value) {
+        'active' => AccountLifecycleState.active,
+        'archived' => AccountLifecycleState.archived,
+        'draft' => AccountLifecycleState.draft,
+        'adopting' => AccountLifecycleState.adopting,
+        'restoring' => AccountLifecycleState.restoring,
+        'adopted_recovery' => AccountLifecycleState.adoptedRecovery,
+        'recovery_copy' => AccountLifecycleState.recoveryCopy,
+        'deleted_hold' => AccountLifecycleState.deletedHold,
+        _ => throw FormatException('Unknown local workspace state: $value'),
+      };
 
   String _randomId(String prefix) {
     final random = Random.secure();
