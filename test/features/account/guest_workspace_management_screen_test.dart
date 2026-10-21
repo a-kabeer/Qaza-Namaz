@@ -10,6 +10,7 @@ import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:qaza_namaz/domain/entities/qaza_record.dart';
+import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:qaza_namaz/features/account/guest_workspace_management_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
@@ -111,7 +112,7 @@ void main() {
     );
     addTearDown(container.dispose);
     await tester.pumpWidget(
-      _app(container, const GuestWorkspaceManagementScreen()),
+      _app(container, GuestWorkspaceManagementScreen()),
     );
     // The screen loads workspaces asynchronously; pump in bounded steps
     // until the seeded workspaces are listed.
@@ -289,6 +290,99 @@ void main() {
       manyRecordsId,
     );
   });
+
+  testWidgets(
+    'switching to a saved Guest returns to the root workspace with navigation',
+    (tester) async {
+      await store.saveProfile(
+        manyRecordsId,
+        UserProfile(
+          gender: Gender.male,
+          madhab: Madhab.hanafi,
+          dateOfBirth: DateTime(1990, 1, 1),
+          pubertyAge: 12,
+          startPrayingAge: 15,
+          witrIncluded: true,
+          onboardingCompleted: true,
+        ),
+      );
+
+      late ProviderContainer switchContainer;
+      final switchManager = AccountSessionManager(
+        accountStore: store,
+        onActiveLocalAccountChanged: (id) {
+          switchContainer
+              .read(activeLocalAccountIdStateProvider.notifier)
+              .state = id;
+        },
+      );
+      switchContainer = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWithValue(database),
+          accountLocalStoreProvider.overrideWith((ref) => store),
+          accountSessionManagerProvider.overrideWith((ref) => switchManager),
+        ],
+      );
+      addTearDown(switchContainer.dispose);
+      await switchManager.initialize();
+
+      await tester.pumpWidget(
+        _app(
+          switchContainer,
+          Builder(
+            builder: (context) => Scaffold(
+              body: Column(
+                children: [
+                  const Text('Workspace home'),
+                  ElevatedButton(
+                    key: const Key('open_guest_workspace_management'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => GuestWorkspaceManagementScreen(),
+                      ),
+                    ),
+                    child: const Text('Open Guest workspaces'),
+                  ),
+                ],
+              ),
+              bottomNavigationBar: NavigationBar(
+                destinations: [
+                  NavigationDestination(
+                    icon: Icon(Icons.home_outlined),
+                    label: 'Home',
+                  ),
+                  NavigationDestination(
+                    icon: Icon(Icons.checklist_outlined),
+                    label: 'Qaza',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(
+        find.byKey(const Key('open_guest_workspace_management')),
+      );
+      await tester.pumpAndSettle();
+      final tile = find.byKey(Key('guest_workspace_$manyRecordsId'));
+      expect(tile, findsOneWidget);
+      await tester.tap(tile);
+
+      for (var i = 0; i < 100; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find.text('Workspace home').evaluate().isNotEmpty) break;
+      }
+      await tester.pumpAndSettle();
+
+      expect(switchManager.activeLocalAccountId, manyRecordsId);
+      expect(find.text('Workspace home'), findsOneWidget);
+      expect(find.byType(NavigationBar), findsOneWidget);
+      expect(find.byType(GuestWorkspaceManagementScreen), findsNothing);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   test(
       'rename updates the listed display name without changing the '
