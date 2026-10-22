@@ -15,26 +15,50 @@ part 'app_database.g.dart';
   tables: [QazaRecords],
   daos: [QazaRecordsDao],
 )
+enum AppDatabaseRole { controlGuest, googleWorkspace }
+
 class AppDatabase extends _$AppDatabase {
   /// Test seam retained for in-memory and explicitly supplied executors.
   AppDatabase([QueryExecutor? executor])
-      : super(executor ?? _openEncryptedDatabase());
+      : _role = AppDatabaseRole.controlGuest,
+        _workspaceId = null,
+        super(executor ?? _openEncryptedDatabase());
 
   /// Explicit production constructor for the control + Guest database.
-  AppDatabase.control() : super(_openEncryptedDatabase());
+  AppDatabase.control()
+      : _role = AppDatabaseRole.controlGuest,
+        _workspaceId = null,
+        super(_openEncryptedDatabase());
+
+  AppDatabase._workspace({
+    required QueryExecutor executor,
+    required String workspaceId,
+  })  : _role = AppDatabaseRole.googleWorkspace,
+        _workspaceId = workspaceId,
+        super(executor);
+
+  final AppDatabaseRole _role;
+  final String? _workspaceId;
+
+  bool get isGoogleWorkspaceDatabase =>
+      _role == AppDatabaseRole.googleWorkspace;
+  String? get workspaceId => _workspaceId;
 
   static QueryExecutor _openEncryptedDatabase({
     String fileName = 'qaza_namaz.sqlite',
+    bool migrateLegacyPlaintext = true,
   }) {
     return LazyDatabase(() async {
       final directory = await getApplicationDocumentsDirectory();
       final databaseFile = File('${directory.path}/$fileName');
       final key = await DatabaseEncryptionKeyStore().readOrCreate();
 
-      await PlaintextDatabaseMigrator.migrateIfNeeded(
-        databaseFile: databaseFile,
-        key: key,
-      );
+      if (migrateLegacyPlaintext) {
+        await PlaintextDatabaseMigrator.migrateIfNeeded(
+          databaseFile: databaseFile,
+          key: key,
+        );
+      }
 
       return NativeDatabase.createInBackground(
         databaseFile,
@@ -70,15 +94,38 @@ class AppDatabase extends _$AppDatabase {
           await _ensureQazaProfilePlanProvenanceSchema();
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
-          await _ensureRegistryDatabaseRoutingSchema();
           await _ensureMetaStoreSchema();
           await _ensureDailySalahTrackingSchema();
-          await _ensureCloudSetupChoiceSchema();
           await _ensureLocalRecoverySnapshotSchema();
           await _ensureWorkspaceRevisionSchema();
           await _ensureWorkspaceLifecycleSchema();
+          if (isGoogleWorkspaceDatabase) {
+            await _ensureWorkspaceOwnerGuardSchema();
+            if (_workspaceId == null || _workspaceId!.isEmpty) {
+              throw StateError('Google workspace database requires an owner ID.');
+            }
+          } else {
+            await _ensureRegistryDatabaseRoutingSchema();
+            await _ensureCloudSetupChoiceSchema();
+            await _ensureWorkspaceOperationJournalColumns();
+          }
         },
         onUpgrade: (Migrator m, int from, int to) async {
+          if (isGoogleWorkspaceDatabase) {
+            // Google workspace files contain only workspace-owned state.
+            // The control registry/session/journal are never installed here.
+            await _ensureQazaAdditionSchema();
+            await _ensureQazaProfilePlanProvenanceSchema();
+            await _ensurePerformanceIndexes();
+            await _ensureAccountSchema();
+            await _ensureMetaStoreSchema();
+            await _ensureDailySalahTrackingSchema();
+            await _ensureLocalRecoverySnapshotSchema();
+            await _ensureWorkspaceRevisionSchema();
+            await _ensureWorkspaceLifecycleSchema();
+            await _ensureWorkspaceOwnerGuardSchema();
+            return;
+          }
           if (from < 2) {
             await _ensurePerformanceIndexes();
           }
@@ -156,6 +203,8 @@ class AppDatabase extends _$AppDatabase {
           if (from < 26) {
             await _ensureAccountSchema();
             await _ensureRegistryDatabaseRoutingSchema();
+            await _ensureWorkspaceLifecycleSchema();
+            await _ensureWorkspaceOperationJournalColumns();
           }
         },
       );
@@ -167,19 +216,28 @@ class AppDatabase extends _$AppDatabase {
         value TEXT NOT NULL
       )
     ''');
+    if (isGoogleWorkspaceDatabase) {
+      final id = _workspaceId;
+      if (id == null || id.isEmpty) {
+        throw StateError('Google workspace database requires an owner ID.');
+      }
+      await customInsert(
+        'INSERT OR IGNORE INTO meta_store (key, value) VALUES (?, ?)',
+        variables: [
+          Variable<String>('workspace_revision:$id'),
+          const Variable<String>('1'),
+        ],
+      );
+      return;
+    }
     await customStatement(
       "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
       "('is_onboarding_completed', '0')",
     );
     // Drift's schemaVersion is the sole authoritative SQLite schema version.
-    // The former meta_store schema_version key is obsolete and must not
-    // compete with Drift's generated schema metadata.
+    await customStatement("DELETE FROM meta_store WHERE key = 'schema_version'");
     await customStatement(
-      "DELETE FROM meta_store WHERE key = 'schema_version'",
-    );
-    await customStatement(
-      "INSERT OR IGNORE INTO meta_store (key, value) VALUES "
-      "('db_revision', '1')",
+      "INSERT OR IGNORE INTO meta_store (key, value) VALUES ('db_revision', '1')",
     );
   }
 
@@ -788,34 +846,33 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _ensureAccountSchema() async {
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS local_accounts (
-        local_account_id TEXT NOT NULL PRIMARY KEY,
-        account_mode TEXT NOT NULL DEFAULT 'local',
-        lifecycle_state TEXT NOT NULL DEFAULT 'active',
-        db_file_name TEXT,
-        db_layout TEXT NOT NULL DEFAULT 'shared',
-        db_migration_state TEXT NOT NULL DEFAULT 'not_started',
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL
-      )
-    ''');
-
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS app_session_state (
-        id INTEGER NOT NULL PRIMARY KEY,
-        active_local_account_id TEXT,
-        generation INTEGER NOT NULL DEFAULT 1
-      )
-    ''');
-
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS device_metadata (
-        id INTEGER NOT NULL PRIMARY KEY,
-        device_instance_id TEXT NOT NULL
-      )
-    ''');
-
+    if (!isGoogleWorkspaceDatabase) {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS local_accounts (
+          local_account_id TEXT NOT NULL PRIMARY KEY,
+          account_mode TEXT NOT NULL DEFAULT 'local',
+          lifecycle_state TEXT NOT NULL DEFAULT 'active',
+          db_file_name TEXT,
+          db_layout TEXT NOT NULL DEFAULT 'shared',
+          db_migration_state TEXT NOT NULL DEFAULT 'not_started',
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL
+        )
+      ''');
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS app_session_state (
+          id INTEGER NOT NULL PRIMARY KEY,
+          active_local_account_id TEXT,
+          generation INTEGER NOT NULL DEFAULT 1
+        )
+      ''');
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS device_metadata (
+          id INTEGER NOT NULL PRIMARY KEY,
+          device_instance_id TEXT NOT NULL
+        )
+      ''');
+    }
     await customStatement('''
       CREATE TABLE IF NOT EXISTS account_profiles (
         local_account_id TEXT NOT NULL PRIMARY KEY,
@@ -826,7 +883,6 @@ class AppDatabase extends _$AppDatabase {
         operation_id TEXT NOT NULL
       )
     ''');
-
     await customStatement('''
       CREATE TABLE IF NOT EXISTS account_plan_revisions (
         local_account_id TEXT NOT NULL,
@@ -836,6 +892,122 @@ class AppDatabase extends _$AppDatabase {
         PRIMARY KEY (local_account_id, revision_id)
       )
     ''');
+  }
+
+  Future<String?> readWorkspaceFileOwner() async {
+    if (!isGoogleWorkspaceDatabase) {
+      throw StateError('The control database has no Google workspace owner.');
+    }
+    final rows = await customSelect(
+      "SELECT value FROM meta_store WHERE key = 'workspace_file_owner' LIMIT 1",
+    ).get();
+    return rows.isEmpty ? null : rows.single.read<String>('value');
+  }
+
+  Future<void> writeWorkspaceFileOwner(String localAccountId) async {
+    if (!isGoogleWorkspaceDatabase || localAccountId != _workspaceId) {
+      throw StateError('Workspace owner marker does not match the database target.');
+    }
+    await customInsert(
+      'INSERT INTO meta_store (key, value) VALUES (?, ?) '
+      'ON CONFLICT(key) DO UPDATE SET value = excluded.value',
+      variables: [
+        const Variable<String>('workspace_file_owner'),
+        Variable<String>(localAccountId),
+      ],
+    );
+  }
+
+  Future<void> _ensureWorkspaceOwnerGuardSchema() async {
+    if (!isGoogleWorkspaceDatabase) return;
+    final id = _workspaceId;
+    if (id == null || id.isEmpty) {
+      throw StateError('Google workspace database requires an owner ID.');
+    }
+    final ownerLiteral = "'${id.replaceAll("'", "''")}'";
+    const ownerTables = <String, String>{
+      'qaza_records': 'user_id',
+      'daily_salah_logs': 'user_id',
+      'qaza_additions': 'user_id',
+      'qaza_deletion_actions': 'user_id',
+      'qaza_deletion_action_record_snapshots': 'user_id',
+      'qaza_profile_plan_provenance': 'user_id',
+      'account_profiles': 'local_account_id',
+      'account_plan_revisions': 'local_account_id',
+      'workspace_sync_metadata': 'local_account_id',
+    };
+    for (final entry in ownerTables.entries) {
+      final table = entry.key;
+      final ownerColumn = entry.value;
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_owner_guard_${table}_insert
+        BEFORE INSERT ON "$table"
+        WHEN NEW."$ownerColumn" != $ownerLiteral
+        BEGIN
+          SELECT RAISE(ABORT, 'workspace owner mismatch');
+        END
+      ''');
+      await customStatement('''
+        CREATE TRIGGER IF NOT EXISTS workspace_owner_guard_${table}_update
+        BEFORE UPDATE OF "$ownerColumn" ON "$table"
+        WHEN NEW."$ownerColumn" != $ownerLiteral
+        BEGIN
+          SELECT RAISE(ABORT, 'workspace owner mismatch');
+        END
+      ''');
+    }
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_meta_owner_guard_insert
+      BEFORE INSERT ON meta_store
+      WHEN NOT (
+        NEW.key = 'workspace_file_owner'
+        OR NEW.key = ('workspace_revision:' || $ownerLiteral)
+        OR NEW.key = ('workspace_display_name:' || $ownerLiteral)
+        OR NEW.key = ('daily_salah_tracking_enabled:' || $ownerLiteral)
+        OR NEW.key = ('daily_salah_tracking_setup_dismissed:' || $ownerLiteral)
+        OR NEW.key = ('initial_cloud_backup_pending:' || $ownerLiteral)
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'workspace metadata key is not scoped to this owner');
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS workspace_meta_owner_guard_update
+      BEFORE UPDATE ON meta_store
+      WHEN NOT (
+        NEW.key = 'workspace_file_owner'
+        OR NEW.key = ('workspace_revision:' || $ownerLiteral)
+        OR NEW.key = ('workspace_display_name:' || $ownerLiteral)
+        OR NEW.key = ('daily_salah_tracking_enabled:' || $ownerLiteral)
+        OR NEW.key = ('daily_salah_tracking_setup_dismissed:' || $ownerLiteral)
+        OR NEW.key = ('initial_cloud_backup_pending:' || $ownerLiteral)
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'workspace metadata key is not scoped to this owner');
+      END
+    ''');
+  }
+
+  Future<void> _ensureWorkspaceOperationJournalColumns() async {
+    final rows = await customSelect(
+      'PRAGMA table_info(workspace_operation_journal)',
+    ).get();
+    final names = rows.map((row) => row.read<String>('name')).toSet();
+    if (!names.contains('staging_file')) {
+      await customStatement(
+        'ALTER TABLE workspace_operation_journal ADD COLUMN staging_file TEXT',
+      );
+    }
+    if (!names.contains('final_file')) {
+      await customStatement(
+        'ALTER TABLE workspace_operation_journal ADD COLUMN final_file TEXT',
+      );
+    }
+    if (!names.contains('content_hash')) {
+      await customStatement(
+        'ALTER TABLE workspace_operation_journal ADD COLUMN content_hash TEXT',
+      );
+    }
   }
 
   /// Adds physical-database routing metadata to the control registry.
@@ -880,28 +1052,33 @@ class AppDatabase extends _$AppDatabase {
   /// deletion holds. These records remain local and are never restored from a
   /// remote workspace payload.
   Future<void> _ensureWorkspaceLifecycleSchema() async {
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS workspace_operation_journal (
-        operation_id TEXT NOT NULL PRIMARY KEY,
-        operation_type TEXT NOT NULL,
-        source_local_account_id TEXT NOT NULL,
-        target_local_account_id TEXT NOT NULL,
-        phase TEXT NOT NULL,
-        snapshot_id TEXT,
-        created_at INTEGER NOT NULL,
-        updated_at INTEGER NOT NULL,
-        backup_verified_at INTEGER,
-        error_message TEXT
-      )
-    ''');
-    await customStatement('''
-      CREATE TABLE IF NOT EXISTS local_workspace_deletion_holds (
-        local_account_id TEXT NOT NULL PRIMARY KEY,
-        requested_at INTEGER NOT NULL,
-        expires_at INTEGER NOT NULL,
-        prior_lifecycle_state TEXT NOT NULL
-      )
-    ''');
+    if (!isGoogleWorkspaceDatabase) {
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS workspace_operation_journal (
+          operation_id TEXT NOT NULL PRIMARY KEY,
+          operation_type TEXT NOT NULL,
+          source_local_account_id TEXT NOT NULL,
+          target_local_account_id TEXT NOT NULL,
+          phase TEXT NOT NULL,
+          snapshot_id TEXT,
+          created_at INTEGER NOT NULL,
+          updated_at INTEGER NOT NULL,
+          backup_verified_at INTEGER,
+          error_message TEXT,
+          staging_file TEXT,
+          final_file TEXT,
+          content_hash TEXT
+        )
+      ''');
+      await customStatement('''
+        CREATE TABLE IF NOT EXISTS local_workspace_deletion_holds (
+          local_account_id TEXT NOT NULL PRIMARY KEY,
+          requested_at INTEGER NOT NULL,
+          expires_at INTEGER NOT NULL,
+          prior_lifecycle_state TEXT NOT NULL
+        )
+      ''');
+    }
     await customStatement('''
       CREATE TABLE IF NOT EXISTS workspace_sync_metadata (
         local_account_id TEXT NOT NULL PRIMARY KEY,
@@ -1000,14 +1177,28 @@ class AppDatabase extends _$AppDatabase {
   }
 
   Future<void> _ensureWorkspaceRevisionSchema() async {
-    await customStatement('''
-      INSERT OR IGNORE INTO meta_store (key, value)
-      SELECT 'workspace_revision:' || local_account_id, '2'
-      FROM local_accounts
-    ''');
+    if (isGoogleWorkspaceDatabase) {
+      final id = _workspaceId;
+      if (id == null || id.isEmpty) {
+        throw StateError('Google workspace database requires an owner ID.');
+      }
+      await customInsert(
+        'INSERT OR IGNORE INTO meta_store (key, value) VALUES (?, ?)',
+        variables: [
+          Variable<String>('workspace_revision:$id'),
+          const Variable<String>('1'),
+        ],
+      );
+    } else {
+      await customStatement('''
+        INSERT OR IGNORE INTO meta_store (key, value)
+        SELECT 'workspace_revision:' || local_account_id, '2'
+        FROM local_accounts
+      ''');
+    }
 
-    const ownerTables = <String, String>{
-      'local_accounts': 'local_account_id',
+    final ownerTables = <String, String>{
+      if (!isGoogleWorkspaceDatabase) 'local_accounts': 'local_account_id',
       'qaza_records': 'user_id',
       'daily_salah_logs': 'user_id',
       'qaza_additions': 'user_id',
@@ -1063,6 +1254,7 @@ class AppDatabase extends _$AppDatabase {
       'workspace_display_name:',
       'daily_salah_tracking_enabled:',
       'daily_salah_tracking_setup_dismissed:',
+      'initial_cloud_backup_pending:',
     ];
     final when = workspaceKeyPrefixes
         .map((prefix) => "NEW.key GLOB '${prefix}*'")
@@ -1338,4 +1530,26 @@ class AppDatabase extends _$AppDatabase {
       'ON qaza_deletion_action_record_snapshots (deletion_action_id, record_id)',
     );
   }
+}
+
+
+/// Encrypted database containing exactly one verified Google workspace.
+/// It reuses the existing Drift table and DAO declarations but its role-aware
+/// schema setup deliberately excludes registry, session, device and journal state.
+class GoogleWorkspaceDatabase extends AppDatabase {
+  GoogleWorkspaceDatabase({
+    required String fileName,
+    required String workspaceId,
+  }) : super._workspace(
+          executor: AppDatabase._openEncryptedDatabase(
+            fileName: fileName,
+            migrateLegacyPlaintext: false,
+          ),
+          workspaceId: workspaceId,
+        );
+
+  GoogleWorkspaceDatabase.forTesting({
+    required QueryExecutor executor,
+    required String workspaceId,
+  }) : super._workspace(executor: executor, workspaceId: workspaceId);
 }
