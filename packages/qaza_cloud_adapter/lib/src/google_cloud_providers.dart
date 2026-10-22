@@ -469,6 +469,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
     if (manager == null) return Future.value(_phase1.database);
     return manager.databaseForWorkspace(localWorkspaceId);
   }
+
   final GoogleSignInGateway _gateway;
   final CloudSyncStateStore _state;
   final CloudSyncScheduler _scheduler;
@@ -563,8 +564,8 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
             );
           }
           final workspaceDatabase = await _workspaceDatabase(localWorkspaceId);
-          final workspaceRevision =
-              await workspaceDatabase.readWorkspaceRevision(localWorkspaceId);
+          final workspaceRevision = await workspaceDatabase
+              .readWorkspaceRevision(localWorkspaceId);
           final (syncState, conflictMarker) = switch (result.kind) {
             CloudBackupDiscoveryKind.noBackup => ('pending', null),
             CloudBackupDiscoveryKind.found => (
@@ -1153,8 +1154,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           .activeAccountId();
       if (accountId != null && accountId.isNotEmpty) {
         final workspaceId = googleLocalWorkspaceId(accountId);
-        return (await _workspaceDatabase(workspaceId))
-            .readWorkspaceRevision(workspaceId);
+        return (await _workspaceDatabase(
+          workspaceId,
+        )).readWorkspaceRevision(workspaceId);
       }
     }
     return _phase1.readDbRevision();
