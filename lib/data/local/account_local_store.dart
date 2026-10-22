@@ -16,7 +16,7 @@ class AccountLocalStore {
     required this.database,
     DatabaseManager? databaseManager,
   }) : _databaseManager =
-           databaseManager ?? DatabaseManager(controlDatabase: database);
+            databaseManager ?? DatabaseManager(controlDatabase: database);
 
   /// Always the control + Guest handle. Registry/session/device changes live here.
   final AppDatabase database;
@@ -94,9 +94,11 @@ class AccountLocalStore {
   }
 
   Future<LocalAccount?> activeAccount() async {
-    final rows = await database.customSelect(
-      'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
-    ).get();
+    final rows = await database
+        .customSelect(
+          'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+        )
+        .get();
     if (rows.isEmpty) return null;
     final id = rows.single.read<String?>('active_local_account_id');
     if (id == null || id.trim().isEmpty) return null;
@@ -648,7 +650,8 @@ class AccountLocalStore {
       UserProfile? existing;
       if (existingRows.isNotEmpty) {
         try {
-          final decoded = jsonDecode(existingRows.single.read<String>('payload_json'));
+          final decoded =
+              jsonDecode(existingRows.single.read<String>('payload_json'));
           if (decoded is Map) {
             existing = UserProfile.fromJson(Map<String, dynamic>.from(decoded));
           }
@@ -673,7 +676,8 @@ class AccountLocalStore {
       }
       return true;
     });
-    if (!identical(workspace, database) && changed &&
+    if (!identical(workspace, database) &&
+        changed &&
         await database.isCurrentWorkspaceGeneration(
           localAccountId: localAccountId,
           generation: beforeGeneration,
@@ -780,18 +784,19 @@ class AccountLocalStore {
     }
 
     final workspace = await _workspaceDatabase(id);
-    final sessionRows = await database.customSelect(
-      'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
-    ).get();
+    final sessionRows = await database
+        .customSelect(
+          'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+        )
+        .get();
     final activeId = sessionRows.isEmpty
         ? null
         : sessionRows.single.read<String?>('active_local_account_id');
     if (activeId != id) {
       throw StateError('Onboarding account is not the active local account.');
     }
-    final sessionGeneration = sessionRows.isEmpty
-        ? 1
-        : sessionRows.single.read<int>('generation');
+    final sessionGeneration =
+        sessionRows.isEmpty ? 1 : sessionRows.single.read<int>('generation');
 
     final accountRows = await database.customSelect(
       'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ? LIMIT 1',
@@ -853,7 +858,10 @@ class AccountLocalStore {
       '''UPDATE workspace_operation_journal
          SET phase = 'prepared', error_message = NULL, updated_at = ?
          WHERE operation_id = ? AND phase != 'committed' ''',
-      variables: [Variable(DateTime.now().microsecondsSinceEpoch), Variable(operationId)],
+      variables: [
+        Variable(DateTime.now().microsecondsSinceEpoch),
+        Variable(operationId)
+      ],
     );
 
     try {
@@ -925,7 +933,8 @@ class AccountLocalStore {
       variables: [Variable(localAccountId), Variable(revision.revisionId)],
     ).get();
     if (existingRevision.isNotEmpty) {
-      if (existingRevision.single.read<String>('payload_json') != revisionPayload) {
+      if (existingRevision.single.read<String>('payload_json') !=
+          revisionPayload) {
         throw StateError('Immutable onboarding plan revision conflict.');
       }
     } else {
@@ -1013,9 +1022,8 @@ class AccountLocalStore {
          WHERE operation_type = 'onboarding_commit' AND phase = 'verified'
          ${onlyOperationId == null ? '' : 'AND operation_id = ?'}
          ORDER BY created_at''',
-      variables: onlyOperationId == null
-          ? const []
-          : [Variable(onlyOperationId)],
+      variables:
+          onlyOperationId == null ? const [] : [Variable(onlyOperationId)],
     ).get();
     for (final row in rows) {
       final operationId = row.read<String>('operation_id');
@@ -1026,7 +1034,8 @@ class AccountLocalStore {
         variables: [Variable(id)],
       ).get();
       if (profileRows.isEmpty) {
-        throw StateError('Verified onboarding journal has no workspace profile.');
+        throw StateError(
+            'Verified onboarding journal has no workspace profile.');
       }
       dynamic decoded;
       try {
@@ -1035,13 +1044,16 @@ class AccountLocalStore {
         throw StateError('Verified onboarding profile is invalid JSON.');
       }
       if (decoded is! Map || decoded['onboardingCompleted'] != true) {
-        throw StateError('Verified onboarding profile is not marked completed.');
+        throw StateError(
+            'Verified onboarding profile is not marked completed.');
       }
 
       await database.transaction(() async {
-        final sessionRows = await database.customSelect(
-          'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
-        ).get();
+        final sessionRows = await database
+            .customSelect(
+              'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+            )
+            .get();
         final activeId = sessionRows.isEmpty
             ? null
             : sessionRows.single.read<String?>('active_local_account_id');
@@ -1051,7 +1063,10 @@ class AccountLocalStore {
         await database.customUpdate(
           '''UPDATE local_accounts SET lifecycle_state = 'active', updated_at = ?
              WHERE local_account_id = ? AND lifecycle_state = 'draft' ''',
-          variables: [Variable(DateTime.now().microsecondsSinceEpoch), Variable(id)],
+          variables: [
+            Variable(DateTime.now().microsecondsSinceEpoch),
+            Variable(id)
+          ],
         );
         if (activeId == id &&
             (expectedSessionGeneration == null ||

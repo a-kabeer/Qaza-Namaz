@@ -13,7 +13,8 @@ class DatabaseManager {
   DatabaseManager({
     AppDatabase? controlDatabase,
     Future<Directory> Function()? documentsDirectoryProvider,
-    AppDatabase Function({required String fileName, required String workspaceId})?
+    AppDatabase Function(
+            {required String fileName, required String workspaceId})?
         googleDatabaseFactory,
   })  : _controlDatabase = controlDatabase,
         _documentsDirectoryProvider =
@@ -32,8 +33,9 @@ class DatabaseManager {
   final Map<String, Future<AppDatabase>> _provisioningGoogleWorkspaces =
       <String, Future<AppDatabase>>{};
   final Future<Directory> Function() _documentsDirectoryProvider;
-  final AppDatabase Function({required String fileName, required String workspaceId})
-      _googleDatabaseFactory;
+  final AppDatabase Function(
+      {required String fileName,
+      required String workspaceId}) _googleDatabaseFactory;
   Future<void>? _initializeFuture;
   String? _activeWorkspaceId;
 
@@ -41,19 +43,22 @@ class DatabaseManager {
 
   void setActiveWorkspace(String? localAccountId) {
     final id = localAccountId?.trim();
-    if (id == null || id.isEmpty ||
-        id == 'guest' || id.startsWith('guest_') || id.startsWith('guest:')) {
+    if (id == null ||
+        id.isEmpty ||
+        id == 'guest' ||
+        id.startsWith('guest_') ||
+        id.startsWith('guest:')) {
       _activeWorkspaceId = null;
       return;
     }
     if (!_workspaceDatabases.containsKey(id)) {
-      throw StateError('Cannot publish a Google workspace before its database is validated.');
+      throw StateError(
+          'Cannot publish a Google workspace before its database is validated.');
     }
     _activeWorkspaceId = id;
   }
 
-  AppDatabase get controlDatabase =>
-      _controlDatabase ??= AppDatabase.control();
+  AppDatabase get controlDatabase => _controlDatabase ??= AppDatabase.control();
 
   static String googleFileNameForWorkspaceId(String localAccountId) {
     final id = localAccountId.trim();
@@ -145,7 +150,8 @@ class DatabaseManager {
         fileName == null ||
         fileName != googleFileNameForWorkspaceId(id) ||
         !RegExp(r'^qaza_google_[0-9a-f]{32}\.sqlite$').hasMatch(fileName)) {
-      throw StateError('Google workspace registry filename/state failed validation.');
+      throw StateError(
+          'Google workspace registry filename/state failed validation.');
     }
     final cached = _workspaceDatabases[id];
     if (cached != null) return cached;
@@ -156,12 +162,15 @@ class DatabaseManager {
         'The registered Google workspace database is missing. No empty replacement was created.',
       );
     }
-    final workspace = _googleDatabaseFactory(fileName: fileName, workspaceId: id);
+    final workspace =
+        _googleDatabaseFactory(fileName: fileName, workspaceId: id);
     try {
       if (await workspace.readWorkspaceFileOwner() != id) {
-        throw StateError('Google workspace file owner does not match the registry.');
+        throw StateError(
+            'Google workspace file owner does not match the registry.');
       }
-      final integrity = await workspace.customSelect('PRAGMA integrity_check').get();
+      final integrity =
+          await workspace.customSelect('PRAGMA integrity_check').get();
       if (integrity.isEmpty ||
           integrity.first.read<String>('integrity_check') != 'ok') {
         throw StateError('Google workspace database integrity check failed.');
@@ -199,7 +208,8 @@ class DatabaseManager {
       'WHERE local_account_id = ? LIMIT 1',
       variables: [Variable<String>(id)],
     ).get();
-    if (rows.isNotEmpty && rows.single.read<String>('db_layout') == 'separate') {
+    if (rows.isNotEmpty &&
+        rows.single.read<String>('db_layout') == 'separate') {
       return databaseForWorkspace(id);
     }
     if (rows.isNotEmpty && await _hasSharedWorkspaceData(id)) {
@@ -216,7 +226,11 @@ class DatabaseManager {
            (local_account_id, account_mode, lifecycle_state, db_file_name,
             db_layout, db_migration_state, created_at, updated_at)
            VALUES (?, 'local', 'active', NULL, 'shared', 'not_started', ?, ?)''',
-        variables: [Variable<String>(id), Variable<int>(now), Variable<int>(now)],
+        variables: [
+          Variable<String>(id),
+          Variable<int>(now),
+          Variable<int>(now)
+        ],
       );
     }
 
@@ -225,10 +239,12 @@ class DatabaseManager {
     final stagingName = '$fileName.staging';
     final stagingFile = File('${directory.path}/$stagingName');
     if (await finalFile.exists()) {
-      throw StateError('An unregistered Google file already exists; it will not be overwritten.');
+      throw StateError(
+          'An unregistered Google file already exists; it will not be overwritten.');
     }
     if (await stagingFile.exists()) {
-      throw StateError('An interrupted staging file requires recovery; it will not be overwritten.');
+      throw StateError(
+          'An interrupted staging file requires recovery; it will not be overwritten.');
     }
 
     final operationId = 'google-workspace-create:$id';
@@ -240,9 +256,13 @@ class DatabaseManager {
           staging_file, final_file, content_hash, error_message)
          VALUES (?, 'google_workspace_create', ?, ?, 'prepared', ?, ?, ?, ?, NULL, NULL)''',
       variables: [
-        Variable<String>(operationId), Variable<String>(id), Variable<String>(id),
-        Variable<int>(createdAt), Variable<int>(createdAt),
-        Variable<String>(stagingName), Variable<String>(fileName),
+        Variable<String>(operationId),
+        Variable<String>(id),
+        Variable<String>(id),
+        Variable<int>(createdAt),
+        Variable<int>(createdAt),
+        Variable<String>(stagingName),
+        Variable<String>(fileName),
       ],
     );
 
@@ -267,7 +287,9 @@ class DatabaseManager {
     AppDatabase? staging;
     try {
       staging = _googleDatabaseFactory(fileName: stagingName, workspaceId: id);
-      await staging.customSelect('SELECT count(*) AS count FROM qaza_records').get();
+      await staging
+          .customSelect('SELECT count(*) AS count FROM qaza_records')
+          .get();
       await staging.writeWorkspaceFileOwner(id);
       for (final row in scopedKeys) {
         await staging.customInsert(
@@ -308,7 +330,8 @@ class DatabaseManager {
           variables: [Variable<String>(id)],
         );
       }
-      final integrity = await staging.customSelect('PRAGMA integrity_check').get();
+      final integrity =
+          await staging.customSelect('PRAGMA integrity_check').get();
       if (integrity.isEmpty ||
           integrity.first.read<String>('integrity_check') != 'ok' ||
           await staging.readWorkspaceFileOwner() != id) {
@@ -327,18 +350,22 @@ class DatabaseManager {
       staging = null;
       await stagingFile.rename(finalFile.path);
 
-      final published = _googleDatabaseFactory(fileName: fileName, workspaceId: id);
+      final published =
+          _googleDatabaseFactory(fileName: fileName, workspaceId: id);
       try {
         final owner = await published.readWorkspaceFileOwner();
-        final check = await published.customSelect('PRAGMA integrity_check').get();
+        final check =
+            await published.customSelect('PRAGMA integrity_check').get();
         if (owner != id ||
             check.isEmpty ||
             check.first.read<String>('integrity_check') != 'ok') {
           throw StateError('Published Google workspace failed verification.');
         }
-        final publishedHash = await _canonicalWorkspaceCreationHash(published, id);
+        final publishedHash =
+            await _canonicalWorkspaceCreationHash(published, id);
         if (publishedHash != hash) {
-          throw StateError('Published Google workspace content hash does not match staging.');
+          throw StateError(
+              'Published Google workspace content hash does not match staging.');
         }
       } catch (_) {
         await published.close();
@@ -408,19 +435,21 @@ class DatabaseManager {
       'SELECT 1 FROM account_plan_revisions WHERE local_account_id = ? LIMIT 1',
     ];
     for (final query in queries) {
-      final found = await controlDatabase.customSelect(query,
-        variables: [Variable<String>(id)]).get();
+      final found = await controlDatabase
+          .customSelect(query, variables: [Variable<String>(id)]).get();
       if (found.isNotEmpty) return true;
     }
     return false;
   }
 
   Future<void> _reconcileWorkspaceCreationJournal() async {
-    final rows = await controlDatabase.customSelect(
-      "SELECT operation_id, target_local_account_id, phase, staging_file, final_file, content_hash "
-      "FROM workspace_operation_journal WHERE operation_type = 'google_workspace_create' "
-      "AND phase != 'committed' ORDER BY created_at",
-    ).get();
+    final rows = await controlDatabase
+        .customSelect(
+          "SELECT operation_id, target_local_account_id, phase, staging_file, final_file, content_hash "
+          "FROM workspace_operation_journal WHERE operation_type = 'google_workspace_create' "
+          "AND phase != 'committed' ORDER BY created_at",
+        )
+        .get();
     for (final row in rows) {
       final operationId = row.read<String>('operation_id');
       final id = row.read<String>('target_local_account_id');
@@ -434,12 +463,16 @@ class DatabaseManager {
           final staging = File('${dir.path}/$stagingName');
           if (await staging.exists()) {
             final quarantine = File('${staging.path}.quarantine');
-            if (!await quarantine.exists()) await staging.rename(quarantine.path);
+            if (!await quarantine.exists())
+              await staging.rename(quarantine.path);
           }
         }
         await controlDatabase.customUpdate(
           "UPDATE workspace_operation_journal SET phase = 'failed', error_message = 'Interrupted before finalization; staging quarantined', updated_at = ? WHERE operation_id = ?",
-          variables: [Variable<int>(DateTime.now().microsecondsSinceEpoch), Variable<String>(operationId)],
+          variables: [
+            Variable<int>(DateTime.now().microsecondsSinceEpoch),
+            Variable<String>(operationId)
+          ],
         );
         continue;
       }
@@ -449,20 +482,25 @@ class DatabaseManager {
         await stagingFile.rename(finalFile.path);
       }
       if (!await finalFile.exists()) {
-        throw StateError('Finalizing Google workspace creation is missing final and staging files.');
+        throw StateError(
+            'Finalizing Google workspace creation is missing final and staging files.');
       }
-      final published = _googleDatabaseFactory(fileName: finalName, workspaceId: id);
+      final published =
+          _googleDatabaseFactory(fileName: finalName, workspaceId: id);
       try {
         if (await published.readWorkspaceFileOwner() != id) {
           throw StateError('Finalizing workspace owner marker does not match.');
         }
-        final integrity = await published.customSelect('PRAGMA integrity_check').get();
-        if (integrity.isEmpty || integrity.first.read<String>('integrity_check') != 'ok') {
+        final integrity =
+            await published.customSelect('PRAGMA integrity_check').get();
+        if (integrity.isEmpty ||
+            integrity.first.read<String>('integrity_check') != 'ok') {
           throw StateError('Finalizing workspace integrity check failed.');
         }
         final actualHash = await _canonicalWorkspaceCreationHash(published, id);
         if (expectedHash == null || expectedHash != actualHash) {
-          throw StateError('Finalizing workspace content hash does not match the journal.');
+          throw StateError(
+              'Finalizing workspace content hash does not match the journal.');
         }
       } finally {
         await published.close();
@@ -470,11 +508,18 @@ class DatabaseManager {
       await controlDatabase.transaction(() async {
         await controlDatabase.customUpdate(
           "UPDATE local_accounts SET db_file_name = ?, db_layout = 'separate', db_migration_state = 'committed', updated_at = ? WHERE local_account_id = ?",
-          variables: [Variable<String>(finalName), Variable<int>(DateTime.now().microsecondsSinceEpoch), Variable<String>(id)],
+          variables: [
+            Variable<String>(finalName),
+            Variable<int>(DateTime.now().microsecondsSinceEpoch),
+            Variable<String>(id)
+          ],
         );
         await controlDatabase.customUpdate(
           "UPDATE workspace_operation_journal SET phase = 'committed', updated_at = ? WHERE operation_id = ?",
-          variables: [Variable<int>(DateTime.now().microsecondsSinceEpoch), Variable<String>(operationId)],
+          variables: [
+            Variable<int>(DateTime.now().microsecondsSinceEpoch),
+            Variable<String>(operationId)
+          ],
         );
         await controlDatabase.customUpdate(
           'DELETE FROM meta_store WHERE key IN (?, ?, ?, ?, ?)',
@@ -500,7 +545,8 @@ class DatabaseManager {
   ) async {
     final owner = await workspace.readWorkspaceFileOwner();
     if (owner != id) {
-      throw StateError('Cannot hash a Google workspace with an invalid owner marker.');
+      throw StateError(
+          'Cannot hash a Google workspace with an invalid owner marker.');
     }
     final scopedRows = await workspace.customSelect(
       '''SELECT key, value FROM meta_store
@@ -535,7 +581,8 @@ class DatabaseManager {
       ).get();
       final count = rows.single.read<int>('row_count');
       if (count != 0) {
-        throw StateError('Fresh workspace unexpectedly contains $count rows in $table.');
+        throw StateError(
+            'Fresh workspace unexpectedly contains $count rows in $table.');
       }
       counts.add(<Object>[table, count]);
     }
@@ -548,7 +595,8 @@ class DatabaseManager {
       variables: [Variable<String>(id)],
     ).get();
     if (syncRows.length != 1) {
-      throw StateError('A Google workspace must have exactly one sync metadata row.');
+      throw StateError(
+          'A Google workspace must have exactly one sync metadata row.');
     }
     final sync = syncRows.single;
     final canonical = jsonEncode(<Object?>[

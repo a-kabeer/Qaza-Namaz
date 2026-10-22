@@ -24,7 +24,8 @@ void main() {
       googleDatabaseFactory: ({
         required String fileName,
         required String workspaceId,
-      }) => GoogleWorkspaceDatabase.forTesting(
+      }) =>
+          GoogleWorkspaceDatabase.forTesting(
         executor: NativeDatabase(File('${directory.path}/$fileName')),
         workspaceId: workspaceId,
       ),
@@ -47,7 +48,8 @@ void main() {
     );
   }
 
-  Future<void> insertRecord(AppDatabase db, {
+  Future<void> insertRecord(
+    AppDatabase db, {
     required String id,
     required String owner,
   }) async {
@@ -180,9 +182,11 @@ void main() {
       manager.ensureGoogleWorkspace('google_legacy'),
       throwsStateError,
     );
-    final preserved = await control.customSelect(
-      "SELECT COUNT(*) AS row_count FROM qaza_records WHERE user_id = 'google_legacy'",
-    ).get();
+    final preserved = await control
+        .customSelect(
+          "SELECT COUNT(*) AS row_count FROM qaza_records WHERE user_id = 'google_legacy'",
+        )
+        .get();
     expect(preserved.single.read<int>('row_count'), 1);
     final fileName =
         DatabaseManager.googleFileNameForWorkspaceId('google_legacy');

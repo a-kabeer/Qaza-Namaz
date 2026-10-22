@@ -389,7 +389,8 @@ final skipPendingInitialCloudBackupForSessionProvider =
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
   final localAccountId = ref.watch(activeUserIdProvider);
   if (localAccountId == null || localAccountId.isEmpty) {
-    throw StateError('No active local workspace is ready for Qaza data access.');
+    throw StateError(
+        'No active local workspace is ready for Qaza data access.');
   }
   final manager = ref.watch(databaseManagerProvider);
   return DriftQazaLocalStore(

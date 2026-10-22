@@ -102,7 +102,8 @@ class AppDatabase extends _$AppDatabase {
           if (isGoogleWorkspaceDatabase) {
             await _ensureWorkspaceOwnerGuardSchema();
             if (_workspaceId == null || _workspaceId!.isEmpty) {
-              throw StateError('Google workspace database requires an owner ID.');
+              throw StateError(
+                  'Google workspace database requires an owner ID.');
             }
           } else {
             await _ensureRegistryDatabaseRoutingSchema();
@@ -235,7 +236,8 @@ class AppDatabase extends _$AppDatabase {
       "('is_onboarding_completed', '0')",
     );
     // Drift's schemaVersion is the sole authoritative SQLite schema version.
-    await customStatement("DELETE FROM meta_store WHERE key = 'schema_version'");
+    await customStatement(
+        "DELETE FROM meta_store WHERE key = 'schema_version'");
     await customStatement(
       "INSERT OR IGNORE INTO meta_store (key, value) VALUES ('db_revision', '1')",
     );
@@ -908,7 +910,8 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> writeWorkspaceFileOwner(String localAccountId) async {
     if (!isGoogleWorkspaceDatabase || localAccountId != _workspaceId) {
-      throw StateError('Workspace owner marker does not match the database target.');
+      throw StateError(
+          'Workspace owner marker does not match the database target.');
     }
     await customInsert(
       'INSERT INTO meta_store (key, value) VALUES (?, ?) '
@@ -1533,7 +1536,6 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 }
-
 
 /// Encrypted database containing exactly one verified Google workspace.
 /// It reuses the existing Drift table and DAO declarations but its role-aware
