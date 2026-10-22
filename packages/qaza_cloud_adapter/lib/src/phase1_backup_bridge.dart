@@ -57,7 +57,7 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
     if (accountId == null) return database.readDbRevision();
     final workspace = _databaseManager == null
         ? database
-        : await _databaseManager!.databaseForWorkspace(accountId);
+        : await _databaseManager.databaseForWorkspace(accountId);
     return workspace.readWorkspaceRevision(accountId);
   }
 
@@ -142,7 +142,7 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
     final accountId = localAccountId;
     final target = accountId == null || _databaseManager == null
         ? database
-        : await _databaseManager!.databaseForWorkspace(accountId);
+        : await _databaseManager.databaseForWorkspace(accountId);
     await target.saveLocalRecoverySnapshot(phase1BackupJson);
   }
 
@@ -151,7 +151,7 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
     final accountId = localAccountId;
     final target = accountId == null || _databaseManager == null
         ? database
-        : await _databaseManager!.databaseForWorkspace(accountId);
+        : await _databaseManager.databaseForWorkspace(accountId);
     return target.readLocalRecoverySnapshot();
   }
 
@@ -160,7 +160,7 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
     final accountId = localAccountId;
     final target = accountId == null || _databaseManager == null
         ? database
-        : await _databaseManager!.databaseForWorkspace(accountId);
+        : await _databaseManager.databaseForWorkspace(accountId);
     await target.clearLocalRecoverySnapshot();
   }
 }
