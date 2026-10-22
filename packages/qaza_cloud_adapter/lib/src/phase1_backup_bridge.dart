@@ -148,8 +148,11 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
   }
 
   @override
-  Future<void> importBackup(String phase1BackupJson) => _backupService
-      .importJson(phase1BackupJson, targetLocalAccountId: _effectiveWorkspaceId);
+  Future<void> importBackup(String phase1BackupJson) =>
+      _backupService.importJson(
+        phase1BackupJson,
+        targetLocalAccountId: _effectiveWorkspaceId,
+      );
 
   @override
   Future<void> saveRecoverySnapshot(String phase1BackupJson) async {
