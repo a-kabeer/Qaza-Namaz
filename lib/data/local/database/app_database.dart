@@ -10,13 +10,13 @@ import 'tables/qaza_records.dart';
 
 part 'app_database.g.dart';
 
+enum AppDatabaseRole { controlGuest, googleWorkspace }
+
 /// Application-local encrypted SQLite database.
 @DriftDatabase(
   tables: [QazaRecords],
   daos: [QazaRecordsDao],
 )
-enum AppDatabaseRole { controlGuest, googleWorkspace }
-
 class AppDatabase extends _$AppDatabase {
   /// Test seam retained for in-memory and explicitly supplied executors.
   AppDatabase([QueryExecutor? executor])
