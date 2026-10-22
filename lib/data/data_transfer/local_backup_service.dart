@@ -530,6 +530,26 @@ class LocalBackupService {
       );
     }
 
+    // Google workspaces on the separate layout must be populated in their own
+    // database. The shared-layout implementation below remains only for
+    // legacy/test fixtures; it is never used for a committed separate target.
+    final manager = _databaseManager;
+    if (manager != null) {
+      final layoutRows = await database.customSelect(
+        'SELECT db_layout FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable<String>(target)],
+      ).get();
+      if (layoutRows.isNotEmpty &&
+          layoutRows.single.read<String>('db_layout') == 'separate') {
+        await _adoptGuestWorkspaceAcrossFiles(
+          sourceLocalAccountId: source,
+          targetGoogleLocalAccountId: target,
+          googleDisplayName: googleDisplayName,
+        );
+        return;
+      }
+    }
+
     // The operation ID is deterministic for this Guest/Google pair. A process
     // death can safely retry the same operation instead of creating a second
     // snapshot or adopting the same records twice.
