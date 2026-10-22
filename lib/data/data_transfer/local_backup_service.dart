@@ -8,6 +8,7 @@ import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/local_account.dart';
 import '../local/database/app_database.dart';
 import '../local/database/database_manager.dart';
+import '../local/database/workspace_canonical_content.dart';
 
 const _appId = 'qaza_namaz_app';
 const _backupSchemaVersion = 1;
@@ -79,9 +80,36 @@ class LocalBackupService {
           "SELECT local_account_id FROM local_accounts WHERE db_layout = 'separate' ORDER BY local_account_id",
         )
         .get();
+    final separateIds = <String>{
+      for (final registryRow in separateRows)
+        registryRow.read<String>('local_account_id'),
+    };
 
-    for (final registryRow in separateRows) {
-      final id = registryRow.read<String>('local_account_id');
+    // Recovery Stage 4 (R-14, §5.4 retention): a migrated workspace's
+    // superseded rows remain in the control database until the gated
+    // Stage 6 cleanup. The registry — not row presence — decides which
+    // copy is authoritative, so the control leg of a full export must
+    // not emit a separate workspace's retained rows: each separate
+    // workspace contributes its rows exactly once, from its own file
+    // below. Without this filter, retention would duplicate every
+    // migrated workspace's rows in every full export.
+    void dropRetainedSeparateRows(String key, String ownerKey) {
+      (data[key] as List<dynamic>).removeWhere(
+        (row) => row is Map && separateIds.contains(row[ownerKey]),
+      );
+    }
+
+    dropRetainedSeparateRows('qaza_records', 'userId');
+    dropRetainedSeparateRows('daily_salah_logs', 'user_id');
+    dropRetainedSeparateRows('qaza_additions', 'user_id');
+    dropRetainedSeparateRows('qaza_deletion_actions', 'user_id');
+    dropRetainedSeparateRows(
+        'qaza_deletion_action_record_snapshots', 'user_id');
+    dropRetainedSeparateRows('qaza_profile_plan_provenance', 'user_id');
+    dropRetainedSeparateRows('account_profiles', 'local_account_id');
+    dropRetainedSeparateRows('account_plan_revisions', 'local_account_id');
+
+    for (final id in separateIds) {
       final account = await _readLogicalAccount(control, id);
       final workspace = await manager.databaseForWorkspace(id);
       final scopedRoot = jsonDecode(await _exportFromSource(
@@ -1008,7 +1036,7 @@ class LocalBackupService {
       );
     }
     if (priorPhase != null &&
-        !const {'prepared', 'snapshotted', 'copied', 'verified'}
+        !const {'prepared', 'snapshotted', 'copied', 'verified', 'finalizing'}
             .contains(priorPhase)) {
       throw const LocalBackupException(
         'The Guest adoption journal needs recovery before retrying. '
@@ -1101,7 +1129,11 @@ class LocalBackupService {
       return false;
     }
 
-    Future<void> verifyTargetMatchesPayload(String payload) async {
+    Future<void> verifyTargetMatchesPayload(
+      String payload, [
+      AppDatabase? targetOverride,
+    ]) async {
+      final targetDb = targetOverride ?? workspace;
       final decoded = _decodeAndValidate(payload);
       final payloadData = Map<String, dynamic>.from(decoded['data'] as Map);
       final accounts = payloadData['local_accounts'] as List<dynamic>;
@@ -1116,14 +1148,14 @@ class LocalBackupService {
         final expectedRows =
             (payloadData[payloadKey] as List<dynamic>?) ?? const [];
         final actualCount =
-            await rowCount(workspace, table, ownerColumn, target);
+            await rowCount(targetDb, table, ownerColumn, target);
         if (actualCount != expectedRows.length) {
           throw LocalBackupException(
             'Adoption verification failed for $table: expected \${expectedRows.length}, found $actualCount. '
             'The Guest source and snapshot remain available.',
           );
         }
-        final foreignRows = await workspace.customSelect(
+        final foreignRows = await targetDb.customSelect(
           'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$ownerColumn" != ?',
           variables: [Variable<String>(target)],
         ).get();
@@ -1133,16 +1165,29 @@ class LocalBackupService {
           );
         }
       }
-      if (await workspace.readWorkspaceFileOwner() != target) {
+      if (await targetDb.readWorkspaceFileOwner() != target) {
         throw const LocalBackupException(
             'Google file owner changed during adoption.');
       }
       final integrity =
-          await workspace.customSelect('PRAGMA integrity_check').get();
+          await targetDb.customSelect('PRAGMA integrity_check').get();
       if (integrity.isEmpty ||
           integrity.first.read<String>('integrity_check') != 'ok') {
         throw const LocalBackupException(
             'Google file integrity verification failed.');
+      }
+      // Unified canonical hash (decision D-D(ii)): the payload-bearing
+      // owned content of the target must equal the Guest source's,
+      // under the §7 canonicalisation's identity mapping.
+      final sourceHash =
+          await WorkspaceCanonicalContent.ownedContentHash(database, source);
+      final targetHash =
+          await WorkspaceCanonicalContent.ownedContentHash(targetDb, target);
+      if (sourceHash != targetHash) {
+        throw const LocalBackupException(
+          'Adoption verification failed: canonical content hash mismatch. '
+          'The Guest source and snapshot remain available.',
+        );
       }
     }
 
@@ -1220,31 +1265,102 @@ class LocalBackupService {
       ],
     );
 
-    final backupDigest = sha256.convert(utf8.encode(payload)).toString();
-    final restoreOperationId = 'workspace-restore:$target:$backupDigest';
-    final restoreRows = await database.customSelect(
-      'SELECT phase FROM workspace_operation_journal WHERE operation_id = ? LIMIT 1',
-      variables: [Variable<String>(restoreOperationId)],
-    ).get();
-    final restoreCommitted = restoreRows.isNotEmpty &&
-        restoreRows.single.read<String>('phase') == 'committed';
-
-    if (!restoreCommitted) {
+    // §4 staging publish (Recovery Stage 4, decision D-D(i)): the
+    // payload is imported into a staging copy of the target file and
+    // verified there; the finalization intent is journaled BEFORE the
+    // staging file is published over the target's final name; the §4
+    // step-7 commit transaction runs last. The live target file is
+    // never written to before publish. Every phase is idempotent on
+    // retry: 'copied'/'verified' redo the staging import from the
+    // durable snapshot payload, 'finalizing' resumes by verifying the
+    // live file or publishing the surviving staging file.
+    var published = workspace;
+    var contentLive = false;
+    if (priorPhase == 'finalizing') {
+      try {
+        await verifyTargetMatchesPayload(payload);
+        contentLive = true;
+      } catch (_) {
+        try {
+          published = await manager.publishAdoptionStagingDatabase(
+            target,
+            verify: (db) => verifyTargetMatchesPayload(payload, db),
+          );
+          contentLive = true;
+        } on StateError {
+          // Neither the live file nor a staging file holds the adopted
+          // content (for example the publish itself was interrupted
+          // before the swap). Redo the staging import below; the Guest
+          // source and snapshot payload are durable.
+          contentLive = false;
+        }
+      }
+    }
+    if (!contentLive) {
       if (await targetHasUserData()) {
         throw const LocalBackupException(
           'The Google target contains data but no matching committed adoption import exists. '
           'Nothing was overwritten; inspect the target and saved Guest snapshot.',
         );
       }
-      await importJson(payload, targetLocalAccountId: target);
+      await manager.discardAdoptionStagingDatabase(target);
+      final stagingDb = await manager.createAdoptionStagingDatabase(target);
+      try {
+        await _importSeparateGoogleWorkspace(payload, stagingDb, target);
+        await database.customUpdate(
+          '''UPDATE workspace_operation_journal
+             SET phase = 'copied', updated_at = ?, error_message = NULL
+             WHERE operation_id = ?''',
+          variables: [
+            Variable<int>(DateTime.now().microsecondsSinceEpoch),
+            Variable<String>(operationId),
+          ],
+        );
+        await verifyTargetMatchesPayload(payload, stagingDb);
+      } finally {
+        await stagingDb.close();
+      }
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'verified', updated_at = ?, error_message = NULL
+           WHERE operation_id = ?''',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(operationId),
+        ],
+      );
+      // The finalization intent — including the staging and final
+      // file names and the canonical content hash — is durable before
+      // any publish (§4 step order).
+      final contentHash =
+          await WorkspaceCanonicalContent.ownedContentHash(database, source);
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'finalizing', staging_file = ?, final_file = ?,
+               content_hash = ?, updated_at = ?, error_message = NULL
+           WHERE operation_id = ?''',
+        variables: [
+          Variable<String>(
+            '${DatabaseManager.googleFileNameForWorkspaceId(target)}.adoption-staging',
+          ),
+          Variable<String>(
+            DatabaseManager.googleFileNameForWorkspaceId(target),
+          ),
+          Variable<String>(contentHash),
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(operationId),
+        ],
+      );
+      published = await manager.publishAdoptionStagingDatabase(
+        target,
+        verify: (db) => verifyTargetMatchesPayload(payload, db),
+      );
     }
-
-    await verifyTargetMatchesPayload(payload);
 
     final normalizedName = googleDisplayName.trim();
     if (normalizedName.isNotEmpty) {
-      await workspace.transactionWithRevision(() async {
-        await workspace.customInsert(
+      await published.transactionWithRevision(() async {
+        await published.customInsert(
           '''INSERT INTO meta_store (key, value) VALUES (?, ?)
              ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
           variables: [
@@ -1254,16 +1370,6 @@ class LocalBackupService {
         );
       });
     }
-
-    await database.customUpdate(
-      '''UPDATE workspace_operation_journal
-         SET phase = 'verified', updated_at = ?, error_message = NULL
-         WHERE operation_id = ?''',
-      variables: [
-        Variable<int>(DateTime.now().microsecondsSinceEpoch),
-        Variable<String>(operationId),
-      ],
-    );
 
     await database.transaction(() async {
       final sessionRows = await database
@@ -1300,7 +1406,7 @@ class LocalBackupService {
         'UPDATE app_session_state SET active_local_account_id = ?, generation = generation + 1 WHERE id = 1',
         variables: [Variable<String>(target)],
       );
-      final profileRows = await workspace.customSelect(
+      final profileRows = await published.customSelect(
         'SELECT payload_json FROM account_profiles WHERE local_account_id = ? LIMIT 1',
         variables: [Variable<String>(target)],
       ).get();
@@ -1324,6 +1430,11 @@ class LocalBackupService {
         ],
       );
     });
+    // The adoption has committed; the retained pre-adoption file is
+    // discarded (it held only the target's empty baseline). If this is
+    // interrupted, a later retry observes the committed journal and
+    // returns before touching any file.
+    await manager.discardAdoptionPreviousDatabase(target);
     manager.setActiveWorkspace(target);
   }
 
