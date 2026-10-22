@@ -11,6 +11,11 @@ precedence rule, v2.2 wins over every other document. Companion document:
 outcome matches) / `gap` (required behaviour absent) / `conflict`
 (implementation contradicts the design) / `blocker` (architecture-affecting;
 Stage 4 cannot begin until Abdul decides).
+**Decisions recorded (2026-10-23):** Abdul approved the Part E decisions
+D-A…D-D on 2026-10-23 (see E.2). The Stage 4 gate condition — Stage 4
+cannot begin while D-A, D-C, or D-D are unresolved — is now **satisfied**:
+Stage 4 may begin, implementing the decided remediations and the §8
+requirement-to-test matrix.
 
 ---
 
@@ -121,6 +126,9 @@ exist, with different production consequences:
 
 **Status: BLOCKER — decision required from Abdul (see Part E, D-A).**
 No production fix was attempted in Stage 3.
+**Decision (2026-10-23, approved by Abdul — D-A): Shape A,
+registry-true resolution.** Implementing Shape A is Stage 4
+production work; the 41 failing tests must pass unweakened under it.
 **Tests required:** the 41 failing tests must pass unweakened; §8 items
 2, 9, 11, 12.
 
@@ -176,9 +184,13 @@ activation of a shared workspace control-local (Shape A) removes the
 filesystem reach from these journeys; Shapes B/C must be evaluated
 against these files explicitly. **Status: BLOCKER, disposition tied to
 D-A.** Stage 4 must demonstrate both files running to completion.
+**Decision (2026-10-23, approved by Abdul — D-A): Shape A** (see R-01).
+Shape A keeps activation of a shared workspace control-local, which is
+the disposition this item depends on; Stage 4 must demonstrate both
+journey files running to completion under it.
 **Tests required:** §8 items 4, 5, 10, 12.
 
-### R-03 — Auto-migrate vs block on `ensureGoogleWorkspace` (Stage 2 blocker 3) — **disposition recorded; Stage 4 action needs Abdul's awareness**
+### R-03 — Auto-migrate vs block on `ensureGoogleWorkspace` (Stage 2 blocker 3) — **disposition final (D-B approved 2026-10-23)**
 
 **The disagreement** (Stage 2 report §8, verbatim): test
 `legacy shared Google data is preserved and not silently replaced`
@@ -214,6 +226,10 @@ and that needs **Abdul's awareness/approval before Stage 4 applies it**
 (Part E, D-B). The test's title intent ("preserved and not silently
 replaced") remains the property to prove — by parity evidence, not by a
 refusal.
+**Decision (2026-10-23, approved by Abdul — D-B): APPROVED.** The Stage 4
+rewrite of this test's expectation to the §5.2 behaviour is authorized;
+it is executed and listed (per §8(12)) in Stage 4, not in Stage 3. This
+disposition is final.
 **Tests required:** §8 items 3, 4, 5 (migration parts).
 
 ## A.2 Migration mechanics vs §5 (blocker cluster)
@@ -281,6 +297,11 @@ assumes it) and with Recovery Plan Stage 6's default-retain cleanup
 boundary (Part D). **Decision required from Abdul (Part E, D-C).**
 **Tests required:** §8 items 3, 4, 5, 10, 11 — none can be built
 truthfully until this is resolved.
+**Decision (2026-10-23, approved by Abdul — D-C): implement §5.1–§5.4
+AS DESIGNED in Stage 4** — safety copy, storage pre-check, retained
+superseded rows until the Recovery-v1.2-Stage-6-gated cleanup, §5.2
+startup-run trigger, §5.3 mid-operation waits. **v2.2 §5 is NOT
+amended.**
 
 ## A.3 Conflicts and gaps (non-blocker, Stage 4 scope unless noted)
 
@@ -302,6 +323,10 @@ exists"). §8 item 4 requires retry seeded at **every** §4 phase
 including `finalizing` — untestable as designed until this is resolved.
 **Status: conflict; Stage 4 adoption work needs the resolution (Part E,
 D-D, may be decided with D-C).**
+**Decision (2026-10-23, approved by Abdul — D-D(i)): AS DESIGNED** —
+cross-file adoption gains the §4 `finalizing` + staging-publish
+sequence in Stage 4. **v2.2 §4 is NOT amended** for already-provisioned
+targets.
 
 ### R-06 — Shared-target adoption keeps the single-database path (§4 case (c)) — conforms-in-effect, noted
 
@@ -348,6 +373,10 @@ recorded, not judged). Identity mapping for adoption: cross-file
 adoption verifies per-table parity inside its own flow; whether its
 comparison is the §7 mapping-invariant form is a Stage 4 evidence task.
 **Status: conflict (partial). Tests required:** §8 items 3, 7.
+**Decision (2026-10-23, approved by Abdul — D-D(ii)): AS DESIGNED** —
+the canonical hash is unified on §7's scoped-export canonicalisation
+in Stage 4. The branch's `workspace-content-v1` is **NOT** adopted into
+the design record as the definition.
 
 ### R-10 — Startup reconciliation covers only create/migrate journals (§6) — gap (partial)
 
@@ -726,29 +755,40 @@ v1.2 Stage 6's six conditions. The branch's commit-time source deletion
 at the wrong time, without §5.1's safety copy, and without Stage 6's
 approval gate.
 
-## E.2 Decisions required from Abdul
+## E.2 Decisions — DECIDED by Abdul, 2026-10-23
 
-- **D-A (from R-01/R-02):** choose the routing fix shape — A
-  (registry-true resolution; recommended by the design's text), B
-  (injection completion; requires approved test call-site changes), or
-  C (new directory seam). Stage 4 cannot begin until this is decided.
-- **D-B (from R-03):** approve, in principle, the Stage 4 rewrite of
-  the `legacy shared Google data…` test expectation from
-  block-with-`StateError` to §5.2 verified migration (listed §8(12)
-  change, reason: expectation conflicts with design §5.2).
-- **D-C (from R-04):** direct the migration-mechanics remediation —
-  implement §5.1/§5.2/§5.3/§5.4 as designed (safety copy, pre-check,
-  retained superseded rows until the v1.2-Stage-6-gated cleanup,
-  startup-run trigger, mid-operation waits), or amend v2.2 §5 with a
-  written rationale. Stage 4 migration test items (Part D rows 3, 4,
-  5, 10, 11) cannot be built until this is decided.
-- **D-D (from R-05/R-09):** direct (i) whether cross-file adoption
-  gains the §4 `finalizing` + staging-publish sequence or v2.2 §4 is
-  amended for already-provisioned targets; and (ii) whether the
-  canonical hash is unified on the scoped-export canonicalisation as
-  §7 directs, or the branch's `workspace-content-v1` is adopted into
-  the design record as the definition.
+All four decisions were approved by Abdul on **2026-10-23** as a single
+package. Each is recorded below as DECIDED with its approved resolution.
 
-**Stage 4 cannot begin while D-A, D-C, or D-D are unresolved**
-(Recovery Plan Stage 3 gate). D-B may be decided with them or at
-Stage 4's start, but the affected test may not be touched before it is.
+- **D-A (from R-01/R-02) — DECIDED: Shape A, registry-true
+  resolution.** `shared` resolves to the control handle; publish/active
+  gates accept registry-resolved shared workspaces;
+  `ensureGoogleWorkspace` stops provisioning/migrating on activation
+  (provisioning stays with the verified sign-in creation flow; migration
+  becomes the §5.2 startup run). Implementing Shape A is Stage 4
+  production work.
+- **D-B (from R-03) — DECIDED: APPROVED.** The Stage 4 rewrite of the
+  `legacy shared Google data…` test expectation from
+  block-with-`StateError` to §5.2 verified migration is authorized
+  (listed §8(12) change, reason: expectation conflicts with design
+  §5.2). The rewrite is executed and listed in Stage 4, not before.
+- **D-C (from R-04) — DECIDED: implement §5.1–§5.4 AS DESIGNED.**
+  Safety copy, storage pre-check, retained superseded rows until the
+  Recovery-v1.2-Stage-6-gated cleanup, §5.2 startup-run trigger, §5.3
+  mid-operation waits. **v2.2 §5 is NOT amended.** Stage 4 migration
+  test items (Part D rows 3, 4, 5, 10, 11) are built against the design
+  as written.
+- **D-D (from R-05/R-09) — DECIDED: AS DESIGNED on both halves.**
+  (i) Cross-file adoption gains the §4 `finalizing` + staging-publish
+  sequence; **v2.2 §4 is NOT amended** for already-provisioned targets.
+  (ii) The canonical hash is unified on §7's scoped-export
+  canonicalisation; the branch's `workspace-content-v1` is **NOT**
+  adopted into the design record as the definition.
+
+**Stage 4 gate condition: SATISFIED.** The Recovery Plan Stage 3 gate
+("Stage 4 cannot begin while D-A, D-C, or D-D are unresolved") no longer
+blocks: all three gating decisions — and D-B with them — are decided.
+Stage 4 = implement the decided remediations (Shape A routing, §5
+mechanics as designed, §4 adoption sequence, §7 hash unification) +
+build the §8 requirement-to-test matrix + execute the D-B
+test-expectation rewrite, listed per §8(12).

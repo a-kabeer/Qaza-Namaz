@@ -96,6 +96,30 @@ Schema version 26 adds the D10 registry columns to `local_accounts` (`db_file_na
 
 The app is pre-launch (no releases, no production users); the only shared-layout Google data is on developer devices. Design §5 is therefore a slim one-time migration — but its safety mechanics (one safety copy before the first workspace, storage pre-check, hash parity, crash reconciliation, retained superseded rows until the approval-gated cleanup) are **not** slimmed. The register records where the current branch's migration diverges from §5 (register item R-04); those divergences are blockers, not accepted simplifications.
 
+### Stage 3 recovery decisions — D-A…D-D approved by Abdul, 2026-10-23
+
+The Recovery Plan Stage 3 discrepancy register
+(`tp-gen-separate-google-db-discrepancy-register.md`, Part E.2) raised
+four architecture decisions; Abdul approved the following resolutions
+on 2026-10-23. Full text in the register; summary here so the decision
+trail lives in one record:
+
+- **D-A:** routing fix = **Shape A, registry-true resolution** —
+  `shared` resolves to the control handle; migration becomes the §5.2
+  startup run, not an activation-time action.
+- **D-B:** the Stage 4 rewrite of the `legacy shared Google data…` test
+  expectation to §5.2 behaviour is **approved** (executed and listed in
+  Stage 4).
+- **D-C:** migration mechanics §5.1–§5.4 are implemented **as
+  designed** (safety copy, storage pre-check, retained superseded rows
+  until the approval-gated cleanup, startup-run trigger, mid-operation
+  waits). §5 is **not** amended.
+- **D-D:** **as designed** on both halves — cross-file adoption gains
+  the §4 `finalizing` + staging-publish sequence (§4 not amended), and
+  the canonical hash is unified on §7's scoped-export canonicalisation
+  (the branch's `workspace-content-v1` is not adopted as the
+  definition).
+
 ## Safety invariants
 
 1. A scheduled sync captures one verified Google ID and reads/writes only its matching local workspace.
