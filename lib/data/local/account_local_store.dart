@@ -31,6 +31,9 @@ class AccountLocalStore {
     await _reconcileOnboardingCommitJournals();
     final persisted = await activeAccount();
     final activeId = persisted?.localAccountId;
+    if (activeId != null && activeId.startsWith('google_')) {
+      await _databaseManager.ensureGoogleWorkspace(activeId);
+    }
     _databaseManager.setActiveWorkspace(activeId);
     final profile = activeId == null ? null : await loadProfile(activeId);
     await database.transaction(() async {
