@@ -165,7 +165,12 @@ void main() {
     expect(rows.single.read<int>('row_count'), 1);
   });
 
-  test('legacy shared Google data is preserved and not silently replaced',
+  // D-B rewrite (approved by Abdul 2026-10-23): the original
+  // expectation — activation blocks with StateError — conflicts with
+  // design §5.2, which mandates a verified startup migration. The
+  // rewrite changes the expected MECHANISM, not the safety claim: the
+  // legacy record is preserved, and the workspace stays operational.
+  test('legacy shared Google data is preserved and migrated by the startup run',
       () async {
     await control.customInsert(
       '''INSERT INTO local_accounts
@@ -178,18 +183,53 @@ void main() {
       owner: 'google_legacy',
     );
 
-    await expectLater(
-      manager.ensureGoogleWorkspace('google_legacy'),
-      throwsStateError,
+    // Shape A (D-A): activation alone neither provisions a file nor
+    // migrates; the shared workspace resolves to the control handle and
+    // remains fully operational there.
+    final activated = await manager.ensureGoogleWorkspace('google_legacy');
+    expect(identical(activated, control), isTrue);
+    final fileName =
+        DatabaseManager.googleFileNameForWorkspaceId('google_legacy');
+    expect(await File('${directory.path}/$fileName').exists(), isFalse);
+
+    // §5.2: the startup run performs the verified migration.
+    final report = await manager.runStartupMigrations();
+    expect(report.failed, isEmpty);
+    expect(report.migrated, contains('google_legacy'));
+    expect(report.safetyCopyEnsured, isTrue);
+    expect(
+      await File('${directory.path}/qaza_namaz.sqlite.migration-safety-copy')
+          .exists(),
+      isTrue,
     );
+
+    // The record is preserved — now authoritative in the separate file.
+    expect(await File('${directory.path}/$fileName').exists(), isTrue);
+    final migrated = await manager.databaseForWorkspace('google_legacy');
+    final inTarget = await migrated
+        .customSelect(
+          "SELECT COUNT(*) AS row_count FROM qaza_records WHERE user_id = 'google_legacy'",
+        )
+        .get();
+    expect(inTarget.single.read<int>('row_count'), 1);
+
+    // §5.4 retention: the shared source rows are retained as superseded
+    // until the separately gated Stage 6 cleanup — not silently removed
+    // by the migration commit.
     final preserved = await control
         .customSelect(
           "SELECT COUNT(*) AS row_count FROM qaza_records WHERE user_id = 'google_legacy'",
         )
         .get();
     expect(preserved.single.read<int>('row_count'), 1);
-    final fileName =
-        DatabaseManager.googleFileNameForWorkspaceId('google_legacy');
-    expect(await File('${directory.path}/$fileName').exists(), isFalse);
+
+    final registry = await control
+        .customSelect(
+          'SELECT db_layout, db_migration_state FROM local_accounts '
+          "WHERE local_account_id = 'google_legacy'",
+        )
+        .get();
+    expect(registry.single.read<String>('db_layout'), 'separate');
+    expect(registry.single.read<String>('db_migration_state'), 'committed');
   });
 }
