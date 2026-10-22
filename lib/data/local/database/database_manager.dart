@@ -11,7 +11,7 @@ part 'database_manager_migration.dart';
 
 /// Owns foreground database handles and registry-based workspace resolution.
 /// Control/session state is always read from [controlDatabase].
-class DatabaseManager with _DatabaseManagerMigration {
+class DatabaseManager {
   DatabaseManager({
     AppDatabase? controlDatabase,
     Future<Directory> Function()? documentsDirectoryProvider,
@@ -40,6 +40,12 @@ class DatabaseManager with _DatabaseManagerMigration {
       required String workspaceId}) _googleDatabaseFactory;
   Future<void>? _initializeFuture;
   String? _activeWorkspaceId;
+
+  /// Migration/reconciliation helper (database_manager_migration.dart),
+  /// constructor-injected with this manager. Lazily created so it captures
+  /// the fully constructed manager; entry points below delegate to it.
+  late final _DatabaseManagerMigrationHelper _migrationHelper =
+      _DatabaseManagerMigrationHelper(this);
 
   String? get activeWorkspaceId => _activeWorkspaceId;
 
@@ -79,6 +85,19 @@ class DatabaseManager with _DatabaseManagerMigration {
     await controlDatabase.readDbRevision();
     await _reconcileWorkspaceCreationJournal();
   }
+
+  /// Migration entry point used when a registered Google workspace still has
+  /// shared-layout data; delegates to [_DatabaseManagerMigrationHelper].
+  Future<AppDatabase> _migrateLegacyGoogleWorkspace(
+    String id,
+    String finalFileName,
+  ) =>
+      _migrationHelper._migrateLegacyGoogleWorkspace(id, finalFileName);
+
+  /// Startup reconciliation entry point for interrupted legacy migrations;
+  /// delegates to [_DatabaseManagerMigrationHelper].
+  Future<void> _reconcileLegacyGoogleWorkspaceMigration(QueryRow row) =>
+      _migrationHelper._reconcileLegacyGoogleWorkspaceMigration(row);
 
   /// Current provider handle. Google workspaces must already have been resolved
   /// during account activation; a missing handle never falls back to Guest.

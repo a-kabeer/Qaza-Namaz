@@ -19,16 +19,32 @@ List<String> _workspaceMetadataKeys(String id) => <String>[
       'initial_cloud_backup_pending:$id',
     ];
 
-mixin _DatabaseManagerMigration on DatabaseManager {
+/// Migration and startup-reconciliation routines for legacy shared-layout
+/// Google workspaces.
+///
+/// These routines were originally an extension on [DatabaseManager], then a
+/// `mixin _DatabaseManagerMigration on DatabaseManager` applied to
+/// [DatabaseManager] itself — which created recursive interface inheritance
+/// and 42 analyzer errors. They now live in this helper with an explicit,
+/// constructor-injected [DatabaseManager] dependency, and [DatabaseManager]
+/// delegates its migration entry points here (Recovery Plan Stage 1).
+class _DatabaseManagerMigrationHelper {
+  _DatabaseManagerMigrationHelper(this._manager);
+
+  /// The manager that owns the control database, the workspace handle cache,
+  /// and the directory/factory hooks these routines operate through.
+  final DatabaseManager _manager;
   Future<Map<String, String>> _readWorkspaceMetadata(
     AppDatabase source,
     String id,
   ) async {
     final keys = _workspaceMetadataKeys(id);
-    final rows = await source.customSelect(
-      'SELECT key, value FROM meta_store WHERE key IN (?, ?, ?, ?, ?) ORDER BY key',
-      variables: keys.map((key) => Variable<String>(key)).toList(),
-    ).get();
+    final rows = await source
+        .customSelect(
+          'SELECT key, value FROM meta_store WHERE key IN (?, ?, ?, ?, ?) ORDER BY key',
+          variables: keys.map((key) => Variable<String>(key)).toList(),
+        )
+        .get();
     final values = <String, String>{
       for (final row in rows)
         row.read<String>('key'): row.read<String>('value'),
@@ -41,15 +57,19 @@ mixin _DatabaseManagerMigration on DatabaseManager {
     AppDatabase source,
     String id,
   ) async {
-    final table = await source.customSelect(
-      "SELECT 1 FROM sqlite_master WHERE type = 'table' "
-      "AND name = 'local_recovery_snapshots' LIMIT 1",
-    ).get();
+    final table = await source
+        .customSelect(
+          "SELECT 1 FROM sqlite_master WHERE type = 'table' "
+          "AND name = 'local_recovery_snapshots' LIMIT 1",
+        )
+        .get();
     if (table.isEmpty) return null;
-    final rows = await source.customSelect(
-      'SELECT snapshot_id, created_at, payload_json FROM local_recovery_snapshots '
-      'ORDER BY created_at DESC LIMIT 1',
-    ).get();
+    final rows = await source
+        .customSelect(
+          'SELECT snapshot_id, created_at, payload_json FROM local_recovery_snapshots '
+          'ORDER BY created_at DESC LIMIT 1',
+        )
+        .get();
     if (rows.isEmpty) return null;
     final row = rows.single;
     final payload = row.read<String>('payload_json');
@@ -132,7 +152,8 @@ mixin _DatabaseManagerMigration on DatabaseManager {
       'SELECT $quotedColumns FROM "$table" WHERE "$ownerColumn" = ? ORDER BY $orderBy',
       variables: [Variable<String>(ownerId)],
     ).get();
-    final placeholders = List<String>.filled(sourceColumns.length, '?').join(', ');
+    final placeholders =
+        List<String>.filled(sourceColumns.length, '?').join(', ');
     for (final row in rows) {
       final values = <Variable<Object>>[
         for (final column in sourceColumns)
@@ -236,8 +257,8 @@ mixin _DatabaseManagerMigration on DatabaseManager {
     required AppDatabase verifiedWorkspace,
   }) async {
     final id = localAccountId;
-    await controlDatabase.transactionWithRevision<bool>(() async {
-      final current = await controlDatabase.customSelect(
+    await _manager.controlDatabase.transactionWithRevision<bool>(() async {
+      final current = await _manager.controlDatabase.customSelect(
         'SELECT db_file_name, db_layout, db_migration_state FROM local_accounts '
         'WHERE local_account_id = ? LIMIT 1',
         variables: [Variable<String>(id)],
@@ -265,8 +286,10 @@ mixin _DatabaseManagerMigration on DatabaseManager {
 
       // Verify both copies under the control transaction immediately before
       // cutover. Any concurrent change aborts and preserves the source rows.
-      final sourceHash = await _canonicalWorkspaceContentHash(controlDatabase, id);
-      final targetHash = await _canonicalWorkspaceContentHash(verifiedWorkspace, id);
+      final sourceHash =
+          await _canonicalWorkspaceContentHash(_manager.controlDatabase, id);
+      final targetHash =
+          await _canonicalWorkspaceContentHash(verifiedWorkspace, id);
       if (sourceHash != expectedHash || targetHash != expectedHash) {
         throw StateError(
           'Workspace content changed during migration verification. '
@@ -275,28 +298,28 @@ mixin _DatabaseManagerMigration on DatabaseManager {
       }
 
       for (final (table, ownerColumn) in _workspaceOwnedTables) {
-        await controlDatabase.customUpdate(
+        await _manager.controlDatabase.customUpdate(
           'DELETE FROM "$table" WHERE "$ownerColumn" = ?',
           variables: [Variable<String>(id)],
         );
       }
-      await controlDatabase.customUpdate(
+      await _manager.controlDatabase.customUpdate(
         'DELETE FROM workspace_sync_metadata WHERE local_account_id = ?',
         variables: [Variable<String>(id)],
       );
-      await controlDatabase.customUpdate(
+      await _manager.controlDatabase.customUpdate(
         'DELETE FROM meta_store WHERE key IN (?, ?, ?, ?, ?)',
         variables: _workspaceMetadataKeys(id)
             .map((key) => Variable<String>(key))
             .toList(),
       );
       if (recoverySnapshotId != null) {
-        await controlDatabase.customUpdate(
+        await _manager.controlDatabase.customUpdate(
           'DELETE FROM local_recovery_snapshots WHERE snapshot_id = ?',
           variables: [Variable<String>(recoverySnapshotId)],
         );
       }
-      await controlDatabase.customUpdate(
+      await _manager.controlDatabase.customUpdate(
         '''UPDATE local_accounts SET db_file_name = ?, db_layout = 'separate',
            db_migration_state = 'committed', updated_at = ?
            WHERE local_account_id = ?''',
@@ -306,7 +329,7 @@ mixin _DatabaseManagerMigration on DatabaseManager {
           Variable<String>(id),
         ],
       );
-      await controlDatabase.customUpdate(
+      await _manager.controlDatabase.customUpdate(
         '''UPDATE workspace_operation_journal
            SET phase = 'committed', updated_at = ?, error_message = NULL
            WHERE operation_id = ?''',
@@ -323,12 +346,12 @@ mixin _DatabaseManagerMigration on DatabaseManager {
     String id,
     String finalFileName,
   ) async {
-    final directory = await _documentsDirectoryProvider();
+    final directory = await _manager._documentsDirectoryProvider();
     final finalFile = File('${directory.path}/$finalFileName');
     final stagingName = '$finalFileName.migration-staging';
     final stagingFile = File('${directory.path}/$stagingName');
     final operationId = 'google-workspace-migration:$id';
-    final existingJournal = await controlDatabase.customSelect(
+    final existingJournal = await _manager.controlDatabase.customSelect(
       'SELECT phase FROM workspace_operation_journal WHERE operation_id = ? LIMIT 1',
       variables: [Variable<String>(operationId)],
     ).get();
@@ -351,8 +374,9 @@ mixin _DatabaseManagerMigration on DatabaseManager {
     }
 
     final now = DateTime.now().microsecondsSinceEpoch;
-    final currentSnapshot = await _readScopedRecoverySnapshot(controlDatabase, id);
-    await controlDatabase.customInsert(
+    final currentSnapshot =
+        await _readScopedRecoverySnapshot(_manager.controlDatabase, id);
+    await _manager.controlDatabase.customInsert(
       '''INSERT OR REPLACE INTO workspace_operation_journal
          (operation_id, operation_type, source_local_account_id, target_local_account_id,
           phase, snapshot_id, created_at, updated_at, staging_file, final_file,
@@ -372,15 +396,17 @@ mixin _DatabaseManagerMigration on DatabaseManager {
 
     AppDatabase? staging;
     try {
-      staging = _googleDatabaseFactory(
+      staging = _manager._googleDatabaseFactory(
         fileName: stagingName,
         workspaceId: id,
       );
-      await staging.customSelect('SELECT COUNT(*) AS row_count FROM qaza_records').get();
+      await staging
+          .customSelect('SELECT COUNT(*) AS row_count FROM qaza_records')
+          .get();
 
       for (final (table, ownerColumn) in _workspaceOwnedTables) {
         await _copyOwnedTableRows(
-          source: controlDatabase,
+          source: _manager.controlDatabase,
           target: staging,
           table: table,
           ownerColumn: ownerColumn,
@@ -388,13 +414,13 @@ mixin _DatabaseManagerMigration on DatabaseManager {
         );
       }
 
-      final syncRows = await controlDatabase.customSelect(
+      final syncRows = await _manager.controlDatabase.customSelect(
         'SELECT 1 FROM workspace_sync_metadata WHERE local_account_id = ? LIMIT 1',
         variables: [Variable<String>(id)],
       ).get();
       if (syncRows.isNotEmpty) {
         await _copyOwnedTableRows(
-          source: controlDatabase,
+          source: _manager.controlDatabase,
           target: staging,
           table: 'workspace_sync_metadata',
           ownerColumn: 'local_account_id',
@@ -421,7 +447,8 @@ mixin _DatabaseManagerMigration on DatabaseManager {
         );
       }
 
-      final metadata = await _readWorkspaceMetadata(controlDatabase, id);
+      final metadata =
+          await _readWorkspaceMetadata(_manager.controlDatabase, id);
       for (final entry in metadata.entries.toList()
         ..sort((a, b) => a.key.compareTo(b.key))) {
         await staging.customInsert(
@@ -435,9 +462,11 @@ mixin _DatabaseManagerMigration on DatabaseManager {
       }
       await staging.writeWorkspaceFileOwner(id);
 
-      final sourceHash = await _canonicalWorkspaceContentHash(controlDatabase, id);
+      final sourceHash =
+          await _canonicalWorkspaceContentHash(_manager.controlDatabase, id);
       final stagingHash = await _canonicalWorkspaceContentHash(staging, id);
-      final integrity = await staging.customSelect('PRAGMA integrity_check').get();
+      final integrity =
+          await staging.customSelect('PRAGMA integrity_check').get();
       if (sourceHash != stagingHash ||
           integrity.isEmpty ||
           integrity.first.read<String>('integrity_check') != 'ok' ||
@@ -448,7 +477,7 @@ mixin _DatabaseManagerMigration on DatabaseManager {
         );
       }
 
-      await controlDatabase.customUpdate(
+      await _manager.controlDatabase.customUpdate(
         '''UPDATE workspace_operation_journal
            SET phase = 'finalizing', content_hash = ?, updated_at = ?
            WHERE operation_id = ?''',
@@ -462,8 +491,8 @@ mixin _DatabaseManagerMigration on DatabaseManager {
       staging = null;
       await stagingFile.rename(finalFile.path);
 
-      final published =
-          _googleDatabaseFactory(fileName: finalFileName, workspaceId: id);
+      final published = _manager._googleDatabaseFactory(
+          fileName: finalFileName, workspaceId: id);
       try {
         final owner = await published.readWorkspaceFileOwner();
         final publishedIntegrity =
@@ -487,7 +516,7 @@ mixin _DatabaseManagerMigration on DatabaseManager {
           recoverySnapshotId: currentSnapshot?['snapshot_id'] as String?,
           verifiedWorkspace: published,
         );
-        _workspaceDatabases[id] = published;
+        _manager._workspaceDatabases[id] = published;
         return published;
       } catch (_) {
         await published.close();
@@ -495,13 +524,12 @@ mixin _DatabaseManagerMigration on DatabaseManager {
       }
     } catch (error) {
       if (staging != null) await staging.close();
-      final journalRows = await controlDatabase.customSelect(
+      final journalRows = await _manager.controlDatabase.customSelect(
         'SELECT phase FROM workspace_operation_journal WHERE operation_id = ? LIMIT 1',
         variables: [Variable<String>(operationId)],
       ).get();
-      final phase = journalRows.isEmpty
-          ? null
-          : journalRows.single.read<String>('phase');
+      final phase =
+          journalRows.isEmpty ? null : journalRows.single.read<String>('phase');
       if (phase != 'finalizing') {
         if (await stagingFile.exists()) {
           final quarantine = File('${stagingFile.path}.quarantine');
@@ -509,7 +537,7 @@ mixin _DatabaseManagerMigration on DatabaseManager {
             await stagingFile.rename(quarantine.path);
           }
         }
-        await controlDatabase.customUpdate(
+        await _manager.controlDatabase.customUpdate(
           '''UPDATE workspace_operation_journal
              SET phase = 'failed', error_message = ?, updated_at = ?
              WHERE operation_id = ? AND phase != 'committed' ''',
@@ -534,7 +562,7 @@ mixin _DatabaseManagerMigration on DatabaseManager {
     final finalName = journalRow.read<String?>('final_file');
     final expectedHash = journalRow.read<String?>('content_hash');
     final recoverySnapshotId = journalRow.read<String?>('snapshot_id');
-    final directory = await _documentsDirectoryProvider();
+    final directory = await _manager._documentsDirectoryProvider();
 
     if (phase != 'finalizing' || stagingName == null || finalName == null) {
       if (stagingName != null) {
@@ -546,7 +574,7 @@ mixin _DatabaseManagerMigration on DatabaseManager {
           }
         }
       }
-      await controlDatabase.customUpdate(
+      await _manager.controlDatabase.customUpdate(
         '''UPDATE workspace_operation_journal
            SET phase = 'failed',
                error_message = 'Interrupted before finalization; migration staging quarantined',
@@ -564,7 +592,8 @@ mixin _DatabaseManagerMigration on DatabaseManager {
     if (finalName != expectedFileName ||
         stagingName != '$expectedFileName.migration-staging' ||
         expectedHash == null) {
-      throw StateError('Legacy workspace migration journal failed filename/hash validation.');
+      throw StateError(
+          'Legacy workspace migration journal failed filename/hash validation.');
     }
     final finalFile = File('${directory.path}/$finalName');
     final stagingFile = File('${directory.path}/$stagingName');
@@ -577,13 +606,14 @@ mixin _DatabaseManagerMigration on DatabaseManager {
         'The shared source rows were preserved.',
       );
     }
-    final published = _googleDatabaseFactory(
+    final published = _manager._googleDatabaseFactory(
       fileName: finalName,
       workspaceId: id,
     );
     try {
       final owner = await published.readWorkspaceFileOwner();
-      final integrity = await published.customSelect('PRAGMA integrity_check').get();
+      final integrity =
+          await published.customSelect('PRAGMA integrity_check').get();
       final fileHash = await _canonicalWorkspaceContentHash(published, id);
       if (owner != id ||
           integrity.isEmpty ||
