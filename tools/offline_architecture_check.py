@@ -153,4 +153,24 @@ for root in RUNTIME_ROOTS:
             if legacy_token in file_text:
                 fail(f"legacy SharedPreferences business-state path found in {relative}: {legacy_token}")
 
+# All production database connections must be constructed by DatabaseManager.
+# Test code may continue to inject NativeDatabase.memory() or file executors.
+DATABASE_CONSTRUCTION_PATTERN = re.compile(
+    r"\\b(?:AppDatabase|GoogleWorkspaceDatabase)\\s*\\(\\s*\\)"
+)
+DATABASE_MANAGER_PATH = Path("lib/data/local/database/database_manager.dart")
+for root in (ROOT / "lib", ROOT / "packages/qaza_cloud_adapter" / "lib"):
+    if not root.exists():
+        continue
+    for path in root.rglob("*.dart"):
+        relative = path.relative_to(ROOT)
+        if relative == DATABASE_MANAGER_PATH or path.name.endswith(".g.dart"):
+            continue
+        source = path.read_text(errors="ignore")
+        if DATABASE_CONSTRUCTION_PATTERN.search(source):
+            fail(
+                "production database construction bypasses DatabaseManager: "
+                f"{relative}"
+            )
+
 print("Offline architecture policy: PASS")

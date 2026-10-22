@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/local/database/database_manager.dart';
 import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
@@ -55,7 +56,8 @@ void initializeQazaCloudBackgroundDispatcher() {
       return true;
     }
     final operationState = accountScopedState.scopedToAccount(accountId);
-    final appDatabase = AppDatabase();
+    final databaseManager = DatabaseManager();
+    final appDatabase = databaseManager.controlDatabase;
     // A scheduled operation must only ever read or write the workspace
     // owned by the verified Google identity captured above. Passing null here
     // would export/import the entire shared database and could leak or replace
@@ -175,7 +177,7 @@ void initializeQazaCloudBackgroundDispatcher() {
       return false;
     } finally {
       if (accountPinned) gateway.releaseAccountOperation(accountId);
-      await appDatabase.close();
+      await databaseManager.close();
     }
   });
 }

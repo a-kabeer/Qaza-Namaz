@@ -12,7 +12,7 @@ import 'core/widgets/fatal_error_screen.dart';
 import 'core/diagnostics/diagnostics.dart';
 import 'core/licenses/app_license_registry.dart';
 import 'core/time/local_date_service.dart';
-import 'data/local/database/app_database.dart';
+import 'data/local/database/database_manager.dart';
 import 'features/home/home_state.dart';
 
 const Duration _startupStepTimeout = Duration(seconds: 10);
@@ -118,12 +118,12 @@ Widget _appRoot({
 }
 
 Future<void> _initializeDatabase() async {
-  final database = AppDatabase();
+  final databaseManager = DatabaseManager();
   try {
-    // Force the encrypted Drift database to open and validate its schema.
-    await database.readDbRevision();
+    // Force the encrypted control database to open and validate its schema.
+    await databaseManager.controlDatabase.readDbRevision();
   } finally {
-    await database.close();
+    await databaseManager.close();
   }
 }
 

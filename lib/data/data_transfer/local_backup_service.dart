@@ -1678,7 +1678,10 @@ class LocalBackupService {
     // Schemas 19–21 are supported predecessors of schema 22. Older
     // payloads are normalized below, including missing Daily Salah rows and
     // the link/completion-sync fields introduced after schema 20.
-    final compatibleLegacySchema = databaseSchema >= 19 && databaseSchema <= 21;
+    // Schema 26 adds control-registry routing columns only. Schema-25 backup
+    // payloads retain the same logical data shape and are safe to import.
+    final compatibleLegacySchema =
+        (databaseSchema >= 19 && databaseSchema <= 21) || databaseSchema == 25;
     if (databaseSchema > database.schemaVersion) {
       throw LocalBackupException(
         'This backup uses newer database schema $databaseSchema. '

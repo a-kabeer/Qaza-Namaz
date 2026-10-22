@@ -2,6 +2,8 @@
 //
 // Composition root for the Qaza Namaz app.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -15,6 +17,7 @@ import '../core/widgets/app_snackbar.dart';
 import '../l10n/app_localizations.dart';
 import '../data/data_transfer/local_backup_service.dart';
 import '../data/local/database/app_database.dart';
+import '../data/local/database/database_manager.dart';
 import '../data/local/drift_qaza_local_store.dart';
 import '../data/local/account_local_store.dart';
 import '../data/local/account_scoped_user_profile_repository.dart';
@@ -78,7 +81,8 @@ Future<(AppThemeMode, AppPrimaryColor)> loadInitialAppearance() async {
 }
 
 Future<HomePrayerSelectionState> loadInitialHomePrayerSelection() async {
-  final database = AppDatabase();
+  final databaseManager = DatabaseManager();
+  final database = databaseManager.controlDatabase;
   try {
     final rows = await database
         .customSelect(
@@ -114,7 +118,7 @@ Future<HomePrayerSelectionState> loadInitialHomePrayerSelection() async {
   } catch (_) {
     return const HomePrayerSelectionState();
   } finally {
-    await database.close();
+    await databaseManager.close();
   }
 }
 
@@ -278,10 +282,14 @@ final saveProfileUseCaseProvider = Provider<SaveProfileUseCase>((ref) {
   );
 });
 
+final databaseManagerProvider = Provider<DatabaseManager>((ref) {
+  final manager = DatabaseManager();
+  ref.onDispose(() => unawaited(manager.close()));
+  return manager;
+});
+
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  final database = AppDatabase();
-  ref.onDispose(database.close);
-  return database;
+  return ref.watch(databaseManagerProvider).controlDatabase;
 });
 
 final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {

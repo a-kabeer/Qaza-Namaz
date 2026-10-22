@@ -16,13 +16,19 @@ part 'app_database.g.dart';
   daos: [QazaRecordsDao],
 )
 class AppDatabase extends _$AppDatabase {
+  /// Test seam retained for in-memory and explicitly supplied executors.
   AppDatabase([QueryExecutor? executor])
       : super(executor ?? _openEncryptedDatabase());
 
-  static QueryExecutor _openEncryptedDatabase() {
+  /// Explicit production constructor for the control + Guest database.
+  AppDatabase.control() : super(_openEncryptedDatabase());
+
+  static QueryExecutor _openEncryptedDatabase({
+    String fileName = 'qaza_namaz.sqlite',
+  }) {
     return LazyDatabase(() async {
       final directory = await getApplicationDocumentsDirectory();
-      final databaseFile = File('${directory.path}/qaza_namaz.sqlite');
+      final databaseFile = File('${directory.path}/$fileName');
       final key = await DatabaseEncryptionKeyStore().readOrCreate();
 
       await PlaintextDatabaseMigrator.migrateIfNeeded(
@@ -51,9 +57,10 @@ class AppDatabase extends _$AppDatabase {
     });
   }
 
-  /// Schema version 25 persists session generations for stale async-work guards.
+  /// Schema version 26 adds control-registry database-layout metadata.
+  /// Backup payload schema remains v1; workspace data/JSON shapes are unchanged.
   @override
-  int get schemaVersion => 25;
+  int get schemaVersion => 26;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -63,6 +70,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensureQazaProfilePlanProvenanceSchema();
           await _ensurePerformanceIndexes();
           await _ensureAccountSchema();
+          await _ensureRegistryDatabaseRoutingSchema();
           await _ensureMetaStoreSchema();
           await _ensureDailySalahTrackingSchema();
           await _ensureCloudSetupChoiceSchema();
@@ -144,6 +152,10 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 25) {
             await _ensureWorkspaceGenerationColumn();
+          }
+          if (from < 26) {
+            await _ensureAccountSchema();
+            await _ensureRegistryDatabaseRoutingSchema();
           }
         },
       );
@@ -781,6 +793,9 @@ class AppDatabase extends _$AppDatabase {
         local_account_id TEXT NOT NULL PRIMARY KEY,
         account_mode TEXT NOT NULL DEFAULT 'local',
         lifecycle_state TEXT NOT NULL DEFAULT 'active',
+        db_file_name TEXT,
+        db_layout TEXT NOT NULL DEFAULT 'shared',
+        db_migration_state TEXT NOT NULL DEFAULT 'not_started',
         created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL
       )
@@ -821,6 +836,39 @@ class AppDatabase extends _$AppDatabase {
         PRIMARY KEY (local_account_id, revision_id)
       )
     ''');
+  }
+
+  /// Adds physical-database routing metadata to the control registry.
+  /// Existing workspaces start on the shared layout; Phase 2 changes this only
+  /// after a separate file has been validated and its publication is journalled.
+  Future<void> _ensureRegistryDatabaseRoutingSchema() async {
+    final columns = await customSelect(
+      'PRAGMA table_info(local_accounts)',
+    ).get();
+    final names = columns.map((row) => row.read<String>('name')).toSet();
+    if (!names.contains('db_file_name')) {
+      await customStatement('ALTER TABLE local_accounts ADD COLUMN db_file_name TEXT');
+    }
+    if (!names.contains('db_layout')) {
+      await customStatement(
+        "ALTER TABLE local_accounts ADD COLUMN db_layout TEXT NOT NULL DEFAULT 'shared'",
+      );
+    }
+    if (!names.contains('db_migration_state')) {
+      await customStatement(
+        "ALTER TABLE local_accounts ADD COLUMN db_migration_state TEXT NOT NULL DEFAULT 'not_started'",
+      );
+    }
+
+    final invalidRows = await customSelect(
+      "SELECT local_account_id FROM local_accounts "
+      "WHERE db_layout NOT IN ('shared', 'separate') OR db_layout IS NULL LIMIT 1",
+    ).get();
+    // Do not interpret an unrecognized layout as shared. A malformed layout is
+    // an integrity error and must prevent any workspace from being routed.
+    if (invalidRows.isNotEmpty) {
+      throw StateError('A local workspace has invalid database routing metadata.');
+    }
   }
 
   /// Installs triggers that advance revisions only for the workspace touched
