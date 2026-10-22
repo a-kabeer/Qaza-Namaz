@@ -37,11 +37,11 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
     this.database, {
     this.localAccountId,
     DatabaseManager? databaseManager,
-  })  : _databaseManager = databaseManager,
-        _backupService = LocalBackupService(
-          database,
-          databaseManager: databaseManager,
-        );
+  }) : _databaseManager = databaseManager,
+       _backupService = LocalBackupService(
+         database,
+         databaseManager: databaseManager,
+       );
 
   final AppDatabase database;
   final DatabaseManager? _databaseManager;

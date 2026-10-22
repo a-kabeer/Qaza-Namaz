@@ -70,32 +70,38 @@ void initializeQazaCloudBackgroundDispatcher() {
         return true;
       }
 
-      final registryRows = await appDatabase.customSelect(
-        'SELECT db_file_name, db_layout, db_migration_state FROM local_accounts '
-        'WHERE local_account_id = ? LIMIT 1',
-        variables: [Variable<String>(localWorkspaceId)],
-      ).get();
+      final registryRows = await appDatabase
+          .customSelect(
+            'SELECT db_file_name, db_layout, db_migration_state FROM local_accounts '
+            'WHERE local_account_id = ? LIMIT 1',
+            variables: [Variable<String>(localWorkspaceId)],
+          )
+          .get();
       if (registryRows.isEmpty) return true;
       final registry = registryRows.single;
-      final expectedFileName =
-          DatabaseManager.googleFileNameForWorkspaceId(localWorkspaceId);
+      final expectedFileName = DatabaseManager.googleFileNameForWorkspaceId(
+        localWorkspaceId,
+      );
       if (registry.read<String>('db_layout') != 'separate' ||
           registry.read<String>('db_migration_state') != 'committed' ||
           registry.read<String?>('db_file_name') != expectedFileName) {
         return true;
       }
 
-      final outstandingOperations = await appDatabase.customSelect(
-        '''SELECT 1 FROM workspace_operation_journal
+      final outstandingOperations = await appDatabase
+          .customSelect(
+            '''SELECT 1 FROM workspace_operation_journal
            WHERE target_local_account_id = ?
              AND phase NOT IN ('committed', 'failed', 'cleaned')
            LIMIT 1''',
-        variables: [Variable<String>(localWorkspaceId)],
-      ).get();
+            variables: [Variable<String>(localWorkspaceId)],
+          )
+          .get();
       if (outstandingOperations.isNotEmpty) return true;
 
-      final workspaceDatabase =
-          await databaseManager.databaseForWorkspace(localWorkspaceId);
+      final workspaceDatabase = await databaseManager.databaseForWorkspace(
+        localWorkspaceId,
+      );
       final phase1 = LocalPhase1BackupSource(
         workspaceDatabase,
         localAccountId: localWorkspaceId,
