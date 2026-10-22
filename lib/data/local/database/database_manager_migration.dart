@@ -156,8 +156,7 @@ class _DatabaseManagerMigrationHelper {
         List<String>.filled(sourceColumns.length, '?').join(', ');
     for (final row in rows) {
       final values = <Variable<Object>>[
-        for (final column in sourceColumns)
-          Variable<Object>(row.read<Object?>(column)),
+        for (final column in sourceColumns) Variable<Object>(row.data[column]),
       ];
       await target.customInsert(
         'INSERT INTO "$table" ($quotedColumns) VALUES ($placeholders)',
@@ -199,7 +198,7 @@ class _DatabaseManagerMigrationHelper {
         table,
         columns,
         for (final row in rows)
-          <Object?>[for (final column in columns) row.read<Object?>(column)],
+          <Object?>[for (final column in columns) row.data[column]],
       ]);
     }
 
