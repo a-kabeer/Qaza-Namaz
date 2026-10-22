@@ -11,7 +11,7 @@ part 'database_manager_migration.dart';
 
 /// Owns foreground database handles and registry-based workspace resolution.
 /// Control/session state is always read from [controlDatabase].
-class DatabaseManager {
+class DatabaseManager with _DatabaseManagerMigration {
   DatabaseManager({
     AppDatabase? controlDatabase,
     Future<Directory> Function()? documentsDirectoryProvider,
