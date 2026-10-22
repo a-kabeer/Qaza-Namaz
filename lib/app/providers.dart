@@ -286,14 +286,24 @@ final saveProfileUseCaseProvider = Provider<SaveProfileUseCase>((ref) {
   );
 });
 
-final databaseManagerProvider = Provider<DatabaseManager>((ref) {
-  final manager = DatabaseManager();
-  ref.onDispose(() => unawaited(manager.close()));
-  return manager;
+// Recovery Stage 4 (R-02 routing): the control database is the single
+// source of truth for the provider graph. appDatabaseProvider owns the
+// control handle's creation; the DatabaseManager is built over exactly
+// that handle. (The branch had inverted this — the store derived from
+// an unrelated real manager — which silently routed provider-driven
+// flows to a different database than appDatabaseProvider exposed.)
+final appDatabaseProvider = Provider<AppDatabase>((ref) {
+  final database = AppDatabase.control();
+  ref.onDispose(() => unawaited(database.close()));
+  return database;
 });
 
-final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  return ref.watch(databaseManagerProvider).controlDatabase;
+final databaseManagerProvider = Provider<DatabaseManager>((ref) {
+  final manager = DatabaseManager(
+    controlDatabase: ref.watch(appDatabaseProvider),
+  );
+  ref.onDispose(() => unawaited(manager.close()));
+  return manager;
 });
 
 final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
@@ -388,11 +398,15 @@ final skipPendingInitialCloudBackupForSessionProvider =
 
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
   final localAccountId = ref.watch(activeUserIdProvider);
-  if (localAccountId == null || localAccountId.isEmpty) {
-    throw StateError(
-        'No active local workspace is ready for Qaza data access.');
-  }
   final manager = ref.watch(databaseManagerProvider);
+  if (localAccountId == null || localAccountId.isEmpty) {
+    // Session-less contexts (headless helpers and flows that carry an
+    // explicit user ID, e.g. Qaza undo feedback) keep the pre-split
+    // construction contract: the store over the control database, with
+    // per-query user scoping. Routing to a separate workspace file
+    // applies as soon as a session publishes an active workspace.
+    return DriftQazaLocalStore(database: manager.controlDatabase);
+  }
   return DriftQazaLocalStore(
     database: manager.databaseForActiveWorkspace(localAccountId),
   );
@@ -437,10 +451,12 @@ final qazaServiceProvider = Provider<QazaService>(
 
 final qazaAdditionRepositoryProvider = Provider<QazaAdditionRepository>((ref) {
   final localAccountId = ref.watch(activeUserIdProvider);
-  if (localAccountId == null || localAccountId.isEmpty) {
-    throw StateError('No active local workspace is ready for Qaza additions.');
-  }
   final manager = ref.watch(databaseManagerProvider);
+  if (localAccountId == null || localAccountId.isEmpty) {
+    // See qazaLocalStoreProvider: session-less contexts keep the
+    // pre-split construction contract over the control database.
+    return DriftQazaAdditionRepository(manager.controlDatabase);
+  }
   return DriftQazaAdditionRepository(
     manager.databaseForActiveWorkspace(localAccountId),
   );

@@ -120,8 +120,11 @@ class AccountLocalStore {
       throw StateError('This local workspace cannot become active.');
     }
 
-    // Verified Google workspaces must resolve their own file before the active
-    // session is published. Legacy shared data is preserved and fails closed.
+    // Verified Google workspaces must resolve their database before the
+    // active session is published. Resolution is registry-true (Shape A):
+    // a separate workspace resolves to its validated file; a shared
+    // workspace resolves to the control database and remains fully
+    // operational there until the §5.2 startup migration moves it.
     if (localAccountId.startsWith('google_')) {
       await _databaseManager.ensureGoogleWorkspace(localAccountId);
     }
@@ -993,17 +996,28 @@ class AccountLocalStore {
         };
         for (final record in chunk) {
           final row = persistedById[record.id];
+          // DateTime fields are compared at storage precision: drift
+          // persists DateTime values as whole seconds, so an exact
+          // comparison against the in-memory record (which carries
+          // microseconds) could never succeed. Every field is still
+          // verified — at the precision the store actually retains.
+          bool sameInstant(DateTime? a, DateTime? b) =>
+              (a == null && b == null) ||
+              (a != null &&
+                  b != null &&
+                  a.microsecondsSinceEpoch ~/ 1000000 ==
+                      b.microsecondsSinceEpoch ~/ 1000000);
           if (row == null ||
               row.userId != localAccountId ||
               row.prayerType != record.prayerType.name ||
-              row.originalDate != record.originalDate ||
+              !sameInstant(row.originalDate, record.originalDate) ||
               row.status != record.status.name ||
-              row.completedAt != record.completedAt ||
+              !sameInstant(row.completedAt, record.completedAt) ||
               row.completionId != record.completionId ||
               row.additionId != record.additionId ||
               row.recordVersion != record.recordVersion ||
-              row.createdAt != record.createdAt ||
-              row.updatedAt != record.updatedAt) {
+              !sameInstant(row.createdAt, record.createdAt) ||
+              !sameInstant(row.updatedAt, record.updatedAt)) {
             throw StateError(
               'Onboarding Qaza row verification failed for record ${record.id}.',
             );
