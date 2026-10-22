@@ -210,6 +210,9 @@ extension _DatabaseManagerMigration on DatabaseManager {
       'workspace-content-v1',
       id,
       metadata.entries
+          // Revision counters are operational state, not content identity.
+          // Row-copy triggers naturally advance them in the destination file.
+          .where((entry) => entry.key != 'workspace_revision:$id')
           .map((entry) => <String>[entry.key, entry.value])
           .toList(growable: false),
       tablePayload,
