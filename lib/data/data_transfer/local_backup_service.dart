@@ -953,6 +953,364 @@ class LocalBackupService {
     }, mutationPredicate: (_) => true);
   }
 
+  Future<void> _adoptGuestWorkspaceAcrossFiles({
+    required String sourceLocalAccountId,
+    required String targetGoogleLocalAccountId,
+    required String googleDisplayName,
+  }) async {
+    final source = sourceLocalAccountId.trim();
+    final target = targetGoogleLocalAccountId.trim();
+    final manager = _databaseManager;
+    if (manager == null ||
+        !isGuestLocalWorkspaceId(source) ||
+        !target.startsWith('google_') ||
+        source == target) {
+      throw const LocalBackupException(
+        'A separate-file adoption requires one Guest source and a verified Google target.',
+      );
+    }
+
+    await manager.initialize();
+    final operationId = 'guest-adoption:$source=>$target';
+    await database.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_account_adoption_snapshots (
+        snapshot_id TEXT NOT NULL PRIMARY KEY,
+        source_local_account_id TEXT NOT NULL,
+        target_local_account_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        payload_json TEXT NOT NULL
+      )
+    ''');
+
+    final journalRows = await database.customSelect(
+      'SELECT phase FROM workspace_operation_journal WHERE operation_id = ? LIMIT 1',
+      variables: [Variable<String>(operationId)],
+    ).get();
+    final priorPhase = journalRows.isEmpty
+        ? null
+        : journalRows.single.read<String>('phase');
+    if (priorPhase == 'committed' || priorPhase == 'cleaned') {
+      final stateRows = await database.customSelect(
+        '''SELECT local_account_id, lifecycle_state FROM local_accounts
+           WHERE local_account_id IN (?, ?)''',
+        variables: [Variable<String>(source), Variable<String>(target)],
+      ).get();
+      final states = <String, String>{
+        for (final row in stateRows)
+          row.read<String>('local_account_id'):
+              row.read<String>('lifecycle_state'),
+      };
+      if (states[source] == 'adopted_recovery' && states[target] == 'active') {
+        return;
+      }
+      throw const LocalBackupException(
+        'A prior adoption is marked committed but the registry disagrees. '
+        'No records were deleted; restore from the saved snapshot after inspection.',
+      );
+    }
+    if (priorPhase != null &&
+        !const {'prepared', 'snapshotted', 'copied', 'verified'}.contains(priorPhase)) {
+      throw const LocalBackupException(
+        'The Guest adoption journal needs recovery before retrying. '
+        'The Guest source and recovery snapshot were preserved.',
+      );
+    }
+
+    final sourceRows = await database.customSelect(
+      'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+      variables: [Variable<String>(source)],
+    ).get();
+    final targetRows = await database.customSelect(
+      '''SELECT lifecycle_state, db_layout, db_migration_state
+         FROM local_accounts WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable<String>(target)],
+    ).get();
+    if (sourceRows.isEmpty ||
+        sourceRows.single.read<String>('lifecycle_state') != 'active') {
+      throw const LocalBackupException('The source Guest workspace is not active.');
+    }
+    if (targetRows.isEmpty ||
+        targetRows.single.read<String>('lifecycle_state') != 'active' ||
+        targetRows.single.read<String>('db_layout') != 'separate' ||
+        targetRows.single.read<String>('db_migration_state') != 'committed') {
+      throw const LocalBackupException(
+        'The Google target is not a committed separate workspace.',
+      );
+    }
+
+    final sessionBefore = await database.customSelect(
+      'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+    ).get();
+    final activeBefore = sessionBefore.isEmpty
+        ? null
+        : sessionBefore.single.read<String?>('active_local_account_id');
+    if (activeBefore != source) {
+      throw const LocalBackupException(
+        'The source Guest workspace must be active before adoption. No data was moved.',
+      );
+    }
+
+    final workspace = await manager.databaseForWorkspace(target);
+    if (await workspace.readWorkspaceFileOwner() != target) {
+      throw const LocalBackupException(
+        'The Google target database owner could not be verified.',
+      );
+    }
+
+    const ownedTables = <(String, String, String)>[
+      ('qaza_records', 'user_id', 'qaza_records'),
+      ('daily_salah_logs', 'user_id', 'daily_salah_logs'),
+      ('qaza_additions', 'user_id', 'qaza_additions'),
+      ('qaza_deletion_actions', 'user_id', 'qaza_deletion_actions'),
+      (
+        'qaza_deletion_action_record_snapshots',
+        'user_id',
+        'qaza_deletion_action_record_snapshots',
+      ),
+      ('qaza_profile_plan_provenance', 'user_id', 'qaza_profile_plan_provenance'),
+      ('account_profiles', 'local_account_id', 'account_profiles'),
+      ('account_plan_revisions', 'local_account_id', 'account_plan_revisions'),
+    ];
+
+    Future<int> rowCount(
+      AppDatabase db,
+      String table,
+      String ownerColumn,
+      String id,
+    ) async {
+      final rows = await db.customSelect(
+        'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$ownerColumn" = ?',
+        variables: [Variable<String>(id)],
+      ).get();
+      return rows.single.read<int>('row_count');
+    }
+
+    Future<bool> targetHasUserData() async {
+      for (final (table, ownerColumn, _) in ownedTables) {
+        if (await rowCount(workspace, table, ownerColumn, target) != 0) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    Future<void> verifyTargetMatchesPayload(String payload) async {
+      final decoded = _decodeAndValidate(payload);
+      final payloadData = Map<String, dynamic>.from(decoded['data'] as Map);
+      final accounts = payloadData['local_accounts'] as List<dynamic>;
+      if (accounts.length != 1 ||
+          accounts.single is! Map ||
+          (accounts.single as Map)['local_account_id'] != source) {
+        throw const LocalBackupException(
+          'The saved adoption snapshot does not identify the original Guest source.',
+        );
+      }
+      for (final (table, ownerColumn, payloadKey) in ownedTables) {
+        final expectedRows = (payloadData[payloadKey] as List<dynamic>?) ?? const [];
+        final actualCount = await rowCount(workspace, table, ownerColumn, target);
+        if (actualCount != expectedRows.length) {
+          throw LocalBackupException(
+            'Adoption verification failed for $table: expected \${expectedRows.length}, found $actualCount. '
+            'The Guest source and snapshot remain available.',
+          );
+        }
+        final foreignRows = await workspace.customSelect(
+          'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$ownerColumn" != ?',
+          variables: [Variable<String>(target)],
+        ).get();
+        if (foreignRows.single.read<int>('row_count') != 0) {
+          throw LocalBackupException(
+            'The Google file contains rows owned by another workspace in $table.',
+          );
+        }
+      }
+      if (await workspace.readWorkspaceFileOwner() != target) {
+        throw const LocalBackupException('Google file owner changed during adoption.');
+      }
+      final integrity = await workspace.customSelect('PRAGMA integrity_check').get();
+      if (integrity.isEmpty ||
+          integrity.first.read<String>('integrity_check') != 'ok') {
+        throw const LocalBackupException('Google file integrity verification failed.');
+      }
+    }
+
+    final existingSnapshotRows = await database.customSelect(
+      'SELECT payload_json FROM local_account_adoption_snapshots WHERE snapshot_id = ? LIMIT 1',
+      variables: [Variable<String>(operationId)],
+    ).get();
+    String payload;
+    if (existingSnapshotRows.isEmpty) {
+      payload = await exportJson(localAccountId: source);
+      await analyzeImport(payload);
+      await database.customInsert(
+        '''INSERT OR IGNORE INTO workspace_operation_journal
+           (operation_id, operation_type, source_local_account_id,
+            target_local_account_id, phase, created_at, updated_at)
+           VALUES (?, 'guest_adoption', ?, ?, 'prepared', ?, ?)''',
+        variables: [
+          Variable<String>(operationId),
+          Variable<String>(source),
+          Variable<String>(target),
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+        ],
+      );
+      await database.transaction(() async {
+        await database.customInsert(
+          '''INSERT INTO local_account_adoption_snapshots
+             (snapshot_id, source_local_account_id, target_local_account_id,
+              created_at, payload_json)
+             VALUES (?, ?, ?, ?, ?)''',
+          variables: [
+            Variable<String>(operationId),
+            Variable<String>(source),
+            Variable<String>(target),
+            Variable<String>(DateTime.now().toUtc().toIso8601String()),
+            Variable<String>(payload),
+          ],
+        );
+      });
+    } else {
+      payload = existingSnapshotRows.single.read<String>('payload_json');
+      await analyzeImport(payload);
+      final currentPayload = await exportJson(localAccountId: source);
+      bool sameLogicalContent(String first, String second) {
+        try {
+          final a = Map<String, dynamic>.from(jsonDecode(first) as Map);
+          final b = Map<String, dynamic>.from(jsonDecode(second) as Map);
+          for (final root in [a, b]) {
+            final metadata = Map<String, dynamic>.from(root['metadata'] as Map);
+            metadata.remove('export_timestamp');
+            root['metadata'] = metadata;
+          }
+          return jsonEncode(a) == jsonEncode(b);
+        } catch (_) {
+          return false;
+        }
+      }
+
+      if (!sameLogicalContent(payload, currentPayload)) {
+        throw const LocalBackupException(
+          'Guest data changed after the adoption snapshot was saved. '
+          'No overwrite was attempted; preserve both the Guest data and snapshot.',
+        );
+      }
+    }
+
+    await database.customUpdate(
+      '''UPDATE workspace_operation_journal
+         SET phase = 'snapshotted', snapshot_id = ?, updated_at = ?, error_message = NULL
+         WHERE operation_id = ? AND phase IN ('prepared', 'snapshotted', 'copied', 'verified')''',
+      variables: [
+        Variable<String>(operationId),
+        Variable<int>(DateTime.now().microsecondsSinceEpoch),
+        Variable<String>(operationId),
+      ],
+    );
+
+    final backupDigest = sha256.convert(utf8.encode(payload)).toString();
+    final restoreOperationId = 'workspace-restore:$target:$backupDigest';
+    final restoreRows = await database.customSelect(
+      'SELECT phase FROM workspace_operation_journal WHERE operation_id = ? LIMIT 1',
+      variables: [Variable<String>(restoreOperationId)],
+    ).get();
+    final restoreCommitted = restoreRows.isNotEmpty &&
+        restoreRows.single.read<String>('phase') == 'committed';
+
+    if (!restoreCommitted) {
+      if (await targetHasUserData()) {
+        throw const LocalBackupException(
+          'The Google target contains data but no matching committed adoption import exists. '
+          'Nothing was overwritten; inspect the target and saved Guest snapshot.',
+        );
+      }
+      await importJson(payload, targetLocalAccountId: target);
+    }
+
+    await verifyTargetMatchesPayload(payload);
+
+    final normalizedName = googleDisplayName.trim();
+    if (normalizedName.isNotEmpty) {
+      await workspace.transactionWithRevision(() async {
+        await workspace.customInsert(
+          '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+          variables: [
+            Variable<String>('workspace_display_name:$target'),
+            Variable<String>(normalizedName),
+          ],
+        );
+      });
+    }
+
+    await database.customUpdate(
+      '''UPDATE workspace_operation_journal
+         SET phase = 'verified', updated_at = ?, error_message = NULL
+         WHERE operation_id = ?''',
+      variables: [
+        Variable<int>(DateTime.now().microsecondsSinceEpoch),
+        Variable<String>(operationId),
+      ],
+    );
+
+    await database.transaction(() async {
+      final sessionRows = await database.customSelect(
+        'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+      ).get();
+      final activeId = sessionRows.isEmpty
+          ? null
+          : sessionRows.single.read<String?>('active_local_account_id');
+      if (activeId != source) {
+        throw const LocalBackupException(
+          'The active workspace changed during adoption. Guest and Google data were preserved.',
+        );
+      }
+      await database.customUpdate(
+        '''UPDATE local_accounts SET lifecycle_state = 'adopted_recovery', updated_at = ?
+           WHERE local_account_id = ? AND lifecycle_state = 'active' ''',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(source),
+        ],
+      );
+      await database.customUpdate(
+        '''UPDATE local_accounts SET lifecycle_state = 'active', updated_at = ?
+           WHERE local_account_id = ? AND db_layout = 'separate'
+             AND db_migration_state = 'committed' ''',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(target),
+        ],
+      );
+      await database.customUpdate(
+        'UPDATE app_session_state SET active_local_account_id = ?, generation = generation + 1 WHERE id = 1',
+        variables: [Variable<String>(target)],
+      );
+      final profileRows = await workspace.customSelect(
+        'SELECT payload_json FROM account_profiles WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable<String>(target)],
+      ).get();
+      var onboardingCompleted = false;
+      if (profileRows.isNotEmpty) {
+        try {
+          final raw = jsonDecode(profileRows.single.read<String>('payload_json'));
+          onboardingCompleted = raw is Map && raw['onboardingCompleted'] == true;
+        } catch (_) {}
+      }
+      await database.setOnboardingCompletedInTransaction(onboardingCompleted);
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'committed', updated_at = ?, error_message = NULL
+           WHERE operation_id = ?''',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(operationId),
+        ],
+      );
+    });
+    manager.setActiveWorkspace(target);
+  }
+
   /// Records the first verified cloud upload for a completed Guest adoption.
   /// The recovery snapshot remains available for a further 30 days.
   Future<void> markGuestAdoptionBackupVerified(
