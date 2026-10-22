@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/local_account.dart';
 import '../local/database/app_database.dart';
+import '../local/database/database_manager.dart';
 
 const _appId = 'qaza_namaz_app';
 const _backupSchemaVersion = 1;
@@ -32,37 +33,190 @@ class LocalBackupAnalysis {
 }
 
 class LocalBackupService {
-  LocalBackupService(this.database);
+  LocalBackupService(this.database, {DatabaseManager? databaseManager})
+      : _databaseManager = databaseManager;
 
   final AppDatabase database;
+  final DatabaseManager? _databaseManager;
 
   Future<String> exportJson({
     DateTime? exportedAt,
     String? localAccountId,
   }) async {
-    return database.transaction(() async {
+    final manager = _databaseManager;
+    if (manager == null) {
+      return _exportFromSource(
+        database,
+        exportedAt: exportedAt,
+        localAccountId: localAccountId,
+      );
+    }
+    final control = manager.controlDatabase;
+    if (localAccountId != null) {
+      final id = localAccountId.trim();
+      if (id.isEmpty) throw ArgumentError.value(localAccountId, 'localAccountId');
+      final workspace = await manager.databaseForWorkspace(id);
+      final account = await _readLogicalAccount(control, id);
+      return _exportFromSource(
+        workspace,
+        exportedAt: exportedAt,
+        localAccountId: id,
+        logicalAccount: account,
+      );
+    }
+
+    final root = jsonDecode(await _exportFromSource(control, exportedAt: exportedAt));
+    if (root is! Map<String, dynamic>) {
+      throw const LocalBackupException('The local export document is invalid.');
+    }
+    final data = Map<String, dynamic>.from(root['data'] as Map);
+    final separateRows = await control.customSelect(
+      "SELECT local_account_id FROM local_accounts WHERE db_layout = 'separate' ORDER BY local_account_id",
+    ).get();
+
+    for (final registryRow in separateRows) {
+      final id = registryRow.read<String>('local_account_id');
+      final account = await _readLogicalAccount(control, id);
+      final workspace = await manager.databaseForWorkspace(id);
+      final scopedRoot = jsonDecode(await _exportFromSource(
+        workspace,
+        exportedAt: exportedAt,
+        localAccountId: id,
+        logicalAccount: account,
+      )) as Map<String, dynamic>;
+      final scopedData = Map<String, dynamic>.from(scopedRoot['data'] as Map);
+
+      for (final key in const <String>[
+        'qaza_records',
+        'daily_salah_logs',
+        'qaza_additions',
+        'qaza_deletion_actions',
+        'qaza_deletion_action_record_snapshots',
+        'qaza_profile_plan_provenance',
+        'account_profiles',
+        'account_plan_revisions',
+      ]) {
+        (data[key] as List<dynamic>).addAll(scopedData[key] as List<dynamic>);
+      }
+
+      final rootMeta = Map<String, dynamic>.from(data['meta_store'] as Map);
+      final scopedMeta = Map<String, dynamic>.from(scopedData['meta_store'] as Map);
+      for (final key in const <String>[
+        'daily_salah_tracking_enabled_by_account',
+        'daily_salah_tracking_setup_dismissed_by_account',
+        'workspace_display_names_by_account',
+      ]) {
+        final combined = Map<String, dynamic>.from(
+          (rootMeta[key] as Map?) ?? const <String, dynamic>{},
+        );
+        final incoming = scopedMeta[key];
+        if (incoming is Map) {
+          for (final entry in incoming.entries) {
+            if (entry.key is String) combined[entry.key as String] = entry.value;
+          }
+        }
+        rootMeta[key] = combined;
+      }
+      data['meta_store'] = rootMeta;
+    }
+
+    for (final key in const <String>[
+      'qaza_records',
+      'qaza_additions',
+      'qaza_deletion_actions',
+      'account_profiles',
+    ]) {
+      (data[key] as List<dynamic>).sort((a, b) {
+        final left = a as Map;
+        final right = b as Map;
+        final leftKey = (left['id'] ?? left['local_account_id'] ?? '').toString();
+        final rightKey = (right['id'] ?? right['local_account_id'] ?? '').toString();
+        return leftKey.compareTo(rightKey);
+      });
+    }
+    (data['qaza_profile_plan_provenance'] as List<dynamic>).sort((a, b) =>
+        ((a as Map)['record_id'] as String).compareTo((b as Map)['record_id'] as String));
+    (data['account_plan_revisions'] as List<dynamic>).sort((a, b) {
+      final left = a as Map;
+      final right = b as Map;
+      return '${left['local_account_id']}:${left['revision_id']}'
+          .compareTo('${right['local_account_id']}:${right['revision_id']}');
+    });
+    root['data'] = data;
+    return const JsonEncoder.withIndent('  ').convert(root);
+  }
+
+  Future<Map<String, dynamic>> _readLogicalAccount(
+    AppDatabase control,
+    String localAccountId,
+  ) async {
+    final rows = await control.customSelect(
+      '''SELECT local_account_id, account_mode, lifecycle_state, created_at, updated_at
+         FROM local_accounts WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable<String>(localAccountId)],
+    ).get();
+    if (rows.isEmpty) {
+      throw LocalBackupException(
+        'Workspace "$localAccountId" is not registered and cannot be exported.',
+      );
+    }
+    final row = rows.single;
+    return <String, dynamic>{
+      'local_account_id': row.read<String>('local_account_id'),
+      'account_mode': row.read<String>('account_mode'),
+      'lifecycle_state': row.read<String>('lifecycle_state'),
+      'created_at': row.read<int>('created_at'),
+      'updated_at': row.read<int>('updated_at'),
+    };
+  }
+
+  Future<String> _exportFromSource(
+    AppDatabase source, {
+    DateTime? exportedAt,
+    String? localAccountId,
+    Map<String, dynamic>? logicalAccount,
+  }) async {
+    Future<List<Map<String, dynamic>>> selectMapsFromSource(
+      String sql,
+      List<String> columns, {
+      Set<String> integerColumns = const <String>{},
+    }) async {
+      final selectedRows = await source.customSelect(sql).get();
+      return selectedRows.map((row) => <String, dynamic>{
+        for (final column in columns)
+          column: _readValue(
+            row,
+            column,
+            integer: integerColumns.contains(column),
+          ),
+      }).toList(growable: false);
+    }
+
+    return source.transaction(() async {
       final dbRevision = localAccountId == null
-          ? await database.readDbRevision()
-          : await database.readWorkspaceRevision(localAccountId);
-      final users = await database.qazaRecordsDao.userIds();
+          ? await source.readDbRevision()
+          : await source.readWorkspaceRevision(localAccountId);
+      final users = await source.qazaRecordsDao.userIds();
       final records = <Map<String, dynamic>>[];
       for (final userId in users) {
-        final rows = await database.qazaRecordsDao.getAll(userId: userId);
+        final rows = await source.qazaRecordsDao.getAll(userId: userId);
         records.addAll(rows.map((row) => row.toJson()));
       }
       records.sort(
         (a, b) => (a['id'] as String).compareTo(b['id'] as String),
       );
 
-      final accountIdRows = await database
-          .customSelect(
-            'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
-          )
-          .get();
+      final accountIds = source.isGoogleWorkspaceDatabase
+          ? <String>[localAccountId ?? source.workspaceId!]
+          : (await source.customSelect(
+              'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
+            ).get())
+              .map((row) => row.read<String>('local_account_id'))
+              .toList(growable: false);
       final trackingEnabledByAccount = <String, bool>{};
       final trackingSetupDismissedByAccount = <String, bool>{};
       final workspaceDisplayNames = <String, String>{};
-      final workspaceNameRows = await database
+      final workspaceNameRows = await source
           .customSelect(
             "SELECT key, value FROM meta_store "
             "WHERE key LIKE 'workspace_display_name:%'",
@@ -79,21 +233,22 @@ class LocalBackupService {
           workspaceDisplayNames[accountId] = displayName;
         }
       }
-      for (final row in accountIdRows) {
-        final accountId = row.read<String>('local_account_id');
+      for (final accountId in accountIds) {
         trackingEnabledByAccount[accountId] =
-            await database.isDailySalahTrackingEnabled(userId: accountId);
-        trackingSetupDismissedByAccount[accountId] = await database
-            .isDailySalahTrackingSetupDismissed(userId: accountId);
+            await source.isDailySalahTrackingEnabled(userId: accountId);
+        trackingSetupDismissedByAccount[accountId] =
+            await source.isDailySalahTrackingSetupDismissed(userId: accountId);
       }
-      final activeSessionRows = await database
-          .customSelect(
-            'SELECT active_local_account_id FROM app_session_state ORDER BY id LIMIT 1',
-          )
-          .get();
-      final activeAccountId = activeSessionRows.isEmpty
-          ? null
-          : activeSessionRows.first.read<String?>('active_local_account_id');
+      final activeAccountId = source.isGoogleWorkspaceDatabase
+          ? (localAccountId ?? source.workspaceId)
+          : await (() async {
+              final activeRows = await source.customSelect(
+                'SELECT active_local_account_id FROM app_session_state ORDER BY id LIMIT 1',
+              ).get();
+              return activeRows.isEmpty
+                  ? null
+                  : activeRows.first.read<String?>('active_local_account_id');
+            })();
       final preferenceAccountId = localAccountId?.trim().isNotEmpty == true
           ? localAccountId!.trim()
           : activeAccountId ?? 'guest';
@@ -102,14 +257,14 @@ class LocalBackupService {
         'metadata': {
           'app_id': _appId,
           'backup_schema_version': _backupSchemaVersion,
-          'database_schema_version': database.schemaVersion,
+          'database_schema_version': source.schemaVersion,
           'db_revision': dbRevision,
           'export_timestamp':
               (exportedAt ?? DateTime.now()).toUtc().toIso8601String(),
         },
         'data': {
           'qaza_records': records,
-          'daily_salah_logs': await _selectMaps(
+          'daily_salah_logs': await selectMapsFromSource(
             'SELECT user_id, prayer_date, prayer_type, status, '
             'tracker_created_qaza_id, linked_qaza_id, completion_sync_id, '
             'updated_at FROM daily_salah_logs '
@@ -125,7 +280,7 @@ class LocalBackupService {
               'updated_at',
             ],
           ),
-          'qaza_additions': await _selectMaps(
+          'qaza_additions': await selectMapsFromSource(
             'SELECT id, user_id, mode, input_snapshot, revision, created_at, updated_at '
             'FROM qaza_additions ORDER BY id',
             [
@@ -138,7 +293,7 @@ class LocalBackupService {
               'updated_at',
             ],
           ),
-          'qaza_deletion_actions': await _selectMaps(
+          'qaza_deletion_actions': await selectMapsFromSource(
             'SELECT id, user_id, addition_id, created_at, resolved_at, entity_version '
             'FROM qaza_deletion_actions ORDER BY id',
             [
@@ -150,7 +305,7 @@ class LocalBackupService {
               'entity_version',
             ],
           ),
-          'qaza_deletion_action_record_snapshots': await _selectMaps(
+          'qaza_deletion_action_record_snapshots': await selectMapsFromSource(
             'SELECT deletion_action_id, record_id, user_id, addition_id, prayer_type, '
             'original_date, status, completed_at, completion_id, created_at, '
             'updated_at, record_version '
@@ -171,29 +326,40 @@ class LocalBackupService {
               'record_version',
             ],
           ),
-          'qaza_profile_plan_provenance': await _selectMaps(
+          'qaza_profile_plan_provenance': await selectMapsFromSource(
             'SELECT record_id, user_id, plan_revision_id, plan_fingerprint '
             'FROM qaza_profile_plan_provenance ORDER BY record_id',
             ['record_id', 'user_id', 'plan_revision_id', 'plan_fingerprint'],
           ),
-          'local_accounts': await _selectMaps(
-            'SELECT local_account_id, account_mode, lifecycle_state, created_at, updated_at '
-            'FROM local_accounts ORDER BY local_account_id',
-            [
-              'local_account_id',
-              'account_mode',
-              'lifecycle_state',
-              'created_at',
-              'updated_at',
-            ],
-            integerColumns: {'created_at', 'updated_at'},
-          ),
-          'app_session_state': await _selectMaps(
-            'SELECT id, active_local_account_id FROM app_session_state ORDER BY id',
-            ['id', 'active_local_account_id'],
-            integerColumns: {'id'},
-          ),
-          'account_profiles': await _selectMaps(
+          'local_accounts': source.isGoogleWorkspaceDatabase
+              ? <Map<String, dynamic>>[
+                  if (logicalAccount != null) logicalAccount,
+                ]
+              : await selectMapsFromSource(
+                  'SELECT local_account_id, account_mode, lifecycle_state, created_at, updated_at '
+                  'FROM local_accounts ORDER BY local_account_id',
+                  [
+                    'local_account_id',
+                    'account_mode',
+                    'lifecycle_state',
+                    'created_at',
+                    'updated_at',
+                  ],
+                  integerColumns: {'created_at', 'updated_at'},
+                ),
+          'app_session_state': source.isGoogleWorkspaceDatabase
+              ? <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'id': 1,
+                    'active_local_account_id': localAccountId ?? source.workspaceId,
+                  },
+                ]
+              : await selectMapsFromSource(
+                  'SELECT id, active_local_account_id FROM app_session_state ORDER BY id',
+                  ['id', 'active_local_account_id'],
+                  integerColumns: {'id'},
+                ),
+          'account_profiles': await selectMapsFromSource(
             'SELECT local_account_id, payload_json, entity_version, updated_at, '
             'writer_device_id, operation_id FROM account_profiles ORDER BY local_account_id',
             [
@@ -206,21 +372,21 @@ class LocalBackupService {
             ],
             integerColumns: {'updated_at'},
           ),
-          'account_plan_revisions': await _selectMaps(
+          'account_plan_revisions': await selectMapsFromSource(
             'SELECT local_account_id, revision_id, payload_json, created_at '
             'FROM account_plan_revisions ORDER BY local_account_id, revision_id',
             ['local_account_id', 'revision_id', 'payload_json', 'created_at'],
             integerColumns: {'created_at'},
           ),
           'meta_store': {
-            'is_onboarding_completed': await database.isOnboardingCompleted(),
+            'is_onboarding_completed': await source.isOnboardingCompleted(),
             'daily_salah_tracking_enabled':
-                await database.isDailySalahTrackingEnabled(
+                await source.isDailySalahTrackingEnabled(
               userId: preferenceAccountId,
             ),
             'daily_salah_tracking_enabled_by_account': trackingEnabledByAccount,
             'daily_salah_tracking_setup_dismissed':
-                await database.isDailySalahTrackingSetupDismissed(
+                await source.isDailySalahTrackingSetupDismissed(
               userId: preferenceAccountId,
             ),
             'daily_salah_tracking_setup_dismissed_by_account':
