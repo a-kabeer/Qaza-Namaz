@@ -34,32 +34,24 @@ abstract interface class CloudRemoteMetadataStore {
 
 class LocalPhase1BackupSource implements Phase1BackupSource {
   LocalPhase1BackupSource(
-    AppDatabase database, {
+    this.database, {
     this.localAccountId,
     DatabaseManager? databaseManager,
-  }) : _fallbackDatabase = database,
-       _databaseManager = databaseManager,
+  }) : _databaseManager = databaseManager,
        _backupService = LocalBackupService(
          database,
          databaseManager: databaseManager,
        );
 
-  final AppDatabase _fallbackDatabase;
+  /// The fixed injected handle is used for session/generation/control checks.
+  /// Workspace payload operations resolve the selected account independently.
+  final AppDatabase database;
   final DatabaseManager? _databaseManager;
   final String? localAccountId;
   final LocalBackupService _backupService;
 
   String? get _effectiveWorkspaceId =>
       localAccountId ?? _databaseManager?.activeWorkspaceId;
-
-  AppDatabase get database {
-    final manager = _databaseManager;
-    if (manager == null) return _fallbackDatabase;
-    final id = _effectiveWorkspaceId;
-    return id == null
-        ? manager.controlDatabase
-        : manager.databaseForActiveWorkspace(id);
-  }
 
   @override
   Future<int> readDbRevision() async {

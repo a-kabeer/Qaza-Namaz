@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/local/database/database_manager.dart';
 import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 import 'package:qaza_namaz/domain/entities/local_account.dart';
@@ -446,16 +447,28 @@ class GoogleCloudAccountProvider implements CloudAccountProvider {
 class GoogleCloudSyncProvider implements CloudSyncProvider {
   GoogleCloudSyncProvider({
     required AppDatabase database,
+    DatabaseManager? databaseManager,
     required GoogleSignInGateway gateway,
     required CloudSyncStateStore state,
     required CloudSyncScheduler scheduler,
     this.serverClientId,
-  }) : _phase1 = LocalPhase1BackupSource(database),
+  }) : _databaseManager = databaseManager,
+       _phase1 = LocalPhase1BackupSource(
+         database,
+         databaseManager: databaseManager,
+       ),
        _gateway = gateway,
        _state = state,
        _scheduler = scheduler;
 
+  final DatabaseManager? _databaseManager;
   final LocalPhase1BackupSource _phase1;
+
+  Future<AppDatabase> _workspaceDatabase(String localWorkspaceId) {
+    final manager = _databaseManager;
+    if (manager == null) return Future.value(_phase1.database);
+    return manager.databaseForWorkspace(localWorkspaceId);
+  }
   final GoogleSignInGateway _gateway;
   final CloudSyncStateStore _state;
   final CloudSyncScheduler _scheduler;
@@ -549,8 +562,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
               'The active workspace changed during Drive discovery. No backup state was changed; retry when the intended account is active.',
             );
           }
-          final workspaceRevision = await _phase1.database
-              .readWorkspaceRevision(localWorkspaceId);
+          final workspaceDatabase = await _workspaceDatabase(localWorkspaceId);
+          final workspaceRevision =
+              await workspaceDatabase.readWorkspaceRevision(localWorkspaceId);
           final (syncState, conflictMarker) = switch (result.kind) {
             CloudBackupDiscoveryKind.noBackup => ('pending', null),
             CloudBackupDiscoveryKind.found => (
@@ -563,7 +577,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
             ),
             CloudBackupDiscoveryKind.failed => ('cloud_unverified', null),
           };
-          await _phase1.database.writeWorkspaceSyncState(
+          await workspaceDatabase.writeWorkspaceSyncState(
             localWorkspaceId,
             syncState,
             localRevision: workspaceRevision,
@@ -691,7 +705,8 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         }
         _gateway.pinAccountForOperation(operationAccountId);
         accountPinned = true;
-        if (await _phase1.database.isWorkspaceCloudUploadBlocked(
+        final workspaceDatabase = await _workspaceDatabase(localWorkspaceId);
+        if (await workspaceDatabase.isWorkspaceCloudUploadBlocked(
           localWorkspaceId,
         )) {
           return await _snapshot(
@@ -724,10 +739,11 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           localAccountId: localWorkspaceId,
           generation: startGeneration,
         )) {
-          await _phase1.database.writeWorkspaceSyncState(
+          final workspaceDatabase = await _workspaceDatabase(localWorkspaceId);
+          await workspaceDatabase.writeWorkspaceSyncState(
             localWorkspaceId,
             'pending',
-            localRevision: await _phase1.database.readWorkspaceRevision(
+            localRevision: await workspaceDatabase.readWorkspaceRevision(
               localWorkspaceId,
             ),
             remoteAccountId: operationAccountId,
@@ -756,10 +772,11 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
             'needs_sign_in',
           _ => 'pending',
         };
-        await _phase1.database.writeWorkspaceSyncState(
+        final workspaceDatabase = await _workspaceDatabase(localWorkspaceId);
+        await workspaceDatabase.writeWorkspaceSyncState(
           localWorkspaceId,
           nextState,
-          localRevision: await _phase1.database.readWorkspaceRevision(
+          localRevision: await workspaceDatabase.readWorkspaceRevision(
             localWorkspaceId,
           ),
           remoteAccountId: operationAccountId,
@@ -783,10 +800,11 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           error.authorizationFailed &&
           operationAccountId != null) {
         final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
-        await _phase1.database.writeWorkspaceSyncState(
+        final workspaceDatabase = await _workspaceDatabase(localWorkspaceId);
+        await workspaceDatabase.writeWorkspaceSyncState(
           localWorkspaceId,
           'needs_sign_in',
-          localRevision: await _phase1.database.readWorkspaceRevision(
+          localRevision: await workspaceDatabase.readWorkspaceRevision(
             localWorkspaceId,
           ),
           remoteAccountId: operationAccountId,
@@ -896,6 +914,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         }
         await LocalBackupService(
           _phase1.database,
+          databaseManager: _databaseManager,
         ).saveCloudRecoveryCopyFromBackup(
           phase1BackupJson: latest.backup.phase1BackupJson,
           googleAccountId: googleId,
@@ -923,17 +942,18 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
           );
       if (operationAccountId != null) {
         final localWorkspaceId = googleLocalWorkspaceId(operationAccountId);
+        final workspaceDatabase = await _workspaceDatabase(localWorkspaceId);
         final syncState = switch (result.kind) {
           CloudSyncResultKind.uploaded ||
           CloudSyncResultKind.downloaded ||
           CloudSyncResultKind.noOp => 'clean',
           CloudSyncResultKind.conflict => 'conflict',
-          _ => await _phase1.database.readWorkspaceSyncState(localWorkspaceId),
+          _ => await workspaceDatabase.readWorkspaceSyncState(localWorkspaceId),
         };
-        await _phase1.database.writeWorkspaceSyncState(
+        await workspaceDatabase.writeWorkspaceSyncState(
           localWorkspaceId,
           syncState,
-          localRevision: await _phase1.database.readWorkspaceRevision(
+          localRevision: await workspaceDatabase.readWorkspaceRevision(
             localWorkspaceId,
           ),
           remoteAccountId: operationAccountId,
@@ -1012,6 +1032,7 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
         : LocalPhase1BackupSource(
             _phase1.database,
             localAccountId: localAccountId,
+            databaseManager: _databaseManager,
           ),
     remote: GoogleDriveAppDataStore(_gateway),
     state: state ?? _state,
@@ -1131,9 +1152,9 @@ class GoogleCloudSyncProvider implements CloudSyncProvider {
       final accountId = await (state as CloudAccountScopedSyncStateStore)
           .activeAccountId();
       if (accountId != null && accountId.isNotEmpty) {
-        return _phase1.database.readWorkspaceRevision(
-          googleLocalWorkspaceId(accountId),
-        );
+        final workspaceId = googleLocalWorkspaceId(accountId);
+        return (await _workspaceDatabase(workspaceId))
+            .readWorkspaceRevision(workspaceId);
       }
     }
     return _phase1.readDbRevision();
