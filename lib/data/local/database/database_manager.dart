@@ -217,7 +217,7 @@ class DatabaseManager {
     );
 
     final scopedKeys = await controlDatabase.customSelect(
-      'SELECT key, value FROM meta_store WHERE key IN (?, ?, ?, ?, ?)',
+      'SELECT key, value FROM meta_store WHERE key IN (?, ?, ?, ?, ?) ORDER BY key',
       variables: [
         Variable<String>('workspace_display_name:$id'),
         Variable<String>('daily_salah_tracking_enabled:$id'),
@@ -225,6 +225,14 @@ class DatabaseManager {
         Variable<String>('workspace_revision:$id'),
         Variable<String>('initial_cloud_backup_pending:$id'),
       ],
+    ).get();
+    final syncRows = await controlDatabase.customSelect(
+      '''SELECT local_account_id, sync_state, local_revision, last_synced_revision,
+                last_synced_local_hash, last_synced_remote_version,
+                last_synced_remote_hash, last_checked_at, conflict_marker,
+                remote_account_id
+         FROM workspace_sync_metadata WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable<String>(id)],
     ).get();
     AppDatabase? staging;
     try {
@@ -240,19 +248,43 @@ class DatabaseManager {
           ],
         );
       }
+      if (syncRows.isNotEmpty) {
+        final sync = syncRows.single;
+        await staging.customInsert(
+          '''INSERT INTO workspace_sync_metadata
+             (local_account_id, sync_state, local_revision, last_synced_revision,
+              last_synced_local_hash, last_synced_remote_version,
+              last_synced_remote_hash, last_checked_at, conflict_marker,
+              remote_account_id)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+          variables: [
+            Variable<String>(sync.read<String>('local_account_id')),
+            Variable<String>(sync.read<String>('sync_state')),
+            Variable<int>(sync.read<int>('local_revision')),
+            Variable<int?>(sync.read<int?>('last_synced_revision')),
+            Variable<String?>(sync.read<String?>('last_synced_local_hash')),
+            Variable<String?>(sync.read<String?>('last_synced_remote_version')),
+            Variable<String?>(sync.read<String?>('last_synced_remote_hash')),
+            Variable<String?>(sync.read<String?>('last_checked_at')),
+            Variable<String?>(sync.read<String?>('conflict_marker')),
+            Variable<String?>(sync.read<String?>('remote_account_id')),
+          ],
+        );
+      } else {
+        await staging.customInsert(
+          '''INSERT INTO workspace_sync_metadata
+             (local_account_id, sync_state, local_revision)
+             VALUES (?, 'pending', 1)''',
+          variables: [Variable<String>(id)],
+        );
+      }
       final integrity = await staging.customSelect('PRAGMA integrity_check').get();
       if (integrity.isEmpty ||
           integrity.first.read<String>('integrity_check') != 'ok' ||
           await staging.readWorkspaceFileOwner() != id) {
         throw StateError('Staging Google workspace failed verification.');
       }
-      final canonical = jsonEncode(<Object?>[
-        'workspace-canonical-v1',
-        id,
-        for (final row in scopedKeys)
-          <String>[row.read<String>('key'), row.read<String>('value')],
-      ]);
-      final hash = sha256.convert(utf8.encode(canonical)).toString();
+      final hash = await _canonicalWorkspaceCreationHash(staging, id);
       await controlDatabase.customUpdate(
         "UPDATE workspace_operation_journal SET phase = 'finalizing', content_hash = ?, updated_at = ? WHERE operation_id = ?",
         variables: [
@@ -307,6 +339,10 @@ class DatabaseManager {
             Variable<String>('initial_cloud_backup_pending:$id'),
           ],
         );
+        await controlDatabase.customDelete(
+          'DELETE FROM workspace_sync_metadata WHERE local_account_id = ?',
+          variables: [Variable<String>(id)],
+        );
       });
       _workspaceDatabases[id] = published;
       return published;
@@ -336,7 +372,6 @@ class DatabaseManager {
       'SELECT 1 FROM qaza_profile_plan_provenance WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM account_profiles WHERE local_account_id = ? LIMIT 1',
       'SELECT 1 FROM account_plan_revisions WHERE local_account_id = ? LIMIT 1',
-      'SELECT 1 FROM workspace_sync_metadata WHERE local_account_id = ? LIMIT 1',
     ];
     for (final query in queries) {
       final found = await controlDatabase.customSelect(query,
@@ -348,7 +383,7 @@ class DatabaseManager {
 
   Future<void> _reconcileWorkspaceCreationJournal() async {
     final rows = await controlDatabase.customSelect(
-      "SELECT operation_id, target_local_account_id, phase, staging_file, final_file "
+      "SELECT operation_id, target_local_account_id, phase, staging_file, final_file, content_hash "
       "FROM workspace_operation_journal WHERE operation_type = 'google_workspace_create' "
       "AND phase != 'committed' ORDER BY created_at",
     ).get();
@@ -358,6 +393,7 @@ class DatabaseManager {
       final phase = row.read<String>('phase');
       final stagingName = row.read<String?>('staging_file');
       final finalName = row.read<String?>('final_file');
+      final expectedHash = row.read<String?>('content_hash');
       final dir = await _documentsDirectoryProvider();
       if (phase != 'finalizing' || stagingName == null || finalName == null) {
         if (stagingName != null) {
@@ -390,6 +426,10 @@ class DatabaseManager {
         if (integrity.isEmpty || integrity.first.read<String>('integrity_check') != 'ok') {
           throw StateError('Finalizing workspace integrity check failed.');
         }
+        final actualHash = await _canonicalWorkspaceCreationHash(published, id);
+        if (expectedHash == null || expectedHash != actualHash) {
+          throw StateError('Finalizing workspace content hash does not match the journal.');
+        }
       } finally {
         await published.close();
       }
@@ -402,8 +442,101 @@ class DatabaseManager {
           "UPDATE workspace_operation_journal SET phase = 'committed', updated_at = ? WHERE operation_id = ?",
           variables: [Variable<int>(DateTime.now().microsecondsSinceEpoch), Variable<String>(operationId)],
         );
+        await controlDatabase.customDelete(
+          'DELETE FROM meta_store WHERE key IN (?, ?, ?, ?, ?)',
+          variables: [
+            Variable<String>('workspace_display_name:$id'),
+            Variable<String>('daily_salah_tracking_enabled:$id'),
+            Variable<String>('daily_salah_tracking_setup_dismissed:$id'),
+            Variable<String>('workspace_revision:$id'),
+            Variable<String>('initial_cloud_backup_pending:$id'),
+          ],
+        );
+        await controlDatabase.customDelete(
+          'DELETE FROM workspace_sync_metadata WHERE local_account_id = ?',
+          variables: [Variable<String>(id)],
+        );
       });
     }
+  }
+
+  Future<String> _canonicalWorkspaceCreationHash(
+    AppDatabase workspace,
+    String id,
+  ) async {
+    final owner = await workspace.readWorkspaceFileOwner();
+    if (owner != id) {
+      throw StateError('Cannot hash a Google workspace with an invalid owner marker.');
+    }
+    final scopedRows = await workspace.customSelect(
+      '''SELECT key, value FROM meta_store
+         WHERE key IN (?, ?, ?, ?, ?) ORDER BY key''',
+      variables: [
+        Variable<String>('workspace_display_name:$id'),
+        Variable<String>('daily_salah_tracking_enabled:$id'),
+        Variable<String>('daily_salah_tracking_setup_dismissed:$id'),
+        Variable<String>('workspace_revision:$id'),
+        Variable<String>('initial_cloud_backup_pending:$id'),
+      ],
+    ).get();
+    final scoped = [
+      for (final row in scopedRows)
+        <String>[row.read<String>('key'), row.read<String>('value')],
+    ];
+    const ownerTables = <(String, String)>[
+      ('qaza_records', 'user_id'),
+      ('daily_salah_logs', 'user_id'),
+      ('qaza_additions', 'user_id'),
+      ('qaza_deletion_actions', 'user_id'),
+      ('qaza_deletion_action_record_snapshots', 'user_id'),
+      ('qaza_profile_plan_provenance', 'user_id'),
+      ('account_profiles', 'local_account_id'),
+      ('account_plan_revisions', 'local_account_id'),
+    ];
+    final counts = <List<Object>>[];
+    for (final (table, column) in ownerTables) {
+      final rows = await workspace.customSelect(
+        'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$column" = ?',
+        variables: [Variable<String>(id)],
+      ).get();
+      final count = rows.single.read<int>('row_count');
+      if (count != 0) {
+        throw StateError('Fresh workspace unexpectedly contains $count rows in $table.');
+      }
+      counts.add(<Object>[table, count]);
+    }
+    final syncRows = await workspace.customSelect(
+      '''SELECT local_account_id, sync_state, local_revision, last_synced_revision,
+                last_synced_local_hash, last_synced_remote_version,
+                last_synced_remote_hash, last_checked_at, conflict_marker,
+                remote_account_id
+         FROM workspace_sync_metadata WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable<String>(id)],
+    ).get();
+    if (syncRows.length != 1) {
+      throw StateError('A Google workspace must have exactly one sync metadata row.');
+    }
+    final sync = syncRows.single;
+    final canonical = jsonEncode(<Object?>[
+      'workspace-canonical-v1',
+      id,
+      owner,
+      scoped,
+      counts,
+      <Object?>[
+        sync.read<String>('local_account_id'),
+        sync.read<String>('sync_state'),
+        sync.read<int>('local_revision'),
+        sync.read<int?>('last_synced_revision'),
+        sync.read<String?>('last_synced_local_hash'),
+        sync.read<String?>('last_synced_remote_version'),
+        sync.read<String?>('last_synced_remote_hash'),
+        sync.read<String?>('last_checked_at'),
+        sync.read<String?>('conflict_marker'),
+        sync.read<String?>('remote_account_id'),
+      ],
+    ]);
+    return sha256.convert(utf8.encode(canonical)).toString();
   }
 
   Future<void> close() async {
