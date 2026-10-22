@@ -1208,6 +1208,7 @@ class LocalBackupService {
       ],
     );
 
+    var restoredOnboardingCompleted = false;
     final sessionBefore = await control.customSelect(
       'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
     ).get();
@@ -1339,7 +1340,6 @@ class LocalBackupService {
         'SELECT payload_json FROM account_profiles WHERE local_account_id = ? LIMIT 1',
         variables: [Variable<String>(id)],
       ).get();
-      var restoredOnboardingCompleted = false;
       if (profileRows.isNotEmpty) {
         try {
           final profile = jsonDecode(profileRows.single.read<String>('payload_json'));
