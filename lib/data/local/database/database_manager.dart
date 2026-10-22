@@ -306,6 +306,10 @@ class DatabaseManager {
             check.first.read<String>('integrity_check') != 'ok') {
           throw StateError('Published Google workspace failed verification.');
         }
+        final publishedHash = await _canonicalWorkspaceCreationHash(published, id);
+        if (publishedHash != hash) {
+          throw StateError('Published Google workspace content hash does not match staging.');
+        }
       } catch (_) {
         await published.close();
         rethrow;
