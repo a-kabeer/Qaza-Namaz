@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:qaza_namaz/data/data_transfer/local_backup_service.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/local/database/database_manager.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 import 'cloud_models.dart';
@@ -32,10 +33,18 @@ abstract interface class CloudRemoteMetadataStore {
 }
 
 class LocalPhase1BackupSource implements Phase1BackupSource {
-  LocalPhase1BackupSource(this.database, {this.localAccountId})
-    : _backupService = LocalBackupService(database);
+  LocalPhase1BackupSource(
+    this.database, {
+    this.localAccountId,
+    DatabaseManager? databaseManager,
+  })  : _databaseManager = databaseManager,
+        _backupService = LocalBackupService(
+          database,
+          databaseManager: databaseManager,
+        );
 
   final AppDatabase database;
+  final DatabaseManager? _databaseManager;
 
   /// When set, cloud exports/imports are restricted to one local workspace.
   /// Null preserves the all-workspace behavior for explicit full local exports.
@@ -43,10 +52,13 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
   final LocalBackupService _backupService;
 
   @override
-  Future<int> readDbRevision() {
+  Future<int> readDbRevision() async {
     final accountId = localAccountId;
     if (accountId == null) return database.readDbRevision();
-    return database.readWorkspaceRevision(accountId);
+    final workspace = _databaseManager == null
+        ? database
+        : await _databaseManager!.databaseForWorkspace(accountId);
+    return workspace.readWorkspaceRevision(accountId);
   }
 
   @override
@@ -126,15 +138,31 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
       .importJson(phase1BackupJson, targetLocalAccountId: localAccountId);
 
   @override
-  Future<void> saveRecoverySnapshot(String phase1BackupJson) =>
-      database.saveLocalRecoverySnapshot(phase1BackupJson);
+  Future<void> saveRecoverySnapshot(String phase1BackupJson) async {
+    final accountId = localAccountId;
+    final target = accountId == null || _databaseManager == null
+        ? database
+        : await _databaseManager!.databaseForWorkspace(accountId);
+    await target.saveLocalRecoverySnapshot(phase1BackupJson);
+  }
 
   @override
-  Future<String?> readRecoverySnapshot() =>
-      database.readLocalRecoverySnapshot();
+  Future<String?> readRecoverySnapshot() async {
+    final accountId = localAccountId;
+    final target = accountId == null || _databaseManager == null
+        ? database
+        : await _databaseManager!.databaseForWorkspace(accountId);
+    return target.readLocalRecoverySnapshot();
+  }
 
   @override
-  Future<void> clearRecoverySnapshot() => database.clearLocalRecoverySnapshot();
+  Future<void> clearRecoverySnapshot() async {
+    final accountId = localAccountId;
+    final target = accountId == null || _databaseManager == null
+        ? database
+        : await _databaseManager!.databaseForWorkspace(accountId);
+    await target.clearLocalRecoverySnapshot();
+  }
 }
 
 abstract interface class CloudRemoteStore {

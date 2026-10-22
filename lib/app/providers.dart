@@ -468,9 +468,13 @@ final qazaUndoManagerProvider = Provider<QazaUndoManager>(
   (ref) => QazaUndoManager(),
 );
 
-final localBackupServiceProvider = Provider<LocalBackupService>(
-  (ref) => LocalBackupService(ref.watch(appDatabaseProvider)),
-);
+final localBackupServiceProvider = Provider<LocalBackupService>((ref) {
+  final manager = ref.watch(databaseManagerProvider);
+  return LocalBackupService(
+    manager.controlDatabase,
+    databaseManager: manager,
+  );
+});
 
 enum AppRoute { onboarding, home }
 
