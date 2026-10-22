@@ -52,6 +52,30 @@ class DatabaseEncryptionKeyStore {
   }
 }
 
+/// Verification for §5.1 migration safety copies (Recovery Stage 4).
+/// A safety copy is produced by `VACUUM INTO` on the live connection, so
+/// under the real SQLCipher setup it is itself encrypted with the app
+/// key; this opens it with that key and runs an integrity check.
+/// Plaintext copies (test factories) are verified by the caller through
+/// a normal [AppDatabase] handle instead.
+class DatabaseSafetyCopy {
+  DatabaseSafetyCopy._();
+
+  static Future<bool> verifyEncrypted(File file) async {
+    final key = await DatabaseEncryptionKeyStore().readOrCreate();
+    final database = sqlite3.sqlite3.open(file.path);
+    try {
+      database.execute("PRAGMA key = '$key';");
+      final rows = database.select('PRAGMA integrity_check;');
+      return rows.isNotEmpty && rows.first.values.first == 'ok';
+    } on sqlite3.SqliteException {
+      return false;
+    } finally {
+      database.close();
+    }
+  }
+}
+
 /// Migrates the legacy plaintext Drift database to encrypted SQLite before
 /// Drift gets access to the file.
 ///
