@@ -321,9 +321,9 @@ extension _DatabaseManagerMigration on DatabaseManager {
     String finalFileName,
   ) async {
     final directory = await _documentsDirectoryProvider();
-    final finalFile = File('\${directory.path}/$finalFileName');
+    final finalFile = File('${directory.path}/$finalFileName');
     final stagingName = '$finalFileName.migration-staging';
-    final stagingFile = File('\${directory.path}/$stagingName');
+    final stagingFile = File('${directory.path}/$stagingName');
     final operationId = 'google-workspace-migration:$id';
     final existingJournal = await controlDatabase.customSelect(
       'SELECT phase FROM workspace_operation_journal WHERE operation_id = ? LIMIT 1',
@@ -501,7 +501,7 @@ extension _DatabaseManagerMigration on DatabaseManager {
           : journalRows.single.read<String>('phase');
       if (phase != 'finalizing') {
         if (await stagingFile.exists()) {
-          final quarantine = File('\${stagingFile.path}.quarantine');
+          final quarantine = File('${stagingFile.path}.quarantine');
           if (!await quarantine.exists()) {
             await stagingFile.rename(quarantine.path);
           }
@@ -535,9 +535,9 @@ extension _DatabaseManagerMigration on DatabaseManager {
 
     if (phase != 'finalizing' || stagingName == null || finalName == null) {
       if (stagingName != null) {
-        final staging = File('\${directory.path}/$stagingName');
+        final staging = File('${directory.path}/$stagingName');
         if (await staging.exists()) {
-          final quarantine = File('\${staging.path}.quarantine');
+          final quarantine = File('${staging.path}.quarantine');
           if (!await quarantine.exists()) {
             await staging.rename(quarantine.path);
           }
@@ -563,8 +563,8 @@ extension _DatabaseManagerMigration on DatabaseManager {
         expectedHash == null) {
       throw StateError('Legacy workspace migration journal failed filename/hash validation.');
     }
-    final finalFile = File('\${directory.path}/$finalName');
-    final stagingFile = File('\${directory.path}/$stagingName');
+    final finalFile = File('${directory.path}/$finalName');
+    final stagingFile = File('${directory.path}/$stagingName');
     if (!await finalFile.exists() && await stagingFile.exists()) {
       await stagingFile.rename(finalFile.path);
     }
