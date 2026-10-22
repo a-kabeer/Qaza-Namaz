@@ -190,7 +190,11 @@ final cloudSyncProvider = Provider<CloudSyncProvider>(
 final packageAssetNamespaceProvider = Provider<String?>((ref) => null);
 
 final accountLocalStoreProvider = Provider<AccountLocalStore>((ref) {
-  return AccountLocalStore(database: ref.watch(appDatabaseProvider));
+  final manager = ref.watch(databaseManagerProvider);
+  return AccountLocalStore(
+    database: manager.controlDatabase,
+    databaseManager: manager,
+  );
 });
 
 final activeLocalAccountIdStateProvider = StateProvider<String?>((ref) => null);
@@ -383,7 +387,14 @@ final skipPendingInitialCloudBackupForSessionProvider =
     StateProvider<bool>((ref) => false);
 
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
-  return DriftQazaLocalStore(database: ref.watch(appDatabaseProvider));
+  final localAccountId = ref.watch(activeUserIdProvider);
+  if (localAccountId == null || localAccountId.isEmpty) {
+    throw StateError('No active local workspace is ready for Qaza data access.');
+  }
+  final manager = ref.watch(databaseManagerProvider);
+  return DriftQazaLocalStore(
+    database: manager.databaseForActiveWorkspace(localAccountId),
+  );
 });
 
 final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
@@ -423,9 +434,16 @@ final qazaServiceProvider = Provider<QazaService>(
   ),
 );
 
-final qazaAdditionRepositoryProvider = Provider<QazaAdditionRepository>(
-  (ref) => DriftQazaAdditionRepository(ref.watch(appDatabaseProvider)),
-);
+final qazaAdditionRepositoryProvider = Provider<QazaAdditionRepository>((ref) {
+  final localAccountId = ref.watch(activeUserIdProvider);
+  if (localAccountId == null || localAccountId.isEmpty) {
+    throw StateError('No active local workspace is ready for Qaza additions.');
+  }
+  final manager = ref.watch(databaseManagerProvider);
+  return DriftQazaAdditionRepository(
+    manager.databaseForActiveWorkspace(localAccountId),
+  );
+});
 
 final qazaAdditionServiceProvider = Provider<QazaAdditionService>(
   (ref) => QazaAdditionService(
