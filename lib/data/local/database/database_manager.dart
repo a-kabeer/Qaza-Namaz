@@ -329,7 +329,7 @@ class DatabaseManager {
             Variable<String>(operationId),
           ],
         );
-        await controlDatabase.customDelete(
+        await controlDatabase.customUpdate(
           'DELETE FROM meta_store WHERE key IN (?, ?, ?, ?, ?)',
           variables: [
             Variable<String>('workspace_display_name:$id'),
@@ -339,7 +339,7 @@ class DatabaseManager {
             Variable<String>('initial_cloud_backup_pending:$id'),
           ],
         );
-        await controlDatabase.customDelete(
+        await controlDatabase.customUpdate(
           'DELETE FROM workspace_sync_metadata WHERE local_account_id = ?',
           variables: [Variable<String>(id)],
         );
@@ -442,7 +442,7 @@ class DatabaseManager {
           "UPDATE workspace_operation_journal SET phase = 'committed', updated_at = ? WHERE operation_id = ?",
           variables: [Variable<int>(DateTime.now().microsecondsSinceEpoch), Variable<String>(operationId)],
         );
-        await controlDatabase.customDelete(
+        await controlDatabase.customUpdate(
           'DELETE FROM meta_store WHERE key IN (?, ?, ?, ?, ?)',
           variables: [
             Variable<String>('workspace_display_name:$id'),
@@ -452,7 +452,7 @@ class DatabaseManager {
             Variable<String>('initial_cloud_backup_pending:$id'),
           ],
         );
-        await controlDatabase.customDelete(
+        await controlDatabase.customUpdate(
           'DELETE FROM workspace_sync_metadata WHERE local_account_id = ?',
           variables: [Variable<String>(id)],
         );
