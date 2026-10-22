@@ -1,7 +1,6 @@
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
-import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/local/database/database_manager.dart';
 import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';

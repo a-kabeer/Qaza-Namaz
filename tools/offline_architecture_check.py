@@ -156,7 +156,7 @@ for root in RUNTIME_ROOTS:
 # All production database connections must be constructed by DatabaseManager.
 # Test code may continue to inject NativeDatabase.memory() or file executors.
 DATABASE_CONSTRUCTION_PATTERN = re.compile(
-    r"\\b(?:AppDatabase|GoogleWorkspaceDatabase)\\s*\\(\\s*\\)"
+    r"\b(?:AppDatabase|GoogleWorkspaceDatabase)\s*\(\s*\)"
 )
 DATABASE_MANAGER_PATH = Path("lib/data/local/database/database_manager.dart")
 for root in (ROOT / "lib", ROOT / "packages/qaza_cloud_adapter" / "lib"):
