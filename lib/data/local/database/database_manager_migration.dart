@@ -560,7 +560,7 @@ mixin _DatabaseManagerMigration on DatabaseManager {
       return;
     }
 
-    final expectedFileName = googleFileNameForWorkspaceId(id);
+    final expectedFileName = DatabaseManager.googleFileNameForWorkspaceId(id);
     if (finalName != expectedFileName ||
         stagingName != '$expectedFileName.migration-staging' ||
         expectedHash == null) {
