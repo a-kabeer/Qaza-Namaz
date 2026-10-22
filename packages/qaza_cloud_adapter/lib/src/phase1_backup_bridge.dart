@@ -34,27 +34,41 @@ abstract interface class CloudRemoteMetadataStore {
 
 class LocalPhase1BackupSource implements Phase1BackupSource {
   LocalPhase1BackupSource(
-    this.database, {
+    AppDatabase database, {
     this.localAccountId,
     DatabaseManager? databaseManager,
-  }) : _databaseManager = databaseManager,
+  }) : _fallbackDatabase = database,
+       _databaseManager = databaseManager,
        _backupService = LocalBackupService(
          database,
          databaseManager: databaseManager,
        );
 
-  final AppDatabase database;
+  final AppDatabase _fallbackDatabase;
   final DatabaseManager? _databaseManager;
-
-  /// When set, cloud exports/imports are restricted to one local workspace.
-  /// Null preserves the all-workspace behavior for explicit full local exports.
   final String? localAccountId;
   final LocalBackupService _backupService;
 
+  String? get _effectiveWorkspaceId =>
+      localAccountId ?? _databaseManager?.activeWorkspaceId;
+
+  AppDatabase get database {
+    final manager = _databaseManager;
+    if (manager == null) return _fallbackDatabase;
+    final id = _effectiveWorkspaceId;
+    return id == null
+        ? manager.controlDatabase
+        : manager.databaseForActiveWorkspace(id);
+  }
+
   @override
   Future<int> readDbRevision() async {
-    final accountId = localAccountId;
-    if (accountId == null) return database.readDbRevision();
+    final accountId = _effectiveWorkspaceId;
+    if (accountId == null) {
+      return database.isGoogleWorkspaceDatabase
+          ? database.readWorkspaceRevision(database.workspaceId!)
+          : database.readDbRevision();
+    }
     final workspace = _databaseManager == null
         ? database
         : await _databaseManager.databaseForWorkspace(accountId);
@@ -63,12 +77,12 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
 
   @override
   Future<String> exportBackup() =>
-      _backupService.exportJson(localAccountId: localAccountId);
+      _backupService.exportJson(localAccountId: _effectiveWorkspaceId);
 
   @override
   Future<void> validateBackup(String phase1BackupJson) async {
     await _backupService.analyzeImport(phase1BackupJson);
-    final expectedWorkspaceId = localAccountId;
+    final expectedWorkspaceId = _effectiveWorkspaceId;
     if (expectedWorkspaceId == null) return;
 
     final decoded = jsonDecode(phase1BackupJson);
@@ -135,11 +149,11 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
 
   @override
   Future<void> importBackup(String phase1BackupJson) => _backupService
-      .importJson(phase1BackupJson, targetLocalAccountId: localAccountId);
+      .importJson(phase1BackupJson, targetLocalAccountId: _effectiveWorkspaceId);
 
   @override
   Future<void> saveRecoverySnapshot(String phase1BackupJson) async {
-    final accountId = localAccountId;
+    final accountId = _effectiveWorkspaceId;
     final target = accountId == null || _databaseManager == null
         ? database
         : await _databaseManager.databaseForWorkspace(accountId);
@@ -148,7 +162,7 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
 
   @override
   Future<String?> readRecoverySnapshot() async {
-    final accountId = localAccountId;
+    final accountId = _effectiveWorkspaceId;
     final target = accountId == null || _databaseManager == null
         ? database
         : await _databaseManager.databaseForWorkspace(accountId);
@@ -157,7 +171,7 @@ class LocalPhase1BackupSource implements Phase1BackupSource {
 
   @override
   Future<void> clearRecoverySnapshot() async {
-    final accountId = localAccountId;
+    final accountId = _effectiveWorkspaceId;
     final target = accountId == null || _databaseManager == null
         ? database
         : await _databaseManager.databaseForWorkspace(accountId);

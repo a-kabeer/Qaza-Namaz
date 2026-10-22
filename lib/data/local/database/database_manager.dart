@@ -31,6 +31,22 @@ class DatabaseManager {
   final AppDatabase Function({required String fileName, required String workspaceId})
       _googleDatabaseFactory;
   Future<void>? _initializeFuture;
+  String? _activeWorkspaceId;
+
+  String? get activeWorkspaceId => _activeWorkspaceId;
+
+  void setActiveWorkspace(String? localAccountId) {
+    final id = localAccountId?.trim();
+    if (id == null || id.isEmpty ||
+        id == 'guest' || id.startsWith('guest_') || id.startsWith('guest:')) {
+      _activeWorkspaceId = null;
+      return;
+    }
+    if (!_workspaceDatabases.containsKey(id)) {
+      throw StateError('Cannot publish a Google workspace before its database is validated.');
+    }
+    _activeWorkspaceId = id;
+  }
 
   AppDatabase get controlDatabase =>
       _controlDatabase ??= AppDatabase.control();
@@ -397,6 +413,7 @@ class DatabaseManager {
     };
     _controlDatabase = null;
     _workspaceDatabases.clear();
+    _activeWorkspaceId = null;
     for (final database in handles) {
       await database.close();
     }
