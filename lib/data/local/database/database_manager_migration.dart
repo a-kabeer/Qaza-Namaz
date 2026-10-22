@@ -19,7 +19,7 @@ List<String> _workspaceMetadataKeys(String id) => <String>[
       'initial_cloud_backup_pending:$id',
     ];
 
-extension _DatabaseManagerMigration on DatabaseManager {
+mixin _DatabaseManagerMigration on DatabaseManager {
   Future<Map<String, String>> _readWorkspaceMetadata(
     AppDatabase source,
     String id,
