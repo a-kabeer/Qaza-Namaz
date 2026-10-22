@@ -16,8 +16,7 @@ class DatabaseManager {
   final Map<String, AppDatabase> _workspaceDatabases = <String, AppDatabase>{};
 
   /// The control + Guest database. Opening is lazy through Drift's executor.
-  AppDatabase get controlDatabase =>
-      _controlDatabase ??= AppDatabase.control();
+  AppDatabase get controlDatabase => _controlDatabase ??= AppDatabase.control();
 
   /// Resolves a workspace using the authoritative control registry.
   ///

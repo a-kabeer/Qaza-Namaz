@@ -30,7 +30,8 @@ void main() {
     await manager.close();
   });
 
-  test('separate layout never silently falls back to shared database', () async {
+  test('separate layout never silently falls back to shared database',
+      () async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = DatabaseManager(controlDatabase: database);
     await database.readDbRevision();

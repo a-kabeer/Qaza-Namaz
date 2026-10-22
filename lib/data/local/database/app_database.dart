@@ -847,7 +847,8 @@ class AppDatabase extends _$AppDatabase {
     ).get();
     final names = columns.map((row) => row.read<String>('name')).toSet();
     if (!names.contains('db_file_name')) {
-      await customStatement('ALTER TABLE local_accounts ADD COLUMN db_file_name TEXT');
+      await customStatement(
+          'ALTER TABLE local_accounts ADD COLUMN db_file_name TEXT');
     }
     if (!names.contains('db_layout')) {
       await customStatement(
@@ -867,7 +868,8 @@ class AppDatabase extends _$AppDatabase {
     // Do not interpret an unrecognized layout as shared. A malformed layout is
     // an integrity error and must prevent any workspace from being routed.
     if (invalidRows.isNotEmpty) {
-      throw StateError('A local workspace has invalid database routing metadata.');
+      throw StateError(
+          'A local workspace has invalid database routing metadata.');
     }
   }
 
