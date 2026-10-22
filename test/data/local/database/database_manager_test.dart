@@ -44,7 +44,7 @@ void main() {
     await control.customStatement(
       'INSERT INTO local_accounts '
       '(local_account_id, created_at, updated_at) VALUES (?, 1, 1)',
-      [Variable<String>(id)],
+      [id],
     );
   }
 
