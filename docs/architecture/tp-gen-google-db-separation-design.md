@@ -152,23 +152,31 @@ As implemented in `packages/qaza_cloud_adapter/lib/src/cloud_workmanager.dart`
 
 ## 7. Hash, triggers, safety copy (T0.6 record)
 
-- Canonical content hash (migration): `workspace-content-v1` —
-  JSON of `[tag, workspaceId, scoped metadata (excluding
-  `workspace_revision:<id>`), per-table (columns, rows ordered by primary
-  key) for the eight owned tables, sync-metadata row, scoped recovery
-  snapshot if any]`, SHA-256 (database_manager_migration.dart:190–265).
-  Workspace creation uses a second form, `workspace-canonical-v1`
-  (database_manager.dart:608–661). **Neither is the scoped-export hash
-  §5.2 step 2 names — register item R-09.**
-- Trigger rule (§7): implemented as §7's second option in effect —
-  revision counters are excluded from the canonical hash; in migration the
-  scoped metadata (including the counter) is written after the row copy,
-  overwriting trigger-advanced values with the source values. Separate
-  counter verification as §7 words it is not implemented — register
-  item R-09.
-- Safety copy (§5.1): **not implemented anywhere in the branch** — no
-  safety copy, no storage pre-check, and migration deletes the shared
-  source rows at commit. Register item R-04 (blocker cluster).
+- Canonical content hash: **unified in Recovery Stage 4 (decision
+  D-D(ii))** in `WorkspaceCanonicalContent`
+  (lib/data/local/database/workspace_canonical_content.dart) on the §7
+  scoped-export canonicalisation: the eight owned tables (all columns,
+  primary-key order), scoped metadata (display-name value tokenised;
+  revision counter excluded), and the workspace's scoped recovery
+  snapshot, with the owner ID normalised to a token so the hash is
+  mapping-invariant across the Guest→Google identity mapping. Used by
+  migration, workspace creation, and export-side verification;
+  cross-file adoption verification uses the owned-tables part of the
+  same canonicalisation (`ownedContentHash`). The retired
+  `workspace-content-v1` and `workspace-canonical-v1` forms are no
+  longer produced anywhere. Register item R-09 — closed.
+- Trigger rule (§7): revision/sync counters are excluded from the
+  canonical hash and verified separately — migration compares the
+  copied sync row field-by-field at commit (register R-09 evidence).
+- Safety copy (§5.1): **implemented in Recovery Stage 4** — one
+  `VACUUM INTO` copy of the control database
+  (`qaza_namaz.sqlite.migration-safety-copy`), created once before the
+  first migration of a startup run, verified openable +
+  integrity-checked under the actual key setup, never refreshed; the
+  §5.1 storage pre-check (blanket 3× control size via an injectable
+  free-space provider) blocks the run before any file is modified.
+  Migration commit no longer deletes source rows (§5.4 retention).
+  Register item R-04 — closed.
 
 ## 8. Manifest and journal (T0.7 record)
 

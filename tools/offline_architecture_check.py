@@ -155,16 +155,32 @@ for root in RUNTIME_ROOTS:
 
 # All production database connections must be constructed by DatabaseManager.
 # Test code may continue to inject NativeDatabase.memory() or file executors.
+# Recovery Stage 4 (R-12): the pattern also covers named constructors
+# (AppDatabase.control(), GoogleWorkspaceDatabase.forTesting) and the scan
+# covers the apps/ root. The two composition roots are allowlisted: the
+# manager itself, and lib/app/providers.dart, which creates the single
+# control handle that the foreground DatabaseManager is built over.
 DATABASE_CONSTRUCTION_PATTERN = re.compile(
-    r"\b(?:AppDatabase|GoogleWorkspaceDatabase)\s*\(\s*\)"
+    r"\b(?:AppDatabase|GoogleWorkspaceDatabase)\s*(?:\.\w+)?\s*\(\s*\)"
 )
-DATABASE_MANAGER_PATH = Path("lib/data/local/database/database_manager.dart")
-for root in (ROOT / "lib", ROOT / "packages/qaza_cloud_adapter" / "lib"):
+DATABASE_CONSTRUCTION_ALLOWED = {
+    Path("lib/data/local/database/database_manager.dart"),
+    Path("lib/app/providers.dart"),
+    # The class definition itself (named-constructor declarations).
+    Path("lib/data/local/database/app_database.dart"),
+}
+for root in (
+    ROOT / "lib",
+    ROOT / "packages/qaza_cloud_adapter" / "lib",
+    ROOT / "apps",
+):
     if not root.exists():
         continue
     for path in root.rglob("*.dart"):
         relative = path.relative_to(ROOT)
-        if relative == DATABASE_MANAGER_PATH or path.name.endswith(".g.dart"):
+        if relative in DATABASE_CONSTRUCTION_ALLOWED or path.name.endswith(
+            ".g.dart"
+        ):
             continue
         source = path.read_text(errors="ignore")
         if DATABASE_CONSTRUCTION_PATTERN.search(source):

@@ -792,3 +792,172 @@ Stage 4 = implement the decided remediations (Shape A routing, §5
 mechanics as designed, §4 adoption sequence, §7 hash unification) +
 build the §8 requirement-to-test matrix + execute the D-B
 test-expectation rewrite, listed per §8(12).
+
+
+---
+
+# Stage 4 addendum (2026-10-23) — dispositions after remediation
+
+Produced by Recovery Stage 4 under decisions D-A…D-D (approved by Abdul
+2026-10-23). The Stage 3 text above is preserved as the historical
+record; this addendum records what Stage 4 changed and the resulting
+status of every item. Full evidence: `~/workspace/qaza_recovery/STAGE4_REPORT.md`.
+
+## Item dispositions
+
+- **R-01 — CLOSED.** Shape A implemented: `shared` resolves to the
+  control handle in `_openDatabaseForWorkspace`; publish/active gates
+  accept registry-resolved shared workspaces (control-resolved ID set);
+  `ensureGoogleWorkspace` returns the control handle for an existing
+  shared row and no longer provisions or migrates on activation (the
+  registry is consulted before any filename derivation, so legacy
+  colon-form IDs resolve too); the "development conversion or reset"
+  throw is removed. Provider-graph routing completed: `appDatabaseProvider`
+  owns the single control handle and `databaseManagerProvider` is built
+  over it (the branch had inverted this, silently routing
+  provider-driven flows to a different database than the overridden
+  `appDatabaseProvider` — the R-02 seam break); `DatabaseManager.close()`
+  no longer closes a caller-injected control database. All 41 Stage 2
+  census failures pass unweakened (app suite 800/800, adapter 133/133).
+- **R-02 — CLOSED.** Both journey files run to completion and pass:
+  `account_chained_journeys_test.dart` (scenarios 5B, 6, 9) and
+  `cloud_setup_choice_screen_test.dart` (all tests).
+- **R-03 — CLOSED (D-B executed).** The legacy test was rewritten to the
+  §5.2 behaviour as the stage's single authorized pre-existing-test
+  change: activation resolves shared→control without provisioning;
+  `runStartupMigrations()` performs the verified migration; the record
+  is preserved in the separate file; the shared source rows are
+  retained as superseded (§5.4). Listed with reason in the Stage 4
+  report per §8(12).
+- **R-04 — CLOSED (D-C, §5 as designed).** (a) Safety copy: one
+  `VACUUM INTO` copy of the control DB, created once before the first
+  migration, verified (openable + `integrity_check`; encrypted copies
+  verified under the real SQLCipher key via `DatabaseSafetyCopy`),
+  never refreshed. (b) Storage pre-check: required = safety copy +
+  staging/final + margin, satisfied by a blanket 3× control size;
+  free space via injectable provider (POSIX `statvfs` FFI default);
+  failure blocks before any file is modified. (c) Startup-run trigger:
+  `DatabaseManager.runStartupMigrations()`, invoked from both apps'
+  startup database step, for every resident shared Google workspace;
+  failure leaves the workspace fully operational on shared.
+  (d) §5.3 waits: `adopting`/`restoring` lifecycles and workspaces with
+  non-terminal journal operations are skipped per run; the per-workspace
+  migration also refuses mid-adopting/restoring states. (e) §5.4
+  retention: the commit no longer deletes source rows, scoped meta, the
+  sync row, or the recovery snapshot; the registry decides authority.
+  Manifest: journal phases `copying`/`verifying`/`finalizing`/
+  `committed`/`failed` with distinct `source_hash`/`target_hash`
+  (schema-26 journal columns added by ensure), mirrored into
+  `db_migration_state`.
+- **R-05 — CLOSED (D-D(i), §4 as designed).** Cross-file adoption now
+  imports into a staging copy of the target file (`VACUUM INTO` from
+  the live file, inheriting its baseline), verifies there (counts,
+  foreign-row, owner, integrity, canonical owned-content hash), records
+  the `finalizing` intent (staging/final names + content hash) BEFORE
+  publish, publishes by file swap with reopen + re-verification and
+  rollback to the retained pre-adoption file on failure, then runs the
+  §4 step-7 commit transaction and discards the retained file. Retry is
+  idempotent at every phase (tested: fresh, `copied`, `finalizing`
+  pre-publish, `finalizing` post-publish/pre-commit, committed).
+- **R-06 — unchanged** (conforms-in-effect; shared-target adoption
+  keeps the single-database path per §4 case (c)).
+- **R-07 — DISPOSITIONED, not Stage 4 work.** No Google deletion-hold
+  flow exists anywhere in the product (holds are a Guest-only v4.1
+  feature); §5.3's file-expiry rule governs a flow that has not been
+  built. There is no behaviour to remediate in this stage: when/if a
+  Google hold flow is built, §5.3's rule (delete file + registry row
+  on expiry) is its acceptance criterion. Recorded here so the matrix
+  does not claim coverage.
+- **R-08 — CLOSED.** The startup run scans the documents directory:
+  `qaza_google_<32hex>.sqlite` files whose names are not the
+  deterministic name of any registered Google workspace (nor a recorded
+  `db_file_name`) are renamed to `.quarantine` — never exposed, never
+  deleted. (Recognition uses the deterministic S3 mapping because
+  `db_file_name` is NULL for shared workspaces until migration.)
+- **R-09 — CLOSED (D-D(ii)).** One canonicalisation
+  (`WorkspaceCanonicalContent`, §7 scoped-export form) is used by
+  migration, creation, and export paths; sync/revision counters are
+  excluded from the hash and verified separately (migration compares
+  the copied sync row field-by-field at commit). Adoption verification
+  compares the owned-tables part of the same canonicalisation between
+  source and target (scoped metadata in the target is provisioning
+  state, verified directly; a recovery snapshot's payload is bound to
+  its source workspace by construction). `workspace-content-v1` and
+  `workspace-canonical-v1` are retired; design doc §7 updated.
+- **R-10 — PARTIALLY CLOSED, remainder dispositioned.** Create/migrate
+  journals reconcile at `initialize()` (unchanged). Adoption journals
+  reconcile on retry at every phase (now implemented for the staging
+  sequence and §8-tested). In addition, the §5.2 startup run never
+  migrates a workspace with a non-terminal operation, so an interrupted
+  adoption/restore is never compounded by a migration. Startup
+  reconciliation of restore journals remains lazy-by-design (a restore
+  journal's workspace is exposed only through its own flow); no §8 row
+  requires more.
+- **R-11 — unchanged** (conforms).
+- **R-12 — CLOSED.** `apps/qaza_app_cloud/lib/main.dart` now routes its
+  startup database step through `DatabaseManager` (initialize +
+  startup migrations), matching the standalone app. The construction
+  policy check (`tools/offline_architecture_check.py`) now also matches
+  named constructors (`AppDatabase.control()`,
+  `GoogleWorkspaceDatabase.forTesting`) and scans the `apps/` root;
+  composition roots (manager, providers) and the class-definition file
+  are allowlisted with reasons. Check passes.
+- **R-13 — CLOSED (evidence discharged).** Realistic schema 25 → 26
+  upgrade test built and passing
+  (`test/data/local/database/schema_upgrade_25_26_test.dart`); decision
+  record updated to link it.
+- **R-14 — CLOSED, re-verified against retention.** Full export now
+  filters separate workspaces' retained superseded rows out of the
+  control leg (the registry decides authority), so each workspace's
+  rows appear exactly once; tested across Guest + 2 separate + 1
+  shared, before and after the shared workspace migrates. Explicit
+  failure when a separate workspace cannot open is preserved and tested.
+- **R-15 — CLOSED.** Scoped snapshot selection lives in
+  `WorkspaceCanonicalContent.scopedRecoverySnapshot`: newest snapshot
+  *for this workspace* (payload-validated), used by migration and the
+  canonical hash. Tested with a newer snapshot belonging to another
+  workspace present.
+- **R-16, R-17 — unchanged** (conforms-in-effect variances, recorded).
+- **R-18 — NEW (Stage 4 find): onboarding row verification compared
+  DateTimes exactly; drift stores whole seconds — CLOSED.** The
+  branch's `_writeOnboardingWorkspaceData` replaced main's
+  inserted-count verification with an exact field-by-field read-back
+  including `createdAt`/`updatedAt` microseconds, which can never
+  succeed against drift's second-precision DateTime storage. This was
+  an original-branch regression masked in Stage 2 by the hanging
+  suites (the app suite never completed, so this failure was never
+  counted). Evidence: test passes at `efadadd`, fails at `ca26a9f9`;
+  DAO round-trip probe shows identical second-truncation at both
+  commits. Fix (production only): the verification compares DateTime
+  fields at storage precision; every other field is still compared
+  exactly. `profile_setup_screen_test.dart` passes unweakened.
+- **R-19 — NEW (Stage 4 find): Qaza data providers threw when no
+  active user was published — CLOSED.** The branch rewrote
+  `qazaLocalStoreProvider` / `qazaAdditionRepositoryProvider` to throw
+  `StateError` when `activeUserIdProvider` was null (main constructed
+  the store over the app database unconditionally), breaking
+  session-less explicit-user flows — the Qaza undo feedback helper,
+  which deliberately carries an explicit user ID and reads the service
+  through the container after its sheet closes. Fix (production only):
+  with no active user, the providers keep the pre-split construction
+  contract (store over the manager's control database, per-query user
+  scoping); with an active user they resolve the manager-published
+  active handle as before. `qaza_undo_feedback_widget_test.dart` passes
+  unweakened.
+
+## Part D (updated) — §8 requirement mapping at Stage 4 head
+
+| §8 item | Status | Evidence |
+|---|---|---|
+| 1. Per-account files, on-disk assertions, no PII in paths | **Passing** | Manager tests (filename/PII, born-separate, isolation) + Stage 4 manager tests (file assertions throughout) |
+| 2. Switch/restart isolation; worker file-access | **Passing** | Chained journeys scenarios 6/9; local_session suite; adapter worker suites (133/133) |
+| 3. Guest hash invariance; adoption parity | **Passing** | Canonical-hash mapping-invariance test; adoption owned-content hash verification in every cross-file adoption test |
+| 4. Retry seeded at every journal phase (incl. `finalizing`) | **Passing** | Adoption journal suites (pre-existing) + Stage 4 service tests: fresh, `copied`, `finalizing` pre-publish (staging lost → redo), `finalizing` post-publish/pre-commit, committed |
+| 5. Crash recovery per §6 case | **Passing** | Migration reconciliation (pre-existing) + Stage 4: staging-only, final-without-commit, committed-with-missing/invalid file, registry/file disagreement, unknown file → quarantine, mid-operation skips |
+| 6. Missing/corrupt/wrong-key/schema failure isolation | **Passing** (wrong-key by substitute, see report) | Stage 4 isolation tests: corrupt file → account-specific `StateError`, no fallback, registry unchanged, other workspaces usable; wrong-owner swap rejected per workspace; missing file (pre-existing + export test) |
+| 7. Hash correctness with triggers/metadata | **Passing** | Unified canonicalisation (R-09); hash invariance + content-sensitivity tests; sync-row field-by-field verification at migration commit |
+| 8. No silent overwrite/merge; §7 cases | **Passing** | Keep Both + scoped restore suites (pre-existing, green); collision files never overwritten (migration + adoption publish tests) |
+| 9. Export completeness across layouts | **Passing** | Stage 4 export test: Guest + 2 separate + 1 shared, exactly-once, before/after migration retention; explicit failure on unopenable workspace |
+| 10. Safety-copy consistency under journaling mode | **Passing with one device-only exception** | Safety copy created/verified/never-refreshed tests under the plaintext test executor; the encrypted (SQLCipher) verification path is implemented but exercisable only under the real encrypted setup — see the Stage 4 report's exception list |
+| 11. Insufficient-storage pre-check | **Passing** | Pre-check blocks before any file is modified (injected free-space provider); fault legs at copy/verify/publish covered by migration failure + adoption publish rollback tests |
+| 12. Pre-existing suites pass unweakened | **Passing** | App 800/800, adapter 133/133 at the Stage 4 head; the only pre-existing-test change is the D-B rewrite (R-03), listed with its approved reason |
