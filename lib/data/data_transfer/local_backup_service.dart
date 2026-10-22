@@ -986,9 +986,8 @@ class LocalBackupService {
       'SELECT phase FROM workspace_operation_journal WHERE operation_id = ? LIMIT 1',
       variables: [Variable<String>(operationId)],
     ).get();
-    final priorPhase = journalRows.isEmpty
-        ? null
-        : journalRows.single.read<String>('phase');
+    final priorPhase =
+        journalRows.isEmpty ? null : journalRows.single.read<String>('phase');
     if (priorPhase == 'committed' || priorPhase == 'cleaned') {
       final stateRows = await database.customSelect(
         '''SELECT local_account_id, lifecycle_state FROM local_accounts
@@ -1009,7 +1008,8 @@ class LocalBackupService {
       );
     }
     if (priorPhase != null &&
-        !const {'prepared', 'snapshotted', 'copied', 'verified'}.contains(priorPhase)) {
+        !const {'prepared', 'snapshotted', 'copied', 'verified'}
+            .contains(priorPhase)) {
       throw const LocalBackupException(
         'The Guest adoption journal needs recovery before retrying. '
         'The Guest source and recovery snapshot were preserved.',
@@ -1027,7 +1027,8 @@ class LocalBackupService {
     ).get();
     if (sourceRows.isEmpty ||
         sourceRows.single.read<String>('lifecycle_state') != 'active') {
-      throw const LocalBackupException('The source Guest workspace is not active.');
+      throw const LocalBackupException(
+          'The source Guest workspace is not active.');
     }
     if (targetRows.isEmpty ||
         targetRows.single.read<String>('lifecycle_state') != 'active' ||
@@ -1038,9 +1039,11 @@ class LocalBackupService {
       );
     }
 
-    final sessionBefore = await database.customSelect(
-      'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
-    ).get();
+    final sessionBefore = await database
+        .customSelect(
+          'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+        )
+        .get();
     final activeBefore = sessionBefore.isEmpty
         ? null
         : sessionBefore.single.read<String?>('active_local_account_id');
@@ -1067,7 +1070,11 @@ class LocalBackupService {
         'user_id',
         'qaza_deletion_action_record_snapshots',
       ),
-      ('qaza_profile_plan_provenance', 'user_id', 'qaza_profile_plan_provenance'),
+      (
+        'qaza_profile_plan_provenance',
+        'user_id',
+        'qaza_profile_plan_provenance'
+      ),
       ('account_profiles', 'local_account_id', 'account_profiles'),
       ('account_plan_revisions', 'local_account_id', 'account_plan_revisions'),
     ];
@@ -1106,8 +1113,10 @@ class LocalBackupService {
         );
       }
       for (final (table, ownerColumn, payloadKey) in ownedTables) {
-        final expectedRows = (payloadData[payloadKey] as List<dynamic>?) ?? const [];
-        final actualCount = await rowCount(workspace, table, ownerColumn, target);
+        final expectedRows =
+            (payloadData[payloadKey] as List<dynamic>?) ?? const [];
+        final actualCount =
+            await rowCount(workspace, table, ownerColumn, target);
         if (actualCount != expectedRows.length) {
           throw LocalBackupException(
             'Adoption verification failed for $table: expected \${expectedRows.length}, found $actualCount. '
@@ -1125,12 +1134,15 @@ class LocalBackupService {
         }
       }
       if (await workspace.readWorkspaceFileOwner() != target) {
-        throw const LocalBackupException('Google file owner changed during adoption.');
+        throw const LocalBackupException(
+            'Google file owner changed during adoption.');
       }
-      final integrity = await workspace.customSelect('PRAGMA integrity_check').get();
+      final integrity =
+          await workspace.customSelect('PRAGMA integrity_check').get();
       if (integrity.isEmpty ||
           integrity.first.read<String>('integrity_check') != 'ok') {
-        throw const LocalBackupException('Google file integrity verification failed.');
+        throw const LocalBackupException(
+            'Google file integrity verification failed.');
       }
     }
 
@@ -1254,9 +1266,11 @@ class LocalBackupService {
     );
 
     await database.transaction(() async {
-      final sessionRows = await database.customSelect(
-        'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
-      ).get();
+      final sessionRows = await database
+          .customSelect(
+            'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+          )
+          .get();
       final activeId = sessionRows.isEmpty
           ? null
           : sessionRows.single.read<String?>('active_local_account_id');
@@ -1293,8 +1307,10 @@ class LocalBackupService {
       var onboardingCompleted = false;
       if (profileRows.isNotEmpty) {
         try {
-          final raw = jsonDecode(profileRows.single.read<String>('payload_json'));
-          onboardingCompleted = raw is Map && raw['onboardingCompleted'] == true;
+          final raw =
+              jsonDecode(profileRows.single.read<String>('payload_json'));
+          onboardingCompleted =
+              raw is Map && raw['onboardingCompleted'] == true;
         } catch (_) {}
       }
       await database.setOnboardingCompletedInTransaction(onboardingCompleted);
