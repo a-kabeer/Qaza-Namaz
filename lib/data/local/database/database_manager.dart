@@ -3,11 +3,43 @@ import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
+import 'package:drift/native.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'app_database.dart';
+import 'database_encryption.dart';
+import 'free_space.dart';
+import 'workspace_canonical_content.dart';
 
 part 'database_manager_migration.dart';
+
+/// Outcome of one §5.2 startup migration run (Recovery Stage 4).
+class StartupMigrationReport {
+  const StartupMigrationReport({
+    required this.migrated,
+    required this.failed,
+    required this.skippedMidOperation,
+    required this.preCheckPassed,
+    required this.safetyCopyEnsured,
+  });
+
+  /// Workspaces now committed on the separate layout.
+  final List<String> migrated;
+
+  /// Workspace ID → error, for workspaces that remain on the shared
+  /// layout (fully operational there, per §5.2 step 7).
+  final Map<String, String> failed;
+
+  /// Workspaces skipped because an operation is in flight (§5.3).
+  final List<String> skippedMidOperation;
+
+  /// False when the §5.1 storage pre-check blocked the run before any
+  /// file was modified.
+  final bool preCheckPassed;
+
+  /// True when the one-time §5.1 safety copy exists and was verified.
+  final bool safetyCopyEnsured;
+}
 
 /// Owns foreground database handles and registry-based workspace resolution.
 /// Control/session state is always read from [controlDatabase].
@@ -18,7 +50,9 @@ class DatabaseManager {
     AppDatabase Function(
             {required String fileName, required String workspaceId})?
         googleDatabaseFactory,
+    Future<int?> Function(Directory directory)? freeSpaceBytesProvider,
   })  : _controlDatabase = controlDatabase,
+        _ownsControlDatabase = controlDatabase == null,
         _documentsDirectoryProvider =
             documentsDirectoryProvider ?? getApplicationDocumentsDirectory,
         _googleDatabaseFactory = googleDatabaseFactory ??
@@ -26,10 +60,21 @@ class DatabaseManager {
                 GoogleWorkspaceDatabase(
                   fileName: fileName,
                   workspaceId: workspaceId,
-                ));
+                )),
+        _freeSpaceBytesProvider =
+            freeSpaceBytesProvider ?? statvfsFreeSpaceBytes;
 
   AppDatabase? _controlDatabase;
+
+  /// True when this manager created its control database (none was
+  /// injected) and therefore owns its closure.
+  final bool _ownsControlDatabase;
   final Map<String, AppDatabase> _workspaceDatabases = <String, AppDatabase>{};
+
+  /// Registry-resolved workspaces whose authoritative handle is the
+  /// control database (Guest workspaces and shared-layout Google
+  /// workspaces under Shape A registry-true resolution, decision D-A).
+  final Set<String> _controlResolvedWorkspaceIds = <String>{};
   final Map<String, Future<AppDatabase>> _openingWorkspaceDatabases =
       <String, Future<AppDatabase>>{};
   final Map<String, Future<AppDatabase>> _provisioningGoogleWorkspaces =
@@ -38,7 +83,9 @@ class DatabaseManager {
   final AppDatabase Function(
       {required String fileName,
       required String workspaceId}) _googleDatabaseFactory;
+  final Future<int?> Function(Directory directory) _freeSpaceBytesProvider;
   Future<void>? _initializeFuture;
+  Future<StartupMigrationReport>? _startupMigrationFuture;
   String? _activeWorkspaceId;
 
   /// Migration/reconciliation helper (database_manager_migration.dart),
@@ -59,7 +106,8 @@ class DatabaseManager {
       _activeWorkspaceId = null;
       return;
     }
-    if (!_workspaceDatabases.containsKey(id)) {
+    if (!_workspaceDatabases.containsKey(id) &&
+        !_controlResolvedWorkspaceIds.contains(id)) {
       throw StateError(
           'Cannot publish a Google workspace before its database is validated.');
     }
@@ -86,6 +134,49 @@ class DatabaseManager {
     await _reconcileWorkspaceCreationJournal();
   }
 
+  /// The §5.2 startup migration run: migrates every resident
+  /// shared-layout Google workspace before any workspace is exposed.
+  /// Invoked from the app startup path (`main`'s database step) — never
+  /// from activation (Shape A). Per-workspace failures never throw: the
+  /// affected workspace remains fully operational on the shared layout
+  /// and the failure is reported here (§5.2 step 7).
+  Future<StartupMigrationReport> runStartupMigrations() =>
+      _startupMigrationFuture ??= _migrationHelper._runStartupMigrations();
+
+  /// §4 staging file for a cross-file adoption into workspace [id]:
+  /// a `VACUUM INTO` copy of the target's (empty) live file, so the
+  /// staging database starts from the target's exact baseline state
+  /// (owner marker, scoped metadata, sync row).
+  Future<AppDatabase> createAdoptionStagingDatabase(String localAccountId) {
+    return _migrationHelper._createAdoptionStagingDatabase(localAccountId);
+  }
+
+  /// Deletes an unpublished adoption staging file (retry/reset path).
+  Future<void> discardAdoptionStagingDatabase(String localAccountId) {
+    return _migrationHelper._discardAdoptionStagingDatabase(localAccountId);
+  }
+
+  /// §4 publish: swaps the verified adoption staging file into the
+  /// target's final name without overwriting anything, reopens and
+  /// re-verifies it, and restores the previous file if verification
+  /// fails. The previous (empty) file is kept as
+  /// `<final>.adoption-previous` until the adoption commits; call
+  /// [discardAdoptionPreviousDatabase] after the commit.
+  Future<AppDatabase> publishAdoptionStagingDatabase(
+    String localAccountId, {
+    required Future<void> Function(AppDatabase published) verify,
+  }) {
+    return _migrationHelper._publishAdoptionStagingDatabase(
+      localAccountId,
+      verify: verify,
+    );
+  }
+
+  /// Deletes the retained pre-adoption file after a committed adoption.
+  Future<void> discardAdoptionPreviousDatabase(String localAccountId) {
+    return _migrationHelper._discardAdoptionPreviousDatabase(localAccountId);
+  }
+
   /// Migration entry point used when a registered Google workspace still has
   /// shared-layout data; delegates to [_DatabaseManagerMigrationHelper].
   Future<AppDatabase> _migrateLegacyGoogleWorkspace(
@@ -110,6 +201,7 @@ class DatabaseManager {
         id.startsWith('guest:')) {
       return controlDatabase;
     }
+    if (_controlResolvedWorkspaceIds.contains(id)) return controlDatabase;
     final database = _workspaceDatabases[id];
     if (database == null) {
       throw StateError(
@@ -143,6 +235,7 @@ class DatabaseManager {
       if (row.isEmpty) {
         throw StateError('The requested local workspace is not registered.');
       }
+      _controlResolvedWorkspaceIds.add(id);
       return controlDatabase;
     }
 
@@ -158,10 +251,13 @@ class DatabaseManager {
     final row = rows.single;
     final layout = row.read<String>('db_layout');
     if (layout == 'shared') {
-      throw StateError(
-        'This Google workspace has the legacy shared development layout. '
-        'Its data was preserved; it needs an explicit development conversion or reset.',
-      );
+      // Shape A (decision D-A): registry-true resolution. A shared-layout
+      // Google workspace's authoritative database is the control file;
+      // it remains fully operational there until the §5.2 startup
+      // migration moves it. There is no "development conversion or
+      // reset" — that text had no basis in design v2.2.
+      _controlResolvedWorkspaceIds.add(id);
+      return controlDatabase;
     }
     if (layout != 'separate') {
       throw StateError('The Google workspace database layout is invalid.');
@@ -198,9 +294,21 @@ class DatabaseManager {
       }
       _workspaceDatabases[id] = workspace;
       return workspace;
-    } catch (_) {
+    } on StateError {
       await workspace.close();
       rethrow;
+    } catch (error) {
+      // §6 (Recovery Stage 4): a separate file that cannot be opened or
+      // validated — corrupt, wrong key, schema-incompatible — blocks
+      // access to THIS workspace with an account-specific, recoverable
+      // StateError. It never falls back to another database and never
+      // leaks a raw storage exception as the error surface.
+      await workspace.close();
+      throw StateError(
+        'The separate database for this Google workspace could not be '
+        'opened or validated. Access to this workspace is blocked; '
+        'other workspaces are unaffected. ($error)',
+      );
     }
   }
 
@@ -222,20 +330,30 @@ class DatabaseManager {
 
   Future<AppDatabase> _ensureGoogleWorkspace(String localAccountId) async {
     final id = localAccountId.trim();
-    final fileName = googleFileNameForWorkspaceId(id);
     await initialize();
     final rows = await controlDatabase.customSelect(
       'SELECT db_file_name, db_layout, db_migration_state FROM local_accounts '
       'WHERE local_account_id = ? LIMIT 1',
       variables: [Variable<String>(id)],
     ).get();
-    if (rows.isNotEmpty &&
-        rows.single.read<String>('db_layout') == 'separate') {
-      return databaseForWorkspace(id);
+    if (rows.isNotEmpty) {
+      final layout = rows.single.read<String>('db_layout');
+      if (layout == 'separate') {
+        return databaseForWorkspace(id);
+      }
+      if (layout == 'shared') {
+        // Shape A (decision D-A): activating an existing shared-layout
+        // workspace is a control-database operation. It must not
+        // provision a file and must not migrate on activation —
+        // provisioning belongs to the verified sign-in creation flow
+        // (the no-row path below) and migration to the §5.2 startup
+        // run ([runStartupMigrations]).
+        _controlResolvedWorkspaceIds.add(id);
+        return controlDatabase;
+      }
+      throw StateError('The Google workspace database layout is invalid.');
     }
-    if (rows.isNotEmpty && await _hasSharedWorkspaceData(id)) {
-      return _migrateLegacyGoogleWorkspace(id, fileName);
-    }
+    final fileName = googleFileNameForWorkspaceId(id);
 
     final now = DateTime.now().microsecondsSinceEpoch;
     if (rows.isEmpty) {
@@ -441,25 +559,6 @@ class DatabaseManager {
     }
   }
 
-  Future<bool> _hasSharedWorkspaceData(String id) async {
-    const queries = <String>[
-      'SELECT 1 FROM qaza_records WHERE user_id = ? LIMIT 1',
-      'SELECT 1 FROM daily_salah_logs WHERE user_id = ? LIMIT 1',
-      'SELECT 1 FROM qaza_additions WHERE user_id = ? LIMIT 1',
-      'SELECT 1 FROM qaza_deletion_actions WHERE user_id = ? LIMIT 1',
-      'SELECT 1 FROM qaza_deletion_action_record_snapshots WHERE user_id = ? LIMIT 1',
-      'SELECT 1 FROM qaza_profile_plan_provenance WHERE user_id = ? LIMIT 1',
-      'SELECT 1 FROM account_profiles WHERE local_account_id = ? LIMIT 1',
-      'SELECT 1 FROM account_plan_revisions WHERE local_account_id = ? LIMIT 1',
-    ];
-    for (final query in queries) {
-      final found = await controlDatabase
-          .customSelect(query, variables: [Variable<String>(id)]).get();
-      if (found.isNotEmpty) return true;
-    }
-    return false;
-  }
-
   Future<void> _reconcileWorkspaceCreationJournal() async {
     final rows = await controlDatabase
         .customSelect(
@@ -571,82 +670,37 @@ class DatabaseManager {
       throw StateError(
           'Cannot hash a Google workspace with an invalid owner marker.');
     }
-    final scopedRows = await workspace.customSelect(
-      '''SELECT key, value FROM meta_store
-         WHERE key IN (?, ?, ?, ?, ?) ORDER BY key''',
-      variables: [
-        Variable<String>('workspace_display_name:$id'),
-        Variable<String>('daily_salah_tracking_enabled:$id'),
-        Variable<String>('daily_salah_tracking_setup_dismissed:$id'),
-        Variable<String>('workspace_revision:$id'),
-        Variable<String>('initial_cloud_backup_pending:$id'),
-      ],
-    ).get();
-    final scoped = [
-      for (final row in scopedRows)
-        <String>[row.read<String>('key'), row.read<String>('value')],
-    ];
-    const ownerTables = <(String, String)>[
-      ('qaza_records', 'user_id'),
-      ('daily_salah_logs', 'user_id'),
-      ('qaza_additions', 'user_id'),
-      ('qaza_deletion_actions', 'user_id'),
-      ('qaza_deletion_action_record_snapshots', 'user_id'),
-      ('qaza_profile_plan_provenance', 'user_id'),
-      ('account_profiles', 'local_account_id'),
-      ('account_plan_revisions', 'local_account_id'),
-    ];
-    final counts = <List<Object>>[];
-    for (final (table, column) in ownerTables) {
-      final rows = await workspace.customSelect(
-        'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$column" = ?',
-        variables: [Variable<String>(id)],
-      ).get();
-      final count = rows.single.read<int>('row_count');
-      if (count != 0) {
+    // A fresh workspace must not contain any owned rows yet.
+    final counts = await WorkspaceCanonicalContent.rowCounts(workspace, id);
+    for (final entry in counts.entries) {
+      if (entry.value != 0) {
         throw StateError(
-            'Fresh workspace unexpectedly contains $count rows in $table.');
+            'Fresh workspace unexpectedly contains ${entry.value} rows in ${entry.key}.');
       }
-      counts.add(<Object>[table, count]);
     }
     final syncRows = await workspace.customSelect(
-      '''SELECT local_account_id, sync_state, local_revision, last_synced_revision,
-                last_synced_local_hash, last_synced_remote_version,
-                last_synced_remote_hash, last_checked_at, conflict_marker,
-                remote_account_id
-         FROM workspace_sync_metadata WHERE local_account_id = ? LIMIT 1''',
+      'SELECT COUNT(*) AS row_count FROM workspace_sync_metadata '
+      'WHERE local_account_id = ?',
       variables: [Variable<String>(id)],
     ).get();
-    if (syncRows.length != 1) {
+    if (syncRows.single.read<int>('row_count') != 1) {
       throw StateError(
           'A Google workspace must have exactly one sync metadata row.');
     }
-    final sync = syncRows.single;
-    final canonical = jsonEncode(<Object?>[
-      'workspace-canonical-v1',
-      id,
-      owner,
-      scoped,
-      counts,
-      <Object?>[
-        sync.read<String>('local_account_id'),
-        sync.read<String>('sync_state'),
-        sync.read<int>('local_revision'),
-        sync.read<int?>('last_synced_revision'),
-        sync.read<String?>('last_synced_local_hash'),
-        sync.read<String?>('last_synced_remote_version'),
-        sync.read<String?>('last_synced_remote_hash'),
-        sync.read<String?>('last_checked_at'),
-        sync.read<String?>('conflict_marker'),
-        sync.read<String?>('remote_account_id'),
-      ],
-    ]);
-    return sha256.convert(utf8.encode(canonical)).toString();
+    // Unified canonical hash (decision D-D(ii)): the §7 scoped-export
+    // canonicalisation, shared with migration, adoption, and export.
+    // The retired 'workspace-canonical-v1' form is no longer produced.
+    return WorkspaceCanonicalContent.hash(workspace, id);
   }
 
   Future<void> close() async {
+    // A control database injected by the caller stays caller-owned: this
+    // manager closes only the workspace handles it opened and a control
+    // database it created itself. (Recovery Stage 4: provider scopes and
+    // AccountLocalStore both inject the shared control handle; closing
+    // it here would brick the handle for its actual owner.)
     final handles = <AppDatabase>{
-      if (_controlDatabase != null) _controlDatabase!,
+      if (_controlDatabase != null && _ownsControlDatabase) _controlDatabase!,
       ..._workspaceDatabases.values,
     };
     _controlDatabase = null;

@@ -1013,6 +1013,18 @@ class AppDatabase extends _$AppDatabase {
         'ALTER TABLE workspace_operation_journal ADD COLUMN content_hash TEXT',
       );
     }
+    // Recovery Stage 4 (design §5.1): the migration manifest carries
+    // distinct source and target hashes, not one shared content hash.
+    if (!names.contains('source_hash')) {
+      await customStatement(
+        'ALTER TABLE workspace_operation_journal ADD COLUMN source_hash TEXT',
+      );
+    }
+    if (!names.contains('target_hash')) {
+      await customStatement(
+        'ALTER TABLE workspace_operation_journal ADD COLUMN target_hash TEXT',
+      );
+    }
   }
 
   /// Adds physical-database routing metadata to the control registry.
@@ -1072,7 +1084,9 @@ class AppDatabase extends _$AppDatabase {
           error_message TEXT,
           staging_file TEXT,
           final_file TEXT,
-          content_hash TEXT
+          content_hash TEXT,
+          source_hash TEXT,
+          target_hash TEXT
         )
       ''');
       await customStatement('''

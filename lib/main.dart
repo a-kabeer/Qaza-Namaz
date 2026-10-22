@@ -121,7 +121,12 @@ Future<void> _initializeDatabase() async {
   final databaseManager = DatabaseManager();
   try {
     // Force the encrypted control database to open and validate its schema.
-    await databaseManager.controlDatabase.readDbRevision();
+    await databaseManager.initialize();
+    // Recovery Stage 4 (§5.2): the startup migration run executes here,
+    // before runApp — every resident shared-layout Google workspace is
+    // migrated (or left fully operational on the shared layout with the
+    // failure recorded in the report) before any workspace is exposed.
+    await databaseManager.runStartupMigrations();
   } finally {
     await databaseManager.close();
   }

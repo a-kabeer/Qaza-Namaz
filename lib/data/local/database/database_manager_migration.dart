@@ -56,45 +56,10 @@ class _DatabaseManagerMigrationHelper {
   Future<Map<String, dynamic>?> _readScopedRecoverySnapshot(
     AppDatabase source,
     String id,
-  ) async {
-    final table = await source
-        .customSelect(
-          "SELECT 1 FROM sqlite_master WHERE type = 'table' "
-          "AND name = 'local_recovery_snapshots' LIMIT 1",
-        )
-        .get();
-    if (table.isEmpty) return null;
-    final rows = await source
-        .customSelect(
-          'SELECT snapshot_id, created_at, payload_json FROM local_recovery_snapshots '
-          'ORDER BY created_at DESC LIMIT 1',
-        )
-        .get();
-    if (rows.isEmpty) return null;
-    final row = rows.single;
-    final payload = row.read<String>('payload_json');
-    try {
-      final root = Map<String, dynamic>.from(jsonDecode(payload) as Map);
-      final data = Map<String, dynamic>.from(root['data'] as Map);
-      final accounts = data['local_accounts'] as List<dynamic>;
-      final sessions = data['app_session_state'] as List<dynamic>;
-      if (accounts.length != 1 ||
-          accounts.single is! Map ||
-          (accounts.single as Map)['local_account_id'] != id ||
-          sessions.length != 1 ||
-          sessions.single is! Map ||
-          (sessions.single as Map)['active_local_account_id'] != id) {
-        return null;
-      }
-      return <String, dynamic>{
-        'snapshot_id': row.read<String>('snapshot_id'),
-        'created_at': row.read<String>('created_at'),
-        'payload_json': payload,
-      };
-    } catch (_) {
-      // An ambiguous recovery snapshot remains in the control database.
-      return null;
-    }
+  ) {
+    // R-15 (Recovery Stage 4): selection is scoped to this workspace —
+    // the newest snapshot *for this workspace*, not the newest overall.
+    return WorkspaceCanonicalContent.scopedRecoverySnapshot(source, id);
   }
 
   Future<List<String>> _tableColumns(AppDatabase source, String table) async {
@@ -169,82 +134,11 @@ class _DatabaseManagerMigrationHelper {
   Future<String> _canonicalWorkspaceContentHash(
     AppDatabase source,
     String id,
-  ) async {
-    if (source.isGoogleWorkspaceDatabase &&
-        await source.readWorkspaceFileOwner() != id) {
-      throw StateError(
-        'Cannot hash a Google workspace database owned by another ID.',
-      );
-    }
-
-    final tablePayload = <Object?>[];
-    for (final (table, ownerColumn) in _workspaceOwnedTables) {
-      final columns = await _tableColumns(source, table);
-      if (columns.isEmpty || !columns.contains(ownerColumn)) {
-        throw StateError(
-          'Workspace table $table is missing owner column $ownerColumn.',
-        );
-      }
-      final primaryKeys = await _tablePrimaryKeyColumns(source, table);
-      final orderBy = (primaryKeys.isEmpty ? columns : primaryKeys)
-          .map((column) => '"$column"')
-          .join(', ');
-      final quotedColumns = columns.map((column) => '"$column"').join(', ');
-      final rows = await source.customSelect(
-        'SELECT $quotedColumns FROM "$table" WHERE "$ownerColumn" = ? ORDER BY $orderBy',
-        variables: [Variable<String>(id)],
-      ).get();
-      tablePayload.add(<Object?>[
-        table,
-        columns,
-        for (final row in rows)
-          <Object?>[for (final column in columns) row.data[column]],
-      ]);
-    }
-
-    final metadata = await _readWorkspaceMetadata(source, id);
-    final syncRows = await source.customSelect(
-      '''SELECT local_account_id, sync_state, local_revision, last_synced_revision,
-                last_synced_local_hash, last_synced_remote_version,
-                last_synced_remote_hash, last_checked_at, conflict_marker,
-                remote_account_id
-         FROM workspace_sync_metadata WHERE local_account_id = ? LIMIT 1''',
-      variables: [Variable<String>(id)],
-    ).get();
-    final sync = syncRows.isEmpty
-        ? <Object?>[id, 'pending', 1, null, null, null, null, null, null, null]
-        : <Object?>[
-            syncRows.single.read<String>('local_account_id'),
-            syncRows.single.read<String>('sync_state'),
-            syncRows.single.read<int>('local_revision'),
-            syncRows.single.read<int?>('last_synced_revision'),
-            syncRows.single.read<String?>('last_synced_local_hash'),
-            syncRows.single.read<String?>('last_synced_remote_version'),
-            syncRows.single.read<String?>('last_synced_remote_hash'),
-            syncRows.single.read<String?>('last_checked_at'),
-            syncRows.single.read<String?>('conflict_marker'),
-            syncRows.single.read<String?>('remote_account_id'),
-          ];
-    final snapshot = await _readScopedRecoverySnapshot(source, id);
-    final canonical = jsonEncode(<Object?>[
-      'workspace-content-v1',
-      id,
-      metadata.entries
-          // Revision counters are operational state, not content identity.
-          // Row-copy triggers naturally advance them in the destination file.
-          .where((entry) => entry.key != 'workspace_revision:$id')
-          .map((entry) => <String>[entry.key, entry.value])
-          .toList(growable: false),
-      tablePayload,
-      sync,
-      if (snapshot != null)
-        <Object?>[
-          snapshot['snapshot_id'],
-          snapshot['created_at'],
-          snapshot['payload_json'],
-        ],
-    ]);
-    return sha256.convert(utf8.encode(canonical)).toString();
+  ) {
+    // Unified canonical hash (decision D-D(ii), Recovery Stage 4): the
+    // §7 scoped-export canonicalisation in WorkspaceCanonicalContent.
+    // The retired 'workspace-content-v1' form is no longer produced.
+    return WorkspaceCanonicalContent.hash(source, id);
   }
 
   Future<void> _commitLegacyGoogleWorkspaceMigration({
@@ -252,7 +146,6 @@ class _DatabaseManagerMigrationHelper {
     required String fileName,
     required String operationId,
     required String expectedHash,
-    String? recoverySnapshotId,
     required AppDatabase verifiedWorkspace,
   }) async {
     final id = localAccountId;
@@ -295,29 +188,33 @@ class _DatabaseManagerMigrationHelper {
           'The shared source rows have been preserved.',
         );
       }
+      // §7 counter rule: revision/sync counters are excluded from the
+      // canonical hash and verified separately — here, field-by-field
+      // equality of the copied sync row (when the source has one).
+      final sourceSync = await WorkspaceCanonicalContent.syncRowValues(
+        _manager.controlDatabase,
+        id,
+      );
+      if (sourceSync != null) {
+        final targetSync = await WorkspaceCanonicalContent.syncRowValues(
+          verifiedWorkspace,
+          id,
+        );
+        if (targetSync == null ||
+            jsonEncode(targetSync) != jsonEncode(sourceSync)) {
+          throw StateError(
+            'Workspace sync metadata changed during migration verification. '
+            'The shared source rows have been preserved.',
+          );
+        }
+      }
 
-      for (final (table, ownerColumn) in _workspaceOwnedTables) {
-        await _manager.controlDatabase.customUpdate(
-          'DELETE FROM "$table" WHERE "$ownerColumn" = ?',
-          variables: [Variable<String>(id)],
-        );
-      }
-      await _manager.controlDatabase.customUpdate(
-        'DELETE FROM workspace_sync_metadata WHERE local_account_id = ?',
-        variables: [Variable<String>(id)],
-      );
-      await _manager.controlDatabase.customUpdate(
-        'DELETE FROM meta_store WHERE key IN (?, ?, ?, ?, ?)',
-        variables: _workspaceMetadataKeys(id)
-            .map((key) => Variable<String>(key))
-            .toList(),
-      );
-      if (recoverySnapshotId != null) {
-        await _manager.controlDatabase.customUpdate(
-          'DELETE FROM local_recovery_snapshots WHERE snapshot_id = ?',
-          variables: [Variable<String>(recoverySnapshotId)],
-        );
-      }
+      // §5.4 retention (decision D-C): the commit does NOT delete the
+      // shared source rows. They stay in the control database, marked
+      // superseded by the registry's db_layout = 'separate' — the
+      // registry decides which copy is authoritative, and the retained
+      // rows are never read again. Physical deletion is the separately
+      // gated Stage 6 cleanup, not part of migration.
       await _manager.controlDatabase.customUpdate(
         '''UPDATE local_accounts SET db_file_name = ?, db_layout = 'separate',
            db_migration_state = 'committed', updated_at = ?
@@ -330,9 +227,12 @@ class _DatabaseManagerMigrationHelper {
       );
       await _manager.controlDatabase.customUpdate(
         '''UPDATE workspace_operation_journal
-           SET phase = 'committed', updated_at = ?, error_message = NULL
+           SET phase = 'committed', source_hash = ?, target_hash = ?,
+               updated_at = ?, error_message = NULL
            WHERE operation_id = ?''',
         variables: [
+          Variable<String>(sourceHash),
+          Variable<String>(targetHash),
           Variable<int>(DateTime.now().microsecondsSinceEpoch),
           Variable<String>(operationId),
         ],
@@ -345,6 +245,20 @@ class _DatabaseManagerMigrationHelper {
     String id,
     String finalFileName,
   ) async {
+    // §5.3 state rules (decision D-C): never migrate mid-operation.
+    final lifecycleRows = await _manager.controlDatabase.customSelect(
+      'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+      variables: [Variable<String>(id)],
+    ).get();
+    if (lifecycleRows.isNotEmpty) {
+      final lifecycle = lifecycleRows.single.read<String>('lifecycle_state');
+      if (lifecycle == 'adopting' || lifecycle == 'restoring') {
+        throw StateError(
+          'Migration waits while this workspace is $lifecycle; '
+          'it will run at a later startup.',
+        );
+      }
+    }
     final directory = await _manager._documentsDirectoryProvider();
     final finalFile = File('${directory.path}/$finalFileName');
     final stagingName = '$finalFileName.migration-staging';
@@ -379,8 +293,8 @@ class _DatabaseManagerMigrationHelper {
       '''INSERT OR REPLACE INTO workspace_operation_journal
          (operation_id, operation_type, source_local_account_id, target_local_account_id,
           phase, snapshot_id, created_at, updated_at, staging_file, final_file,
-          content_hash, error_message)
-         VALUES (?, 'google_workspace_migration', ?, ?, 'prepared', ?, ?, ?, ?, ?, NULL, NULL)''',
+          content_hash, source_hash, target_hash, error_message)
+         VALUES (?, 'google_workspace_migration', ?, ?, 'copying', ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL)''',
       variables: [
         Variable<String>(operationId),
         Variable<String>(id),
@@ -390,6 +304,15 @@ class _DatabaseManagerMigrationHelper {
         Variable<int>(now),
         Variable<String>(stagingName),
         Variable<String>(finalFileName),
+      ],
+    );
+    // §5.1 manifest states: the registry mirrors the journal phase.
+    await _manager.controlDatabase.customUpdate(
+      "UPDATE local_accounts SET db_migration_state = 'copying', updated_at = ? "
+      'WHERE local_account_id = ?',
+      variables: [
+        Variable<int>(now),
+        Variable<String>(id),
       ],
     );
 
@@ -476,6 +399,29 @@ class _DatabaseManagerMigrationHelper {
         );
       }
 
+      // §5.1: the manifest records the verifying state with the
+      // distinct source and target hashes before finalization.
+      await _manager.controlDatabase.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'verifying', source_hash = ?, target_hash = ?,
+               content_hash = ?, updated_at = ?
+           WHERE operation_id = ?''',
+        variables: [
+          Variable<String>(sourceHash),
+          Variable<String>(stagingHash),
+          Variable<String>(stagingHash),
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(operationId),
+        ],
+      );
+      await _manager.controlDatabase.customUpdate(
+        "UPDATE local_accounts SET db_migration_state = 'verifying', updated_at = ? "
+        'WHERE local_account_id = ?',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(id),
+        ],
+      );
       await _manager.controlDatabase.customUpdate(
         '''UPDATE workspace_operation_journal
            SET phase = 'finalizing', content_hash = ?, updated_at = ?
@@ -484,6 +430,14 @@ class _DatabaseManagerMigrationHelper {
           Variable<String>(stagingHash),
           Variable<int>(DateTime.now().microsecondsSinceEpoch),
           Variable<String>(operationId),
+        ],
+      );
+      await _manager.controlDatabase.customUpdate(
+        "UPDATE local_accounts SET db_migration_state = 'finalizing', updated_at = ? "
+        'WHERE local_account_id = ?',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(id),
         ],
       );
       await staging.close();
@@ -512,7 +466,6 @@ class _DatabaseManagerMigrationHelper {
           fileName: finalFileName,
           operationId: operationId,
           expectedHash: stagingHash,
-          recoverySnapshotId: currentSnapshot?['snapshot_id'] as String?,
           verifiedWorkspace: published,
         );
         _manager._workspaceDatabases[id] = published;
@@ -546,6 +499,14 @@ class _DatabaseManagerMigrationHelper {
             Variable<String>(operationId),
           ],
         );
+        await _manager.controlDatabase.customUpdate(
+          "UPDATE local_accounts SET db_migration_state = 'failed', updated_at = ? "
+          "WHERE local_account_id = ? AND db_layout = 'shared'",
+          variables: [
+            Variable<int>(DateTime.now().microsecondsSinceEpoch),
+            Variable<String>(id),
+          ],
+        );
       }
       rethrow;
     }
@@ -560,7 +521,6 @@ class _DatabaseManagerMigrationHelper {
     final stagingName = journalRow.read<String?>('staging_file');
     final finalName = journalRow.read<String?>('final_file');
     final expectedHash = journalRow.read<String?>('content_hash');
-    final recoverySnapshotId = journalRow.read<String?>('snapshot_id');
     final directory = await _manager._documentsDirectoryProvider();
 
     if (phase != 'finalizing' || stagingName == null || finalName == null) {
@@ -582,6 +542,14 @@ class _DatabaseManagerMigrationHelper {
         variables: [
           Variable<int>(DateTime.now().microsecondsSinceEpoch),
           Variable<String>(operationId),
+        ],
+      );
+      await _manager.controlDatabase.customUpdate(
+        "UPDATE local_accounts SET db_migration_state = 'failed', updated_at = ? "
+        "WHERE local_account_id = ? AND db_layout = 'shared'",
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(id),
         ],
       );
       return;
@@ -628,11 +596,340 @@ class _DatabaseManagerMigrationHelper {
         fileName: finalName,
         operationId: operationId,
         expectedHash: expectedHash,
-        recoverySnapshotId: recoverySnapshotId,
         verifiedWorkspace: published,
       );
     } finally {
       await published.close();
     }
+  }
+
+  // ---------------------------------------------------------------------
+  // Recovery Stage 4: §5.1 safety copy + storage pre-check, §5.2 startup
+  // run, §6 quarantine scan, §4 adoption staging publish.
+  // ---------------------------------------------------------------------
+
+  static const String safetyCopyFileName =
+      'qaza_namaz.sqlite.migration-safety-copy';
+
+  /// §5.2 startup run. See [DatabaseManager.runStartupMigrations].
+  Future<StartupMigrationReport> _runStartupMigrations() async {
+    await _manager.initialize();
+    final rows = await _manager.controlDatabase
+        .customSelect(
+          "SELECT local_account_id, lifecycle_state FROM local_accounts "
+          "WHERE db_layout = 'shared' "
+          "AND substr(local_account_id, 1, 7) = 'google_' "
+          'ORDER BY local_account_id',
+        )
+        .get();
+    final migrated = <String>[];
+    final failed = <String, String>{};
+    final skipped = <String>[];
+    final eligible = <String>[];
+    for (final row in rows) {
+      final id = row.read<String>('local_account_id');
+      final lifecycle = row.read<String>('lifecycle_state');
+      // §5.3: a workspace mid-adoption or mid-restore is never migrated.
+      if (lifecycle == 'adopting' || lifecycle == 'restoring') {
+        skipped.add(id);
+        continue;
+      }
+      // §5.3/§6: a workspace with a non-terminal operation in flight is
+      // left exactly as it is for this run.
+      final inFlight = await _manager.controlDatabase.customSelect(
+        'SELECT 1 FROM workspace_operation_journal '
+        'WHERE (source_local_account_id = ? OR target_local_account_id = ?) '
+        "AND phase NOT IN ('committed', 'failed', 'cleaned') LIMIT 1",
+        variables: [Variable<String>(id), Variable<String>(id)],
+      ).get();
+      if (inFlight.isNotEmpty) {
+        skipped.add(id);
+        continue;
+      }
+      eligible.add(id);
+    }
+    if (eligible.isEmpty) {
+      return StartupMigrationReport(
+        migrated: migrated,
+        failed: failed,
+        skippedMidOperation: skipped,
+        preCheckPassed: true,
+        safetyCopyEnsured: false,
+      );
+    }
+
+    final directory = await _manager._documentsDirectoryProvider();
+    // §5.1 storage pre-check: required space is the safety copy (≈ the
+    // control size) + the largest workspace's staging and final files +
+    // margin; a blanket 3× the control size satisfies the computed
+    // requirement for any single-workspace staging/final pair. The check
+    // runs before any file is modified; when free space cannot be
+    // determined the run proceeds (nothing is fabricated) and the
+    // per-workspace copy will fail safe on its own.
+    final controlSize = await _controlDatabaseSizeBytes();
+    final requiredBytes = controlSize * 3;
+    final freeBytes = await _manager._freeSpaceBytesProvider(directory);
+    if (freeBytes != null && freeBytes < requiredBytes) {
+      for (final id in eligible) {
+        failed[id] = 'Insufficient storage for the migration pre-check: '
+            'required $requiredBytes bytes, available $freeBytes bytes. '
+            'No file was modified.';
+      }
+      return StartupMigrationReport(
+        migrated: migrated,
+        failed: failed,
+        skippedMidOperation: skipped,
+        preCheckPassed: false,
+        safetyCopyEnsured: false,
+      );
+    }
+
+    // §5.1 safety copy: created ONCE before the first migration of the
+    // run (and of the database's lifetime), never refreshed afterwards.
+    bool safetyOk;
+    try {
+      safetyOk = await _ensureSafetyCopy(directory);
+    } catch (error) {
+      safetyOk = false;
+      for (final id in eligible) {
+        failed[id] = 'Safety copy could not be created or verified: $error';
+      }
+    }
+    if (!safetyOk) {
+      return StartupMigrationReport(
+        migrated: migrated,
+        failed: failed,
+        skippedMidOperation: skipped,
+        preCheckPassed: true,
+        safetyCopyEnsured: false,
+      );
+    }
+
+    // §6: unrecognized Google files are quarantined, never exposed as
+    // empty workspaces and never deleted.
+    await _quarantineUnrecognizedGoogleFiles(directory);
+
+    for (final id in eligible) {
+      try {
+        await _migrateLegacyGoogleWorkspace(
+          id,
+          DatabaseManager.googleFileNameForWorkspaceId(id),
+        );
+        _manager._controlResolvedWorkspaceIds.remove(id);
+        migrated.add(id);
+      } catch (error) {
+        // §5.2 step 7: the workspace remains fully operational on the
+        // shared layout; the failure is recorded, not hidden.
+        failed[id] = error.toString();
+      }
+    }
+    return StartupMigrationReport(
+      migrated: migrated,
+      failed: failed,
+      skippedMidOperation: skipped,
+      preCheckPassed: true,
+      safetyCopyEnsured: true,
+    );
+  }
+
+  Future<int> _controlDatabaseSizeBytes() async {
+    final pageCountRows =
+        await _manager.controlDatabase.customSelect('PRAGMA page_count').get();
+    final pageSizeRows =
+        await _manager.controlDatabase.customSelect('PRAGMA page_size').get();
+    final pageCount = pageCountRows.single.read<int>('page_count');
+    final pageSize = pageSizeRows.single.read<int>('page_size');
+    return pageCount * pageSize;
+  }
+
+  Future<bool> _ensureSafetyCopy(Directory directory) async {
+    final copyFile = File('${directory.path}/$safetyCopyFileName');
+    if (await copyFile.exists()) {
+      // The pristine pre-migration copy is never refreshed or
+      // overwritten (§5.1); it is only re-verified.
+      return _verifySafetyCopy(copyFile);
+    }
+    final escapedPath = copyFile.path.replaceAll("'", "''");
+    await _manager.controlDatabase
+        .customStatement("VACUUM INTO '$escapedPath'");
+    return _verifySafetyCopy(copyFile);
+  }
+
+  Future<bool> _verifySafetyCopy(File copyFile) async {
+    if (!await copyFile.exists()) return false;
+    final handle = await copyFile.open();
+    final header = await handle.read(16);
+    await handle.close();
+    final isPlainSqlite = header.length >= 15 &&
+        String.fromCharCodes(header.sublist(0, 15)) == 'SQLite format 3';
+    if (isPlainSqlite) {
+      final copy = AppDatabase(NativeDatabase(copyFile));
+      try {
+        final integrity =
+            await copy.customSelect('PRAGMA integrity_check').get();
+        return integrity.isNotEmpty &&
+            integrity.first.read<String>('integrity_check') == 'ok';
+      } catch (_) {
+        return false;
+      } finally {
+        await copy.close();
+      }
+    }
+    // Encrypted copy: verify under the real SQLCipher key.
+    try {
+      return await DatabaseSafetyCopy.verifyEncrypted(copyFile);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _quarantineUnrecognizedGoogleFiles(Directory directory) async {
+    // A file is recognized when its name is the deterministic S3 name
+    // of ANY registered Google workspace (db_file_name is NULL for a
+    // shared workspace until its migration commits, so the column alone
+    // cannot be the recognition test) or is recorded as a db_file_name.
+    final registered = await _manager.controlDatabase
+        .customSelect(
+          'SELECT local_account_id, db_file_name FROM local_accounts',
+        )
+        .get();
+    final knownNames = <String>{};
+    for (final row in registered) {
+      final id = row.read<String>('local_account_id');
+      if (id.startsWith('google_')) {
+        knownNames.add(DatabaseManager.googleFileNameForWorkspaceId(id));
+      }
+      final fileName = row.read<String?>('db_file_name');
+      if (fileName != null) knownNames.add(fileName);
+    }
+    final pattern = RegExp(r'^qaza_google_[0-9a-f]{32}\.sqlite$');
+    await for (final entity in directory.list()) {
+      if (entity is! File) continue;
+      final name = entity.uri.pathSegments.last;
+      if (!pattern.hasMatch(name) || knownNames.contains(name)) continue;
+      final quarantine = File('${entity.path}.quarantine');
+      if (!await quarantine.exists()) {
+        await entity.rename(quarantine.path);
+      }
+    }
+  }
+
+  String _adoptionStagingName(String id) =>
+      '${DatabaseManager.googleFileNameForWorkspaceId(id)}.adoption-staging';
+
+  String _adoptionPreviousName(String id) =>
+      '${DatabaseManager.googleFileNameForWorkspaceId(id)}.adoption-previous';
+
+  Future<AppDatabase> _createAdoptionStagingDatabase(String id) async {
+    await _manager.initialize();
+    final live = await _manager.databaseForWorkspace(id);
+    if (!live.isGoogleWorkspaceDatabase) {
+      throw StateError(
+        'Cross-file adoption requires a separate Google workspace target.',
+      );
+    }
+    final directory = await _manager._documentsDirectoryProvider();
+    final stagingName = _adoptionStagingName(id);
+    final stagingFile = File('${directory.path}/$stagingName');
+    if (await stagingFile.exists()) {
+      throw StateError(
+        'An adoption staging file already exists; it will not be overwritten.',
+      );
+    }
+    final escapedPath = stagingFile.path.replaceAll("'", "''");
+    await live.customStatement("VACUUM INTO '$escapedPath'");
+    final staging = _manager._googleDatabaseFactory(
+      fileName: stagingName,
+      workspaceId: id,
+    );
+    try {
+      if (await staging.readWorkspaceFileOwner() != id) {
+        throw StateError('Adoption staging file has an invalid owner marker.');
+      }
+      return staging;
+    } catch (_) {
+      await staging.close();
+      rethrow;
+    }
+  }
+
+  Future<void> _discardAdoptionStagingDatabase(String id) async {
+    final directory = await _manager._documentsDirectoryProvider();
+    final stagingFile = File('${directory.path}/${_adoptionStagingName(id)}');
+    if (await stagingFile.exists()) await stagingFile.delete();
+  }
+
+  Future<AppDatabase> _publishAdoptionStagingDatabase(
+    String id, {
+    required Future<void> Function(AppDatabase published) verify,
+  }) async {
+    final directory = await _manager._documentsDirectoryProvider();
+    final finalName = DatabaseManager.googleFileNameForWorkspaceId(id);
+    final finalFile = File('${directory.path}/$finalName');
+    final stagingFile = File('${directory.path}/${_adoptionStagingName(id)}');
+    final previousFile = File('${directory.path}/${_adoptionPreviousName(id)}');
+    if (!await stagingFile.exists()) {
+      throw StateError('The adoption staging file is missing.');
+    }
+    if (await previousFile.exists()) {
+      throw StateError(
+        'A retained pre-adoption file requires recovery before publishing.',
+      );
+    }
+    final cached = _manager._workspaceDatabases.remove(id);
+    if (cached != null) await cached.close();
+    var movedFinalAside = false;
+    try {
+      if (await finalFile.exists()) {
+        await finalFile.rename(previousFile.path);
+        movedFinalAside = true;
+      }
+      await stagingFile.rename(finalFile.path);
+    } catch (_) {
+      if (movedFinalAside &&
+          !await finalFile.exists() &&
+          await previousFile.exists()) {
+        await previousFile.rename(finalFile.path);
+      }
+      rethrow;
+    }
+    final published = _manager._googleDatabaseFactory(
+      fileName: finalName,
+      workspaceId: id,
+    );
+    try {
+      if (await published.readWorkspaceFileOwner() != id) {
+        throw StateError('Published adoption file has an invalid owner.');
+      }
+      final integrity =
+          await published.customSelect('PRAGMA integrity_check').get();
+      if (integrity.isEmpty ||
+          integrity.first.read<String>('integrity_check') != 'ok') {
+        throw StateError('Published adoption file failed integrity check.');
+      }
+      await verify(published);
+    } catch (_) {
+      await published.close();
+      // Never leave an unverified file live: quarantine it and restore
+      // the previous file untouched.
+      final quarantine = File('${finalFile.path}.quarantine');
+      if (await finalFile.exists() && !await quarantine.exists()) {
+        await finalFile.rename(quarantine.path);
+      }
+      if (movedFinalAside &&
+          await previousFile.exists() &&
+          !await finalFile.exists()) {
+        await previousFile.rename(finalFile.path);
+      }
+      rethrow;
+    }
+    _manager._workspaceDatabases[id] = published;
+    return published;
+  }
+
+  Future<void> _discardAdoptionPreviousDatabase(String id) async {
+    final directory = await _manager._documentsDirectoryProvider();
+    final previousFile = File('${directory.path}/${_adoptionPreviousName(id)}');
+    if (await previousFile.exists()) await previousFile.delete();
   }
 }
