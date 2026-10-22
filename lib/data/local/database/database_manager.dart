@@ -27,6 +27,10 @@ class DatabaseManager {
 
   AppDatabase? _controlDatabase;
   final Map<String, AppDatabase> _workspaceDatabases = <String, AppDatabase>{};
+  final Map<String, Future<AppDatabase>> _openingWorkspaceDatabases =
+      <String, Future<AppDatabase>>{};
+  final Map<String, Future<AppDatabase>> _provisioningGoogleWorkspaces =
+      <String, Future<AppDatabase>>{};
   final Future<Directory> Function() _documentsDirectoryProvider;
   final AppDatabase Function({required String fileName, required String workspaceId})
       _googleDatabaseFactory;
@@ -89,7 +93,20 @@ class DatabaseManager {
     return database;
   }
 
-  Future<AppDatabase> databaseForWorkspace(String localAccountId) async {
+  Future<AppDatabase> databaseForWorkspace(String localAccountId) {
+    final id = localAccountId.trim();
+    final pending = _openingWorkspaceDatabases[id];
+    if (pending != null) return pending;
+    final future = _openDatabaseForWorkspace(id);
+    _openingWorkspaceDatabases[id] = future;
+    return future.whenComplete(() {
+      if (identical(_openingWorkspaceDatabases[id], future)) {
+        _openingWorkspaceDatabases.remove(id);
+      }
+    });
+  }
+
+  Future<AppDatabase> _openDatabaseForWorkspace(String localAccountId) async {
     final id = localAccountId.trim();
     if (id.isEmpty) throw ArgumentError.value(localAccountId, 'localAccountId');
     if (!id.startsWith('google_')) {
@@ -160,7 +177,20 @@ class DatabaseManager {
   /// Creates a new separate Google workspace only when called by a flow that
   /// has already verified the Google identity. Existing shared workspace data
   /// is preserved and is never silently discarded.
-  Future<AppDatabase> ensureGoogleWorkspace(String localAccountId) async {
+  Future<AppDatabase> ensureGoogleWorkspace(String localAccountId) {
+    final id = localAccountId.trim();
+    final pending = _provisioningGoogleWorkspaces[id];
+    if (pending != null) return pending;
+    final future = _ensureGoogleWorkspace(id);
+    _provisioningGoogleWorkspaces[id] = future;
+    return future.whenComplete(() {
+      if (identical(_provisioningGoogleWorkspaces[id], future)) {
+        _provisioningGoogleWorkspaces.remove(id);
+      }
+    });
+  }
+
+  Future<AppDatabase> _ensureGoogleWorkspace(String localAccountId) async {
     final id = localAccountId.trim();
     final fileName = googleFileNameForWorkspaceId(id);
     await initialize();
@@ -550,6 +580,8 @@ class DatabaseManager {
     };
     _controlDatabase = null;
     _workspaceDatabases.clear();
+    _openingWorkspaceDatabases.clear();
+    _provisioningGoogleWorkspaces.clear();
     _activeWorkspaceId = null;
     for (final database in handles) {
       await database.close();
