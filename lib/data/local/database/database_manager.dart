@@ -7,6 +7,8 @@ import 'package:path_provider/path_provider.dart';
 
 import 'app_database.dart';
 
+part 'database_manager_migration.dart';
+
 /// Owns foreground database handles and registry-based workspace resolution.
 /// Control/session state is always read from [controlDatabase].
 class DatabaseManager {
@@ -213,10 +215,7 @@ class DatabaseManager {
       return databaseForWorkspace(id);
     }
     if (rows.isNotEmpty && await _hasSharedWorkspaceData(id)) {
-      throw StateError(
-        'Existing Google workspace data is still in the shared development database. '
-        'The data was preserved; an explicit conversion or reset is required.',
-      );
+      return _migrateLegacyGoogleWorkspace(id, fileName);
     }
 
     final now = DateTime.now().microsecondsSinceEpoch;
@@ -445,12 +444,17 @@ class DatabaseManager {
   Future<void> _reconcileWorkspaceCreationJournal() async {
     final rows = await controlDatabase
         .customSelect(
-          "SELECT operation_id, target_local_account_id, phase, staging_file, final_file, content_hash "
-          "FROM workspace_operation_journal WHERE operation_type = 'google_workspace_create' "
+          "SELECT operation_id, operation_type, target_local_account_id, phase, snapshot_id, staging_file, final_file, content_hash "
+          "FROM workspace_operation_journal "
+          "WHERE operation_type IN ('google_workspace_create', 'google_workspace_migration') "
           "AND phase != 'committed' ORDER BY created_at",
         )
         .get();
     for (final row in rows) {
+      if (row.read<String>('operation_type') == 'google_workspace_migration') {
+        await _reconcileLegacyGoogleWorkspaceMigration(row);
+        continue;
+      }
       final operationId = row.read<String>('operation_id');
       final id = row.read<String>('target_local_account_id');
       final phase = row.read<String>('phase');
