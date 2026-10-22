@@ -838,7 +838,9 @@ class AppDatabase extends _$AppDatabase {
             Iterable<dynamic> value => value.isNotEmpty,
             _ => true,
           };
-      if (mutated) {
+      if (mutated && !isGoogleWorkspaceDatabase) {
+        // Google workspace files use their own trigger-maintained workspace_revision.
+        // A global db_revision key exists only in the control/Guest database.
         await incrementDbRevisionInTransaction();
       }
       return result;
