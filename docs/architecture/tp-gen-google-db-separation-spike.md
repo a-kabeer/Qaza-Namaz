@@ -1,8 +1,10 @@
 # TP-GEN — Google Database Separation: Phase 0 Architecture Spike
 
-**Status:** Implementation gate not yet passed  
-**Audited main commit:** `efadadd6558e8997913ebc248a0798e0a7bc29dd`  
-**Target feature plan:** TP-GEN v2.2 — Separate Encrypted Local Database per Google Account  
+**Status:** Implementation gate not yet passed
+
+**Audited main commit:** `efadadd6558e8997913ebc248a0798e0a7bc29dd`
+
+**Target feature plan:** TP-GEN v2.2 — Separate Encrypted Local Database per Google Account
 **Purpose:** Record repository evidence before production storage changes.
 
 ## Decision
