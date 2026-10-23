@@ -283,6 +283,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_native_oss_licenses:
+    dependency: transitive
+    description:
+      name: flutter_native_oss_licenses
+      sha256: "327957c9b5f07ea7d1224e48813fb9cbfdba47f1dcdf5a42d2840c2527471fa5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   flutter_riverpod:
     dependency: "direct main"
     description:
