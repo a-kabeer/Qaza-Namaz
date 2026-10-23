@@ -35,6 +35,9 @@ void main() {
 
   tearDown(() async {
     await manager.close();
+    // DatabaseManager does not own the injected control database.
+    // Close it explicitly before deleting the temp directory (Windows locks files).
+    await control.close();
     if (await directory.exists()) {
       await directory.delete(recursive: true);
     }
