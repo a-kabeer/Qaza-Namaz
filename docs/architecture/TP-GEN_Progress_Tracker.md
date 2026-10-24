@@ -348,3 +348,24 @@ The user explicitly reports that this issue is fixed. Mark the original sign-in 
 - Added `f9d00a9e` in `packages/qaza_cloud_adapter/lib/src/sync_engine.dart`: the post-recovery-snapshot remote backup recheck now has its own timing event, `cloud_restore.recheck_remote_backup_after_recovery_snapshot`. This distinguishes that operation from the initial `revalidate_remote_backup` stage.
 - This is measurement only: the second freshness check and all recovery/validation behavior remain intact.
 - Automated tests, formatting, and the real-device timings remain **pending**.
+
+
+### Test feedback after syncing UX diagnostics — account-screen suite
+
+**Evidence supplied by user:** `flutter test test/features/account/account_screen_test.dart` on the local Windows checkout.
+
+- **Result:** 18 tests passed and 2 failed; both failures are `pumpAndSettle timed out` in the existing tests `offline sign-out cancellation preserves the connected session and local Qaza` and `offline sign-out anyway disconnects but keeps local Qaza records`.
+- **Cause:** The sign-out flow now intentionally renders an indeterminate `CircularProgressIndicator` / `LinearProgressIndicator` while awaiting sync status and the offline safety dialog. Flutter's `pumpAndSettle()` waits for all animations to stop, so it is the wrong test wait condition in these two tests. This output does not show an app assertion or data-integrity failure in those two cases; it shows the test harness timeout before it can continue.
+- **Positive evidence:** The newly added test `sign out shows a visible progress state while checking backup status` passed (`+14`), and the reachable-Drive sign-out test also passed. Recorded mocked test timings are fast and do not measure real Drive restore performance.
+
+**Fix committed:** `10193e50` (`test(account): wait for sign-out dialog during progress animation`). The two offline tests now wait for the expected `Changes not backed up` dialog using bounded frame pumps rather than `pumpAndSettle()`. This preserves the real progress animation and tests the visible safety dialog.
+
+**Verification status:** The adjustment is committed remotely but has **not yet been rerun locally or confirmed by CI**. Re-sync the branch and rerun the account screen test before treating this as resolved. Do not alter production animation behavior just to make `pumpAndSettle()` succeed.
+
+**Next test sequence after syncing:**
+1. `dart format lib/app/providers.dart lib/core/diagnostics/flow_timing.dart lib/features/account/account_screen.dart lib/features/onboarding/cloud_setup_choice_screen.dart packages/qaza_cloud_adapter/lib/src/sync_engine.dart test/features/account/account_screen_test.dart`
+2. `flutter test test/features/account/account_screen_test.dart`
+3. `flutter test test/features/onboarding/cloud_setup_choice_screen_test.dart`
+4. `flutter analyze`
+
+Then run a debug build on the phone and capture `[tp-gen-timing]` logs while reproducing sign-out/restore. These unit-test timings are not evidence of real Drive performance. The final grey-screen root cause remains open until reproduced with device logs.
