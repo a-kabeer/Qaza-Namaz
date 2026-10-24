@@ -550,3 +550,16 @@ These warnings should be reviewed deliberately; do not globally suppress them or
 **Focused regression test:** `test/features/onboarding/startup_gate_test.dart` now covers a pending sign-out marker while AccountSessionManager remains in its loading state.
 
 **Verification:** Code and focused regression test committed. The user requested a narrow fix; run only the targeted startup-gate test and then rebuild/install for the specific relaunch check. Full suite is not being rerun for this targeted change. Physical-device relaunch acceptance remains pending.
+
+### Narrow follow-up — sign-out red screen and account-switch path
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Commits:** `859b5bab` (sign-out provider invalidation) and `3c68c202` (focused startup-test compile fix)
+
+**Finding:** After `AccountSessionManager.activateGuest()` publishes the Guest workspace, `activeUserIdProvider` changes and Riverpod recomputes its dependent workspace providers. `_finishSignOut()` then synchronously invalidated the same profile/repository provider graph again while still in the sign-out transition. This is a credible source of the reported `Concurrent modification during iteration` red screen. The exact device stack is still not available, so this is a targeted hypothesis, not yet device-confirmed.
+
+**Change:** Removed the redundant manual invalidations of app route, profile, progress, and Qaza repository providers from `_finishSignOut()`. The durable returning-account-choice marker still takes priority in StartupGate; workspace selection from the account-choice screen refreshes account-specific state. Cloud disconnect, local Guest activation, and marker persistence remain unchanged. No local records or Drive backups are deleted.
+
+**Test repair:** The new startup regression test now checks `session.state.phase.name` rather than referring to an enum symbol that is not imported into that test, fixing its compile error without expanding test imports.
+
+**Next verification:** Run the focused startup-gate test, then the focused account-screen sign-out test. Rebuild/sign/install the cloud-enabled debug APK with the already-verified test signing certificate and check only (1) first sign-out has no red screen, (2) account choice appears, (3) choosing a different Google account proceeds, and (4) force-stop/relaunch does not remain on splash. Device verification is still pending.
