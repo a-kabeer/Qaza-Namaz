@@ -287,20 +287,20 @@ final databaseManagerProvider = Provider<DatabaseManager>((ref) {
 
 final accountChoiceCompleteProvider = FutureProvider<bool>((ref) async {
   final database = ref.watch(appDatabaseProvider);
-  if (await database.isCloudSetupChoiceComplete()) return true;
+  if (await database.isAccountChoiceComplete()) return true;
 
   // Migration compatibility: installations from before the explicit choice
   // marker existed must not be forced back through first-run account choice.
   // Check durable onboarding metadata directly rather than relying on a routed
   // provider that may be cached while StartupGate itself is initializing.
   if (await database.isOnboardingCompleted()) {
-    await database.markCloudSetupChoiceComplete();
+    await database.markAccountChoiceComplete();
     return true;
   }
 
   final profile = await ref.read(userProfileProvider.future);
   if (profile != null) {
-    await database.markCloudSetupChoiceComplete();
+    await database.markAccountChoiceComplete();
     return true;
   }
 
