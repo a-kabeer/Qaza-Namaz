@@ -437,3 +437,19 @@ User-provided local results:
 The fixes avoid `pumpAndSettle()` while an indeterminate operation indicator is running, waiting instead for the expected dialog, route, or progress-panel disappearance. Production code and data-preservation/account-isolation assertions were not changed.
 
 **Still pending:** run the entire `test/features/account/account_chained_journeys_test.dart` file, then rerun the full project suite on this updated code. The last full-suite run before this test-only fix reported 802 passing and 2 failures, both now individually passing in isolated reruns; this is not yet evidence that the entire suite passes. Flutter dependency resolution again printed `Changed 1 dependency!`; review local `pubspec.lock` status/diff and preserve all existing stashes.
+
+
+### Full chained account journey file passes
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Command:** `flutter test --reporter expanded test/features/account/account_chained_journeys_test.dart`  
+**Result:** **Passed: all 3 tests** in about 7 seconds on the user's local Windows checkout.
+
+Passing scenarios:
+- Scenario 5 Case B — Keep Local reconciliation preserves the existing Google workspace and leaves the separate Guest workspace untouched.
+- Scenario 6 — An existing Google workspace's unsynced changes are uploaded instead of being overwritten by a remote restore.
+- Scenario 9 — Offline changes under Google A remain intact through sign-out, Google B activation, and return to Google A.
+
+The bounded-pump test fix is therefore verified for the complete chained-journey file, not only isolated scenarios. The assertions for workspace/data preservation remain in place.
+
+**Next gate:** preserve any new `pubspec.lock` change created by Flutter dependency resolution, then rerun the full suite against the updated branch. This file-level pass does not yet establish a full-suite pass or physical-device Google Drive verification.
