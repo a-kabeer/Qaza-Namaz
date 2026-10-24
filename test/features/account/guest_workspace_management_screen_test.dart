@@ -307,16 +307,8 @@ void main() {
         ),
       );
 
-      late ProviderContainer switchContainer;
-      final switchManager = AccountSessionManager(
-        accountStore: store,
-        onActiveLocalAccountChanged: (id) {
-          switchContainer
-              .read(activeLocalAccountIdStateProvider.notifier)
-              .state = id;
-        },
-      );
-      switchContainer = ProviderContainer(
+      final switchManager = AccountSessionManager(accountStore: store);
+      final switchContainer = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           accountLocalStoreProvider.overrideWith((ref) => store),
