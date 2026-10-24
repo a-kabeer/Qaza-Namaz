@@ -80,15 +80,15 @@ class QazaCompletionController extends Notifier<QazaCompletionState> {
 
   Future<void> _maybeRequestGuestConnectPrompt() async {
     try {
-      final cloudAccount = ref.read(cloudAccountProvider);
-      if (!cloudAccount.isSupported) return;
+      final identityProvider = ref.read(googleIdentityProvider);
+      if (!identityProvider.isSupported) return;
       final database = ref.read(appDatabaseProvider);
       if (await database.hasShownGuestGooglePrompt()) return;
 
-      // This is a non-interactive restore/status check. A saved profile alone
-      // never counts as a verified connected Google account.
-      final account = await cloudAccount.restore();
-      if (account.isConnected) return;
+      // This checks identity only. It never requests remote storage permission
+      // or assumes Google sign-in provides backup/restore.
+      final identity = await identityProvider.restore();
+      if (identity.isSignedIn) return;
 
       // The app-level host marks the prompt shown only after initiating
       // dialog presentation, avoiding a lost request when the host is absent.
