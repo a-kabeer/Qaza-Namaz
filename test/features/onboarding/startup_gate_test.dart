@@ -183,6 +183,10 @@ Future<ProviderContainer> _container({
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   testWidgets(
       'pending sign-out shows account choice even while session restore is loading',
       (tester) async {
@@ -207,10 +211,6 @@ void main() {
 
     expect(session.state.phase, AccountSessionPhase.loading);
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
-  });
-
-  setUp(() {
-    SharedPreferences.setMockInitialValues({});
   });
 
   testWidgets(
