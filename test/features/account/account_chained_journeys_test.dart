@@ -91,7 +91,7 @@ void main() {
       await tester.pumpWidget(
         _app(container, const AccountScreen(autoConnect: true)),
       );
-      await tester.pumpAndSettle();
+      await _pumpUntilVisible(tester, find.text('Different changes found'));
 
       // A found backup for a workspace that already has local data must be
       // reconciled through an explicit decision — never restored blindly.
@@ -100,10 +100,15 @@ void main() {
       expect(cloudSync.backupCalls, 0);
 
       await tester.tap(find.text('Keep this device'));
-      await tester.pumpAndSettle();
-      expect(find.text("Keep this device's progress?"), findsOneWidget);
+      await _pumpUntilVisible(
+        tester,
+        find.text("Keep this device's progress?"),
+      );
       await tester.tap(find.text('Continue'));
-      await tester.pumpAndSettle();
+      await _pumpUntilAbsent(
+        tester,
+        find.byKey(const Key('account_cloud_operation_progress')),
+      );
 
       // Reconciled as Keep Local: the provider was asked to publish the
       // local workspace, not to import the remote backup over it.
@@ -247,10 +252,9 @@ void main() {
       expect(find.text('User A'), findsOneWidget);
 
       await tester.tap(find.text('Sign out'));
-      await tester.pumpAndSettle();
-      expect(find.text('Changes not backed up'), findsOneWidget);
+      await _pumpUntilVisible(tester, find.text('Changes not backed up'));
       await tester.tap(find.text('Sign Out Anyway'));
-      await tester.pumpAndSettle();
+      await _pumpUntilVisible(tester, find.text('Welcome to Qaza Namaz'));
 
       expect(cloudAccount.snapshot.isConnected, isFalse);
       expect(find.text('Welcome to Qaza Namaz'), findsOneWidget);
@@ -283,7 +287,10 @@ void main() {
       await tester.pumpWidget(_app(newContainer(), const AccountScreen()));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sign in with Google'));
-      await tester.pumpAndSettle();
+      await _pumpUntilAbsent(
+        tester,
+        find.byKey(const Key('account_cloud_operation_progress')),
+      );
 
       expect(manager.activeLocalAccountId, googleB);
       expect(cloudSync.backupCalls, backupsBeforeB + 1);
@@ -299,7 +306,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('User B'), findsOneWidget);
       await tester.tap(find.text('Sign out'));
-      await tester.pumpAndSettle();
+      await _pumpUntilVisible(tester, find.text('Welcome to Qaza Namaz'));
 
       expect(cloudAccount.snapshot.isConnected, isFalse);
       expect(find.text('Welcome to Qaza Namaz'), findsOneWidget);
@@ -322,7 +329,10 @@ void main() {
       await tester.pumpWidget(_app(newContainer(), const AccountScreen()));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sign in with Google'));
-      await tester.pumpAndSettle();
+      await _pumpUntilAbsent(
+        tester,
+        find.byKey(const Key('account_cloud_operation_progress')),
+      );
 
       expect(manager.activeLocalAccountId, googleA);
       expect(cloudSync.backupCalls, backupsBeforeReturn + 1);
@@ -333,6 +343,30 @@ void main() {
       );
     },
   );
+}
+
+Future<void> _pumpUntilVisible(
+  WidgetTester tester,
+  Finder finder, {
+  int maxFrames = 30,
+}) async {
+  for (var frame = 0; frame < maxFrames; frame++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (finder.evaluate().isNotEmpty) return;
+  }
+  fail('Expected widget to become visible within $maxFrames frames.');
+}
+
+Future<void> _pumpUntilAbsent(
+  WidgetTester tester,
+  Finder finder, {
+  int maxFrames = 30,
+}) async {
+  for (var frame = 0; frame < maxFrames; frame++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (finder.evaluate().isEmpty) return;
+  }
+  fail('Expected widget to disappear within $maxFrames frames.');
 }
 
 Future<AccountSessionManager> _createSession(AppDatabase database) async {
