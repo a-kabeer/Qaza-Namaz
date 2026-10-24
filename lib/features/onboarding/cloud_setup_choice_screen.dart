@@ -369,6 +369,7 @@ class _CloudSetupChoiceScreenState
       _cloudAttempted = true;
       final account = await traceAsyncStage(
         flow: 'cloud_setup',
+        // Keep diagnostics package-neutral; this shared screen also ships offline.
         stage: 'google_connect_and_drive_authorization',
         action: accountProvider.signIn,
       );
