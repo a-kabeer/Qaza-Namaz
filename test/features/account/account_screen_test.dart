@@ -121,8 +121,7 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
 
   @override
   Future<CloudSyncSnapshot> status() {
-    return statusCompleter?.future ??
-        Future<CloudSyncSnapshot>.value(snapshot);
+    return statusCompleter?.future ?? Future<CloudSyncSnapshot>.value(snapshot);
   }
 
   @override
@@ -820,7 +819,8 @@ void main() {
       expect(
         tester.takeException(),
         isNull,
-        reason: 'Sign-out must not throw a provider lifecycle/concurrency error.',
+        reason:
+            'Sign-out must not throw a provider lifecycle/concurrency error.',
       );
     },
   );

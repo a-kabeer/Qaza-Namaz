@@ -923,8 +923,9 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     await traceAsyncStage(
       flow: 'sign_out',
       stage: 'persist_returning_account_choice',
-      action: () =>
-          container.read(appDatabaseProvider).markReturningAccountChoicePending(),
+      action: () => container
+          .read(appDatabaseProvider)
+          .markReturningAccountChoicePending(),
     );
 
     // Switch away from the outgoing workspace without deleting its local data.

@@ -371,18 +371,19 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.0"
-  flutter_native_oss_licenses:
-    dependency: "direct main"
-    description:
-      name: flutter_native_oss_licenses
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.0"
   flutter_localizations:
     dependency: "direct main"
     description: flutter
     source: sdk
     version: "0.0.0"
+  flutter_native_oss_licenses:
+    dependency: "direct main"
+    description:
+      name: flutter_native_oss_licenses
+      sha256: "327957c9b5f07ea7d1224e48813fb9cbfdba47f1dcdf5a42d2840c2527471fa5"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   flutter_riverpod:
     dependency: "direct main"
     description:
@@ -1161,7 +1162,7 @@ packages:
     source: hosted
     version: "3.1.6"
   uuid:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: uuid
       sha256: "9b129329f58692f6e6578329498a8fe9fbe98f090beb764ffbb8ee2eadd01dcd"
