@@ -1,6 +1,6 @@
 # TP-GEN Progress Tracker — Separate Encrypted Local Database per Google Account
 
-**Last updated:** 2026-10-24 (Asia/Karachi) — latest diagnostic checkpoint: 22 account tests + 8 onboarding tests passed; current `flutter analyze` reports 0 errors, 0 warnings, 23 info findings. Full-suite rerun and device validation for the latest diagnostic changes remain pending.  
+**Last updated:** 2026-10-24 (Asia/Karachi) — targeted account/onboarding tests pass (30 total); current analyzer reports 0 errors/warnings and 23 info findings; latest full suite has 2 failing account journeys (802 passed).  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/separate-google-db`  
 **Purpose:** Living checkpoint log for the TP-GEN task. Update this file after each meaningful action, test result, decision, or blocker. Record evidence and exact outcomes; never mark a phase complete based only on a plan or an unverified claim.
@@ -37,7 +37,7 @@ The planning materials are not fully aligned: the separate-database implementati
 | Local working-tree safety | **Preserve local changes** | Two stashes remain preserved: `preserve local formatting before TP-GEN sync` and `preserve pubspec.lock before signout test fix`. After sync, `dart format` changed `cloud_setup_choice_screen.dart`, `sync_engine.dart`, and `account_screen_test.dart`; `flutter pub get` also modified `pubspec.lock`. Its diff shows lock metadata/order changes and `uuid` changing from transitive to direct. Keep the edits/stashes until the manifest and full diff are reviewed; do not reset or drop stashes. |
 | Database manager test teardown | **Targeted tests passed** | User ran `flutter test test/data/local/database/database_manager_test.dart test/data/local/database/database_manager_stage4_test.dart`; output ended `All tests passed!`. Drift duplicate-database warnings appeared and remain to be investigated. |
 | Qaza screen contract tests | **Passed** | User ran `flutter test test/features/qaza/qaza_tracker_screen_contract_test.dart`; output ended `+53: All tests passed!`. Windows/Unix line-ending normalization is present in the test file on GitHub. |
-| Full test suite | **Previously passed 803; latest-code rerun pending** | The reported 803-test full-suite pass predates the current UX diagnostic instrumentation and `10193e50` account-test wait fix. For the latest local code, the account-screen suite passed 22 tests and the cloud-setup onboarding suite passed 8 tests; rerun the full suite before accepting the latest changes. Non-fatal warnings noted in previous runs remain follow-up items. |
+| Full test suite | **Latest-code rerun failed: 802 passed, 2 failed** | User's `flutter test --reporter expanded` run completed around 3:05 with `+802 -2`. Failures are in `test/features/account/account_chained_journeys_test.dart`: Scenario 5 Case B (Keep Local backup reconciliation must preserve Guest workspace) and Scenario 9 (offline A changes survive A → B → A and upload on A reactivation). The pasted log begins mid-stack and does not include the primary assertion/exception details, so root cause is not yet established. Previous 803-test pass predates the latest diagnostic code. |
 | Static analysis | **Latest diagnostic checkpoint: 0 errors, 0 warnings, 23 info** | User ran `flutter analyze` after the latest branch sync and formatter/test runs; output ended `23 issues found (ran in 109.1s)`. These are `info` lints only, including style cleanup and deprecated Radio API notices. The latest run did not report errors or warnings. Earlier analyzer results in the history table remain historical; this latest result does not replace the need to review unused migration/helper code and direct dependency ownership during the architecture audit. |
 | Database/account architecture | **Close-race and undo-context targeted tests passed; architecture not yet accepted** | The manager test logs passed with 15 Stage 4 tests and 22 combined manager tests. The latest `flutter analyze` ends `23 issues found (ran in 13.9s)` with zero errors and zero warnings; the three `use_build_context_synchronously` notices are gone after the provider-container capture change. `qaza_undo_feedback_widget_test.dart` ended `00:05 +3: All tests passed!`. Drift multiple-instance warnings remain visible in manager/migration tests and are not proof of shared-executor reuse by themselves. Full suite, build and broader architecture gates remain open. |
 | Merge/release readiness | **Not ready to declare** | Full suite, static analysis, audit gates, required isolation/recovery coverage and device verification remain outstanding. |
@@ -390,3 +390,20 @@ Then run a debug build on the phone and capture `[tp-gen-timing]` logs while rep
 - The two targeted test files provide **30 passing tests**, but this is not a replacement for the full-suite rerun on the latest diagnostic code.
 - Test/mock timing events do not establish real Google Drive latency. Physical-device restore/sign-out stage timings and the final grey/blank screen reproduction remain pending.
 - Next recommended gate: review the complete diff and dependency manifest, then run the full test suite on the latest branch. After that, continue the architecture/isolation audit, debug APK/device checks, and update this tracker with exact outcomes.
+
+
+### Latest full-suite checkpoint — two account journey failures
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Command:** `flutter test --reporter expanded`  
+**Observed result:** **802 passed, 2 failed**, around 3:05 elapsed.
+
+Failing tests:
+1. `scenario 5 Case B: found backup reconciles the existing local Google workspace via Keep Local and leaves the Guest workspace untouched`
+2. `scenario 9: offline changes survive an A -> B -> A account round trip and are uploaded when A is reactivated`
+
+Both are account-workspace and sync-lifecycle invariants. Do not weaken tests, skip either scenario, or delete/merge workspace data to make the suite green.
+
+**Evidence limitation:** the user-provided output contains the final failed-test names but begins in the middle of a Flutter stack trace; the actual first exception/expectation mismatch and its adjacent assertion context are missing. No root cause is claimed yet.
+
+**Next diagnostic step:** rerun only `test/features/account/account_chained_journeys_test.dart` and capture the complete failure detail (especially the first error, expected/actual values, and test line number). Fix the underlying behavior or test harness only after identifying which assertion fails, then rerun both scenarios, the targeted account/onboarding tests, and the full suite. Keep the existing local formatting and lockfile changes and both stashes preserved. The earlier 22 account-screen tests, 8 onboarding tests, and analyzer run (0 errors/warnings, 23 info findings) remain valid for their respective commands but do not override this full-suite failure.
