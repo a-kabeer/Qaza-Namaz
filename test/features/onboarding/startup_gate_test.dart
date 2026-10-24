@@ -209,7 +209,7 @@ void main() {
     await tester.pumpWidget(_app(container));
     await tester.pumpAndSettle();
 
-    expect(session.state.phase, AccountSessionPhase.loading);
+    expect(session.state.phase.name, 'loading');
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
   });
 
