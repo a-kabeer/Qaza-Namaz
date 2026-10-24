@@ -86,6 +86,7 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
   CloudSyncSnapshot snapshot;
   CloudBackupDiscoverySnapshot discoverySnapshot;
   int discoveryCalls = 0;
+  Completer<CloudSyncSnapshot>? statusCompleter;
 
   @override
   Future<CloudBackupDiscoverySnapshot> discoverBackup({
@@ -107,7 +108,10 @@ class _FakeCloudSyncProvider extends UnsupportedCloudSyncProvider {
   bool get isSupported => true;
 
   @override
-  Future<CloudSyncSnapshot> status() async => snapshot;
+  Future<CloudSyncSnapshot> status() {
+    return statusCompleter?.future ??
+        Future<CloudSyncSnapshot>.value(snapshot);
+  }
 
   @override
   Future<CloudSyncSnapshot> backupNow({
@@ -801,6 +805,70 @@ void main() {
       expect(find.text('Continue as Guest'), findsOneWidget);
       expect(manager.activeAccount, isNotNull);
       expect(await database.hasReturningAccountChoicePending(), isTrue);
+    },
+  );
+
+  testWidgets(
+    'sign out shows a visible progress state while checking backup status',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final manager = await _createSession(database);
+      final cloudAccount = _FakeCloudAccountProvider(
+        snapshot: const CloudAccountSnapshot(
+          status: CloudAccountStatus.connected,
+          accountId: 'test-google-account-A',
+          displayName: 'Connected User',
+          email: 'connected@example.com',
+        ),
+      );
+      final cloudSync = _FakeCloudSyncProvider(
+        snapshot: const CloudSyncSnapshot(
+          status: CloudSyncStatus.idle,
+          hasPendingChanges: false,
+        ),
+      );
+      final container = ProviderContainer(
+        overrides: [
+          appDatabaseProvider.overrideWith((ref) => database),
+          accountSessionManagerProvider.overrideWith((ref) => manager),
+          cloudAccountProvider.overrideWith((ref) => cloudAccount),
+          cloudSyncProvider.overrideWith((ref) => cloudSync),
+          progressSummaryProvider.overrideWith(
+            (ref) async => QazaProgressSummary.empty(),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      await tester.pumpWidget(_app(container, const AccountScreen()));
+      await tester.pumpAndSettle();
+
+      final statusGate = Completer<CloudSyncSnapshot>();
+      cloudSync.statusCompleter = statusGate;
+      await tester.tap(find.text('Sign out'));
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 100));
+
+      expect(
+        find.byKey(const Key('account_cloud_operation_progress')),
+        findsOneWidget,
+      );
+      expect(find.text('Checking backup…'), findsOneWidget);
+      expect(find.text('Welcome to Qaza Namaz'), findsNothing);
+
+      statusGate.complete(
+        const CloudSyncSnapshot(
+          status: CloudSyncStatus.idle,
+          hasPendingChanges: false,
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Welcome to Qaza Namaz'), findsOneWidget);
+      expect(cloudAccount.snapshot.isConnected, isFalse);
+      expect(await database.hasReturningAccountChoicePending(), isTrue);
+      expect(tester.takeException(), isNull);
     },
   );
 
