@@ -938,13 +938,13 @@ void main() {
 
   test('export normalizes a supplied timestamp to UTC', () async {
     final json = await service.exportJson(
-      exportedAt: DateTime(2026, 10, 8, 12, 34, 56),
+      exportedAt: DateTime.parse('2026-10-08T12:34:56+05:00'),
     );
     final decoded = jsonDecode(json) as Map<String, dynamic>;
     final timestamp = (decoded['metadata']
         as Map<String, dynamic>)['export_timestamp'] as String;
 
-    expect(timestamp, '2026-10-08T12:34:56.000Z');
+    expect(timestamp, '2026-10-08T07:34:56.000Z');
   });
 
   test('unsupported older backup schema is rejected without mutation',
