@@ -88,6 +88,13 @@ class DatabaseManager {
   Future<StartupMigrationReport>? _startupMigrationFuture;
   String? _activeWorkspaceId;
 
+  // A manager is single-lifecycle: once close begins, reject new open/provision
+  // requests, wait for operations already in flight, then close every handle
+  // those operations may have created.
+  bool _closing = false;
+  bool _closed = false;
+  Future<void>? _closeFuture;
+
   /// Migration/reconciliation helper (database_manager_migration.dart),
   /// constructor-injected with this manager. Lazily created so it captures
   /// the fully constructed manager; entry points below delegate to it.
@@ -114,7 +121,21 @@ class DatabaseManager {
     _activeWorkspaceId = id;
   }
 
-  AppDatabase get controlDatabase => _controlDatabase ??= AppDatabase.control();
+  AppDatabase get controlDatabase {
+    if (_closed) {
+      throw StateError('DatabaseManager is closed.');
+    }
+    if (_closing && _controlDatabase == null) {
+      throw StateError('DatabaseManager is closing.');
+    }
+    return _controlDatabase ??= AppDatabase.control();
+  }
+
+  void _throwIfClosing() {
+    if (_closing || _closed) {
+      throw StateError('DatabaseManager is closing or closed.');
+    }
+  }
 
   static String googleFileNameForWorkspaceId(String localAccountId) {
     final id = localAccountId.trim();
@@ -127,7 +148,12 @@ class DatabaseManager {
     return 'qaza_google_${hash.substring(0, 32)}.sqlite';
   }
 
-  Future<void> initialize() => _initializeFuture ??= _initialize();
+  Future<void> initialize() {
+    final pending = _initializeFuture;
+    if (pending != null) return pending;
+    _throwIfClosing();
+    return _initializeFuture ??= _initialize();
+  }
 
   Future<void> _initialize() async {
     await controlDatabase.readDbRevision();
@@ -140,8 +166,12 @@ class DatabaseManager {
   /// from activation (Shape A). Per-workspace failures never throw: the
   /// affected workspace remains fully operational on the shared layout
   /// and the failure is reported here (§5.2 step 7).
-  Future<StartupMigrationReport> runStartupMigrations() =>
-      _startupMigrationFuture ??= _migrationHelper._runStartupMigrations();
+  Future<StartupMigrationReport> runStartupMigrations() {
+    final pending = _startupMigrationFuture;
+    if (pending != null) return pending;
+    _throwIfClosing();
+    return _startupMigrationFuture ??= _migrationHelper._runStartupMigrations();
+  }
 
   /// §4 staging file for a cross-file adoption into workspace [id]:
   /// a `VACUUM INTO` copy of the target's (empty) live file, so the
@@ -212,6 +242,7 @@ class DatabaseManager {
   }
 
   Future<AppDatabase> databaseForWorkspace(String localAccountId) {
+    _throwIfClosing();
     final id = localAccountId.trim();
     final pending = _openingWorkspaceDatabases[id];
     if (pending != null) return pending;
@@ -316,6 +347,7 @@ class DatabaseManager {
   /// has already verified the Google identity. Existing shared workspace data
   /// is preserved and is never silently discarded.
   Future<AppDatabase> ensureGoogleWorkspace(String localAccountId) {
+    _throwIfClosing();
     final id = localAccountId.trim();
     final pending = _provisioningGoogleWorkspaces[id];
     if (pending != null) return pending;
@@ -693,16 +725,23 @@ class DatabaseManager {
     return WorkspaceCanonicalContent.hash(workspace, id);
   }
 
-  Future<void> close() async {
+  Future<void> close() => _closeFuture ??= _closeAndReleaseHandles();
+
+  Future<void> _closeAndReleaseHandles() async {
+    // Set the gate before the first await. No new opens or provisions may
+    // begin after this point, while operations already registered in the
+    // in-flight maps are allowed to finish and publish their handles.
+    _closing = true;
+    await _awaitInFlightOperations();
+
     // A control database injected by the caller stays caller-owned: this
     // manager closes only the workspace handles it opened and a control
-    // database it created itself. (Recovery Stage 4: provider scopes and
-    // AccountLocalStore both inject the shared control handle; closing
-    // it here would brick the handle for its actual owner.)
+    // database it created itself.
     final handles = <AppDatabase>{
       if (_controlDatabase != null && _ownsControlDatabase) _controlDatabase!,
       ..._workspaceDatabases.values,
     };
+    _closed = true;
     _controlDatabase = null;
     _workspaceDatabases.clear();
     _openingWorkspaceDatabases.clear();
@@ -710,6 +749,42 @@ class DatabaseManager {
     _activeWorkspaceId = null;
     for (final database in handles) {
       await database.close();
+    }
+  }
+
+  Future<void> _awaitInFlightOperations() async {
+    // Closing must not take its handle snapshot while an async open, create,
+    // initialization, or startup migration can still add a database to the
+    // manager. Drain until all registered operations and completion callbacks
+    // have settled. Failed operations still need to settle before handles are
+    // released; their original callers continue to receive their errors.
+    while (true) {
+      final pending = <Future<void>>[];
+      final initialization = _initializeFuture;
+      if (initialization != null) {
+        pending.add(_settleOperation(initialization));
+      }
+      final migration = _startupMigrationFuture;
+      if (migration != null) {
+        pending.add(_settleOperation(migration));
+      }
+      pending.addAll(
+        _openingWorkspaceDatabases.values.map(_settleOperation),
+      );
+      pending.addAll(
+        _provisioningGoogleWorkspaces.values.map(_settleOperation),
+      );
+      if (pending.isEmpty) return;
+      await Future.wait(pending);
+    }
+  }
+
+  Future<void> _settleOperation<T>(Future<T> operation) async {
+    try {
+      await operation;
+    } catch (_) {
+      // Failure is returned to the operation's caller; shutdown still has to
+      // wait for all in-flight work before collecting database handles.
     }
   }
 }
