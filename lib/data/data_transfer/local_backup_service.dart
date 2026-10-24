@@ -2382,7 +2382,7 @@ class LocalBackupService {
     // Before account-scoped backups, Qaza primary keys included the owning
     // workspace prefix. When adopting a legacy Guest backup into Google,
     // rewrite those IDs as well as every stored reference to them.
-    final sourceWorkspaceId = sourceAccountId!;
+    final sourceWorkspaceId = sourceAccountId;
     final remapLegacyGuestRecordIds =
         isGuestLocalWorkspaceId(sourceWorkspaceId) &&
             !isGuestLocalWorkspaceId(target);
@@ -3358,24 +3358,6 @@ class LocalBackupService {
     }
     root['data'] = payload;
     return root;
-  }
-
-  Future<List<Map<String, dynamic>>> _selectMaps(
-    String sql,
-    List<String> columns, {
-    Set<String> integerColumns = const <String>{},
-  }) async {
-    final rows = await database.customSelect(sql).get();
-    return rows.map((row) {
-      return {
-        for (final column in columns)
-          column: _readValue(
-            row,
-            column,
-            integer: integerColumns.contains(column),
-          ),
-      };
-    }).toList(growable: false);
   }
 
   Object? _readValue(
