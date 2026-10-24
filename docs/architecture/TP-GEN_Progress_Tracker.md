@@ -306,3 +306,38 @@ The account change in the recording is now explained by the user's clarification
 ### Account-specific “Something went wrong” message — status update
 
 The user explicitly reports that this issue is fixed. Mark the original sign-in error as **resolved by user-reported reproduction**, with no code-root-cause claim. Do not keep requesting logcat for that resolved symptom unless it returns. The loading/blank-screen items above remain separate open issues.
+
+
+---
+
+## 8. UX diagnostic implementation checkpoint — timings and visible sign-out progress
+
+**Date:** 2026-10-24  
+**Status:** Code committed; automated verification and physical-device reproduction still pending.
+
+### Changes committed on `tp-gen/separate-google-db`
+
+- Added `lib/core/diagnostics/flow_timing.dart` (`b6cb9b42`): a debug-only asynchronous stage timer. It logs constant flow/stage labels, outcome, and elapsed milliseconds; it does not log account identifiers, emails, Qaza records/counts, backup contents, or authorization tokens.
+- Updated `lib/features/account/account_screen.dart` (`12dec995`, `6c04b4b6`, `d808def5`): account restore/profile and sync-status refresh timings; interactive Google sign-in and workspace activation timings; sign-out timings for sync status, Drive discovery, backup attempt, cloud disconnect/scheduled-work cancellation, workspace activation, and the returning-choice marker. Sign-out failures are sent through the existing redacting diagnostics service. Added a visible indeterminate progress panel while account connection/backup checking/sign-out work is in progress.
+- Updated `lib/features/onboarding/cloud_setup_choice_screen.dart` (`eeb40ae5`, `9fe2c8af`): timing around startup/interactive Google connection, workspace activation, backup discovery, and confirmed remote restore. A follow-up correction explicitly retains workspace activation after sign-in.
+- Updated `lib/app/providers.dart` (`0f7ea716`): timing for startup Google-account restoration and restoration of its local workspace.
+- Updated `packages/qaza_cloud_adapter/lib/src/sync_engine.dart` (`76943a64`): timing for remote backup revalidation, local recovery snapshot export/write/read-back verification, remote restore application into the database, and sync-cursor persistence.
+- Updated `test/features/account/account_screen_test.dart` (`f11cd977`): added a regression test that holds sync status unresolved and asserts the sign-out progress card stays visible until the operation completes.
+
+### Verification status
+
+- [ ] Run `dart format` on all changed Dart files.
+- [ ] Run the targeted account-screen test, especially `sign out shows a visible progress state while checking backup status`.
+- [ ] Run the account-screen and cloud setup choice test files.
+- [ ] Run the full unit/widget test suite and static analysis on the synchronized local branch.
+- [ ] Build/run a **debug** APK, reproduce the sign-out / long restore flow, and capture `[tp-gen-timing]` messages from Logcat. These timings are necessary to identify the true bottleneck.
+- [ ] Reproduce the final uniform grey screen with a recording that includes the exact tap and Logcat from before sign-out until after navigation.
+
+### Important caveats
+
+- These commits have not yet been executed in the user's local checkout in this checkpoint. Passing tests or a successful build must not be claimed until the user or CI provides that evidence.
+- The recording's uniform grey final frames alone do not prove a Flutter rendering crash; this remains a device-side issue to reproduce.
+- A plausible performance hypothesis is that backup payload validation/re-download may contribute to the delay. It remains a hypothesis until stage timings confirm it. Do not remove the post-recovery remote freshness check, backup validation, or recovery snapshot verification just to shorten the operation.
+- Preserve local `pubspec.lock` changes; do not reset the branch or delete local/Drive test data as part of this work.
+
+**Next action:** synchronize these commits locally, run formatting and the focused account-screen/cloud-setup tests, and reproduce the UX on a debug build. Use the emitted stage timings to decide whether an optimization is justified, then update this tracker with exact results.
