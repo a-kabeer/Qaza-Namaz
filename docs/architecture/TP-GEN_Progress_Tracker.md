@@ -537,3 +537,16 @@ These warnings should be reviewed deliberately; do not globally suppress them or
 - Review local Dart formatting diffs; keep them for review and do not reset source files.
 - Run `flutter analyze`, then the full test suite.
 - Rebuild and install the compatible signed debug APK, then reproduce Google sign-out, account-choice routing, force-stop, and relaunch on the physical Android device. The concurrent-modification issue and startup splash hang remain unverified on device.
+
+### Targeted fix — returning account choice is blocked by session startup
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Commit:** `420d40f7` (`fix(startup): prioritize pending sign-out account choice`)
+
+**Finding:** StartupGate previously returned the splash while the account session was loading *before* it checked the durable `returning_account_choice_pending` marker. After sign-out, that ordering could keep the user on splash if session restoration did not finish after process recreation, even though account choice was the required recovery route.
+
+**Change:** For the cloud-enabled host, StartupGate now checks the persisted returning-account-choice marker before gating on session readiness. When the marker is true it opens CloudSetupChoiceScreen; all other routes still require session readiness. No database records, workspace files, or Drive backups are deleted or reset.
+
+**Focused regression test:** `test/features/onboarding/startup_gate_test.dart` now covers a pending sign-out marker while AccountSessionManager remains in its loading state.
+
+**Verification:** Code and focused regression test committed. The user requested a narrow fix; run only the targeted startup-gate test and then rebuild/install for the specific relaunch check. Full suite is not being rerun for this targeted change. Physical-device relaunch acceptance remains pending.
