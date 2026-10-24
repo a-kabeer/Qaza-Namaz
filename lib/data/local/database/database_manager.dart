@@ -742,9 +742,9 @@ class DatabaseManager {
   Future<void> close() => _closeFuture ??= _closeAndReleaseHandles();
 
   Future<void> _closeAndReleaseHandles() async {
-    // Set the gate before the first await. No new opens or provisions may
-    // begin after this point, while operations already registered in the
-    // in-flight maps are allowed to finish and publish their handles.
+    // Set the gate before the first await. New workspace-open/provision
+    // requests are rejected from this point, while operations already
+    // registered in the in-flight maps may finish and publish their handles.
     _closing = true;
     await _awaitInFlightOperations();
 
