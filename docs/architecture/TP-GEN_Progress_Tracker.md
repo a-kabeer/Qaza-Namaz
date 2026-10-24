@@ -257,3 +257,52 @@ No explicit Google Sign-In exception, OAuth error code, credential error, packag
 The user confirmed that they tapped the account which was already displayed as connected before the chooser opened. Therefore the recording does **not** establish an account-switch mismatch. The observed long backup validation/restore remains worth diagnosing, but should be treated separately from the sign-in failure reported for the other test account.
 
 Updated next action: reproduce the failing account sign-in and capture the Android logcat exception. Do not infer the root cause from the generic UI message; do not reset data or delete backups.
+
+
+---
+
+## 7. Re-review of screen recording — sign-out, loading, and blank-screen behavior
+
+**Reviewed:** 2026-10-24  
+**Recording:** `screen-20261024-132807.mp4` (79.25 seconds)  
+**User clarification:** The “Something went wrong” Google-connection issue is fixed. In this recording, the user selected `akalbaloshi0@gmail.com`. The recording begins with `a.kabeer1991@gmail.com` shown on the Account page, so the later switch to `akalbaloshi0@gmail.com` is expected. Do not treat the account-name change as evidence of cross-account data leakage.
+
+### Observed timeline
+
+| Approx. time | Visible behavior | Assessment |
+|---|---|---|
+| 0–5.8 s | Home screen; Qaza total is 9,000. | Baseline UI. |
+| 5.8–6.8 s | Account page shows `a.kabeer1991@gmail.com` and a Sign out action. | Previous account was active. |
+| 6.8–7.9 s | After Sign out, the app returns to the Welcome/account-choice screen. | This first sign-out navigation takes about 1 second; no sustained blank screen is visible in this segment. |
+| About 9–18 s | After Google sign-in is initiated, the page displays “Connecting to Google Drive” / checking for an existing backup; the buttons are unavailable while work is in progress. | Roughly 9 seconds of blocking connection/backup discovery before the next decision. |
+| About 18–23 s | A “Replace local progress?” confirmation is shown, followed by “Different changes found.” | Restore/replace is a consequential choice and must stay explicit. |
+| About 23–62 s | The UI stays on “Restoring your verified backup…” with a progress indicator for roughly 35–40 seconds. | Significant wait. The current UI does not make the expensive sub-stage or stall reason obvious in the recording. The video alone cannot tell whether time is spent downloading, validating, applying SQL changes, or refreshing providers. |
+| About 63 s | Home appears with total Qaza reduced from 9,000 to 8,640 (34 completed, 8,606 pending). | Consistent with the user-confirmed remote restore/replace choice; not evidence of an accidental account mismatch. |
+| About 67–69.3 s | User opens Settings → Account; the account screen briefly checks identity, then displays `akalbaloshi0@gmail.com`. A Sign out control is visible. | Account display matches the account the user says they selected. |
+| About 69.4–79.2 s | The recording becomes a uniform grey/blank frame until the clip ends. | **Open, high priority to reproduce.** This occurs immediately after the account page is shown and may correspond to the reported blank/white screen around sign-out, but the frames alone cannot prove the exact tap or distinguish an app-rendering failure from a capture/lifecycle artifact. No status or navigation bars are visible on the grey frames. |
+
+### Source-code path reviewed
+
+- `lib/features/account/account_screen.dart::_disconnect()` first queries sync status. When pending changes exist, it may discover the remote backup, run `backupNow()`, and prompt before sign-out. This can intentionally delay sign-out to protect unsynced data; the screen should communicate that work clearly.
+- `_finishSignOut()` awaits cloud disconnect, activates a safe Guest/local workspace, invalidates account-scoped providers, persists the returning-account-choice marker, and then navigates to `StartupGate`. A failure or hang in these sequential operations is a candidate for instrumentation.
+- `lib/features/onboarding/cloud_setup_choice_screen.dart::_connectGoogle()` performs sign-in, activates the Google workspace, and then discovers the Drive backup. `_restoreBackup()` awaits `cloudSync.resolveConflict(... useRemote ...)` while setting the restore progress UI. The actual 35–40 second cost must be timed by sub-stage before optimizing it.
+- `CloudSetupChoiceScreen.initState()` also kicks off `_restoreExistingAccount()`. Check this lifecycle in sign-out/returning-choice tests so stale restore work cannot race with a new explicit account choice.
+
+### Required follow-up
+
+- [ ] Add privacy-safe stopwatch/diagnostic events to measure sign-out stages separately: sync status check; pending-change decision/discovery/backup; cloud disconnect/scheduler cancellation; Guest/local workspace activation; control-database marker write; final navigation.
+- [ ] Add matching restore timings for authentication and Drive authorization, backup discovery/download, envelope/schema/hash validation, database import/migration, post-restore session refresh, and route completion. Never log tokens, raw backup contents, or unnecessary personal data.
+- [ ] Reproduce the grey/blank screen with fresh logcat captured from before tapping Sign out until after the expected account-choice screen should render. Record the precise tap and whether Android system bars remain visible.
+- [ ] Add widget/regression tests for signing out after a successful Google restore and for sign-out with pending changes. Assert that navigation reaches a visible, retryable screen, the old account is not active, and local records remain intact.
+- [ ] Run a representative large-backup restore with stage timings. Optimize the measured bottleneck; do not simply shorten/remove integrity checks or hide the progress indicator.
+- [ ] Keep the initial account-choice screen responsive. Where network work must continue, show the exact stage and an appropriate recoverable state; never leave the user with an unexplained blank surface.
+
+**Current decision:** the Google sign-in error is reported fixed. The confirmed UX findings to work next are the long connection/backup-discovery delay, the roughly 35–40 second restore wait, and the blank/grey screen at the end of the recording. Root cause for the blank screen and restore duration is not yet established.
+
+### Correction to the previous account-switch hypothesis
+
+The account change in the recording is now explained by the user's clarification: the starting Account page shows `a.kabeer1991@gmail.com`, then the user selects `akalbaloshi0@gmail.com`, and the final Account page shows `akalbaloshi0@gmail.com`. The video does not establish an account-identity mismatch. Close that hypothesis unless new evidence contradicts it.
+
+### Account-specific “Something went wrong” message — status update
+
+The user explicitly reports that this issue is fixed. Mark the original sign-in error as **resolved by user-reported reproduction**, with no code-root-cause claim. Do not keep requesting logcat for that resolved symptom unless it returns. The loading/blank-screen items above remain separate open issues.
