@@ -516,3 +516,24 @@ These warnings should be reviewed deliberately; do not globally suppress them or
 - Chained account journeys and startup-gate/restart persistence tests remain to run.
 - The command resolved dependencies and printed `Changed 1 dependency!`; inspect `git status` and preserve any local `pubspec.lock` modification. Do not discard it or drop existing stashes.
 - Continue with the chained account-journey suite, startup-gate tests, analysis, full suite, then rebuild/install the compatible signed debug APK and reproduce sign-out/restart on the physical device.
+
+
+### Account journey and startup gate verification
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Commit under test:** `72402725` plus local `dart format` changes in the account screen and its test.
+
+**User-provided result:**
+- Command: `flutter test --reporter expanded test/features/account/account_chained_journeys_test.dart test/features/onboarding/startup_gate_test.dart`
+- **PASS: 14 tests; all tests passed** (about 15 seconds).
+- Chained journey scenarios 5, 6, and 9 passed, including Google workspace reconciliation and A → B → A data-isolation coverage.
+- Startup-gate scenarios passed, including cloud startup account choice, Google sign-in with no backup, sign-in failure/cancellation, backup discovery error handling, explicit restore, existing completed onboarding, and offline startup.
+
+**Non-fatal test warnings:**
+- Startup-gate tests emitted repeated hit-test warnings when tapping the Urdu language row at an offset outside its hittable area. Tests completed successfully, but the test interaction/layout should be reviewed later; do not silence these warnings by setting `warnIfMissed: false`.
+
+**Next gates:**
+- Flutter again printed `Changed 1 dependency!`; check status and preserve the new local `pubspec.lock` diff without dropping earlier stashes.
+- Review local Dart formatting diffs; keep them for review and do not reset source files.
+- Run `flutter analyze`, then the full test suite.
+- Rebuild and install the compatible signed debug APK, then reproduce Google sign-out, account-choice routing, force-stop, and relaunch on the physical Android device. The concurrent-modification issue and startup splash hang remain unverified on device.
