@@ -230,14 +230,6 @@ class DatabaseManager {
     );
   }
 
-  /// Migration entry point used when a registered Google workspace still has
-  /// shared-layout data; delegates to [_DatabaseManagerMigrationHelper].
-  Future<AppDatabase> _migrateLegacyGoogleWorkspace(
-    String id,
-    String finalFileName,
-  ) =>
-      _migrationHelper._migrateLegacyGoogleWorkspace(id, finalFileName);
-
   /// Startup reconciliation entry point for interrupted legacy migrations;
   /// delegates to [_DatabaseManagerMigrationHelper].
   Future<void> _reconcileLegacyGoogleWorkspaceMigration(QueryRow row) =>
