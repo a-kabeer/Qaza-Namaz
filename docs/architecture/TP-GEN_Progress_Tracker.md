@@ -341,3 +341,10 @@ The user explicitly reports that this issue is fixed. Mark the original sign-in 
 - Preserve local `pubspec.lock` changes; do not reset the branch or delete local/Drive test data as part of this work.
 
 **Next action:** synchronize these commits locally, run formatting and the focused account-screen/cloud-setup tests, and reproduce the UX on a debug build. Use the emitted stage timings to decide whether an optimization is justified, then update this tracker with exact results.
+
+
+### Follow-up instrumentation refinement
+
+- Added `f9d00a9e` in `packages/qaza_cloud_adapter/lib/src/sync_engine.dart`: the post-recovery-snapshot remote backup recheck now has its own timing event, `cloud_restore.recheck_remote_backup_after_recovery_snapshot`. This distinguishes that operation from the initial `revalidate_remote_backup` stage.
+- This is measurement only: the second freshness check and all recovery/validation behavior remain intact.
+- Automated tests, formatting, and the real-device timings remain **pending**.
