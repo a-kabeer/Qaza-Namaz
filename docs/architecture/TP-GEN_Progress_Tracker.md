@@ -423,3 +423,17 @@ flutter test --reporter expanded --plain-name "scenario 5 Case B" test/features/
 flutter test --reporter expanded --plain-name "scenario 9" test/features/account/account_chained_journeys_test.dart
 ```
 If either still fails, capture the first underlying exception/expectation mismatch and fix it without weakening account-isolation or data-preservation assertions. Only after both isolated journeys pass should the full suite be rerun.
+
+
+### Targeted reruns after the chained-journey bounded-pump fix
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Commit under test:** `cad24b03` (test-only bounded waits for the indeterminate account-operation progress UI).
+
+User-provided local results:
+- `flutter test --reporter expanded --plain-name "scenario 5 Case B" test/features/account/account_chained_journeys_test.dart` — **passed: 1 test** in about 7 seconds.
+- `flutter test --reporter expanded --plain-name "scenario 9" test/features/account/account_chained_journeys_test.dart` — **passed: 1 test** in about 25 seconds.
+
+The fixes avoid `pumpAndSettle()` while an indeterminate operation indicator is running, waiting instead for the expected dialog, route, or progress-panel disappearance. Production code and data-preservation/account-isolation assertions were not changed.
+
+**Still pending:** run the entire `test/features/account/account_chained_journeys_test.dart` file, then rerun the full project suite on this updated code. The last full-suite run before this test-only fix reported 802 passing and 2 failures, both now individually passing in isolated reruns; this is not yet evidence that the entire suite passes. Flutter dependency resolution again printed `Changed 1 dependency!`; review local `pubspec.lock` status/diff and preserve all existing stashes.
