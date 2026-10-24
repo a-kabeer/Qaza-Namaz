@@ -392,7 +392,11 @@ class _CloudSetupChoiceScreenState
       final existed = workspaceId != null &&
           await ref.read(accountLocalStoreProvider).getAccount(workspaceId) !=
               null;
-      _accountConnected = true;
+      await traceAsyncStage(
+        flow: 'cloud_setup',
+        stage: 'activate_google_workspace_after_sign_in',
+        action: () => _activateGoogleWorkspace(account),
+      );
       _accountConnected = true;
       _googleWorkspaceMayAdoptGuest = !existed;
       _connectedGoogleWorkspaceId = workspaceId;
