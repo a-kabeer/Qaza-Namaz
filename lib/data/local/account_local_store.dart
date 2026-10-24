@@ -427,11 +427,6 @@ class AccountLocalStore {
           'Switch to another workspace before deleting this Guest workspace.',
         );
       }
-      if (await database.hasPendingInitialCloudBackup(localAccountId: id)) {
-        throw StateError(
-          'This workspace has a backup waiting to finish. Keep it until the backup is resolved.',
-        );
-      }
       await database.customUpdate(
         '''UPDATE local_accounts
            SET lifecycle_state = 'deleted_hold', updated_at = ?
@@ -524,7 +519,7 @@ class AccountLocalStore {
   }
 
   /// Permanently removes only Guest workspaces whose seven-day hold expired.
-  /// Active workspaces and workspaces with a pending backup are never purged.
+  /// Only expired Guest workspace deletion holds are purged.
   Future<int> purgeExpiredGuestWorkspaceDeletions({DateTime? now}) async {
     final cutoff = (now ?? DateTime.now()).microsecondsSinceEpoch;
     final holds = await database.customSelect(
@@ -535,8 +530,7 @@ class AccountLocalStore {
     var purged = 0;
     for (final hold in holds) {
       final id = hold.read<String>('local_account_id');
-      if (!isGuestLocalWorkspaceId(id) ||
-          await database.hasPendingInitialCloudBackup(localAccountId: id)) {
+      if (!isGuestLocalWorkspaceId(id)) {
         continue;
       }
       final removed = await database.transaction(() async {
