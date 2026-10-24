@@ -30,6 +30,35 @@ class StartupGate extends ConsumerWidget {
   }
 
   Widget _buildAfterLocaleRestore(WidgetRef ref) {
+    final cloudEnabled = ref.watch(cloudAccountProvider).isSupported &&
+        ref.watch(cloudSyncProvider).isSupported;
+
+    if (cloudEnabled) {
+      // A durable sign-out marker must take priority over session restoration.
+      // The account-choice screen is the recovery destination after sign-out,
+      // so don't keep it hidden behind a session initializer that may be slow
+      // or stuck after process recreation.
+      final returningChoice = ref.watch(returningAccountChoicePendingProvider);
+      return returningChoice.when(
+        loading: () => const SplashScreen(),
+        error: (_, __) => StartupProfileLoadErrorBoundary(
+          key: const Key('startup_returning_account_choice_error'),
+          onRetry: () => ref.invalidate(returningAccountChoicePendingProvider),
+        ),
+        data: (required) {
+          if (required) return const CloudSetupChoiceScreen();
+          return _buildAfterSessionRestore(ref, cloudEnabled: true);
+        },
+      );
+    }
+
+    return _buildAfterSessionRestore(ref, cloudEnabled: false);
+  }
+
+  Widget _buildAfterSessionRestore(
+    WidgetRef ref, {
+    required bool cloudEnabled,
+  }) {
     final session = ref.watch(accountSessionManagerProvider);
 
     if (session.state.phase == AccountSessionPhase.loading) {
@@ -43,31 +72,17 @@ class StartupGate extends ConsumerWidget {
       );
     }
 
-    final cloudEnabled = ref.watch(cloudAccountProvider).isSupported &&
-        ref.watch(cloudSyncProvider).isSupported;
-
     if (cloudEnabled) {
-      final returningChoice = ref.watch(returningAccountChoicePendingProvider);
-      return returningChoice.when(
+      final choice = ref.watch(cloudSetupChoiceCompleteProvider);
+      return choice.when(
         loading: () => const SplashScreen(),
         error: (_, __) => StartupProfileLoadErrorBoundary(
-          key: const Key('startup_returning_account_choice_error'),
-          onRetry: () => ref.invalidate(returningAccountChoicePendingProvider),
+          key: const Key('startup_cloud_setup_choice_error'),
+          onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
         ),
-        data: (required) {
-          if (required) return const CloudSetupChoiceScreen();
-          final choice = ref.watch(cloudSetupChoiceCompleteProvider);
-          return choice.when(
-            loading: () => const SplashScreen(),
-            error: (_, __) => StartupProfileLoadErrorBoundary(
-              key: const Key('startup_cloud_setup_choice_error'),
-              onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
-            ),
-            data: (completed) => completed
-                ? _restoredWorkspaceDestination(ref)
-                : const CloudSetupChoiceScreen(),
-          );
-        },
+        data: (completed) => completed
+            ? _restoredWorkspaceDestination(ref)
+            : const CloudSetupChoiceScreen(),
       );
     }
 
