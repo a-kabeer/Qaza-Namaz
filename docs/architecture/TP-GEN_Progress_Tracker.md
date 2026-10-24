@@ -1,6 +1,6 @@
 # TP-GEN Progress Tracker — Separate Encrypted Local Database per Google Account
 
-**Last updated:** 2026-10-24 (Asia/Karachi) — full-suite apparent stall reported; isolate rollback test  
+**Last updated:** 2026-10-24 (Asia/Karachi) — optimized quadratic scans in rollback test fake; local rerun pending  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/separate-google-db`  
 **Purpose:** Living checkpoint log for the TP-GEN task. Update this file after each meaningful action, test result, decision, or blocker. Record evidence and exact outcomes; never mark a phase complete based only on a plan or an unverified claim.
@@ -146,6 +146,7 @@ Append new entries at each checkpoint. Keep old failures for history; mark them 
 | 2026-10-24 | User synced branch and reran targeted failure groups | **Passed: 4 targeted test files** | `git pull --ff-only origin tp-gen/separate-google-db` fast-forwarded `65820a1b..5295005a`; `pubspec.lock` was stashed/popped and remains modified, not discarded. `flutter test test/core/fixed_hijri_arithmetic_service_test.dart` passed (7 tests); `flutter test test/data/local_backup_service_test.dart` passed (36 tests); `flutter test test/data/stage4_adoption_export_test.dart` passed (6 tests); `flutter test test/features/prayer_time/prayer_time_ui_contract_test.dart` passed (5 tests). Stage 4 emitted repeated Drift warnings about multiple database instances sharing a `QueryExecutor`; investigate rather than suppress. Full-suite rerun remains pending. |
 | 2026-10-24 | Static analysis rerun after targeted fixes | **Completed: 0 errors; 4 warnings; 26 info** | User ran `flutter analyze`; completion time 158.0 seconds; final output `30 issues found`. Warnings include unused `_selectMaps` and `_migrateLegacyGoogleWorkspace`, plus unnecessary non-null assertions. An info notice says `uuid` is imported by `account_local_store.dart` but is not a direct dependency. Review code/dependency intent; don't remove migration code or edit dependencies blindly. Full-suite test run is the next gate. |
 | 2026-10-24 | Full-suite test run — apparent stall reported | **Unconfirmed; no completion result yet** | User reports the console has remained at `08:15 +796` near a test named `revision failure rolls back the atomic ledger mutation` for 20+ minutes. The line shows 796 completed tests, but `08:15` is the runner's displayed elapsed time at the last refresh, which conflicts with the wall-clock wait reported. Previous full-suite run took about 29m45s overall, so a 20+ minute total run is not by itself proof of a hang; being stuck on one unchanged test is a reason to isolate it. Suggested diagnostic: stop the apparently stalled run with Ctrl+C, then run `flutter test --reporter expanded --plain-name "revision failure rolls back the atomic ledger mutation" --timeout 30s`. Do not mark the suite pass/fail until the isolated result and eventual full-suite summary are captured. |
+| 2026-10-24 | Isolated rollback test inspected; test fake optimized | **Fix committed remotely; local verification pending** | The isolated output points to `test/domain/profile_qaza_plan_reconciliation_service_test.dart`. The test stores a prior plan revision but starts with an empty in-memory ledger; `apply` builds additions for the new plan before intentionally failing revision save. `MemoryMutationRepository.applyProfilePlanChanges` previously scanned the growing ledger for each addition (`O(n²)`), and rollback similarly used `mutation.added.any(...)` inside `removeWhere` (`O(n²)`). Changed only the test fake to use a set of Qaza prayer keys and sets of record IDs (`72700e14`). This is a test performance optimization, not a change to production transaction behavior. Rerun the isolated test locally; do not count this as fixed until it passes. |
 
 ### Checkpoint update template
 
@@ -164,12 +165,19 @@ Do not mark a stage complete until its acceptance gate has evidence. If no code 
 
 ## 5. Immediate next action
 
-The user has synced the test-fix commits and confirmed all four targeted test groups pass. `flutter analyze` has now run and reported 0 errors, 4 warnings, and 26 informational notices (details recorded in the checkpoint table and issue log). The user then reported an apparent full-suite stall on `revision failure rolls back the atomic ledger mutation`; the elapsed timer and wall-clock duration don't agree, so confirm by isolating this test using the command recorded in the issue log. Once the isolated result is known, rerun or resume full-suite verification as appropriate and record the exact summary. Before accepting Stage 4, investigate the Drift warning in `stage4_adoption_export_test.dart`: trace the injected `GoogleWorkspaceDatabase.forTesting` factory, staging database lifecycle, and manager caches to determine whether the instances use the same executor and whether each instance is intentionally opened/closed. Do not silence `dontWarnAboutMultipleDatabases` or treat a passing test as sufficient evidence.
+The user has synced the test-fix commits and confirmed all four targeted test groups pass. `flutter analyze` reported 0 errors, 4 warnings, and 26 informational notices. The full suite and isolated test then appeared stalled on `revision failure rolls back the atomic ledger mutation`. Inspection found quadratic scans in the in-memory test fake; these were replaced with sets in commit `72700e14`. Local verification is pending. Pull the fix safely preserving the local `pubspec.lock` modification, then rerun the isolated test and full suite. Before accepting Stage 4, investigate the Drift duplicate-database warning; do not suppress it or treat this test-only optimization as proof that production transaction behavior is correct.
 
-Run the full suite from the repository root:
+First synchronize the test-only performance fix while preserving the local lockfile change, then isolate the test before rerunning the full suite:
 
 ```powershell
-flutter test
+git status --short --branch
+git stash push -m "preserve pubspec.lock before rollback test fix" -- pubspec.lock
+git pull --ff-only origin tp-gen/separate-google-db
+git stash pop
+git status --short --branch
+flutter test --reporter expanded --plain-name "revision failure rolls back the atomic ledger mutation" --timeout 30s
 ```
+
+If the isolated test passes, run `flutter test` for the full suite and record the final summary. If it still appears stuck, capture the last output and whether the timeout appears, then inspect the next specific operation; do not delete the assertion or skip the test.
 
 Keep `pubspec.lock` modified exactly as it is unless its diff is reviewed; do not reset it as part of syncing or test cleanup. If the full suite fails, capture each remaining failure and fix the underlying cause, then rerun the affected tests and full suite. Update this tracker after each meaningful result. Do not build a release APK or declare the branch ready for merge while the full-suite, static-analysis, Drift lifecycle, and architecture gates remain unresolved.
