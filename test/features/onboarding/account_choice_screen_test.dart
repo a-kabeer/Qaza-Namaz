@@ -181,6 +181,7 @@ void main() {
     final harness = await _createHarness();
     addTearDown(harness.dispose);
 
+    await harness.store.createGuestWorkspace(displayName: 'Saved Guest');
     await tester.pumpWidget(_app(harness.container));
     await _pumpUntil(
       tester,
