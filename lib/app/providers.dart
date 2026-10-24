@@ -39,6 +39,7 @@ import '../domain/repositories/qaza_repository.dart';
 import '../domain/repositories/qaza_addition_repository.dart';
 import '../domain/repositories/user_profile_repository.dart';
 import '../domain/services/cloud_sync_contracts.dart';
+import '../domain/services/google_identity_contracts.dart';
 import '../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../domain/services/profile_rules.dart';
 import '../domain/services/qaza_plan_service.dart';
@@ -123,15 +124,22 @@ Future<HomePrayerSelectionState> loadInitialHomePrayerSelection() async {
   }
 }
 
-/// Optional capabilities default to unavailable in the offline-only target.
-/// Cloud-enabled hosts override both providers from their composition root.
+/// Google identity is independent of any remote storage provider.
+final googleIdentityProvider = Provider<GoogleIdentityProvider>(
+  (ref) => const UnsupportedGoogleIdentityProvider(),
+);
+
+final googleIdentityStartupRestoreProvider =
+    FutureProvider<GoogleIdentitySnapshot>((ref) {
+  return ref.watch(googleIdentityProvider).restore();
+});
+
+/// Legacy generic cloud contracts remain unsupported in every target; the
+/// Drive adapter has been removed. Identity-only UI uses googleIdentityProvider.
 final cloudAccountProvider = Provider<CloudAccountProvider>(
   (ref) => const UnsupportedCloudAccountProvider(),
 );
 
-/// Loads the optional cloud account snapshot for onboarding. The implementation
-/// may inspect a resolved account and cached identity, but must never prompt for
-/// authentication; interactive sign-in is only initiated by an explicit action.
 final cloudAccountStartupRestoreProvider =
     FutureProvider<CloudAccountSnapshot>((ref) {
   final account = ref.watch(cloudAccountProvider);
@@ -141,48 +149,34 @@ final cloudAccountStartupRestoreProvider =
   return account.restore();
 });
 
-/// True after an explicit account-choice flow already activated the selected
-/// workspace during this process.
 final startupWorkspaceRestoreSatisfiedProvider =
     StateProvider<bool>((ref) => false);
 
-/// Restores the active cloud identity before routing to account-specific UI.
-/// StartupGate keeps the splash visible until workspace activation completes,
-/// preventing stale Guest onboarding/profile content from flashing on screen.
+/// Resolves Google identity into a local workspace only. No remote storage,
+/// backup discovery or database synchronization is started from this provider.
 final startupAccountWorkspaceRestoreProvider =
     FutureProvider<void>((ref) async {
   if (ref.read(startupWorkspaceRestoreSatisfiedProvider)) return;
 
-  final cloudAccount = ref.watch(cloudAccountProvider);
+  final identityProvider = ref.watch(googleIdentityProvider);
   final session = ref.read(accountSessionManagerProvider);
-  if (cloudAccount.isSupported) {
+  if (identityProvider.isSupported) {
     final snapshot = await traceAsyncStage(
       flow: 'startup_restore',
-      stage: 'restore_google_account',
-      action: cloudAccount.restore,
+      stage: 'restore_google_identity',
+      action: identityProvider.restore,
     );
     final accountId = snapshot.accountId?.trim();
-    if (accountId != null &&
-        accountId.isNotEmpty &&
-        snapshot.status != CloudAccountStatus.disconnected &&
-        snapshot.status != CloudAccountStatus.unavailable) {
-      // A verified Google identity selects its own workspace. When no Google
-      // identity is connected, preserve the persisted local workspace rather
-      // than resetting every returning Guest to the legacy fixed workspace.
+    if (snapshot.isSignedIn && accountId != null && accountId.isNotEmpty) {
       await traceAsyncStage(
         flow: 'startup_restore',
-        stage: 'activate_restored_google_workspace',
+        stage: 'activate_google_workspace',
         action: () => session.activateGoogleAccount(accountId),
       );
     }
-    // Disconnected, offline, and unavailable cloud states do not prove that
-    // a local workspace should be replaced or cleared.
   }
 
-  // Profile, progress and repository providers react to activeUserIdProvider.
-  // Let the session notification rebuild those dependents once rather than
-  // invalidating them again during the same workspace transition. The route
-  // provider is independent of the active workspace, so refresh it explicitly.
+  // Account-scoped providers derive from AccountSessionManager.
   ref.invalidate(appRouteProvider);
 });
 
