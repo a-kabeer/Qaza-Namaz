@@ -1,5 +1,7 @@
 # TP-GEN — Separate Google Database: Routing Design (Reconciled)
 
+> **Historical architecture record (2026-10-25):** This document describes the former Google Drive-enabled Phase 2 architecture and is retained as implementation history. The active application after PR #350 uses Google Sign-In only for local workspace identity; Google Drive backup, restore, sync, and WorkManager integration are removed. Do not follow the Drive-specific sections as current runtime instructions. Supabase is a separate future task and is not implemented.
+
 **Status:** Phase 0 design record, completed retrospectively in Recovery Plan
 Stage 3 (2026-10-22) against the implementation on
 `tp-gen/separate-google-db` @ `ef5f646c`.

@@ -651,7 +651,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountChoiceDescription =>
-      'Sign in with Google to back up and restore your progress across devices.';
+      'Sign in with Google to use a separate local workspace. Your Qaza records stay on this device.';
 
   @override
   String get accountChoiceContinueGoogle => 'Continue with Google';
@@ -661,7 +661,22 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get accountChoiceGuestDescription =>
-      'Guest data stays on this device. You can connect Google later.';
+      'Guest data stays in this local workspace on this device.';
+
+  @override
+  String get accountChoiceAdoptGuestTitle => 'Use saved Guest data?';
+
+  @override
+  String get accountChoiceAdoptGuestMessage =>
+      'This Google account has no local workspace yet. You can move a saved Guest workspace into it. The move is local to this device; Google Drive is not used.';
+
+  @override
+  String get accountChoiceAdoptGuestOption =>
+      'Move this Guest\'s data into this Google account';
+
+  @override
+  String get accountChoiceGoogleStartFresh =>
+      'Start with an empty Google workspace';
 
   @override
   String get accountChoiceGoogleFailed =>
@@ -2705,11 +2720,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cloudBackupAndSignOut => 'Back Up & Sign Out';
 
   @override
-  String get guestGooglePromptTitle => 'Keep your Qaza progress safe';
+  String get guestGooglePromptTitle => 'Use Google sign-in';
 
   @override
   String get guestGooglePromptMessage =>
-      'Connect a Google account to back up your Qaza progress and restore it if you change devices.';
+      'Sign in with Google to use a separate local workspace on this device. Your Qaza data will not be backed up or transferred automatically.';
 
   @override
   String get cloudSetupUseGoogle => 'Continue with Google';

@@ -577,74 +577,6 @@ void main() {
     expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
   });
 
-  test(
-      'Guest deletion is refused while its initial cloud backup is '
-      'still pending', () async {
-    final store = AccountLocalStore(database: database);
-    final guestId =
-        await store.createGuestWorkspace(displayName: 'Pending Backup');
-    await database.qazaRecordsDao.insertRecord(
-      _recordFor(guestId, 'guest_pending_backup_record', DateTime(2025, 2, 3)),
-    );
-    final otherGuest =
-        await store.createGuestWorkspace(displayName: 'Other Guest');
-    await store.activate(otherGuest);
-    await database.markInitialCloudBackupPending(localAccountId: guestId);
-
-    await expectLater(
-      store.scheduleGuestWorkspaceDeletion(guestId),
-      throwsA(isA<StateError>()),
-    );
-    // Nothing was scheduled and nothing was deleted.
-    expect(
-      (await store.getAccount(guestId))!.lifecycleState,
-      AccountLifecycleState.active,
-    );
-    expect(await store.listGuestWorkspaceDeletionHolds(), isEmpty);
-    expect(await store.hasAnyAccountData(guestId), isTrue);
-  });
-
-  test(
-      'expired Guest deletion is not purged while a backup is pending, '
-      'and purges once it clears', () async {
-    final store = AccountLocalStore(database: database);
-    final guestId = await store.createGuestWorkspace(displayName: 'Held Guest');
-    await database.qazaRecordsDao.insertRecord(
-      _recordFor(guestId, 'guest_held_record', DateTime(2025, 2, 4)),
-    );
-    final otherGuest =
-        await store.createGuestWorkspace(displayName: 'Keep Guest');
-    await store.activate(otherGuest);
-    final requested = DateTime(2026, 10, 1);
-    await store.scheduleGuestWorkspaceDeletion(
-      guestId,
-      requestedAt: requested,
-    );
-    await database.markInitialCloudBackupPending(localAccountId: guestId);
-
-    expect(
-      await store.purgeExpiredGuestWorkspaceDeletions(
-        now: requested.add(const Duration(days: 8)),
-      ),
-      0,
-    );
-    expect(await store.getAccount(guestId) != null, isTrue);
-    expect(
-      (await database.qazaRecordsDao.getAll(userId: guestId)).single.id,
-      'guest_held_record',
-    );
-
-    await database.clearPendingInitialCloudBackup(localAccountId: guestId);
-    expect(
-      await store.purgeExpiredGuestWorkspaceDeletions(
-        now: requested.add(const Duration(days: 8)),
-      ),
-      1,
-    );
-    expect(await store.getAccount(guestId) == null, isTrue);
-    expect(await database.qazaRecordsDao.getAll(userId: guestId), isEmpty);
-  });
-
   test('backup preserves daily Salah links and the tracking preference',
       () async {
     await database.qazaRecordsDao.insertRecord(
@@ -1317,31 +1249,5 @@ void main() {
           .map((record) => record.id),
       ['canonical_google_record'],
     );
-  });
-
-  test('initial cloud backup marker belongs to the workspace that created it',
-      () async {
-    final store = AccountLocalStore(database: database);
-    await database.markInitialCloudBackupPending();
-
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
-
-    const googleId = 'google_independent-workspace';
-    await store.ensureAccountActive(googleId);
-    expect(await database.hasPendingInitialCloudBackup(), isFalse);
-
-    await database.markInitialCloudBackupPending(localAccountId: googleId);
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
-
-    await store.activate('guest');
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
-
-    await store.activate(googleId);
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
-    await database.clearPendingInitialCloudBackup(localAccountId: googleId);
-    expect(await database.hasPendingInitialCloudBackup(), isFalse);
-
-    await store.activate('guest');
-    expect(await database.hasPendingInitialCloudBackup(), isTrue);
   });
 }

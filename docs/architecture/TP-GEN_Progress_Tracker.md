@@ -1,5 +1,7 @@
 # TP-GEN Progress Tracker — Separate Encrypted Local Database per Google Account
 
+> **Current architecture update (2026-10-25):** Google Drive has been removed from active `main` implementation. The optional `apps/qaza_app_cloud` target now uses Google Sign-In for local workspace identity only; there is no cloud backup, restore, sync, or WorkManager cloud job. The Drive-related sections below are historical checkpoint evidence, not current runtime requirements. Supabase remains future work and is not implemented.
+
 **Last updated:** 2026-10-24 (Asia/Karachi) — latest full test suite passed 804 tests after the chained-account journey test fix; analyzer checkpoint has 0 errors/warnings and 23 info findings. Device/Drive timing and architecture gates remain open.  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/separate-google-db`  

@@ -1,14 +1,15 @@
-name: Cloud App CI
+name: Google Identity App CI
 
 on:
   push:
     branches:
+      - main
+      - 'tp-gen/**'
       - 'task/**'
       - 'feat/**'
       - 'fix/**'
     paths:
       - 'apps/qaza_app_cloud/**'
-      - 'packages/qaza_cloud_adapter/**'
       - 'lib/**'
       - 'test/**'
       - 'android/**'
@@ -19,7 +20,6 @@ on:
       - main
     paths:
       - 'apps/qaza_app_cloud/**'
-      - 'packages/qaza_cloud_adapter/**'
       - 'lib/**'
       - 'test/**'
       - 'android/**'
@@ -59,7 +59,7 @@ jobs:
         run: flutter test --coverage
 
   cloud_host:
-    name: Analyze and build cloud-enabled Android host
+    name: Analyze and build Google identity Android host
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -69,10 +69,10 @@ jobs:
           channel: stable
           cache: true
       - uses: gradle/actions/setup-gradle@v4
-      - name: Install cloud host dependencies
+      - name: Install Google identity host dependencies
         working-directory: apps/qaza_app_cloud
         run: flutter pub get
-      - name: Format cloud host sources on branch pushes
+      - name: Format Google identity host sources on branch pushes
         if: github.event_name == 'push'
         working-directory: apps/qaza_app_cloud
         shell: bash
@@ -80,7 +80,7 @@ jobs:
           set -euo pipefail
           dart format lib test
           if git diff --quiet -- lib test; then
-            echo "Cloud host Dart sources are already formatted."
+            echo "Google identity host Dart sources are already formatted."
             exit 0
           fi
           git config user.name "github-actions[bot]"
@@ -88,23 +88,16 @@ jobs:
           git add lib test
           git commit -m "style: format cloud host Dart sources"
           git push origin "HEAD:${GITHUB_REF_NAME}"
-      - name: Analyze cloud host
+      - name: Analyze Google identity host
         working-directory: apps/qaza_app_cloud
         run: dart analyze
-      - name: Check cloud host formatting
+      - name: Check Google identity host formatting
         working-directory: apps/qaza_app_cloud
         run: dart format --output=none --set-exit-if-changed lib test
-      - name: Test cloud host composition
+      - name: Test Google identity host
         working-directory: apps/qaza_app_cloud
         run: flutter test
-      - name: Install and test adapter package
-        working-directory: packages/qaza_cloud_adapter
-        run: |
-          flutter pub get
-          dart analyze
-          dart format --output=none --set-exit-if-changed lib test
-          flutter test
-      - name: Build cloud-enabled Android APK
+      - name: Build Google identity Android APK
         working-directory: apps/qaza_app_cloud
         env:
           GOOGLE_SERVER_CLIENT_ID: ${{ secrets.GOOGLE_SERVER_CLIENT_ID }}

@@ -38,7 +38,7 @@ import '../domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../domain/repositories/qaza_addition_repository.dart';
 import '../domain/repositories/user_profile_repository.dart';
-import '../domain/services/cloud_sync_contracts.dart';
+import '../domain/services/google_identity_contracts.dart';
 import '../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../domain/services/profile_rules.dart';
 import '../domain/services/qaza_plan_service.dart';
@@ -123,72 +123,45 @@ Future<HomePrayerSelectionState> loadInitialHomePrayerSelection() async {
   }
 }
 
-/// Optional capabilities default to unavailable in the offline-only target.
-/// Cloud-enabled hosts override both providers from their composition root.
-final cloudAccountProvider = Provider<CloudAccountProvider>(
-  (ref) => const UnsupportedCloudAccountProvider(),
+/// Google identity is independent of any remote storage provider.
+final googleIdentityProvider = Provider<GoogleIdentityProvider>(
+  (ref) => const UnsupportedGoogleIdentityProvider(),
 );
 
-/// Loads the optional cloud account snapshot for onboarding. The implementation
-/// may inspect a resolved account and cached identity, but must never prompt for
-/// authentication; interactive sign-in is only initiated by an explicit action.
-final cloudAccountStartupRestoreProvider =
-    FutureProvider<CloudAccountSnapshot>((ref) {
-  final account = ref.watch(cloudAccountProvider);
-  if (!account.isSupported) {
-    return Future.value(const CloudAccountSnapshot.unavailable());
-  }
-  return account.restore();
+final googleIdentityStartupRestoreProvider =
+    FutureProvider<GoogleIdentitySnapshot>((ref) {
+  return ref.watch(googleIdentityProvider).restore();
 });
 
-/// True after an explicit account-choice flow already activated the selected
-/// workspace during this process.
+/// True after account choice has already activated a workspace in this process.
 final startupWorkspaceRestoreSatisfiedProvider =
     StateProvider<bool>((ref) => false);
 
-/// Restores the active cloud identity before routing to account-specific UI.
-/// StartupGate keeps the splash visible until workspace activation completes,
-/// preventing stale Guest onboarding/profile content from flashing on screen.
+/// Restores Google identity only to select the matching local workspace.
 final startupAccountWorkspaceRestoreProvider =
     FutureProvider<void>((ref) async {
   if (ref.read(startupWorkspaceRestoreSatisfiedProvider)) return;
 
-  final cloudAccount = ref.watch(cloudAccountProvider);
+  final identityProvider = ref.watch(googleIdentityProvider);
   final session = ref.read(accountSessionManagerProvider);
-  if (cloudAccount.isSupported) {
+  if (identityProvider.isSupported) {
     final snapshot = await traceAsyncStage(
       flow: 'startup_restore',
-      stage: 'restore_google_account',
-      action: cloudAccount.restore,
+      stage: 'restore_google_identity',
+      action: identityProvider.restore,
     );
     final accountId = snapshot.accountId?.trim();
-    if (accountId != null &&
-        accountId.isNotEmpty &&
-        snapshot.status != CloudAccountStatus.disconnected &&
-        snapshot.status != CloudAccountStatus.unavailable) {
-      // A verified Google identity selects its own workspace. When no Google
-      // identity is connected, preserve the persisted local workspace rather
-      // than resetting every returning Guest to the legacy fixed workspace.
+    if (snapshot.isSignedIn && accountId != null && accountId.isNotEmpty) {
       await traceAsyncStage(
         flow: 'startup_restore',
-        stage: 'activate_restored_google_workspace',
+        stage: 'activate_google_workspace',
         action: () => session.activateGoogleAccount(accountId),
       );
     }
-    // Disconnected, offline, and unavailable cloud states do not prove that
-    // a local workspace should be replaced or cleared.
   }
 
-  // Profile, progress and repository providers react to activeUserIdProvider.
-  // Let the session notification rebuild those dependents once rather than
-  // invalidating them again during the same workspace transition. The route
-  // provider is independent of the active workspace, so refresh it explicitly.
   ref.invalidate(appRouteProvider);
 });
-
-final cloudSyncProvider = Provider<CloudSyncProvider>(
-  (ref) => const UnsupportedCloudSyncProvider(),
-);
 
 /// Prefix for assets/fonts owned by this package when embedded as a dependency.
 /// Null in the standalone offline app; the optional host sets `qaza_namaz`.
@@ -312,80 +285,26 @@ final databaseManagerProvider = Provider<DatabaseManager>((ref) {
   return manager;
 });
 
-final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
+final accountChoiceCompleteProvider = FutureProvider<bool>((ref) async {
   final database = ref.watch(appDatabaseProvider);
-  if (await database.isCloudSetupChoiceComplete()) return true;
+  if (await database.isAccountChoiceComplete()) return true;
 
   // Migration compatibility: installations from before the explicit choice
   // marker existed must not be forced back through first-run account choice.
   // Check durable onboarding metadata directly rather than relying on a routed
   // provider that may be cached while StartupGate itself is initializing.
   if (await database.isOnboardingCompleted()) {
-    await database.markCloudSetupChoiceComplete();
+    await database.markAccountChoiceComplete();
     return true;
   }
 
   final profile = await ref.read(userProfileProvider.future);
   if (profile != null) {
-    await database.markCloudSetupChoiceComplete();
+    await database.markAccountChoiceComplete();
     return true;
   }
 
   return false;
-});
-
-/// Durable initial-backup marker, invalidated whenever onboarding or cloud
-/// backup completes. It survives process death between local commit and upload.
-final initialCloudBackupPendingProvider = FutureProvider<bool>((ref) {
-  final localAccountId = ref.watch(activeUserIdProvider);
-  return ref.watch(appDatabaseProvider).hasPendingInitialCloudBackup(
-        localAccountId: localAccountId,
-      );
-});
-
-/// Best-effort initial backup retry that never gates local Home navigation.
-/// The cloud adapter verifies its own authenticated account before uploading;
-/// this additional guard prevents clearing a marker after an account switch.
-final initialCloudBackupRetryProvider = FutureProvider<void>((ref) async {
-  final sync = ref.watch(cloudSyncProvider);
-  if (!sync.isSupported || !ref.watch(cloudAccountProvider).isSupported) return;
-  if (ref.watch(skipPendingInitialCloudBackupForSessionProvider)) return;
-
-  final database = ref.watch(appDatabaseProvider);
-  final localAccountId = ref.watch(activeUserIdProvider);
-  if (localAccountId == null || !localAccountId.startsWith('google:')) return;
-
-  UserProfile? profile;
-  try {
-    // Depend on the active profile, not just its value at startup, so a
-    // workspace that completes onboarding later gets another safe retry.
-    profile = await ref.watch(userProfileProvider.future);
-  } catch (_) {
-    return;
-  }
-  if (profile?.isComplete != true ||
-      ref.watch(activeUserIdProvider) != localAccountId ||
-      ref.watch(skipPendingInitialCloudBackupForSessionProvider)) {
-    return;
-  }
-  if (!await database.hasPendingInitialCloudBackup(
-    localAccountId: localAccountId,
-  )) {
-    return;
-  }
-
-  try {
-    final result = await sync.backupNow();
-    if (ref.read(activeUserIdProvider) != localAccountId) return;
-    if (result.status == CloudSyncStatus.synced && !result.hasPendingChanges) {
-      await database.clearPendingInitialCloudBackup(
-        localAccountId: localAccountId,
-      );
-      ref.invalidate(initialCloudBackupPendingProvider);
-    }
-  } catch (_) {
-    // A failed background attempt leaves all local data and the marker intact.
-  }
 });
 
 /// Explicit sign-out returns to account choice without resetting onboarding.
@@ -396,11 +315,6 @@ final returningAccountChoicePendingProvider = FutureProvider<bool>((ref) {
 /// Incremented after a successful Qaza completion when cloud is available but
 /// no Google account is currently connected.
 final guestConnectPromptRequestProvider = StateProvider<int>((ref) => 0);
-
-/// Lets the user continue to Home after an initial backup failure in the
-/// current process while retaining the durable marker for a retry next launch.
-final skipPendingInitialCloudBackupForSessionProvider =
-    StateProvider<bool>((ref) => false);
 
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
   final localAccountId = ref.watch(activeUserIdProvider);

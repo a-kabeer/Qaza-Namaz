@@ -5,14 +5,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:timezone/data/latest_all.dart' as tzdata;
 import 'package:qaza_namaz/app/app.dart';
+import 'package:qaza_namaz/app/providers.dart';
 import 'package:qaza_namaz/core/diagnostics/diagnostics.dart';
 import 'package:qaza_namaz/core/licenses/app_license_registry.dart';
 import 'package:qaza_namaz/core/time/local_date_service.dart';
 import 'package:qaza_namaz/core/widgets/fatal_error_screen.dart';
 import 'package:qaza_namaz/data/local/database/database_manager.dart';
-import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
 
-import 'cloud_host_composition.dart';
+import 'google_sign_in_identity_provider.dart';
 
 const Duration _startupStepTimeout = Duration(seconds: 10);
 
@@ -50,11 +50,9 @@ Future<void> main() async {
   });
 
   const serverClientId = String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
-  final gateway = GoogleSignInGateway(
+  final identity = GoogleSignInIdentityProvider(
     serverClientId: serverClientId.isEmpty ? null : serverClientId,
   );
-  final state = SharedPreferencesCloudSyncStateStore();
-  final scheduler = CloudSyncScheduler(state: state);
 
   try {
     await _initializeDatabase();
@@ -72,7 +70,7 @@ Future<void> main() async {
         onRetry: () async {
           try {
             await _initializeDatabase();
-            runApp(_cloudApp(gateway, state, scheduler, serverClientId));
+            runApp(_identityApp(identity));
           } catch (retryError, retryStack) {
             diagnostics.recordFailure(
               DiagnosticArea.databaseMigration,
@@ -89,30 +87,20 @@ Future<void> main() async {
     return;
   }
 
-  runApp(_cloudApp(gateway, state, scheduler, serverClientId));
+  runApp(_identityApp(identity));
 }
 
-Widget _cloudApp(
-  GoogleSignInGateway gateway,
-  SharedPreferencesCloudSyncStateStore state,
-  CloudSyncScheduler scheduler,
-  String serverClientId,
-) {
+Widget _identityApp(GoogleSignInIdentityProvider identity) {
   return ProviderScope(
-    overrides: cloudHostProviderOverrides(
-      gateway: gateway,
-      state: state,
-      scheduler: scheduler,
-      serverClientId: serverClientId.isEmpty ? null : serverClientId,
-    ),
+    overrides: [
+      googleIdentityProvider.overrideWithValue(identity),
+      packageAssetNamespaceProvider.overrideWithValue('qaza_namaz'),
+    ],
     child: const QazaNamazApp(),
   );
 }
 
 Future<void> _initializeDatabase() async {
-  // Recovery Stage 4 (R-12): routed through DatabaseManager like the
-  // standalone app — no direct AppDatabase construction outside the
-  // manager/composition roots.
   final databaseManager = DatabaseManager();
   try {
     await databaseManager.initialize();

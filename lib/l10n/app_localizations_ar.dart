@@ -646,7 +646,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get accountChoiceDescription =>
-      'سجّل الدخول باستخدام Google لنسخ تقدمك احتياطيًا واستعادته عبر الأجهزة.';
+      'سجّل الدخول باستخدام Google لاستخدام مساحة عمل محلية منفصلة. ستبقى سجلات القضاء على هذا الجهاز.';
 
   @override
   String get accountChoiceContinueGoogle => 'المتابعة باستخدام Google';
@@ -656,7 +656,22 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get accountChoiceGuestDescription =>
-      'تظل بيانات الضيف على هذا الجهاز. يمكنك ربط Google لاحقًا.';
+      'تظل بيانات الضيف في مساحة العمل المحلية على هذا الجهاز.';
+
+  @override
+  String get accountChoiceAdoptGuestTitle =>
+      'هل تريد استخدام بيانات الضيف المحفوظة؟';
+
+  @override
+  String get accountChoiceAdoptGuestMessage =>
+      'لا توجد مساحة عمل محلية لهذا الحساب على هذا الجهاز بعد. يمكنك نقل مساحة عمل ضيف محفوظّة إلى هذا الحساب. يتم النقل على هذا الجهاز فقط؛ لن يُستخدم Google Drive.';
+
+  @override
+  String get accountChoiceAdoptGuestOption =>
+      'نقل بيانات مساحة الضيف إلى حساب Google هذا';
+
+  @override
+  String get accountChoiceGoogleStartFresh => 'البدء بمساحة عمل Google فارغة';
 
   @override
   String get accountChoiceGoogleFailed =>
@@ -2695,11 +2710,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cloudBackupAndSignOut => 'نسخ احتياطي وتسجيل الخروج';
 
   @override
-  String get guestGooglePromptTitle => 'احتفظ بتقدم القضاء';
+  String get guestGooglePromptTitle => 'استخدام تسجيل الدخول إلى Google';
 
   @override
   String get guestGooglePromptMessage =>
-      'اربط حساب Google للاحتفاظ بنسخة احتياطية من تقدم القضاء واستعادته عند تغيير الجهاز.';
+      'سجّل الدخول باستخدام Google لاستخدام مساحة عمل محلية منفصلة على هذا الجهاز. لن يتم نسخ بيانات القضاء احتياطيًا أو نقلها تلقائيًا.';
 
   @override
   String get cloudSetupUseGoogle => 'المتابعة باستخدام Google';

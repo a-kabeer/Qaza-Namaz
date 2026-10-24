@@ -107,7 +107,7 @@ class AppDatabase extends _$AppDatabase {
             }
           } else {
             await _ensureRegistryDatabaseRoutingSchema();
-            await _ensureCloudSetupChoiceSchema();
+            await _ensureAccountChoiceSchema();
             await _ensureWorkspaceOperationJournalColumns();
           }
         },
@@ -180,7 +180,7 @@ class AppDatabase extends _$AppDatabase {
           }
           if (from < 19) {
             await _ensureMetaStoreSchema();
-            await _ensureCloudSetupChoiceSchema();
+            await _ensureAccountChoiceSchema();
             await _ensureLocalRecoverySnapshotSchema();
           }
           if (from < 20) {
@@ -426,26 +426,31 @@ class AppDatabase extends _$AppDatabase {
     return true;
   }
 
-  Future<void> _ensureCloudSetupChoiceSchema() async {
+  Future<void> _ensureAccountChoiceSchema() async {
     await customStatement(
       "INSERT OR IGNORE INTO meta_store (key, value) "
-      "VALUES ('cloud_setup_choice_complete', '0')",
+      "VALUES ('account_choice_complete', '0')",
     );
   }
 
-  Future<bool> isCloudSetupChoiceComplete() async {
+  Future<bool> isAccountChoiceComplete() async {
     final rows = await customSelect(
       "SELECT value FROM meta_store "
-      "WHERE key = 'cloud_setup_choice_complete' LIMIT 1",
+      "WHERE key IN ('account_choice_complete', 'cloud_setup_choice_complete') "
+      "ORDER BY CASE key WHEN 'account_choice_complete' THEN 0 ELSE 1 END "
+      "LIMIT 1",
     ).get();
     return rows.isNotEmpty && rows.first.read<String>('value') == '1';
   }
 
-  Future<void> markCloudSetupChoiceComplete() async {
+  Future<void> markAccountChoiceComplete() async {
     await customUpdate(
       '''INSERT INTO meta_store (key, value)
-         VALUES ('cloud_setup_choice_complete', '1')
+         VALUES ('account_choice_complete', '1')
          ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+    );
+    await customStatement(
+      "DELETE FROM meta_store WHERE key = 'cloud_setup_choice_complete'",
     );
   }
 
@@ -591,208 +596,6 @@ class AppDatabase extends _$AppDatabase {
       throw StateError('The workspace revision is invalid.');
     }
     return revision;
-  }
-
-  /// Returns the active workspace ID used to scope the durable initial-upload
-  /// marker. This keeps one Google account's pending upload from appearing
-  /// while an unrelated Guest or Google workspace is active.
-  Future<String?> _activeAccountForInitialBackup() async {
-    final rows = await customSelect(
-      'SELECT active_local_account_id FROM app_session_state '
-      'WHERE id = 1 LIMIT 1',
-    ).get();
-    if (rows.isEmpty) return null;
-    final id = rows.first.read<String?>('active_local_account_id')?.trim();
-    return id == null || id.isEmpty ? null : id;
-  }
-
-  Future<String?> _pendingInitialBackupAccount() async {
-    final rows = await customSelect(
-      "SELECT value FROM meta_store "
-      "WHERE key = 'initial_cloud_backup_pending_account_id' LIMIT 1",
-    ).get();
-    if (rows.isEmpty) return null;
-    final id = rows.first.read<String>('value').trim();
-    return id.isEmpty ? null : id;
-  }
-
-  /// Durable marker for an initial upload, scoped to a local workspace.
-  /// A legacy marker without an owner is ambiguous, so it is not assigned to
-  /// whichever account happens to be active after an upgrade.
-  String _initialCloudBackupPendingKey(String accountId) =>
-      'initial_cloud_backup_pending:${accountId.trim()}';
-
-  Future<bool> hasPendingInitialCloudBackup({String? localAccountId}) async {
-    final activeAccount = localAccountId?.trim().isNotEmpty == true
-        ? localAccountId!.trim()
-        : await _activeAccountForInitialBackup();
-    if (activeAccount == null || activeAccount.isEmpty) return false;
-
-    // New markers are independent per workspace. A late upload callback for
-    // Google B must never clear or replace Google A's pending marker.
-    final scopedRows = await customSelect(
-      'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
-      variables: [Variable(_initialCloudBackupPendingKey(activeAccount))],
-    ).get();
-    if (scopedRows.isNotEmpty) {
-      return scopedRows.single.read<String>('value') == '1';
-    }
-
-    // Read legacy single-owner markers written by older app versions without
-    // assigning an ambiguous marker to whichever workspace is active now.
-    final legacyRows = await customSelect(
-      "SELECT value FROM meta_store "
-      "WHERE key = 'initial_cloud_backup_pending' LIMIT 1",
-    ).get();
-    if (legacyRows.isEmpty || legacyRows.single.read<String>('value') != '1') {
-      return false;
-    }
-    return await _pendingInitialBackupAccount() == activeAccount;
-  }
-
-  Future<void> _refreshLegacyInitialCloudBackupMarker() async {
-    final pendingRows = await customSelect(
-      "SELECT key FROM meta_store "
-      "WHERE key LIKE 'initial_cloud_backup_pending:%' AND value = '1' "
-      "ORDER BY key",
-    ).get();
-    if (pendingRows.isEmpty) {
-      await customInsert(
-        '''INSERT INTO meta_store (key, value)
-           VALUES ('initial_cloud_backup_pending', '0')
-           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-      );
-      await customStatement(
-        "DELETE FROM meta_store "
-        "WHERE key = 'initial_cloud_backup_pending_account_id'",
-      );
-      return;
-    }
-
-    await customInsert(
-      '''INSERT INTO meta_store (key, value)
-         VALUES ('initial_cloud_backup_pending', '1')
-         ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-    );
-    if (pendingRows.length == 1) {
-      final key = pendingRows.single.read<String>('key');
-      await customInsert(
-        '''INSERT INTO meta_store (key, value)
-           VALUES ('initial_cloud_backup_pending_account_id', ?)
-           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-        variables: [
-          Variable(key.substring('initial_cloud_backup_pending:'.length))
-        ],
-      );
-    } else {
-      // More than one workspace can be pending; the legacy scalar marker
-      // cannot represent that state, so deliberately leave it ownerless.
-      await customStatement(
-        "DELETE FROM meta_store "
-        "WHERE key = 'initial_cloud_backup_pending_account_id'",
-      );
-    }
-  }
-
-  Future<void> markInitialCloudBackupPending({String? localAccountId}) async {
-    final accountId = localAccountId?.trim().isNotEmpty == true
-        ? localAccountId!.trim()
-        : await _activeAccountForInitialBackup();
-    if (accountId == null || accountId.isEmpty) {
-      throw StateError(
-        'Cannot mark an initial cloud backup without a selected workspace.',
-      );
-    }
-    await transaction(() async {
-      await customInsert(
-        '''INSERT INTO meta_store (key, value) VALUES (?, '1')
-           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
-        variables: [Variable(_initialCloudBackupPendingKey(accountId))],
-      );
-      await _refreshLegacyInitialCloudBackupMarker();
-    });
-  }
-
-  Future<void> clearPendingInitialCloudBackup({String? localAccountId}) async {
-    final accountId = localAccountId?.trim().isNotEmpty == true
-        ? localAccountId!.trim()
-        : await _activeAccountForInitialBackup();
-    if (accountId == null || accountId.isEmpty) return;
-
-    await transaction(() async {
-      await customStatement(
-        'DELETE FROM meta_store WHERE key = ?',
-        [_initialCloudBackupPendingKey(accountId)],
-      );
-
-      // Clear a legacy owner marker only if it belongs to this workspace.
-      if (await _pendingInitialBackupAccount() == accountId) {
-        await customStatement(
-          "DELETE FROM meta_store "
-          "WHERE key = 'initial_cloud_backup_pending_account_id'",
-        );
-      }
-      await _refreshLegacyInitialCloudBackupMarker();
-    });
-  }
-
-  /// Returns true only when the database is still a genuinely fresh install.
-  /// The local account/session bootstrap rows are expected and are excluded;
-  /// any profile, Qaza ledger, plan-revision, or mutation data blocks an
-  /// automatic destructive restore.
-  Future<bool> isFreshInstallationForCloudRestore({
-    String? localAccountId,
-  }) async {
-    return transaction(() async {
-      if (localAccountId == null) {
-        if (await isOnboardingCompleted() || await readDbRevision() != 1) {
-          return false;
-        }
-
-        const businessTables = <String>[
-          'qaza_records',
-          'daily_salah_logs',
-          'qaza_additions',
-          'qaza_deletion_actions',
-          'qaza_deletion_action_record_snapshots',
-          'qaza_profile_plan_provenance',
-          'account_profiles',
-          'account_plan_revisions',
-        ];
-        for (final table in businessTables) {
-          final row = await customSelect(
-            'SELECT COUNT(*) AS row_count FROM $table',
-          ).getSingle();
-          if (row.read<int>('row_count') != 0) return false;
-        }
-        return true;
-      }
-
-      final normalized = localAccountId.trim();
-      if (normalized.isEmpty) return false;
-
-      // Account switching is allowed even when another workspace has data or
-      // the global revision is greater than one. Only this workspace blocks
-      // automatic restore.
-      const ownedTables = <(String, String)>[
-        ('qaza_records', 'user_id'),
-        ('daily_salah_logs', 'user_id'),
-        ('qaza_additions', 'user_id'),
-        ('qaza_deletion_actions', 'user_id'),
-        ('qaza_deletion_action_record_snapshots', 'user_id'),
-        ('qaza_profile_plan_provenance', 'user_id'),
-        ('account_profiles', 'local_account_id'),
-        ('account_plan_revisions', 'local_account_id'),
-      ];
-      for (final (table, ownerColumn) in ownedTables) {
-        final row = await customSelect(
-          'SELECT 1 FROM $table WHERE $ownerColumn = ? LIMIT 1',
-          variables: [Variable(normalized)],
-        ).get();
-        if (row.isNotEmpty) return false;
-      }
-      return true;
-    });
   }
 
   Future<void> setOnboardingCompletedInTransaction(bool completed) {
@@ -970,7 +773,6 @@ class AppDatabase extends _$AppDatabase {
         OR NEW.key = ('workspace_display_name:' || $ownerLiteral)
         OR NEW.key = ('daily_salah_tracking_enabled:' || $ownerLiteral)
         OR NEW.key = ('daily_salah_tracking_setup_dismissed:' || $ownerLiteral)
-        OR NEW.key = ('initial_cloud_backup_pending:' || $ownerLiteral)
       )
       BEGIN
         SELECT RAISE(ABORT, 'workspace metadata key is not scoped to this owner');
@@ -985,7 +787,6 @@ class AppDatabase extends _$AppDatabase {
         OR NEW.key = ('workspace_display_name:' || $ownerLiteral)
         OR NEW.key = ('daily_salah_tracking_enabled:' || $ownerLiteral)
         OR NEW.key = ('daily_salah_tracking_setup_dismissed:' || $ownerLiteral)
-        OR NEW.key = ('initial_cloud_backup_pending:' || $ownerLiteral)
       )
       BEGIN
         SELECT RAISE(ABORT, 'workspace metadata key is not scoped to this owner');
@@ -1273,7 +1074,6 @@ class AppDatabase extends _$AppDatabase {
       'workspace_display_name:',
       'daily_salah_tracking_enabled:',
       'daily_salah_tracking_setup_dismissed:',
-      'initial_cloud_backup_pending:',
     ];
     final when = workspaceKeyPrefixes
         .map((prefix) => "NEW.key GLOB '${prefix}*'")

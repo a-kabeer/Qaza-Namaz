@@ -652,7 +652,7 @@ class AppLocalizationsUrLatn extends AppLocalizations {
 
   @override
   String get accountChoiceDescription =>
-      'Google se sign in karein taake aap ki progress mukhtalif dioaisz par mehfooz aur bahal ho ske';
+      'Google se sign in karein taake is device par apne account ki alag local workspace istemal karein. Aap ka Qaza data isi device par rahe ga.';
 
   @override
   String get accountChoiceContinueGoogle => 'Google ke saath jari rakhein';
@@ -662,7 +662,22 @@ class AppLocalizationsUrLatn extends AppLocalizations {
 
   @override
   String get accountChoiceGuestDescription =>
-      'mehmaan ka Data isi device par mehfooz rehta he aap baad mein Google munsalik kar sakte hin';
+      'Guest data isi device par is local workspace mein mehfooz rehta hai.';
+
+  @override
+  String get accountChoiceAdoptGuestTitle => "Saved Guest data istemal karein?";
+
+  @override
+  String get accountChoiceAdoptGuestMessage =>
+      "Is Google account ki is device par abhi local workspace nahi. Aap saved Guest workspace ka data is account mein move kar sakte hain. Ye move isi device par hoga; Google Drive istemal nahi hogi.";
+
+  @override
+  String get accountChoiceAdoptGuestOption =>
+      "Is Guest ka data is Google account mein move karein";
+
+  @override
+  String get accountChoiceGoogleStartFresh =>
+      "Khali Google workspace se shuru karein";
 
   @override
   String get accountChoiceGoogleFailed =>
@@ -2725,11 +2740,11 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get cloudBackupAndSignOut => "Backup le kar sign out karein";
 
   @override
-  String get guestGooglePromptTitle => "Apni Qaza progress mehfooz rakhein";
+  String get guestGooglePromptTitle => "Google sign-in istemal karein";
 
   @override
   String get guestGooglePromptMessage =>
-      "Apni Qaza ka backup banane aur device badalne par bahal karne ke liye Google account connect karein.";
+      "Is device par alag local workspace istemal karne ke liye Google se sign in karein. Aap ka Qaza data khud-ba-khud backup ya transfer nahi hoga.";
 
   @override
   String get cloudSetupUseGoogle => 'Google ke saath jari rakhein';

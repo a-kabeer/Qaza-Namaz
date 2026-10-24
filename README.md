@@ -81,9 +81,12 @@ The protected `main` branch should require green CI and approved pull requests, 
 All direct dependencies in `pubspec.yaml` are explicitly constrained; no direct dependency uses `any`. Riverpod remains on its current major version for this milestone. A dedicated Riverpod 3 migration should be treated as a separate, planned change rather than mixed into security hardening.
 
 
-## Optional cloud-enabled host
+## Optional Google identity host
 
 The default root application remains offline-only. The separately built
-`apps/qaza_app_cloud` host opts into the removable Google Drive adapter without
-adding cloud SDK dependencies to the offline target. See
-`docs/PHASE_2_CLOUD_ADAPTER.md` for configuration, build, and device QA gates.
+`apps/qaza_app_cloud` target adds Google Sign-In solely to identify the selected
+local workspace. It does not connect to Google Drive or any remote data backend.
+Qaza records remain in the app's encrypted local SQLite workspaces. Signing in
+on a different device does not transfer records automatically. A future remote
+backend (planned separately) may add synchronization; Supabase is not included
+in the current runtime.

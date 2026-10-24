@@ -1178,7 +1178,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountChoiceDescription.
   ///
   /// In en, this message translates to:
-  /// **'Sign in with Google to back up and restore your progress across devices.'**
+  /// **'Sign in with Google to use a separate local workspace. Your Qaza records stay on this device.'**
   String get accountChoiceDescription;
 
   /// No description provided for @accountChoiceContinueGoogle.
@@ -1196,8 +1196,32 @@ abstract class AppLocalizations {
   /// No description provided for @accountChoiceGuestDescription.
   ///
   /// In en, this message translates to:
-  /// **'Guest data stays on this device. You can connect Google later.'**
+  /// **'Guest data stays in this local workspace on this device.'**
   String get accountChoiceGuestDescription;
+
+  /// No description provided for @accountChoiceAdoptGuestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use saved Guest data?'**
+  String get accountChoiceAdoptGuestTitle;
+
+  /// No description provided for @accountChoiceAdoptGuestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This Google account has no local workspace yet. You can move a saved Guest workspace into it. The move is local to this device; Google Drive is not used.'**
+  String get accountChoiceAdoptGuestMessage;
+
+  /// No description provided for @accountChoiceAdoptGuestOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Move this Guest\'s data into this Google account'**
+  String get accountChoiceAdoptGuestOption;
+
+  /// No description provided for @accountChoiceGoogleStartFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with an empty Google workspace'**
+  String get accountChoiceGoogleStartFresh;
 
   /// No description provided for @accountChoiceGoogleFailed.
   ///
@@ -4696,13 +4720,13 @@ abstract class AppLocalizations {
   /// No description provided for @guestGooglePromptTitle.
   ///
   /// In en, this message translates to:
-  /// **'Keep your Qaza progress safe'**
+  /// **'Use Google sign-in'**
   String get guestGooglePromptTitle;
 
   /// No description provided for @guestGooglePromptMessage.
   ///
   /// In en, this message translates to:
-  /// **'Connect a Google account to back up your Qaza progress and restore it if you change devices.'**
+  /// **'Sign in with Google to use a separate local workspace on this device. Your Qaza data will not be backed up or transferred automatically.'**
   String get guestGooglePromptMessage;
 
   /// No description provided for @cloudSetupUseGoogle.
