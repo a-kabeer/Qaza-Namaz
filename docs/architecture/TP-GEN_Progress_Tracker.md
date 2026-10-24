@@ -250,3 +250,10 @@ Lines supplied by the user around 13:12 show:
 No explicit Google Sign-In exception, OAuth error code, credential error, package/configuration error, or app exception is present in the supplied excerpt. Account-specific OAuth restrictions, Drive authorization failure, and post-auth workspace/storage failure therefore remain hypotheses only.
 
 **Next evidence required:** clear logcat, reproduce just the failed attempt, capture the fresh logcat output including non-error/warning lines, and inspect messages near the attempt across Google Sign-In/Play services and the app process. Redact access tokens, secrets and personal data before sharing. Do not reset application data, remove accounts, or delete local/Drive backups as a diagnostic shortcut.
+
+
+### Follow-up clarification — screen recording account selection
+
+The user confirmed that they tapped the account which was already displayed as connected before the chooser opened. Therefore the recording does **not** establish an account-switch mismatch. The observed long backup validation/restore remains worth diagnosing, but should be treated separately from the sign-in failure reported for the other test account.
+
+Updated next action: reproduce the failing account sign-in and capture the Android logcat exception. Do not infer the root cause from the generic UI message; do not reset data or delete backups.
