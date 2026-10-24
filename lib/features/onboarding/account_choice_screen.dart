@@ -59,6 +59,7 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
     String stableGoogleId,
     String? displayName,
   ) async {
+    await ref.read(accountSessionManagerProvider).initialize();
     final id = stableGoogleId.trim();
     if (id.isEmpty) throw StateError('Google returned an empty account ID.');
     await ref.read(accountSessionManagerProvider).activateGoogleAccount(id);
@@ -153,6 +154,7 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
     });
     try {
       await ref.read(localeProvider.notifier).set(_selectedLocale);
+      await ref.read(accountSessionManagerProvider).initialize();
       final store = ref.read(accountLocalStoreProvider);
       final guests = await store.listGuestWorkspaces();
       String selectedId;
