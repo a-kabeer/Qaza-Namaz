@@ -48,6 +48,9 @@ void main() {
 
   tearDown(() async {
     await manager.close();
+    // DatabaseManager does not own the injected control connection.
+    // Close it before deleting the temp directory (required on Windows).
+    await control.close();
     if (await directory.exists()) {
       await directory.delete(recursive: true);
     }
@@ -317,6 +320,8 @@ void main() {
     const separateD = 'google_export_d';
     await manager.ensureGoogleWorkspace(separateD);
     final fileName = DatabaseManager.googleFileNameForWorkspaceId(separateD);
+    // Close the original manager before removing its open database file.
+    await manager.close();
     // A fresh manager has no cached handle, so the open must fail
     // against the missing file instead of silently skipping the
     // workspace.
