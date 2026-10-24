@@ -235,3 +235,18 @@ Keep `pubspec.lock` modified exactly as it is unless its diff is reviewed; do no
 - [ ] Once the failing stage is established, fix and test that path, update this tracker, and repeat the real-device attempt.
 
 **Safety:** Do not delete either Google account, Drive backups, local databases, encryption keys, or app data to troubleshoot this. The fact that one account works and the other fails is a clue, not proof of an OAuth allowlist or database defect.
+
+
+### Diagnostic update — first Android logcat sample
+
+**Date:** 2026-10-24  
+**Result:** **Inconclusive; no root cause established.**
+
+Lines supplied by the user around 13:12 show:
+- `GoogleSignInActivity` from Google Play services was launched.
+- `WindowLayout` logged a zero requested height for that activity. This alone is not an authentication error and does not identify why the sign-in flow failed.
+- `payjoy_access_service` and `PantaCard.SysUi.PluginFileUtils` messages appear to be device/OEM or third-party service noise, not a demonstrated Qaza Namaz failure.
+
+No explicit Google Sign-In exception, OAuth error code, credential error, package/configuration error, or app exception is present in the supplied excerpt. Account-specific OAuth restrictions, Drive authorization failure, and post-auth workspace/storage failure therefore remain hypotheses only.
+
+**Next evidence required:** clear logcat, reproduce just the failed attempt, capture the fresh logcat output including non-error/warning lines, and inspect messages near the attempt across Google Sign-In/Play services and the app process. Redact access tokens, secrets and personal data before sharing. Do not reset application data, remove accounts, or delete local/Drive backups as a diagnostic shortcut.
