@@ -165,7 +165,7 @@ void main() {
     await _pumpUntil(tester,
         find.byKey(const Key('account_choice_google_sign_in')));
     await tester.tap(find.byKey(const Key('account_choice_google_sign_in')));
-    await _pumpUntil(tester, find.byType(Scaffold));
+    await tester.pumpAndSettle();
 
     expect(harness.identity.signInCalls, 1);
     expect(
