@@ -168,6 +168,8 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     final activeAccount =
         ref.watch(accountSessionManagerProvider).activeAccount;
     final isGuest = isGuestLocalWorkspaceId(activeAccount?.localAccountId);
+    final activeGoogleWorkspace =
+        activeAccount?.localAccountId.startsWith('google_') ?? false;
     final connected = _identity.isSignedIn;
     final rawName = _identity.displayName?.trim();
     final rawEmail = _identity.email?.trim();
@@ -214,7 +216,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                               ? l10n.accountProfileChecking
                               : connected
                                   ? displayName
-                                  : l10n.accountGuest,
+                                  : activeGoogleWorkspace
+                                      ? (activeAccount?.displayName?.trim().isNotEmpty == true
+                                          ? activeAccount!.displayName!
+                                          : l10n.accountGoogle)
+                                      : l10n.accountGuest,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         if (connected && email != null)
@@ -223,7 +229,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                         Text(
                           connected
                               ? l10n.accountSignedInWithGoogle
-                              : l10n.accountChoiceGuestDescription,
+                              : activeGoogleWorkspace
+                                  ? l10n.accountProfileUnavailableDetail
+                                  : l10n.accountChoiceGuestDescription,
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ],
@@ -237,7 +245,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           if (provider.isSupported)
             SizedBox(
               width: double.infinity,
-              child: connected
+              child: (connected || activeGoogleWorkspace)
                   ? OutlinedButton.icon(
                       key: const Key('account_google_sign_out'),
                       onPressed: _working ? null : _signOut,
