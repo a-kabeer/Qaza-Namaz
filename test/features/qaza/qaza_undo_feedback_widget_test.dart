@@ -7,6 +7,8 @@ import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/core/widgets/app_snackbar.dart';
 import 'package:qaza_namaz/domain/entities/qaza_completion_result.dart';
 import 'package:qaza_namaz/domain/repositories/qaza_repository.dart';
+import 'package:qaza_namaz/features/daily_salah/daily_salah_tracking_providers.dart';
+import 'package:qaza_namaz/features/daily_salah/daily_salah_tracking_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_service.dart';
 import 'package:qaza_namaz/domain/services/qaza_undo_service.dart';
 import 'package:qaza_namaz/features/qaza/qaza_undo_feedback.dart';
@@ -16,6 +18,18 @@ import 'package:qaza_namaz/l10n/app_localizations.dart';
 // These tests replace the undo manager, which never calls QazaService.
 // Keep the service fake so the tests do not open persistent storage.
 class _UnusedQazaRepository extends Fake implements QazaRepository {}
+
+class _UnusedDailySalahTrackingService extends Fake
+    implements DailySalahTrackingService {
+  @override
+  Future<void> syncQazaReopened({
+    required String userId,
+    required String recordId,
+    required PrayerType prayerType,
+    required DateTime originalDate,
+    required String expectedCompletionId,
+  }) async {}
+}
 
 class _FakeQazaUndoManager extends QazaUndoManager {
   _FakeQazaUndoManager(this.batch);
@@ -155,6 +169,9 @@ void main() {
             qazaServiceProvider.overrideWith(
               (ref) => QazaService(_UnusedQazaRepository()),
             ),
+            dailySalahTrackingServiceProvider.overrideWith(
+              (ref) => _UnusedDailySalahTrackingService(),
+            ),
             prayerTimeClockProvider.overrideWith(
               (ref) async* {
                 yield DateTime(2026, 10, 4, 12);
@@ -210,6 +227,9 @@ void main() {
             qazaServiceProvider.overrideWith(
               (ref) => QazaService(_UnusedQazaRepository()),
             ),
+            dailySalahTrackingServiceProvider.overrideWith(
+              (ref) => _UnusedDailySalahTrackingService(),
+            ),
             prayerTimeClockProvider.overrideWith(
               (ref) async* {
                 yield DateTime(2026, 10, 4, 12);
@@ -258,6 +278,9 @@ void main() {
             qazaUndoManagerProvider.overrideWithValue(manager),
             qazaServiceProvider.overrideWith(
               (ref) => QazaService(_UnusedQazaRepository()),
+            ),
+            dailySalahTrackingServiceProvider.overrideWith(
+              (ref) => _UnusedDailySalahTrackingService(),
             ),
             prayerTimeClockProvider.overrideWith(
               (ref) async* {
