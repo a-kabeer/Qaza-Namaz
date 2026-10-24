@@ -208,6 +208,45 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('Google sign-in offers an explicit local Guest adoption',
+      (tester) async {
+    final harness = await _createHarness(
+      signInResult: const GoogleIdentitySnapshot.signedIn(
+        accountId: 'google-adopt-account',
+        displayName: 'Adoption Test',
+      ),
+    );
+    addTearDown(harness.dispose);
+
+    final guestId =
+        await harness.store.createGuestWorkspace(displayName: 'Saved Guest');
+    await tester.pumpWidget(_app(harness.container));
+    await _pumpUntil(
+      tester,
+      find.byKey(const Key('account_choice_google_login')),
+    );
+    await tester.tap(find.byKey(const Key('account_choice_google_login')));
+    await _pumpUntil(
+      tester,
+      find.byKey(Key('google_adopt_guest_$guestId')),
+    );
+
+    expect(find.byKey(const Key('google_workspace_start_fresh')), findsOneWidget);
+    await tester.tap(find.byKey(Key('google_adopt_guest_$guestId')));
+    await tester.pumpAndSettle();
+
+    expect(
+      harness.session.activeLocalAccountId,
+      googleLocalWorkspaceId('google-adopt-account'),
+    );
+    expect(
+      (await harness.store.getAccount(guestId))?.lifecycleState,
+      AccountLifecycleState.adoptedRecovery,
+    );
+    expect(await harness.database.isAccountChoiceComplete(), isTrue);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('Google identity failure leaves local account choice available',
       (tester) async {
     final harness = await _createHarness(
