@@ -38,7 +38,6 @@ import '../domain/repositories/qaza_profile_plan_mutation_repository.dart';
 import '../domain/repositories/qaza_repository.dart';
 import '../domain/repositories/qaza_addition_repository.dart';
 import '../domain/repositories/user_profile_repository.dart';
-import '../domain/services/cloud_sync_contracts.dart';
 import '../domain/services/google_identity_contracts.dart';
 import '../domain/services/profile_qaza_plan_reconciliation_service.dart';
 import '../domain/services/profile_rules.dart';
@@ -134,26 +133,11 @@ final googleIdentityStartupRestoreProvider =
   return ref.watch(googleIdentityProvider).restore();
 });
 
-/// Legacy generic cloud contracts remain unsupported in every target; the
-/// Drive adapter has been removed. Identity-only UI uses googleIdentityProvider.
-final cloudAccountProvider = Provider<CloudAccountProvider>(
-  (ref) => const UnsupportedCloudAccountProvider(),
-);
-
-final cloudAccountStartupRestoreProvider =
-    FutureProvider<CloudAccountSnapshot>((ref) {
-  final account = ref.watch(cloudAccountProvider);
-  if (!account.isSupported) {
-    return Future.value(const CloudAccountSnapshot.unavailable());
-  }
-  return account.restore();
-});
-
+/// True after account choice has already activated a workspace in this process.
 final startupWorkspaceRestoreSatisfiedProvider =
     StateProvider<bool>((ref) => false);
 
-/// Resolves Google identity into a local workspace only. No remote storage,
-/// backup discovery or database synchronization is started from this provider.
+/// Restores Google identity only to select the matching local workspace.
 final startupAccountWorkspaceRestoreProvider =
     FutureProvider<void>((ref) async {
   if (ref.read(startupWorkspaceRestoreSatisfiedProvider)) return;
@@ -176,13 +160,8 @@ final startupAccountWorkspaceRestoreProvider =
     }
   }
 
-  // Account-scoped providers derive from AccountSessionManager.
   ref.invalidate(appRouteProvider);
 });
-
-final cloudSyncProvider = Provider<CloudSyncProvider>(
-  (ref) => const UnsupportedCloudSyncProvider(),
-);
 
 /// Prefix for assets/fonts owned by this package when embedded as a dependency.
 /// Null in the standalone offline app; the optional host sets `qaza_namaz`.
@@ -306,7 +285,7 @@ final databaseManagerProvider = Provider<DatabaseManager>((ref) {
   return manager;
 });
 
-final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
+final accountChoiceCompleteProvider = FutureProvider<bool>((ref) async {
   final database = ref.watch(appDatabaseProvider);
   if (await database.isCloudSetupChoiceComplete()) return true;
 
@@ -328,60 +307,6 @@ final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
   return false;
 });
 
-/// Durable initial-backup marker, invalidated whenever onboarding or cloud
-/// backup completes. It survives process death between local commit and upload.
-final initialCloudBackupPendingProvider = FutureProvider<bool>((ref) {
-  final localAccountId = ref.watch(activeUserIdProvider);
-  return ref.watch(appDatabaseProvider).hasPendingInitialCloudBackup(
-        localAccountId: localAccountId,
-      );
-});
-
-/// Best-effort initial backup retry that never gates local Home navigation.
-/// The cloud adapter verifies its own authenticated account before uploading;
-/// this additional guard prevents clearing a marker after an account switch.
-final initialCloudBackupRetryProvider = FutureProvider<void>((ref) async {
-  final sync = ref.watch(cloudSyncProvider);
-  if (!sync.isSupported || !ref.watch(cloudAccountProvider).isSupported) return;
-  if (ref.watch(skipPendingInitialCloudBackupForSessionProvider)) return;
-
-  final database = ref.watch(appDatabaseProvider);
-  final localAccountId = ref.watch(activeUserIdProvider);
-  if (localAccountId == null || !localAccountId.startsWith('google:')) return;
-
-  UserProfile? profile;
-  try {
-    // Depend on the active profile, not just its value at startup, so a
-    // workspace that completes onboarding later gets another safe retry.
-    profile = await ref.watch(userProfileProvider.future);
-  } catch (_) {
-    return;
-  }
-  if (profile?.isComplete != true ||
-      ref.watch(activeUserIdProvider) != localAccountId ||
-      ref.watch(skipPendingInitialCloudBackupForSessionProvider)) {
-    return;
-  }
-  if (!await database.hasPendingInitialCloudBackup(
-    localAccountId: localAccountId,
-  )) {
-    return;
-  }
-
-  try {
-    final result = await sync.backupNow();
-    if (ref.read(activeUserIdProvider) != localAccountId) return;
-    if (result.status == CloudSyncStatus.synced && !result.hasPendingChanges) {
-      await database.clearPendingInitialCloudBackup(
-        localAccountId: localAccountId,
-      );
-      ref.invalidate(initialCloudBackupPendingProvider);
-    }
-  } catch (_) {
-    // A failed background attempt leaves all local data and the marker intact.
-  }
-});
-
 /// Explicit sign-out returns to account choice without resetting onboarding.
 final returningAccountChoicePendingProvider = FutureProvider<bool>((ref) {
   return ref.watch(appDatabaseProvider).hasReturningAccountChoicePending();
@@ -390,11 +315,6 @@ final returningAccountChoicePendingProvider = FutureProvider<bool>((ref) {
 /// Incremented after a successful Qaza completion when cloud is available but
 /// no Google account is currently connected.
 final guestConnectPromptRequestProvider = StateProvider<int>((ref) => 0);
-
-/// Lets the user continue to Home after an initial backup failure in the
-/// current process while retaining the durable marker for a retry next launch.
-final skipPendingInitialCloudBackupForSessionProvider =
-    StateProvider<bool>((ref) => false);
 
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
   final localAccountId = ref.watch(activeUserIdProvider);
