@@ -17,6 +17,18 @@ import 'package:qaza_namaz/features/data_management/qaza_data_management_screen.
 import 'package:qaza_namaz/features/settings/settings_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
+Future<void> _pumpUntilVisible(
+  WidgetTester tester,
+  Finder finder, {
+  int maxFrames = 30,
+}) async {
+  for (var frame = 0; frame < maxFrames; frame++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (finder.evaluate().isNotEmpty) return;
+  }
+  fail('Expected widget to become visible within $maxFrames frames.');
+}
+
 Future<AccountSessionManager> _createSession(AppDatabase database) async {
   final store = AccountLocalStore(database: database);
   final manager = AccountSessionManager(accountStore: store);
@@ -922,7 +934,9 @@ void main() {
       await tester.pumpWidget(_app(container, const AccountScreen()));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sign out'));
-      await tester.pumpAndSettle();
+      // The in-flight progress indicator is indeterminate; wait for the
+      // expected safety dialog instead of waiting for all animations to stop.
+      await _pumpUntilVisible(tester, find.text('Changes not backed up'));
 
       expect(find.text('Changes not backed up'), findsOneWidget);
       expect(find.text('Sign Out Anyway'), findsOneWidget);
@@ -991,7 +1005,9 @@ void main() {
       await tester.pumpWidget(_app(container, const AccountScreen()));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Sign out'));
-      await tester.pumpAndSettle();
+      // The in-flight progress indicator is indeterminate; wait for the
+      // expected safety dialog instead of waiting for all animations to stop.
+      await _pumpUntilVisible(tester, find.text('Changes not backed up'));
       await tester.tap(find.text('Sign Out Anyway'));
       await tester.pumpAndSettle();
 
