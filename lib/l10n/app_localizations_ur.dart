@@ -664,6 +664,19 @@ class AppLocalizationsUr extends AppLocalizations {
       'مہمان کا ڈیٹا اسی ڈیوائس پر اس مقامی ورک اسپیس میں محفوظ رہتا ہے۔';
 
   @override
+  String get accountChoiceAdoptGuestTitle => "محفوظ مہمان ڈیٹا استعمال کریں؟";
+
+  @override
+  String get accountChoiceAdoptGuestMessage => "اس Google اکاؤنٹ کی اس ڈیوائس پر ابھی مقامی ورک اسپیس موجود نہیں۔ آپ محفوظ مہمان ورک اسپیس کا ڈیٹا اس اکاؤنٹ میں منتقل کر سکتے ہیں۔ یہ منتقلی اسی ڈیوائس پر ہوگی؛ Google Drive استعمال نہیں ہوگی۔";
+
+  @override
+  String get accountChoiceAdoptGuestOption => "اس مہمان کا ڈیٹا اس Google اکاؤنٹ میں منتقل کریں";
+
+  @override
+  String get accountChoiceGoogleStartFresh => "خالی Google ورک اسپیس سے شروع کریں";
+
+
+  @override
   String get accountChoiceGoogleFailed =>
       'گوگل سائن اِن مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں۔';
 

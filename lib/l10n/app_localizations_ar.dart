@@ -659,6 +659,19 @@ class AppLocalizationsAr extends AppLocalizations {
       'تظل بيانات الضيف في مساحة العمل المحلية على هذا الجهاز.';
 
   @override
+  String get accountChoiceAdoptGuestTitle => "هل تريد استخدام بيانات الضيف المحفوظة؟";
+
+  @override
+  String get accountChoiceAdoptGuestMessage => "لا توجد مساحة عمل محلية لهذا الحساب على هذا الجهاز بعد. يمكنك نقل مساحة عمل ضيف محفوظّة إلى هذا الحساب. يتم النقل على هذا الجهاز فقط؛ لن يُستخدم Google Drive.";
+
+  @override
+  String get accountChoiceAdoptGuestOption => "نقل بيانات مساحة الضيف إلى حساب Google هذا";
+
+  @override
+  String get accountChoiceGoogleStartFresh => "البدء بمساحة عمل Google فارغة";
+
+
+  @override
   String get accountChoiceGoogleFailed =>
       'تعذر إكمال تسجيل الدخول باستخدام Google. حاول مرة أخرى.';
 

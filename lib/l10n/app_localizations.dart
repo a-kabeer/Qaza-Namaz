@@ -1199,6 +1199,18 @@ abstract class AppLocalizations {
   /// **'Guest data stays in this local workspace on this device.'**
   String get accountChoiceGuestDescription;
 
+  /// Local-only account choice copy.
+  String get accountChoiceAdoptGuestTitle;
+
+  /// Local-only account choice copy.
+  String get accountChoiceAdoptGuestMessage;
+
+  /// Local-only account choice copy.
+  String get accountChoiceAdoptGuestOption;
+
+  /// Local-only account choice copy.
+  String get accountChoiceGoogleStartFresh;
+
   /// No description provided for @accountChoiceGoogleFailed.
   ///
   /// In en, this message translates to:
