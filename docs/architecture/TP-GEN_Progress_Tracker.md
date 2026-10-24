@@ -1,6 +1,6 @@
 # TP-GEN Progress Tracker — Separate Encrypted Local Database per Google Account
 
-**Last updated:** 2026-10-24 (Asia/Karachi) — targeted account/onboarding tests pass (30 total); current analyzer reports 0 errors/warnings and 23 info findings; latest full suite has 2 failing account journeys (802 passed).  
+**Last updated:** 2026-10-24 (Asia/Karachi) — latest full test suite passed 804 tests after the chained-account journey test fix; analyzer checkpoint has 0 errors/warnings and 23 info findings. Device/Drive timing and architecture gates remain open.  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/separate-google-db`  
 **Purpose:** Living checkpoint log for the TP-GEN task. Update this file after each meaningful action, test result, decision, or blocker. Record evidence and exact outcomes; never mark a phase complete based only on a plan or an unverified claim.
@@ -37,7 +37,7 @@ The planning materials are not fully aligned: the separate-database implementati
 | Local working-tree safety | **Preserve local changes** | Two stashes remain preserved: `preserve local formatting before TP-GEN sync` and `preserve pubspec.lock before signout test fix`. After sync, `dart format` changed `cloud_setup_choice_screen.dart`, `sync_engine.dart`, and `account_screen_test.dart`; `flutter pub get` also modified `pubspec.lock`. Its diff shows lock metadata/order changes and `uuid` changing from transitive to direct. Keep the edits/stashes until the manifest and full diff are reviewed; do not reset or drop stashes. |
 | Database manager test teardown | **Targeted tests passed** | User ran `flutter test test/data/local/database/database_manager_test.dart test/data/local/database/database_manager_stage4_test.dart`; output ended `All tests passed!`. Drift duplicate-database warnings appeared and remain to be investigated. |
 | Qaza screen contract tests | **Passed** | User ran `flutter test test/features/qaza/qaza_tracker_screen_contract_test.dart`; output ended `+53: All tests passed!`. Windows/Unix line-ending normalization is present in the test file on GitHub. |
-| Full test suite | **Latest-code rerun failed: 802 passed, 2 failed** | User's `flutter test --reporter expanded` run completed around 3:05 with `+802 -2`. Failures are in `test/features/account/account_chained_journeys_test.dart`: Scenario 5 Case B (Keep Local backup reconciliation must preserve Guest workspace) and Scenario 9 (offline A changes survive A → B → A and upload on A reactivation). The pasted log begins mid-stack and does not include the primary assertion/exception details, so root cause is not yet established. Previous 803-test pass predates the latest diagnostic code. |
+| Full test suite | **Latest rerun passed: 804 tests** | User's latest `flutter test --reporter expanded` output ends `02:46 +804: All tests passed!`. This is after the bounded-pump fix for the chained account journeys. The previous 802-pass/2-timeout result is superseded; both scenarios were also rerun individually and the complete chained-journey file passed all 3 scenarios. Non-fatal FlexColorScheme warnings and Settings-language test hit-test warnings remain visible for follow-up; the import-controller test also deliberately logs its injected first-attempt failure while testing retry behavior. |
 | Static analysis | **Latest diagnostic checkpoint: 0 errors, 0 warnings, 23 info** | User ran `flutter analyze` after the latest branch sync and formatter/test runs; output ended `23 issues found (ran in 109.1s)`. These are `info` lints only, including style cleanup and deprecated Radio API notices. The latest run did not report errors or warnings. Earlier analyzer results in the history table remain historical; this latest result does not replace the need to review unused migration/helper code and direct dependency ownership during the architecture audit. |
 | Database/account architecture | **Close-race and undo-context targeted tests passed; architecture not yet accepted** | The manager test logs passed with 15 Stage 4 tests and 22 combined manager tests. The latest `flutter analyze` ends `23 issues found (ran in 13.9s)` with zero errors and zero warnings; the three `use_build_context_synchronously` notices are gone after the provider-container capture change. `qaza_undo_feedback_widget_test.dart` ended `00:05 +3: All tests passed!`. Drift multiple-instance warnings remain visible in manager/migration tests and are not proof of shared-executor reuse by themselves. Full suite, build and broader architecture gates remain open. |
 | Merge/release readiness | **Not ready to declare** | Full suite, static analysis, audit gates, required isolation/recovery coverage and device verification remain outstanding. |
@@ -453,3 +453,24 @@ Passing scenarios:
 The bounded-pump test fix is therefore verified for the complete chained-journey file, not only isolated scenarios. The assertions for workspace/data preservation remain in place.
 
 **Next gate:** preserve any new `pubspec.lock` change created by Flutter dependency resolution, then rerun the full suite against the updated branch. This file-level pass does not yet establish a full-suite pass or physical-device Google Drive verification.
+
+
+### Full test suite passes after chained-journey test fix
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Command:** `flutter test --reporter expanded`  
+**Result supplied by user:** **804 tests passed; all tests passed**, final output `02:46 +804: All tests passed!`.
+
+This run follows the test-only bounded-pump changes in `cad24b03`, and it supersedes the earlier full-suite result of 802 passed / 2 timed-out journey tests. In the meantime the user also verified:
+- Scenario 5 Case B alone — passed.
+- Scenario 9 alone — passed.
+- The complete `test/features/account/account_chained_journeys_test.dart` file — all 3 scenarios passed.
+
+**Warnings that remain visible but did not fail this test run:**
+- FlexColorScheme warns that `primaryLightRef`, `secondaryLightRef` and `tertiaryLightRef` are null.
+- Settings screen language-selection tests emit Flutter hit-test warnings for tap positions that may not hit the requested option.
+- The profile Qaza apply retry test logs its intentionally injected first-attempt `StateError` while exercising recovery/retry.
+
+These warnings should be reviewed deliberately; do not globally suppress them or confuse the expected injected retry log with a test failure.
+
+**Acceptance remains open:** full-suite green is a significant milestone but does not establish physical-device Google Drive restore/sign-out timing, explain the final grey/blank screen in the recording, or complete the separate encrypted workspace architecture/isolation/recovery audit. Static-analysis checkpoint remains 0 errors, 0 warnings and 23 info-level findings from the latest user-provided analyzer run. Four local stashes are still being preserved; review the complete diffs and `pubspec.lock` before applying or dropping anything.
