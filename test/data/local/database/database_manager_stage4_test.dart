@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
@@ -16,10 +17,14 @@ void main() {
   late AppDatabase control;
   late DatabaseManager manager;
 
-  DatabaseManager buildManager({int? freeSpaceOverride}) {
+  DatabaseManager buildManager({
+    int? freeSpaceOverride,
+    Future<Directory> Function()? documentsDirectoryProvider,
+  }) {
     return DatabaseManager(
       controlDatabase: control,
-      documentsDirectoryProvider: () async => directory,
+      documentsDirectoryProvider:
+          documentsDirectoryProvider ?? (() async => directory),
       googleDatabaseFactory: ({
         required String fileName,
         required String workspaceId,
@@ -298,6 +303,72 @@ void main() {
         )
         .get();
     expect(rows.map((r) => r.read<String>('snapshot_id')), ['snap_alpha']);
+  });
+
+  test('close waits for an in-flight workspace open and closes its handle',
+      () async {
+    // Seed a registered separate workspace and leave its file on disk.
+    await manager.ensureGoogleWorkspace('google_close_open');
+    await manager.close();
+
+    final directoryRequested = Completer<void>();
+    final releaseDirectory = Completer<Directory>();
+    manager = buildManager(
+      documentsDirectoryProvider: () {
+        if (!directoryRequested.isCompleted) directoryRequested.complete();
+        return releaseDirectory.future;
+      },
+    );
+
+    final opening = manager.databaseForWorkspace('google_close_open');
+    await directoryRequested.future;
+
+    var closeCompleted = false;
+    final closing = manager.close().then((_) => closeCompleted = true);
+    await Future<void>.delayed(Duration.zero);
+    expect(closeCompleted, isFalse);
+
+    releaseDirectory.complete(directory);
+    final opened = await opening;
+    await closing;
+
+    expect(closeCompleted, isTrue);
+    await expectLater(
+      opened.customSelect('SELECT 1 AS value').get(),
+      throwsA(anything),
+    );
+  });
+
+  test('close waits for in-flight Google workspace provisioning',
+      () async {
+    await manager.close();
+
+    final directoryRequested = Completer<void>();
+    final releaseDirectory = Completer<Directory>();
+    manager = buildManager(
+      documentsDirectoryProvider: () {
+        if (!directoryRequested.isCompleted) directoryRequested.complete();
+        return releaseDirectory.future;
+      },
+    );
+
+    final provisioning = manager.ensureGoogleWorkspace('google_close_create');
+    await directoryRequested.future;
+
+    var closeCompleted = false;
+    final closing = manager.close().then((_) => closeCompleted = true);
+    await Future<void>.delayed(Duration.zero);
+    expect(closeCompleted, isFalse);
+
+    releaseDirectory.complete(directory);
+    final created = await provisioning;
+    await closing;
+
+    expect(closeCompleted, isTrue);
+    await expectLater(
+      created.customSelect('SELECT 1 AS value').get(),
+      throwsA(anything),
+    );
   });
 
   test('§8 handle lifecycle: one handle per workspace, concurrent dedup',
