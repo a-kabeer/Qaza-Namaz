@@ -8,7 +8,7 @@ import '../../domain/services/profile_rules.dart';
 import '../../core/time/local_date_service.dart';
 import '../../l10n/app_localizations.dart';
 import '../shell/workspace_shell.dart';
-import 'cloud_setup_choice_screen.dart';
+import 'account_choice_screen.dart';
 import 'language_selection_screen.dart';
 import 'profile_setup_screen.dart';
 import 'splash_screen.dart';
@@ -30,10 +30,9 @@ class StartupGate extends ConsumerWidget {
   }
 
   Widget _buildAfterLocaleRestore(WidgetRef ref) {
-    final cloudEnabled = ref.watch(cloudAccountProvider).isSupported &&
-        ref.watch(cloudSyncProvider).isSupported;
+    final identityEnabled = ref.watch(googleIdentityProvider).isSupported;
 
-    if (cloudEnabled) {
+    if (identityEnabled) {
       // A durable sign-out marker must take priority over session restoration.
       // The account-choice screen is the recovery destination after sign-out,
       // so don't keep it hidden behind a session initializer that may be slow
@@ -46,18 +45,18 @@ class StartupGate extends ConsumerWidget {
           onRetry: () => ref.invalidate(returningAccountChoicePendingProvider),
         ),
         data: (required) {
-          if (required) return const CloudSetupChoiceScreen();
-          return _buildAfterSessionRestore(ref, cloudEnabled: true);
+          if (required) return const AccountChoiceScreen();
+          return _buildAfterSessionRestore(ref, identityEnabled: true);
         },
       );
     }
 
-    return _buildAfterSessionRestore(ref, cloudEnabled: false);
+    return _buildAfterSessionRestore(ref, identityEnabled: false);
   }
 
   Widget _buildAfterSessionRestore(
     WidgetRef ref, {
-    required bool cloudEnabled,
+    required bool identityEnabled,
   }) {
     final session = ref.watch(accountSessionManagerProvider);
 
@@ -72,7 +71,7 @@ class StartupGate extends ConsumerWidget {
       );
     }
 
-    if (cloudEnabled) {
+    if (identityEnabled) {
       final choice = ref.watch(cloudSetupChoiceCompleteProvider);
       return choice.when(
         loading: () => const SplashScreen(),
@@ -82,11 +81,11 @@ class StartupGate extends ConsumerWidget {
         ),
         data: (completed) => completed
             ? _restoredWorkspaceDestination(ref)
-            : const CloudSetupChoiceScreen(),
+            : const AccountChoiceScreen(),
       );
     }
 
-    return _profileDestination(ref, cloudEnabled: false);
+    return _profileDestination(ref, identityEnabled: false);
   }
 
   Widget _restoredWorkspaceDestination(WidgetRef ref) {
@@ -97,13 +96,13 @@ class StartupGate extends ConsumerWidget {
         key: const Key('startup_account_workspace_restore_error'),
         onRetry: () => ref.invalidate(startupAccountWorkspaceRestoreProvider),
       ),
-      data: (_) => _profileDestination(ref, cloudEnabled: true),
+      data: (_) => _profileDestination(ref, identityEnabled: true),
     );
   }
 
   Widget _profileDestination(
     WidgetRef ref, {
-    required bool cloudEnabled,
+    required bool identityEnabled,
   }) {
     final routeAsync = ref.watch(appRouteProvider);
     return routeAsync.when(
@@ -123,7 +122,7 @@ class StartupGate extends ConsumerWidget {
           data: (profile) {
             if (route == AppRoute.onboarding) {
               if (profile == null) {
-                return cloudEnabled
+                return identityEnabled
                     ? ProfileSetupScreen(
                         languageCode: ref.read(localeProvider).languageCode,
                       )
@@ -136,7 +135,7 @@ class StartupGate extends ConsumerWidget {
             }
 
             if (profile == null) {
-              return cloudEnabled
+              return identityEnabled
                   ? ProfileSetupScreen(
                       languageCode: ref.read(localeProvider).languageCode,
                     )
@@ -154,12 +153,8 @@ class StartupGate extends ConsumerWidget {
               );
             }
 
-            // A completed local profile always gets to Home. Initial upload is
-            // attempted in the background and its durable, account-scoped marker
-            // remains set if authorization, network, or Drive upload fails.
-            if (cloudEnabled) {
-              ref.watch(initialCloudBackupRetryProvider);
-            }
+            // Google identity selects a local workspace only. Home is never
+            // gated by cloud authorization, backup, or synchronization.
             return const WorkspaceShell();
           },
         );
