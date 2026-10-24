@@ -936,12 +936,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
           container.read(accountSessionManagerProvider).activateGuest(),
     );
 
-    container.invalidate(appRouteProvider);
-    container.invalidate(userProfileProvider);
-    container.invalidate(progressSummaryProvider);
-    container.invalidate(qazaRepositoryProvider);
-    container.invalidate(qazaAdditionRepositoryProvider);
-    container.invalidate(qazaPlanRevisionRepositoryProvider);
+    // AccountSessionManager has already published the new Guest workspace.
+    // Its active-user dependency updates account-scoped providers. Don't
+    // manually invalidate the same provider graph during this notification;
+    // the durable marker routes StartupGate to account choice, where the next
+    // workspace selection refreshes profile and repository state.
     widget.onAccountChanged(const CloudAccountSnapshot.disconnected());
     container.invalidate(cloudAccountStartupRestoreProvider);
     container.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state =
