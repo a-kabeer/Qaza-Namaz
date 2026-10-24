@@ -88,7 +88,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('account_google_profile_card')), findsOneWidget);
-    expect(find.byKey(const Key('account_google_sign_in')), findsOneWidget);
+    expect(find.byKey(const Key('account_google_login')), findsOneWidget);
     expect(find.byKey(const Key('account_guest_workspace_management')),
         findsOneWidget);
     expect(find.byKey(const Key('account_data_management')), findsOneWidget);
@@ -138,12 +138,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('account_google_sign_in')));
+    await tester.tap(find.byKey(const Key('account_google_login')));
     await tester.pumpAndSettle();
 
     expect(identity.signInCalls, 1);
     expect(session.activeLocalAccountId, originalWorkspace);
-    expect(find.byKey(const Key('account_google_sign_in')), findsOneWidget);
+    expect(find.byKey(const Key('account_google_login')), findsOneWidget);
     expect(find.byKey(const Key('account_cloud_backup')), findsNothing);
     expect(tester.takeException(), isNull);
   });
