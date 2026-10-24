@@ -187,7 +187,7 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
     await database.clearReturningAccountChoicePending();
     // This existing durable marker now means the local account-choice flow has
     // completed; it does not imply any cloud service is configured.
-    await database.markCloudSetupChoiceComplete();
+    await database.markAccountChoiceComplete();
     ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = true;
     ref.invalidate(startupAccountWorkspaceRestoreProvider);
     ref.invalidate(returningAccountChoicePendingProvider);
