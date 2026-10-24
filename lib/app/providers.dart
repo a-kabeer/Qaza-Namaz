@@ -11,6 +11,7 @@ import 'package:intl/intl.dart' as intl;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/diagnostics/diagnostics.dart';
+import '../core/diagnostics/flow_timing.dart';
 import '../core/constants/prayer_types.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
@@ -155,7 +156,11 @@ final startupAccountWorkspaceRestoreProvider =
   final cloudAccount = ref.watch(cloudAccountProvider);
   final session = ref.read(accountSessionManagerProvider);
   if (cloudAccount.isSupported) {
-    final snapshot = await cloudAccount.restore();
+    final snapshot = await traceAsyncStage(
+      flow: 'startup_restore',
+      stage: 'restore_google_account',
+      action: cloudAccount.restore,
+    );
     final accountId = snapshot.accountId?.trim();
     if (accountId != null &&
         accountId.isNotEmpty &&
@@ -164,7 +169,11 @@ final startupAccountWorkspaceRestoreProvider =
       // A verified Google identity selects its own workspace. When no Google
       // identity is connected, preserve the persisted local workspace rather
       // than resetting every returning Guest to the legacy fixed workspace.
-      await session.activateGoogleAccount(accountId);
+      await traceAsyncStage(
+        flow: 'startup_restore',
+        stage: 'activate_restored_google_workspace',
+        action: () => session.activateGoogleAccount(accountId),
+      );
     }
     // Disconnected, offline, and unavailable cloud states do not prove that
     // a local workspace should be replaced or cleared.
