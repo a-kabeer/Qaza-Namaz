@@ -2,7 +2,13 @@
 ///
 /// Authentication identifies a local workspace; it does not imply that any
 /// remote storage, backup, or synchronization service is configured.
-enum GoogleIdentityStatus { unavailable, signedOut, signedIn, failed, cancelled }
+enum GoogleIdentityStatus {
+  unavailable,
+  signedOut,
+  signedIn,
+  failed,
+  cancelled
+}
 
 class GoogleIdentitySnapshot {
   const GoogleIdentitySnapshot({

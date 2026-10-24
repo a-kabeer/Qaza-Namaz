@@ -86,16 +86,16 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
       final identity = await ref.read(googleIdentityProvider).signIn();
       if (!mounted || identity.status == GoogleIdentityStatus.cancelled) return;
       if (!identity.isSignedIn) {
-        setState(() => _error =
-            identity.message ?? AppLocalizations.of(context).accountChoiceGoogleFailed);
+        setState(() => _error = identity.message ??
+            AppLocalizations.of(context).accountChoiceGoogleFailed);
         return;
       }
       await _activateGoogleWorkspace(identity.accountId!, identity.displayName);
       await _completeChoice();
     } catch (_) {
       if (mounted) {
-        setState(() => _error =
-            AppLocalizations.of(context).accountChoiceGoogleFailed);
+        setState(() =>
+            _error = AppLocalizations.of(context).accountChoiceGoogleFailed);
       }
     } finally {
       if (mounted) setState(() => _working = false);
@@ -138,8 +138,7 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
         actions: [
           TextButton(
             key: const Key('guest_workspace_start_fresh'),
-            onPressed: () =>
-                Navigator.of(dialogContext).pop(_startFreshChoice),
+            onPressed: () => Navigator.of(dialogContext).pop(_startFreshChoice),
             child: const Text('Start Fresh'),
           ),
         ],
@@ -175,8 +174,7 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
       await _completeChoice();
     } catch (_) {
       if (mounted) {
-        setState(() => _error =
-            AppLocalizations.of(context).errorUnknown);
+        setState(() => _error = AppLocalizations.of(context).errorUnknown);
       }
     } finally {
       if (mounted) setState(() => _working = false);

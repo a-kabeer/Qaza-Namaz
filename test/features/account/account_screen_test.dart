@@ -16,7 +16,8 @@ import 'package:qaza_namaz/l10n/app_localizations.dart';
 class _FakeIdentityProvider implements GoogleIdentityProvider {
   _FakeIdentityProvider({
     this.initial = const GoogleIdentitySnapshot.signedOut(),
-    this.signInResult = const GoogleIdentitySnapshot.failed('Test sign-in failure'),
+    this.signInResult =
+        const GoogleIdentitySnapshot.failed('Test sign-in failure'),
   }) : _snapshot = initial;
 
   final GoogleIdentitySnapshot initial;
@@ -48,7 +49,8 @@ class _FakeIdentityProvider implements GoogleIdentityProvider {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  testWidgets('account shows Google identity controls and local data tools only',
+  testWidgets(
+      'account shows Google identity controls and local data tools only',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = DatabaseManager(controlDatabase: database);
@@ -87,7 +89,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('account_google_profile_card')), findsOneWidget);
+    expect(
+        find.byKey(const Key('account_google_profile_card')), findsOneWidget);
     expect(find.byKey(const Key('account_google_login')), findsOneWidget);
     expect(find.byKey(const Key('account_guest_workspace_management')),
         findsOneWidget);

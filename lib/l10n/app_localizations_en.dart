@@ -647,7 +647,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get splashTagline => 'A calm place for prayer accountability';
 
   @override
-  String get accountChoiceHeadline => 'Use Google sign-in';
+  String get accountChoiceHeadline => 'Keep your Qaza progress safe';
 
   @override
   String get accountChoiceDescription =>

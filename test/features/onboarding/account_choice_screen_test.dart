@@ -166,8 +166,8 @@ void main() {
     addTearDown(harness.dispose);
 
     await tester.pumpWidget(_app(harness.container));
-    await _pumpUntil(tester,
-        find.byKey(const Key('account_choice_google_login')));
+    await _pumpUntil(
+        tester, find.byKey(const Key('account_choice_google_login')));
     await tester.tap(find.byKey(const Key('account_choice_google_login')));
     await tester.pumpAndSettle();
 
@@ -194,7 +194,8 @@ void main() {
     await tester.tap(find.byKey(const Key('account_choice_continue_guest')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('guest_workspace_start_fresh')), findsOneWidget);
+    expect(
+        find.byKey(const Key('guest_workspace_start_fresh')), findsOneWidget);
     await tester.tap(find.byKey(const Key('guest_workspace_start_fresh')));
     await tester.pumpAndSettle();
 
@@ -215,12 +216,13 @@ void main() {
     addTearDown(harness.dispose);
 
     await tester.pumpWidget(_app(harness.container));
-    await _pumpUntil(tester,
-        find.byKey(const Key('account_choice_google_login')));
+    await _pumpUntil(
+        tester, find.byKey(const Key('account_choice_google_login')));
     await tester.tap(find.byKey(const Key('account_choice_google_login')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('account_choice_continue_guest')), findsOneWidget);
+    expect(
+        find.byKey(const Key('account_choice_continue_guest')), findsOneWidget);
     expect(await harness.database.isAccountChoiceComplete(), isFalse);
     expect(tester.takeException(), isNull);
   });

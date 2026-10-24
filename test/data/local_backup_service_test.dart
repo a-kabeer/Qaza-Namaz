@@ -1250,6 +1250,4 @@ void main() {
       ['canonical_google_record'],
     );
   });
-
-
 }

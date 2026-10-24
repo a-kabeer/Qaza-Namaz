@@ -16,8 +16,8 @@ import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeIdentityProvider implements GoogleIdentityProvider {
-  _FakeIdentityProvider({this.snapshot =
-      const GoogleIdentitySnapshot.signedOut()});
+  _FakeIdentityProvider(
+      {this.snapshot = const GoogleIdentitySnapshot.signedOut()});
 
   final GoogleIdentitySnapshot snapshot;
 

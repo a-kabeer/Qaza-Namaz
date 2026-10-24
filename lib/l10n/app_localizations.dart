@@ -1178,7 +1178,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountChoiceDescription.
   ///
   /// In en, this message translates to:
-  /// **'Sign in with Google to back up and restore your progress across devices.'**
+  /// **'Sign in with Google to use a separate local workspace. Your Qaza records stay on this device.'**
   String get accountChoiceDescription;
 
   /// No description provided for @accountChoiceContinueGoogle.
@@ -1196,7 +1196,7 @@ abstract class AppLocalizations {
   /// No description provided for @accountChoiceGuestDescription.
   ///
   /// In en, this message translates to:
-  /// **'Guest data stays on this device. You can connect Google later.'**
+  /// **'Guest data stays in this local workspace on this device.'**
   String get accountChoiceGuestDescription;
 
   /// No description provided for @accountChoiceGoogleFailed.
@@ -4696,13 +4696,13 @@ abstract class AppLocalizations {
   /// No description provided for @guestGooglePromptTitle.
   ///
   /// In en, this message translates to:
-  /// **'Keep your Qaza progress safe'**
+  /// **'Use Google sign-in'**
   String get guestGooglePromptTitle;
 
   /// No description provided for @guestGooglePromptMessage.
   ///
   /// In en, this message translates to:
-  /// **'Connect a Google account to back up your Qaza progress and restore it if you change devices.'**
+  /// **'Sign in with Google to use a separate local workspace on this device. Your Qaza data will not be backed up or transferred automatically.'**
   String get guestGooglePromptMessage;
 
   /// No description provided for @cloudSetupUseGoogle.

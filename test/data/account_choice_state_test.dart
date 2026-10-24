@@ -5,7 +5,8 @@ import 'package:qaza_namaz/data/local/database/app_database.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  test('local account-choice completion is durable database metadata', () async {
+  test('local account-choice completion is durable database metadata',
+      () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 

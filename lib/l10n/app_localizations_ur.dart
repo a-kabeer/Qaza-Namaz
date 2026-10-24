@@ -647,7 +647,7 @@ class AppLocalizationsUr extends AppLocalizations {
   String get splashTagline => 'نماز کی پابندی کے لیے ایک پُرسکون جگہ';
 
   @override
-  String get accountChoiceHeadline => 'گوگل سائن اِن استعمال کریں';
+  String get accountChoiceHeadline => 'اپنی قضا کی پیش رفت محفوظ رکھیں';
 
   @override
   String get accountChoiceDescription =>

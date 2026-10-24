@@ -22,8 +22,7 @@ class AccountScreen extends ConsumerStatefulWidget {
 }
 
 class _AccountScreenState extends ConsumerState<AccountScreen> {
-  GoogleIdentitySnapshot _identity =
-      const GoogleIdentitySnapshot.unavailable();
+  GoogleIdentitySnapshot _identity = const GoogleIdentitySnapshot.unavailable();
   bool _loading = true;
   bool _working = false;
   String? _error;
@@ -64,16 +63,16 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
       final identity = await ref.read(googleIdentityProvider).signIn();
       if (!mounted || identity.status == GoogleIdentityStatus.cancelled) return;
       if (!identity.isSignedIn) {
-        setState(() => _error =
-            identity.message ?? AppLocalizations.of(context).accountChoiceGoogleFailed);
+        setState(() => _error = identity.message ??
+            AppLocalizations.of(context).accountChoiceGoogleFailed);
         return;
       }
       await _activateGoogleWorkspace(identity);
       if (mounted) setState(() => _identity = identity);
     } catch (_) {
       if (mounted) {
-        setState(() => _error =
-            AppLocalizations.of(context).accountChoiceGoogleFailed);
+        setState(() =>
+            _error = AppLocalizations.of(context).accountChoiceGoogleFailed);
       }
     } finally {
       if (mounted) setState(() => _working = false);
@@ -87,13 +86,13 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     if (accountId == null || accountId.isEmpty) {
       throw StateError('Google returned an empty account identifier.');
     }
-    await ref.read(accountSessionManagerProvider).activateGoogleAccount(accountId);
+    await ref
+        .read(accountSessionManagerProvider)
+        .activateGoogleAccount(accountId);
     final workspaceId =
         ref.read(accountSessionManagerProvider).activeLocalAccountId;
     final displayName = identity.displayName?.trim();
-    if (workspaceId != null &&
-        displayName != null &&
-        displayName.isNotEmpty) {
+    if (workspaceId != null && displayName != null && displayName.isNotEmpty) {
       await ref
           .read(accountLocalStoreProvider)
           .saveWorkspaceDisplayName(workspaceId, displayName);
@@ -200,8 +199,9 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                 children: [
                   CircleAvatar(
                     radius: 28,
-                    backgroundImage:
-                        connected && photoUrl != null ? NetworkImage(photoUrl) : null,
+                    backgroundImage: connected && photoUrl != null
+                        ? NetworkImage(photoUrl)
+                        : null,
                     child: !connected || photoUrl == null
                         ? const Icon(Icons.person_outline_rounded, size: 30)
                         : null,
@@ -217,14 +217,18 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                               : connected
                                   ? displayName
                                   : activeGoogleWorkspace
-                                      ? (activeAccount?.displayName?.trim().isNotEmpty == true
+                                      ? (activeAccount?.displayName
+                                                  ?.trim()
+                                                  .isNotEmpty ==
+                                              true
                                           ? activeAccount!.displayName!
                                           : l10n.accountGoogle)
                                       : l10n.accountGuest,
                           style: Theme.of(context).textTheme.titleMedium,
                         ),
                         if (connected && email != null)
-                          Text(email, style: Theme.of(context).textTheme.bodySmall),
+                          Text(email,
+                              style: Theme.of(context).textTheme.bodySmall),
                         const SizedBox(height: 4),
                         Text(
                           connected
@@ -310,9 +314,7 @@ String? _safeGooglePhotoUrl(String? value) {
   final raw = value?.trim();
   if (raw == null || raw.isEmpty) return null;
   final uri = Uri.tryParse(raw);
-  if (uri == null ||
-      uri.scheme.toLowerCase() != 'https' ||
-      uri.host.isEmpty) {
+  if (uri == null || uri.scheme.toLowerCase() != 'https' || uri.host.isEmpty) {
     return null;
   }
   return raw;
