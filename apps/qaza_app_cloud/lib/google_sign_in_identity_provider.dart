@@ -46,25 +46,10 @@ class GoogleSignInIdentityProvider implements GoogleIdentityProvider {
   @override
   Future<GoogleIdentitySnapshot> restore() => _serialized(() async {
         await _initialize();
-        if (_currentAccount != null) {
-          return _snapshot(_currentAccount!);
-        }
-
-        // Google Sign-In 7.x uses a provider-controlled lightweight restore.
-        // It may show minimal account UI on some platforms, so all identity
-        // operations share this serialized queue and cannot race an explicit
-        // authenticate() call.
-        try {
-          final attempt = _signIn.attemptLightweightAuthentication();
-          if (attempt == null) {
-            return const GoogleIdentitySnapshot.signedOut();
-          }
-          _currentAccount = await attempt;
-        } catch (_) {
-          // Failure to restore identity is not a database failure. The user
-          // can explicitly sign in again from the account-choice screen.
-          _currentAccount = null;
-        }
+        // Do not launch lightweight auth during startup: on Android it may
+        // surface account UI. The local session manager already restores the
+        // active workspace. Account identity is refreshed only by an explicit
+        // sign-in gesture in this build.
         final account = _currentAccount;
         return account == null
             ? const GoogleIdentitySnapshot.signedOut()
