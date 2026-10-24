@@ -253,7 +253,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
                       label: Text(l10n.accountSignOut),
                     )
                   : FilledButton.icon(
-                      key: const Key('account_google_sign_in'),
+                      key: const Key('account_google_login'),
                       onPressed: _working || _loading ? null : _signIn,
                       icon: const Icon(Icons.login_rounded),
                       label: Text(l10n.accountChoiceContinueGoogle),
