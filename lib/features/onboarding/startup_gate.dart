@@ -72,12 +72,12 @@ class StartupGate extends ConsumerWidget {
     }
 
     if (identityEnabled) {
-      final choice = ref.watch(cloudSetupChoiceCompleteProvider);
+      final choice = ref.watch(accountChoiceCompleteProvider);
       return choice.when(
         loading: () => const SplashScreen(),
         error: (_, __) => StartupProfileLoadErrorBoundary(
           key: const Key('startup_cloud_setup_choice_error'),
-          onRetry: () => ref.invalidate(cloudSetupChoiceCompleteProvider),
+          onRetry: () => ref.invalidate(accountChoiceCompleteProvider),
         ),
         data: (completed) => completed
             ? _restoredWorkspaceDestination(ref)
