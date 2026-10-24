@@ -231,7 +231,8 @@ void main() {
       find.byKey(Key('google_adopt_guest_$guestId')),
     );
 
-    expect(find.byKey(const Key('google_workspace_start_fresh')), findsOneWidget);
+    expect(
+        find.byKey(const Key('google_workspace_start_fresh')), findsOneWidget);
     await tester.tap(find.byKey(Key('google_adopt_guest_$guestId')));
     await tester.pumpAndSettle();
 

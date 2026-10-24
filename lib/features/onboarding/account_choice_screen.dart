@@ -42,8 +42,8 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
       await _completeGoogleIdentity(identity);
     } catch (_) {
       if (mounted) {
-        setState(() => _error =
-            AppLocalizations.of(context).accountChoiceGoogleFailed);
+        setState(() =>
+            _error = AppLocalizations.of(context).accountChoiceGoogleFailed);
       }
     } finally {
       if (mounted) setState(() => _working = false);
@@ -143,7 +143,9 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
     // Provision the empty, account-isolated Google target first; then make the
     // chosen Guest active because the local adoption journal requires that
     // source to remain authoritative until the transaction commits.
-    await ref.read(accountSessionManagerProvider).activateGoogleAccount(stableId);
+    await ref
+        .read(accountSessionManagerProvider)
+        .activateGoogleAccount(stableId);
     await ref
         .read(accountSessionManagerProvider)
         .activateLocalAccount(selectedSource);

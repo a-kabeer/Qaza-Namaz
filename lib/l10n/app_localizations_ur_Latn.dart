@@ -668,14 +668,16 @@ class AppLocalizationsUrLatn extends AppLocalizations {
   String get accountChoiceAdoptGuestTitle => "Saved Guest data istemal karein?";
 
   @override
-  String get accountChoiceAdoptGuestMessage => "Is Google account ki is device par abhi local workspace nahi. Aap saved Guest workspace ka data is account mein move kar sakte hain. Ye move isi device par hoga; Google Drive istemal nahi hogi.";
+  String get accountChoiceAdoptGuestMessage =>
+      "Is Google account ki is device par abhi local workspace nahi. Aap saved Guest workspace ka data is account mein move kar sakte hain. Ye move isi device par hoga; Google Drive istemal nahi hogi.";
 
   @override
-  String get accountChoiceAdoptGuestOption => "Is Guest ka data is Google account mein move karein";
+  String get accountChoiceAdoptGuestOption =>
+      "Is Guest ka data is Google account mein move karein";
 
   @override
-  String get accountChoiceGoogleStartFresh => "Khali Google workspace se shuru karein";
-
+  String get accountChoiceGoogleStartFresh =>
+      "Khali Google workspace se shuru karein";
 
   @override
   String get accountChoiceGoogleFailed =>

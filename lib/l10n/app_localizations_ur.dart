@@ -664,17 +664,19 @@ class AppLocalizationsUr extends AppLocalizations {
       'مہمان کا ڈیٹا اسی ڈیوائس پر اس مقامی ورک اسپیس میں محفوظ رہتا ہے۔';
 
   @override
-  String get accountChoiceAdoptGuestTitle => "محفوظ مہمان ڈیٹا استعمال کریں؟";
+  String get accountChoiceAdoptGuestTitle => 'محفوظ مہمان ڈیٹا استعمال کریں؟';
 
   @override
-  String get accountChoiceAdoptGuestMessage => "اس Google اکاؤنٹ کی اس ڈیوائس پر ابھی مقامی ورک اسپیس موجود نہیں۔ آپ محفوظ مہمان ورک اسپیس کا ڈیٹا اس اکاؤنٹ میں منتقل کر سکتے ہیں۔ یہ منتقلی اسی ڈیوائس پر ہوگی؛ Google Drive استعمال نہیں ہوگی۔";
+  String get accountChoiceAdoptGuestMessage =>
+      'اس Google اکاؤنٹ کی اس ڈیوائس پر ابھی مقامی ورک اسپیس موجود نہیں۔ آپ محفوظ مہمان ورک اسپیس کا ڈیٹا اس اکاؤنٹ میں منتقل کر سکتے ہیں۔ یہ منتقلی اسی ڈیوائس پر ہوگی؛ Google Drive استعمال نہیں ہوگی۔';
 
   @override
-  String get accountChoiceAdoptGuestOption => "اس مہمان کا ڈیٹا اس Google اکاؤنٹ میں منتقل کریں";
+  String get accountChoiceAdoptGuestOption =>
+      'اس مہمان کا ڈیٹا اس Google اکاؤنٹ میں منتقل کریں';
 
   @override
-  String get accountChoiceGoogleStartFresh => "خالی Google ورک اسپیس سے شروع کریں";
-
+  String get accountChoiceGoogleStartFresh =>
+      'خالی Google ورک اسپیس سے شروع کریں';
 
   @override
   String get accountChoiceGoogleFailed =>
@@ -3593,6 +3595,21 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   @override
   String get accountChoiceGuestDescription =>
       'Guest data isi device par is local workspace mein mehfooz rehta hai.';
+
+  @override
+  String get accountChoiceAdoptGuestTitle => 'Saved Guest data istemal karein?';
+
+  @override
+  String get accountChoiceAdoptGuestMessage =>
+      'Is Google account ki is device par abhi local workspace nahi. Aap saved Guest workspace ka data is account mein move kar sakte hain. Ye move isi device par hoga; Google Drive istemal nahi hogi.';
+
+  @override
+  String get accountChoiceAdoptGuestOption =>
+      'Is Guest ka data is Google account mein move karein';
+
+  @override
+  String get accountChoiceGoogleStartFresh =>
+      'Khali Google workspace se shuru karein';
 
   @override
   String get accountChoiceGoogleFailed =>

@@ -664,17 +664,19 @@ class AppLocalizationsEn extends AppLocalizations {
       'Guest data stays in this local workspace on this device.';
 
   @override
-  String get accountChoiceAdoptGuestTitle => "Use saved Guest data?";
+  String get accountChoiceAdoptGuestTitle => 'Use saved Guest data?';
 
   @override
-  String get accountChoiceAdoptGuestMessage => "This Google account has no local workspace yet. You can move a saved Guest workspace into it. The move is local to this device; Google Drive is not used.";
+  String get accountChoiceAdoptGuestMessage =>
+      'This Google account has no local workspace yet. You can move a saved Guest workspace into it. The move is local to this device; Google Drive is not used.';
 
   @override
-  String get accountChoiceAdoptGuestOption => "Move this Guest's data into this Google account";
+  String get accountChoiceAdoptGuestOption =>
+      'Move this Guest\'s data into this Google account';
 
   @override
-  String get accountChoiceGoogleStartFresh => "Start with an empty Google workspace";
-
+  String get accountChoiceGoogleStartFresh =>
+      'Start with an empty Google workspace';
 
   @override
   String get accountChoiceGoogleFailed =>

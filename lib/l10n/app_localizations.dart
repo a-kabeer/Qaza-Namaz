@@ -1199,16 +1199,28 @@ abstract class AppLocalizations {
   /// **'Guest data stays in this local workspace on this device.'**
   String get accountChoiceGuestDescription;
 
-  /// Local-only account choice copy.
+  /// No description provided for @accountChoiceAdoptGuestTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Use saved Guest data?'**
   String get accountChoiceAdoptGuestTitle;
 
-  /// Local-only account choice copy.
+  /// No description provided for @accountChoiceAdoptGuestMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'This Google account has no local workspace yet. You can move a saved Guest workspace into it. The move is local to this device; Google Drive is not used.'**
   String get accountChoiceAdoptGuestMessage;
 
-  /// Local-only account choice copy.
+  /// No description provided for @accountChoiceAdoptGuestOption.
+  ///
+  /// In en, this message translates to:
+  /// **'Move this Guest\'s data into this Google account'**
   String get accountChoiceAdoptGuestOption;
 
-  /// Local-only account choice copy.
+  /// No description provided for @accountChoiceGoogleStartFresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Start with an empty Google workspace'**
   String get accountChoiceGoogleStartFresh;
 
   /// No description provided for @accountChoiceGoogleFailed.
