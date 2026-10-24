@@ -245,7 +245,7 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
           if (provider.isSupported)
             SizedBox(
               width: double.infinity,
-              child: (connected || activeGoogleWorkspace)
+              child: connected
                   ? OutlinedButton.icon(
                       key: const Key('account_google_sign_out'),
                       onPressed: _working ? null : _signOut,
