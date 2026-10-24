@@ -156,9 +156,11 @@ class DatabaseManager {
     _throwIfClosing();
     _initializationInFlight = true;
     final initialization = _initialize();
-    return _initializeFuture = initialization.whenComplete(
-      () => _initializationInFlight = false,
-    );
+    final tracked = initialization.whenComplete(() {
+      _initializationInFlight = false;
+    });
+    _initializeFuture = tracked;
+    return tracked;
   }
 
   Future<void> _initialize() async {
@@ -178,9 +180,11 @@ class DatabaseManager {
     _throwIfClosing();
     _startupMigrationInFlight = true;
     final migration = _migrationHelper._runStartupMigrations();
-    return _startupMigrationFuture = migration.whenComplete(
-      () => _startupMigrationInFlight = false,
-    );
+    final tracked = migration.whenComplete(() {
+      _startupMigrationInFlight = false;
+    });
+    _startupMigrationFuture = tracked;
+    return tracked;
   }
 
   /// §4 staging file for a cross-file adoption into workspace [id]:
