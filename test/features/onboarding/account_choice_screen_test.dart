@@ -166,8 +166,8 @@ void main() {
 
     await tester.pumpWidget(_app(harness.container));
     await _pumpUntil(tester,
-        find.byKey(const Key('account_choice_google_sign_in')));
-    await tester.tap(find.byKey(const Key('account_choice_google_sign_in')));
+        find.byKey(const Key('account_choice_google_login')));
+    await tester.tap(find.byKey(const Key('account_choice_google_login')));
     await tester.pumpAndSettle();
 
     expect(harness.identity.signInCalls, 1);
@@ -215,8 +215,8 @@ void main() {
 
     await tester.pumpWidget(_app(harness.container));
     await _pumpUntil(tester,
-        find.byKey(const Key('account_choice_google_sign_in')));
-    await tester.tap(find.byKey(const Key('account_choice_google_sign_in')));
+        find.byKey(const Key('account_choice_google_login')));
+    await tester.tap(find.byKey(const Key('account_choice_google_login')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('account_choice_continue_guest')), findsOneWidget);
