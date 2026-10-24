@@ -189,7 +189,7 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
     ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = true;
     ref.invalidate(startupAccountWorkspaceRestoreProvider);
     ref.invalidate(returningAccountChoicePendingProvider);
-    ref.invalidate(cloudSetupChoiceCompleteProvider);
+    ref.invalidate(accountChoiceCompleteProvider);
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const StartupGate()),
