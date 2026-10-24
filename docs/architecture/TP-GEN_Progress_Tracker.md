@@ -208,3 +208,30 @@ git log -5 --oneline
 After the targeted rerun, continue the production ownership audit across `app/providers.dart`, `app_database.dart`, and `database_manager.dart`, especially startup's standalone `loadInitialHomePrayerSelection()` manager and remaining manager-test warnings. The warning counter alone is not evidence that two instances share one executor. Do not set `dontWarnAboutMultipleDatabases = true` as a shortcut. Record evidence and tests for the fix before acceptance.
 
 Keep `pubspec.lock` modified exactly as it is unless its diff is reviewed; do not reset it as part of syncing or test cleanup. If the full suite fails, capture each remaining failure and fix the underlying cause, then rerun the affected tests and full suite. Update this tracker after each meaningful result. Do not build a release APK or declare the branch ready for merge while the full-suite, static-analysis, Drift lifecycle, and architecture gates remain unresolved.
+
+
+---
+
+## 6. Newly reported device issue — account-specific Google connection failure
+
+**Reported:** 2026-10-24 (Asia/Karachi)  
+**Device evidence:** Screenshot from the startup account-choice screen. Sign-in succeeded for `akalbaloshi0@gmail.com`; trying `a.kabeer1991@gmail.com` showed the generic dialog “Something Went Wrong — Google connection could not be completed. Try again or continue locally.” The dialog offered Cancel and Retry.
+
+**Status: Open — root cause not yet identified. Do not reset account/workspace data.**
+
+### Source-path review
+
+- `lib/features/onboarding/cloud_setup_choice_screen.dart` runs `cloudAccountProvider.signIn()`, then activates the verified account workspace, then performs Google Drive backup discovery. Its catch path sends an exception to `_showFailure`; unknown/retryable errors may be presented as a generic connection failure. Therefore the screenshot does not prove that the native Google account picker itself failed.
+- `packages/qaza_cloud_adapter/lib/src/google_cloud_providers.dart` `_signIn()` performs Google authentication, Drive authorization, profile persistence, cloud-sync enablement and scheduler setup within one try/catch. Each stage can be the failure source.
+- Workspace activation and database resolution happen after account authentication, so a missing/invalid legacy workspace state for the second stable Google ID remains another possibility.
+- The UI currently collapses multiple failure sources into similar wording. A real exception/code and stage are required before choosing a fix.
+
+### Diagnostic plan
+
+- [ ] Reproduce the failure once with `a.kabeer1991@gmail.com` and collect the exception/code from Android logcat for the same timestamp.
+- [ ] Determine whether failure happens during `GoogleSignIn.authenticate()`, Drive authorization, cloud-state/profile persistence, workspace activation/database open, or Drive backup discovery.
+- [ ] Check Google Cloud OAuth consent-screen publishing/testing status and tester list if the captured error is an OAuth access/consent denial. Do not alter OAuth settings based only on the generic dialog.
+- [ ] Add stage-specific, privacy-safe diagnostics and regression tests if current logging cannot identify the failing step. Never log access/refresh tokens or raw local database contents.
+- [ ] Once the failing stage is established, fix and test that path, update this tracker, and repeat the real-device attempt.
+
+**Safety:** Do not delete either Google account, Drive backups, local databases, encryption keys, or app data to troubleshoot this. The fact that one account works and the other fails is a clue, not proof of an OAuth allowlist or database defect.
