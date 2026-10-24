@@ -6,6 +6,7 @@ import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_theme_labels.dart';
 import '../../core/widgets/language_selector.dart';
 import '../../domain/entities/local_account.dart';
+import '../../domain/services/google_identity_contracts.dart';
 import '../../l10n/app_localizations.dart';
 import '../account/guest_workspace_label.dart';
 import 'startup_gate.dart';
