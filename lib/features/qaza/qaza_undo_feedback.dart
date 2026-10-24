@@ -47,14 +47,13 @@ Future<void> showQazaUndoFeedback({
 }
 
 void _scheduleDailySalahAfterUndo({
-  required BuildContext context,
+  required ProviderContainer container,
   required String userId,
   required QazaUndoResult result,
 }) {
-  final container = ProviderScope.containerOf(context, listen: false);
   // This sync is a secondary projection of an already-committed Qaza undo.
-  // Use the persistent container so reconciliation can finish after the modal
-  // sheet closes, without holding the undo success UI open.
+  // Use the container captured before the async gap so reconciliation can
+  // finish even after the modal sheet closes, without using a stale context.
   unawaited(
     _syncDailySalahAfterUndo(
       container: container,
@@ -223,6 +222,7 @@ Future<void> _undoAll({
   Future<void> Function()? onUndone,
 }) async {
   final diagnostics = ref.read(diagnosticsProvider);
+  final container = ProviderScope.containerOf(context, listen: false);
   try {
     final result = await ref.read(qazaUndoManagerProvider).undo(
           userId: userId,
@@ -230,7 +230,7 @@ Future<void> _undoAll({
           expectedBatch: batch,
         );
     _scheduleDailySalahAfterUndo(
-        context: context, userId: userId, result: result);
+        container: container, userId: userId, result: result);
     try {
       ref.read(homeControllerProvider).invalidateDashboard();
       ref.invalidate(progressSummaryProvider);
@@ -313,6 +313,7 @@ class _QazaUndoSelectionSheetState
     if (_selected.isEmpty || _working) {
       return;
     }
+    final container = ProviderScope.containerOf(context, listen: false);
     setState(() => _working = true);
     try {
       final result = await ref.read(qazaUndoManagerProvider).undoSelected(
@@ -322,7 +323,7 @@ class _QazaUndoSelectionSheetState
             selectedIds: Set<String>.of(_selected),
           );
       _scheduleDailySalahAfterUndo(
-        context: context,
+        container: container,
         userId: widget.userId,
         result: result,
       );
@@ -370,6 +371,7 @@ class _QazaUndoSelectionSheetState
 
   Future<void> _undoAll() async {
     if (_working) return;
+    final container = ProviderScope.containerOf(context, listen: false);
     setState(() => _working = true);
     try {
       final result = await ref.read(qazaUndoManagerProvider).undo(
@@ -378,7 +380,7 @@ class _QazaUndoSelectionSheetState
             expectedBatch: _batch,
           );
       _scheduleDailySalahAfterUndo(
-        context: context,
+        container: container,
         userId: widget.userId,
         result: result,
       );

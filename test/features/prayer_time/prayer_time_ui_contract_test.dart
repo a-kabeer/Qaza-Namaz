@@ -2,11 +2,15 @@ import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
 
+String _readSource(String path) => File(path)
+    .readAsStringSync()
+    .replaceAll('\r\n', '\n')
+    .replaceAll('\r', '\n');
+
 void main() {
   test('Prayer Time focus countdown cannot wrap', () {
-    final source =
-        File('lib/features/prayer_time/presentation/prayer_time_page.dart')
-            .readAsStringSync();
+    final source = _readSource(
+        'lib/features/prayer_time/presentation/prayer_time_page.dart');
     final start =
         source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
     final end = source.indexOf(
@@ -23,9 +27,8 @@ void main() {
   });
 
   test('Prayer Time focus card renders a separate upcoming label and time', () {
-    final source =
-        File('lib/features/prayer_time/presentation/prayer_time_page.dart')
-            .readAsStringSync();
+    final source = _readSource(
+        'lib/features/prayer_time/presentation/prayer_time_page.dart');
     final start =
         source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
     final end = source.indexOf(
@@ -42,9 +45,8 @@ void main() {
   });
 
   test('Prayer Time focus restricted range cannot wrap', () {
-    final source =
-        File('lib/features/prayer_time/presentation/prayer_time_page.dart')
-            .readAsStringSync();
+    final source = _readSource(
+        'lib/features/prayer_time/presentation/prayer_time_page.dart');
     final start =
         source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
     final end = source.indexOf(
@@ -75,9 +77,8 @@ void main() {
   test(
       'Qibla summary replaces the large bearing value with the shared compass visualization',
       () {
-    final source =
-        File('lib/features/prayer_time/presentation/qibla_summary_card.dart')
-            .readAsStringSync();
+    final source = _readSource(
+        'lib/features/prayer_time/presentation/qibla_summary_card.dart');
 
     expect(source, contains('class QiblaSummaryCard extends ConsumerWidget {'));
     expect(source, contains('compassSensorAvailableProvider'));
@@ -92,8 +93,7 @@ void main() {
   test('Qibla dial uses a clean directional needle in static and live modes',
       () {
     final source =
-        File('lib/features/prayer_time/presentation/qibla_visuals.dart')
-            .readAsStringSync();
+        _readSource('lib/features/prayer_time/presentation/qibla_visuals.dart');
 
     expect(source, contains('class QiblaDialPainter extends CustomPainter {'));
     expect(source, isNot(contains('_drawKaaba(')));

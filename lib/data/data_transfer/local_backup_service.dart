@@ -1,10 +1,14 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 import 'package:drift/drift.dart';
 
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/local_account.dart';
 import '../local/database/app_database.dart';
+import '../local/database/database_manager.dart';
+import '../local/database/workspace_canonical_content.dart';
 
 const _appId = 'qaza_namaz_app';
 const _backupSchemaVersion = 1;
@@ -32,37 +36,230 @@ class LocalBackupAnalysis {
 }
 
 class LocalBackupService {
-  LocalBackupService(this.database);
+  LocalBackupService(this.database, {DatabaseManager? databaseManager})
+      : _databaseManager = databaseManager;
 
   final AppDatabase database;
+  final DatabaseManager? _databaseManager;
 
   Future<String> exportJson({
     DateTime? exportedAt,
     String? localAccountId,
   }) async {
-    return database.transaction(() async {
+    final manager = _databaseManager;
+    if (manager == null) {
+      return _exportFromSource(
+        database,
+        exportedAt: exportedAt,
+        localAccountId: localAccountId,
+      );
+    }
+    final control = manager.controlDatabase;
+    if (localAccountId != null) {
+      final id = localAccountId.trim();
+      if (id.isEmpty)
+        throw ArgumentError.value(localAccountId, 'localAccountId');
+      final workspace = await manager.databaseForWorkspace(id);
+      final account = await _readLogicalAccount(control, id);
+      return _exportFromSource(
+        workspace,
+        exportedAt: exportedAt,
+        localAccountId: id,
+        logicalAccount: account,
+      );
+    }
+
+    final root =
+        jsonDecode(await _exportFromSource(control, exportedAt: exportedAt));
+    if (root is! Map<String, dynamic>) {
+      throw const LocalBackupException('The local export document is invalid.');
+    }
+    final data = Map<String, dynamic>.from(root['data'] as Map);
+    final separateRows = await control
+        .customSelect(
+          "SELECT local_account_id FROM local_accounts WHERE db_layout = 'separate' ORDER BY local_account_id",
+        )
+        .get();
+    final separateIds = <String>{
+      for (final registryRow in separateRows)
+        registryRow.read<String>('local_account_id'),
+    };
+
+    // Recovery Stage 4 (R-14, §5.4 retention): a migrated workspace's
+    // superseded rows remain in the control database until the gated
+    // Stage 6 cleanup. The registry — not row presence — decides which
+    // copy is authoritative, so the control leg of a full export must
+    // not emit a separate workspace's retained rows: each separate
+    // workspace contributes its rows exactly once, from its own file
+    // below. Without this filter, retention would duplicate every
+    // migrated workspace's rows in every full export.
+    void dropRetainedSeparateRows(String key, String ownerKey) {
+      (data[key] as List<dynamic>).removeWhere(
+        (row) => row is Map && separateIds.contains(row[ownerKey]),
+      );
+    }
+
+    dropRetainedSeparateRows('qaza_records', 'userId');
+    dropRetainedSeparateRows('daily_salah_logs', 'user_id');
+    dropRetainedSeparateRows('qaza_additions', 'user_id');
+    dropRetainedSeparateRows('qaza_deletion_actions', 'user_id');
+    dropRetainedSeparateRows(
+        'qaza_deletion_action_record_snapshots', 'user_id');
+    dropRetainedSeparateRows('qaza_profile_plan_provenance', 'user_id');
+    dropRetainedSeparateRows('account_profiles', 'local_account_id');
+    dropRetainedSeparateRows('account_plan_revisions', 'local_account_id');
+
+    for (final id in separateIds) {
+      final account = await _readLogicalAccount(control, id);
+      final workspace = await manager.databaseForWorkspace(id);
+      final scopedRoot = jsonDecode(await _exportFromSource(
+        workspace,
+        exportedAt: exportedAt,
+        localAccountId: id,
+        logicalAccount: account,
+      )) as Map<String, dynamic>;
+      final scopedData = Map<String, dynamic>.from(scopedRoot['data'] as Map);
+
+      for (final key in const <String>[
+        'qaza_records',
+        'daily_salah_logs',
+        'qaza_additions',
+        'qaza_deletion_actions',
+        'qaza_deletion_action_record_snapshots',
+        'qaza_profile_plan_provenance',
+        'account_profiles',
+        'account_plan_revisions',
+      ]) {
+        (data[key] as List<dynamic>).addAll(scopedData[key] as List<dynamic>);
+      }
+
+      final rootMeta = Map<String, dynamic>.from(data['meta_store'] as Map);
+      final scopedMeta =
+          Map<String, dynamic>.from(scopedData['meta_store'] as Map);
+      for (final key in const <String>[
+        'daily_salah_tracking_enabled_by_account',
+        'daily_salah_tracking_setup_dismissed_by_account',
+        'workspace_display_names_by_account',
+      ]) {
+        final combined = Map<String, dynamic>.from(
+          (rootMeta[key] as Map?) ?? const <String, dynamic>{},
+        );
+        final incoming = scopedMeta[key];
+        if (incoming is Map) {
+          for (final entry in incoming.entries) {
+            if (entry.key is String)
+              combined[entry.key as String] = entry.value;
+          }
+        }
+        rootMeta[key] = combined;
+      }
+      data['meta_store'] = rootMeta;
+    }
+
+    for (final key in const <String>[
+      'qaza_records',
+      'qaza_additions',
+      'qaza_deletion_actions',
+      'account_profiles',
+    ]) {
+      (data[key] as List<dynamic>).sort((a, b) {
+        final left = a as Map;
+        final right = b as Map;
+        final leftKey =
+            (left['id'] ?? left['local_account_id'] ?? '').toString();
+        final rightKey =
+            (right['id'] ?? right['local_account_id'] ?? '').toString();
+        return leftKey.compareTo(rightKey);
+      });
+    }
+    (data['qaza_profile_plan_provenance'] as List<dynamic>).sort((a, b) =>
+        ((a as Map)['record_id'] as String)
+            .compareTo((b as Map)['record_id'] as String));
+    (data['account_plan_revisions'] as List<dynamic>).sort((a, b) {
+      final left = a as Map;
+      final right = b as Map;
+      return '${left['local_account_id']}:${left['revision_id']}'
+          .compareTo('${right['local_account_id']}:${right['revision_id']}');
+    });
+    root['data'] = data;
+    return const JsonEncoder.withIndent('  ').convert(root);
+  }
+
+  Future<Map<String, dynamic>> _readLogicalAccount(
+    AppDatabase control,
+    String localAccountId,
+  ) async {
+    final rows = await control.customSelect(
+      '''SELECT local_account_id, account_mode, lifecycle_state, created_at, updated_at
+         FROM local_accounts WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable<String>(localAccountId)],
+    ).get();
+    if (rows.isEmpty) {
+      throw LocalBackupException(
+        'Workspace "$localAccountId" is not registered and cannot be exported.',
+      );
+    }
+    final row = rows.single;
+    return <String, dynamic>{
+      'local_account_id': row.read<String>('local_account_id'),
+      'account_mode': row.read<String>('account_mode'),
+      'lifecycle_state': row.read<String>('lifecycle_state'),
+      'created_at': row.read<int>('created_at'),
+      'updated_at': row.read<int>('updated_at'),
+    };
+  }
+
+  Future<String> _exportFromSource(
+    AppDatabase source, {
+    DateTime? exportedAt,
+    String? localAccountId,
+    Map<String, dynamic>? logicalAccount,
+  }) async {
+    Future<List<Map<String, dynamic>>> selectMapsFromSource(
+      String sql,
+      List<String> columns, {
+      Set<String> integerColumns = const <String>{},
+    }) async {
+      final selectedRows = await source.customSelect(sql).get();
+      return selectedRows
+          .map((row) => <String, dynamic>{
+                for (final column in columns)
+                  column: _readValue(
+                    row,
+                    column,
+                    integer: integerColumns.contains(column),
+                  ),
+              })
+          .toList(growable: false);
+    }
+
+    return source.transaction(() async {
       final dbRevision = localAccountId == null
-          ? await database.readDbRevision()
-          : await database.readWorkspaceRevision(localAccountId);
-      final users = await database.qazaRecordsDao.userIds();
+          ? await source.readDbRevision()
+          : await source.readWorkspaceRevision(localAccountId);
+      final users = await source.qazaRecordsDao.userIds();
       final records = <Map<String, dynamic>>[];
       for (final userId in users) {
-        final rows = await database.qazaRecordsDao.getAll(userId: userId);
+        final rows = await source.qazaRecordsDao.getAll(userId: userId);
         records.addAll(rows.map((row) => row.toJson()));
       }
       records.sort(
         (a, b) => (a['id'] as String).compareTo(b['id'] as String),
       );
 
-      final accountIdRows = await database
-          .customSelect(
-            'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
-          )
-          .get();
+      final accountIds = source.isGoogleWorkspaceDatabase
+          ? <String>[localAccountId ?? source.workspaceId!]
+          : (await source
+                  .customSelect(
+                    'SELECT local_account_id FROM local_accounts ORDER BY local_account_id',
+                  )
+                  .get())
+              .map((row) => row.read<String>('local_account_id'))
+              .toList(growable: false);
       final trackingEnabledByAccount = <String, bool>{};
       final trackingSetupDismissedByAccount = <String, bool>{};
       final workspaceDisplayNames = <String, String>{};
-      final workspaceNameRows = await database
+      final workspaceNameRows = await source
           .customSelect(
             "SELECT key, value FROM meta_store "
             "WHERE key LIKE 'workspace_display_name:%'",
@@ -79,21 +276,24 @@ class LocalBackupService {
           workspaceDisplayNames[accountId] = displayName;
         }
       }
-      for (final row in accountIdRows) {
-        final accountId = row.read<String>('local_account_id');
+      for (final accountId in accountIds) {
         trackingEnabledByAccount[accountId] =
-            await database.isDailySalahTrackingEnabled(userId: accountId);
-        trackingSetupDismissedByAccount[accountId] = await database
-            .isDailySalahTrackingSetupDismissed(userId: accountId);
+            await source.isDailySalahTrackingEnabled(userId: accountId);
+        trackingSetupDismissedByAccount[accountId] =
+            await source.isDailySalahTrackingSetupDismissed(userId: accountId);
       }
-      final activeSessionRows = await database
-          .customSelect(
-            'SELECT active_local_account_id FROM app_session_state ORDER BY id LIMIT 1',
-          )
-          .get();
-      final activeAccountId = activeSessionRows.isEmpty
-          ? null
-          : activeSessionRows.first.read<String?>('active_local_account_id');
+      final activeAccountId = source.isGoogleWorkspaceDatabase
+          ? (localAccountId ?? source.workspaceId)
+          : await (() async {
+              final activeRows = await source
+                  .customSelect(
+                    'SELECT active_local_account_id FROM app_session_state ORDER BY id LIMIT 1',
+                  )
+                  .get();
+              return activeRows.isEmpty
+                  ? null
+                  : activeRows.first.read<String?>('active_local_account_id');
+            })();
       final preferenceAccountId = localAccountId?.trim().isNotEmpty == true
           ? localAccountId!.trim()
           : activeAccountId ?? 'guest';
@@ -102,14 +302,14 @@ class LocalBackupService {
         'metadata': {
           'app_id': _appId,
           'backup_schema_version': _backupSchemaVersion,
-          'database_schema_version': database.schemaVersion,
+          'database_schema_version': source.schemaVersion,
           'db_revision': dbRevision,
           'export_timestamp':
               (exportedAt ?? DateTime.now()).toUtc().toIso8601String(),
         },
         'data': {
           'qaza_records': records,
-          'daily_salah_logs': await _selectMaps(
+          'daily_salah_logs': await selectMapsFromSource(
             'SELECT user_id, prayer_date, prayer_type, status, '
             'tracker_created_qaza_id, linked_qaza_id, completion_sync_id, '
             'updated_at FROM daily_salah_logs '
@@ -125,7 +325,7 @@ class LocalBackupService {
               'updated_at',
             ],
           ),
-          'qaza_additions': await _selectMaps(
+          'qaza_additions': await selectMapsFromSource(
             'SELECT id, user_id, mode, input_snapshot, revision, created_at, updated_at '
             'FROM qaza_additions ORDER BY id',
             [
@@ -138,7 +338,7 @@ class LocalBackupService {
               'updated_at',
             ],
           ),
-          'qaza_deletion_actions': await _selectMaps(
+          'qaza_deletion_actions': await selectMapsFromSource(
             'SELECT id, user_id, addition_id, created_at, resolved_at, entity_version '
             'FROM qaza_deletion_actions ORDER BY id',
             [
@@ -150,7 +350,7 @@ class LocalBackupService {
               'entity_version',
             ],
           ),
-          'qaza_deletion_action_record_snapshots': await _selectMaps(
+          'qaza_deletion_action_record_snapshots': await selectMapsFromSource(
             'SELECT deletion_action_id, record_id, user_id, addition_id, prayer_type, '
             'original_date, status, completed_at, completion_id, created_at, '
             'updated_at, record_version '
@@ -171,29 +371,41 @@ class LocalBackupService {
               'record_version',
             ],
           ),
-          'qaza_profile_plan_provenance': await _selectMaps(
+          'qaza_profile_plan_provenance': await selectMapsFromSource(
             'SELECT record_id, user_id, plan_revision_id, plan_fingerprint '
             'FROM qaza_profile_plan_provenance ORDER BY record_id',
             ['record_id', 'user_id', 'plan_revision_id', 'plan_fingerprint'],
           ),
-          'local_accounts': await _selectMaps(
-            'SELECT local_account_id, account_mode, lifecycle_state, created_at, updated_at '
-            'FROM local_accounts ORDER BY local_account_id',
-            [
-              'local_account_id',
-              'account_mode',
-              'lifecycle_state',
-              'created_at',
-              'updated_at',
-            ],
-            integerColumns: {'created_at', 'updated_at'},
-          ),
-          'app_session_state': await _selectMaps(
-            'SELECT id, active_local_account_id FROM app_session_state ORDER BY id',
-            ['id', 'active_local_account_id'],
-            integerColumns: {'id'},
-          ),
-          'account_profiles': await _selectMaps(
+          'local_accounts': source.isGoogleWorkspaceDatabase
+              ? <Map<String, dynamic>>[
+                  if (logicalAccount != null) logicalAccount,
+                ]
+              : await selectMapsFromSource(
+                  'SELECT local_account_id, account_mode, lifecycle_state, created_at, updated_at '
+                  'FROM local_accounts ORDER BY local_account_id',
+                  [
+                    'local_account_id',
+                    'account_mode',
+                    'lifecycle_state',
+                    'created_at',
+                    'updated_at',
+                  ],
+                  integerColumns: {'created_at', 'updated_at'},
+                ),
+          'app_session_state': source.isGoogleWorkspaceDatabase
+              ? <Map<String, dynamic>>[
+                  <String, dynamic>{
+                    'id': 1,
+                    'active_local_account_id':
+                        localAccountId ?? source.workspaceId,
+                  },
+                ]
+              : await selectMapsFromSource(
+                  'SELECT id, active_local_account_id FROM app_session_state ORDER BY id',
+                  ['id', 'active_local_account_id'],
+                  integerColumns: {'id'},
+                ),
+          'account_profiles': await selectMapsFromSource(
             'SELECT local_account_id, payload_json, entity_version, updated_at, '
             'writer_device_id, operation_id FROM account_profiles ORDER BY local_account_id',
             [
@@ -206,21 +418,21 @@ class LocalBackupService {
             ],
             integerColumns: {'updated_at'},
           ),
-          'account_plan_revisions': await _selectMaps(
+          'account_plan_revisions': await selectMapsFromSource(
             'SELECT local_account_id, revision_id, payload_json, created_at '
             'FROM account_plan_revisions ORDER BY local_account_id, revision_id',
             ['local_account_id', 'revision_id', 'payload_json', 'created_at'],
             integerColumns: {'created_at'},
           ),
           'meta_store': {
-            'is_onboarding_completed': await database.isOnboardingCompleted(),
+            'is_onboarding_completed': await source.isOnboardingCompleted(),
             'daily_salah_tracking_enabled':
-                await database.isDailySalahTrackingEnabled(
+                await source.isDailySalahTrackingEnabled(
               userId: preferenceAccountId,
             ),
             'daily_salah_tracking_enabled_by_account': trackingEnabledByAccount,
             'daily_salah_tracking_setup_dismissed':
-                await database.isDailySalahTrackingSetupDismissed(
+                await source.isDailySalahTrackingSetupDismissed(
               userId: preferenceAccountId,
             ),
             'daily_salah_tracking_setup_dismissed_by_account':
@@ -344,6 +556,26 @@ class LocalBackupService {
       throw const LocalBackupException(
         'Only a Guest workspace can be adopted into a verified Google workspace.',
       );
+    }
+
+    // Google workspaces on the separate layout must be populated in their own
+    // database. The shared-layout implementation below remains only for
+    // legacy/test fixtures; it is never used for a committed separate target.
+    final manager = _databaseManager;
+    if (manager != null) {
+      final layoutRows = await database.customSelect(
+        'SELECT db_layout FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable<String>(target)],
+      ).get();
+      if (layoutRows.isNotEmpty &&
+          layoutRows.single.read<String>('db_layout') == 'separate') {
+        await _adoptGuestWorkspaceAcrossFiles(
+          sourceLocalAccountId: source,
+          targetGoogleLocalAccountId: target,
+          googleDisplayName: googleDisplayName,
+        );
+        return;
+      }
     }
 
     // The operation ID is deterministic for this Guest/Google pair. A process
@@ -749,6 +981,463 @@ class LocalBackupService {
     }, mutationPredicate: (_) => true);
   }
 
+  Future<void> _adoptGuestWorkspaceAcrossFiles({
+    required String sourceLocalAccountId,
+    required String targetGoogleLocalAccountId,
+    required String googleDisplayName,
+  }) async {
+    final source = sourceLocalAccountId.trim();
+    final target = targetGoogleLocalAccountId.trim();
+    final manager = _databaseManager;
+    if (manager == null ||
+        !isGuestLocalWorkspaceId(source) ||
+        !target.startsWith('google_') ||
+        source == target) {
+      throw const LocalBackupException(
+        'A separate-file adoption requires one Guest source and a verified Google target.',
+      );
+    }
+
+    await manager.initialize();
+    final operationId = 'guest-adoption:$source=>$target';
+    await database.customStatement('''
+      CREATE TABLE IF NOT EXISTS local_account_adoption_snapshots (
+        snapshot_id TEXT NOT NULL PRIMARY KEY,
+        source_local_account_id TEXT NOT NULL,
+        target_local_account_id TEXT NOT NULL,
+        created_at TEXT NOT NULL,
+        payload_json TEXT NOT NULL
+      )
+    ''');
+
+    final journalRows = await database.customSelect(
+      'SELECT phase FROM workspace_operation_journal WHERE operation_id = ? LIMIT 1',
+      variables: [Variable<String>(operationId)],
+    ).get();
+    final priorPhase =
+        journalRows.isEmpty ? null : journalRows.single.read<String>('phase');
+    if (priorPhase == 'committed' || priorPhase == 'cleaned') {
+      final stateRows = await database.customSelect(
+        '''SELECT local_account_id, lifecycle_state FROM local_accounts
+           WHERE local_account_id IN (?, ?)''',
+        variables: [Variable<String>(source), Variable<String>(target)],
+      ).get();
+      final states = <String, String>{
+        for (final row in stateRows)
+          row.read<String>('local_account_id'):
+              row.read<String>('lifecycle_state'),
+      };
+      if (states[source] == 'adopted_recovery' && states[target] == 'active') {
+        return;
+      }
+      throw const LocalBackupException(
+        'A prior adoption is marked committed but the registry disagrees. '
+        'No records were deleted; restore from the saved snapshot after inspection.',
+      );
+    }
+    if (priorPhase != null &&
+        !const {'prepared', 'snapshotted', 'copied', 'verified', 'finalizing'}
+            .contains(priorPhase)) {
+      throw const LocalBackupException(
+        'The Guest adoption journal needs recovery before retrying. '
+        'The Guest source and recovery snapshot were preserved.',
+      );
+    }
+
+    final sourceRows = await database.customSelect(
+      'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+      variables: [Variable<String>(source)],
+    ).get();
+    final targetRows = await database.customSelect(
+      '''SELECT lifecycle_state, db_layout, db_migration_state
+         FROM local_accounts WHERE local_account_id = ? LIMIT 1''',
+      variables: [Variable<String>(target)],
+    ).get();
+    if (sourceRows.isEmpty ||
+        sourceRows.single.read<String>('lifecycle_state') != 'active') {
+      throw const LocalBackupException(
+          'The source Guest workspace is not active.');
+    }
+    if (targetRows.isEmpty ||
+        targetRows.single.read<String>('lifecycle_state') != 'active' ||
+        targetRows.single.read<String>('db_layout') != 'separate' ||
+        targetRows.single.read<String>('db_migration_state') != 'committed') {
+      throw const LocalBackupException(
+        'The Google target is not a committed separate workspace.',
+      );
+    }
+
+    final sessionBefore = await database
+        .customSelect(
+          'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+        )
+        .get();
+    final activeBefore = sessionBefore.isEmpty
+        ? null
+        : sessionBefore.single.read<String?>('active_local_account_id');
+    if (activeBefore != source) {
+      throw const LocalBackupException(
+        'The source Guest workspace must be active before adoption. No data was moved.',
+      );
+    }
+
+    final workspace = await manager.databaseForWorkspace(target);
+    if (await workspace.readWorkspaceFileOwner() != target) {
+      throw const LocalBackupException(
+        'The Google target database owner could not be verified.',
+      );
+    }
+
+    const ownedTables = <(String, String, String)>[
+      ('qaza_records', 'user_id', 'qaza_records'),
+      ('daily_salah_logs', 'user_id', 'daily_salah_logs'),
+      ('qaza_additions', 'user_id', 'qaza_additions'),
+      ('qaza_deletion_actions', 'user_id', 'qaza_deletion_actions'),
+      (
+        'qaza_deletion_action_record_snapshots',
+        'user_id',
+        'qaza_deletion_action_record_snapshots',
+      ),
+      (
+        'qaza_profile_plan_provenance',
+        'user_id',
+        'qaza_profile_plan_provenance'
+      ),
+      ('account_profiles', 'local_account_id', 'account_profiles'),
+      ('account_plan_revisions', 'local_account_id', 'account_plan_revisions'),
+    ];
+
+    Future<int> rowCount(
+      AppDatabase db,
+      String table,
+      String ownerColumn,
+      String id,
+    ) async {
+      final rows = await db.customSelect(
+        'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$ownerColumn" = ?',
+        variables: [Variable<String>(id)],
+      ).get();
+      return rows.single.read<int>('row_count');
+    }
+
+    Future<bool> targetHasUserData() async {
+      for (final (table, ownerColumn, _) in ownedTables) {
+        if (await rowCount(workspace, table, ownerColumn, target) != 0) {
+          return true;
+        }
+      }
+      return false;
+    }
+
+    Future<void> verifyTargetMatchesPayload(
+      String payload, [
+      AppDatabase? targetOverride,
+    ]) async {
+      final targetDb = targetOverride ?? workspace;
+      final decoded = _decodeAndValidate(payload);
+      final payloadData = Map<String, dynamic>.from(decoded['data'] as Map);
+      final accounts = payloadData['local_accounts'] as List<dynamic>;
+      if (accounts.length != 1 ||
+          accounts.single is! Map ||
+          (accounts.single as Map)['local_account_id'] != source) {
+        throw const LocalBackupException(
+          'The saved adoption snapshot does not identify the original Guest source.',
+        );
+      }
+      for (final (table, ownerColumn, payloadKey) in ownedTables) {
+        final expectedRows =
+            (payloadData[payloadKey] as List<dynamic>?) ?? const [];
+        final actualCount =
+            await rowCount(targetDb, table, ownerColumn, target);
+        if (actualCount != expectedRows.length) {
+          throw LocalBackupException(
+            'Adoption verification failed for $table: expected \${expectedRows.length}, found $actualCount. '
+            'The Guest source and snapshot remain available.',
+          );
+        }
+        final foreignRows = await targetDb.customSelect(
+          'SELECT COUNT(*) AS row_count FROM "$table" WHERE "$ownerColumn" != ?',
+          variables: [Variable<String>(target)],
+        ).get();
+        if (foreignRows.single.read<int>('row_count') != 0) {
+          throw LocalBackupException(
+            'The Google file contains rows owned by another workspace in $table.',
+          );
+        }
+      }
+      if (await targetDb.readWorkspaceFileOwner() != target) {
+        throw const LocalBackupException(
+            'Google file owner changed during adoption.');
+      }
+      final integrity =
+          await targetDb.customSelect('PRAGMA integrity_check').get();
+      if (integrity.isEmpty ||
+          integrity.first.read<String>('integrity_check') != 'ok') {
+        throw const LocalBackupException(
+            'Google file integrity verification failed.');
+      }
+      // Unified canonical hash (decision D-D(ii)): the payload-bearing
+      // owned content of the target must equal the Guest source's,
+      // under the §7 canonicalisation's identity mapping.
+      final sourceHash =
+          await WorkspaceCanonicalContent.ownedContentHash(database, source);
+      final targetHash =
+          await WorkspaceCanonicalContent.ownedContentHash(targetDb, target);
+      if (sourceHash != targetHash) {
+        throw const LocalBackupException(
+          'Adoption verification failed: canonical content hash mismatch. '
+          'The Guest source and snapshot remain available.',
+        );
+      }
+    }
+
+    final existingSnapshotRows = await database.customSelect(
+      'SELECT payload_json FROM local_account_adoption_snapshots WHERE snapshot_id = ? LIMIT 1',
+      variables: [Variable<String>(operationId)],
+    ).get();
+    String payload;
+    if (existingSnapshotRows.isEmpty) {
+      payload = await exportJson(localAccountId: source);
+      await analyzeImport(payload);
+      await database.customInsert(
+        '''INSERT OR IGNORE INTO workspace_operation_journal
+           (operation_id, operation_type, source_local_account_id,
+            target_local_account_id, phase, created_at, updated_at)
+           VALUES (?, 'guest_adoption', ?, ?, 'prepared', ?, ?)''',
+        variables: [
+          Variable<String>(operationId),
+          Variable<String>(source),
+          Variable<String>(target),
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+        ],
+      );
+      await database.transaction(() async {
+        await database.customInsert(
+          '''INSERT INTO local_account_adoption_snapshots
+             (snapshot_id, source_local_account_id, target_local_account_id,
+              created_at, payload_json)
+             VALUES (?, ?, ?, ?, ?)''',
+          variables: [
+            Variable<String>(operationId),
+            Variable<String>(source),
+            Variable<String>(target),
+            Variable<String>(DateTime.now().toUtc().toIso8601String()),
+            Variable<String>(payload),
+          ],
+        );
+      });
+    } else {
+      payload = existingSnapshotRows.single.read<String>('payload_json');
+      await analyzeImport(payload);
+      final currentPayload = await exportJson(localAccountId: source);
+      bool sameLogicalContent(String first, String second) {
+        try {
+          final a = Map<String, dynamic>.from(jsonDecode(first) as Map);
+          final b = Map<String, dynamic>.from(jsonDecode(second) as Map);
+          for (final root in [a, b]) {
+            final metadata = Map<String, dynamic>.from(root['metadata'] as Map);
+            metadata.remove('export_timestamp');
+            root['metadata'] = metadata;
+          }
+          return jsonEncode(a) == jsonEncode(b);
+        } catch (_) {
+          return false;
+        }
+      }
+
+      if (!sameLogicalContent(payload, currentPayload)) {
+        throw const LocalBackupException(
+          'Guest data changed after the adoption snapshot was saved. '
+          'No overwrite was attempted; preserve both the Guest data and snapshot.',
+        );
+      }
+    }
+
+    await database.customUpdate(
+      '''UPDATE workspace_operation_journal
+         SET phase = 'snapshotted', snapshot_id = ?, updated_at = ?, error_message = NULL
+         WHERE operation_id = ? AND phase IN ('prepared', 'snapshotted', 'copied', 'verified')''',
+      variables: [
+        Variable<String>(operationId),
+        Variable<int>(DateTime.now().microsecondsSinceEpoch),
+        Variable<String>(operationId),
+      ],
+    );
+
+    // §4 staging publish (Recovery Stage 4, decision D-D(i)): the
+    // payload is imported into a staging copy of the target file and
+    // verified there; the finalization intent is journaled BEFORE the
+    // staging file is published over the target's final name; the §4
+    // step-7 commit transaction runs last. The live target file is
+    // never written to before publish. Every phase is idempotent on
+    // retry: 'copied'/'verified' redo the staging import from the
+    // durable snapshot payload, 'finalizing' resumes by verifying the
+    // live file or publishing the surviving staging file.
+    var published = workspace;
+    var contentLive = false;
+    if (priorPhase == 'finalizing') {
+      try {
+        await verifyTargetMatchesPayload(payload);
+        contentLive = true;
+      } catch (_) {
+        try {
+          published = await manager.publishAdoptionStagingDatabase(
+            target,
+            verify: (db) => verifyTargetMatchesPayload(payload, db),
+          );
+          contentLive = true;
+        } on StateError {
+          // Neither the live file nor a staging file holds the adopted
+          // content (for example the publish itself was interrupted
+          // before the swap). Redo the staging import below; the Guest
+          // source and snapshot payload are durable.
+          contentLive = false;
+        }
+      }
+    }
+    if (!contentLive) {
+      if (await targetHasUserData()) {
+        throw const LocalBackupException(
+          'The Google target contains data but no matching committed adoption import exists. '
+          'Nothing was overwritten; inspect the target and saved Guest snapshot.',
+        );
+      }
+      await manager.discardAdoptionStagingDatabase(target);
+      final stagingDb = await manager.createAdoptionStagingDatabase(target);
+      try {
+        await _importSeparateGoogleWorkspace(payload, stagingDb, target);
+        await database.customUpdate(
+          '''UPDATE workspace_operation_journal
+             SET phase = 'copied', updated_at = ?, error_message = NULL
+             WHERE operation_id = ?''',
+          variables: [
+            Variable<int>(DateTime.now().microsecondsSinceEpoch),
+            Variable<String>(operationId),
+          ],
+        );
+        await verifyTargetMatchesPayload(payload, stagingDb);
+      } finally {
+        await stagingDb.close();
+      }
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'verified', updated_at = ?, error_message = NULL
+           WHERE operation_id = ?''',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(operationId),
+        ],
+      );
+      // The finalization intent — including the staging and final
+      // file names and the canonical content hash — is durable before
+      // any publish (§4 step order).
+      final contentHash =
+          await WorkspaceCanonicalContent.ownedContentHash(database, source);
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'finalizing', staging_file = ?, final_file = ?,
+               content_hash = ?, updated_at = ?, error_message = NULL
+           WHERE operation_id = ?''',
+        variables: [
+          Variable<String>(
+            '${DatabaseManager.googleFileNameForWorkspaceId(target)}.adoption-staging',
+          ),
+          Variable<String>(
+            DatabaseManager.googleFileNameForWorkspaceId(target),
+          ),
+          Variable<String>(contentHash),
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(operationId),
+        ],
+      );
+      published = await manager.publishAdoptionStagingDatabase(
+        target,
+        verify: (db) => verifyTargetMatchesPayload(payload, db),
+      );
+    }
+
+    final normalizedName = googleDisplayName.trim();
+    if (normalizedName.isNotEmpty) {
+      await published.transactionWithRevision(() async {
+        await published.customInsert(
+          '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+             ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+          variables: [
+            Variable<String>('workspace_display_name:$target'),
+            Variable<String>(normalizedName),
+          ],
+        );
+      });
+    }
+
+    await database.transaction(() async {
+      final sessionRows = await database
+          .customSelect(
+            'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+          )
+          .get();
+      final activeId = sessionRows.isEmpty
+          ? null
+          : sessionRows.single.read<String?>('active_local_account_id');
+      if (activeId != source) {
+        throw const LocalBackupException(
+          'The active workspace changed during adoption. Guest and Google data were preserved.',
+        );
+      }
+      await database.customUpdate(
+        '''UPDATE local_accounts SET lifecycle_state = 'adopted_recovery', updated_at = ?
+           WHERE local_account_id = ? AND lifecycle_state = 'active' ''',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(source),
+        ],
+      );
+      await database.customUpdate(
+        '''UPDATE local_accounts SET lifecycle_state = 'active', updated_at = ?
+           WHERE local_account_id = ? AND db_layout = 'separate'
+             AND db_migration_state = 'committed' ''',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(target),
+        ],
+      );
+      await database.customUpdate(
+        'UPDATE app_session_state SET active_local_account_id = ?, generation = generation + 1 WHERE id = 1',
+        variables: [Variable<String>(target)],
+      );
+      final profileRows = await published.customSelect(
+        'SELECT payload_json FROM account_profiles WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable<String>(target)],
+      ).get();
+      var onboardingCompleted = false;
+      if (profileRows.isNotEmpty) {
+        try {
+          final raw =
+              jsonDecode(profileRows.single.read<String>('payload_json'));
+          onboardingCompleted =
+              raw is Map && raw['onboardingCompleted'] == true;
+        } catch (_) {}
+      }
+      await database.setOnboardingCompletedInTransaction(onboardingCompleted);
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'committed', updated_at = ?, error_message = NULL
+           WHERE operation_id = ?''',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(operationId),
+        ],
+      );
+    });
+    // The adoption has committed; the retained pre-adoption file is
+    // discarded (it held only the target's empty baseline). If this is
+    // interrupted, a later retry observes the committed journal and
+    // returns before touching any file.
+    await manager.discardAdoptionPreviousDatabase(target);
+    manager.setActiveWorkspace(target);
+  }
+
   /// Records the first verified cloud upload for a completed Guest adoption.
   /// The recovery snapshot remains available for a further 30 days.
   Future<void> markGuestAdoptionBackupVerified(
@@ -954,12 +1643,353 @@ class LocalBackupService {
     );
   }
 
+  Future<LocalBackupAnalysis> _importSeparateGoogleWorkspace(
+    String jsonText,
+    AppDatabase targetDatabase,
+    String targetLocalAccountId, {
+    String? expectedGoogleAccountId,
+    String targetWorkspaceLifecycleState = 'active',
+  }) async {
+    final id = targetLocalAccountId.trim();
+    if (id.isEmpty || !id.startsWith('google_')) {
+      throw ArgumentError.value(targetLocalAccountId, 'targetLocalAccountId');
+    }
+    if (targetWorkspaceLifecycleState != 'active' &&
+        targetWorkspaceLifecycleState != 'recovery_copy') {
+      throw ArgumentError.value(
+          targetWorkspaceLifecycleState, 'targetWorkspaceLifecycleState');
+    }
+    if (targetWorkspaceLifecycleState == 'recovery_copy' &&
+        (expectedGoogleAccountId == null ||
+            expectedGoogleAccountId.trim().isEmpty)) {
+      throw const LocalBackupException(
+        'A recovery copy requires a verified Google identity.',
+      );
+    }
+
+    // Validate identity, schema and every owner field before touching the
+    // workspace file. The current scoped snapshot supplies Keep Local rows.
+    final remoteRoot = _decodeAndValidate(jsonText);
+    final localText = await exportJson(localAccountId: id);
+    final localRoot = _decodeAndValidate(localText);
+    final mergedRoot = _mergeWorkspaceBackup(
+      remoteRoot,
+      localRoot,
+      id,
+      expectedGoogleAccountId: expectedGoogleAccountId,
+      targetWorkspaceLifecycleState: targetWorkspaceLifecycleState,
+    );
+    final validated = _decodeAndValidate(jsonEncode(mergedRoot));
+    final data = Map<String, dynamic>.from(validated['data'] as Map);
+    final meta = Map<String, dynamic>.from(data['meta_store'] as Map);
+    final expectedAccounts = data['local_accounts'] as List<dynamic>;
+    if (expectedAccounts.length != 1 ||
+        expectedAccounts.single is! Map ||
+        (expectedAccounts.single as Map)['local_account_id'] != id) {
+      throw const LocalBackupException(
+        'The restore payload does not describe exactly the selected Google workspace.',
+      );
+    }
+
+    final control = _databaseManager?.controlDatabase ?? database;
+    final registryRows = await control.customSelect(
+      'SELECT db_layout, db_file_name, db_migration_state FROM local_accounts '
+      'WHERE local_account_id = ? LIMIT 1',
+      variables: [Variable<String>(id)],
+    ).get();
+    if (registryRows.isEmpty ||
+        registryRows.single.read<String>('db_layout') != 'separate' ||
+        registryRows.single.read<String>('db_migration_state') != 'committed') {
+      throw const LocalBackupException(
+        'The selected Google workspace is not registered as a committed separate database.',
+      );
+    }
+
+    final payloadHash = sha256.convert(utf8.encode(jsonText)).toString();
+    final operationId = 'workspace-restore:$id:$payloadHash';
+    final now = DateTime.now().microsecondsSinceEpoch;
+    await control.customInsert(
+      '''INSERT OR REPLACE INTO workspace_operation_journal
+         (operation_id, operation_type, source_local_account_id,
+          target_local_account_id, phase, created_at, updated_at,
+          snapshot_id, content_hash, error_message)
+         VALUES (?, ?, ?, ?, 'prepared', ?, ?, ?, ?, NULL)''',
+      variables: [
+        Variable<String>(operationId),
+        Variable<String>(
+          targetWorkspaceLifecycleState == 'recovery_copy'
+              ? 'keep_both_import'
+              : 'workspace_restore',
+        ),
+        Variable<String>(id),
+        Variable<String>(id),
+        Variable<int>(now),
+        Variable<int>(now),
+        Variable<String>(targetWorkspaceLifecycleState),
+        Variable<String>(payloadHash),
+      ],
+    );
+
+    var restoredOnboardingCompleted = false;
+    final sessionBefore = await control
+        .customSelect(
+          'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+        )
+        .get();
+    final activeBefore = sessionBefore.isEmpty
+        ? null
+        : sessionBefore.single.read<String?>('active_local_account_id');
+    final generationBefore = sessionBefore.isEmpty
+        ? 1
+        : sessionBefore.single.read<int>('generation');
+
+    try {
+      await targetDatabase.transaction(() async {
+        await _clearBusinessState(
+          targetDatabase: targetDatabase,
+          includeControlTables: false,
+        );
+
+        for (final raw in data['qaza_records'] as List<dynamic>) {
+          final record =
+              QazaRecord.fromJson(Map<String, dynamic>.from(raw as Map));
+          await targetDatabase.qazaRecordsDao
+              .insertRecord(_recordCompanion(record));
+        }
+        await _insertMaps(
+          'daily_salah_logs',
+          [
+            'user_id',
+            'prayer_date',
+            'prayer_type',
+            'status',
+            'tracker_created_qaza_id',
+            'linked_qaza_id',
+            'completion_sync_id',
+            'updated_at',
+          ],
+          (data['daily_salah_logs'] as List<dynamic>?) ?? const <dynamic>[],
+          targetDatabase: targetDatabase,
+        );
+        await _insertMaps(
+          'qaza_additions',
+          [
+            'id',
+            'user_id',
+            'mode',
+            'input_snapshot',
+            'revision',
+            'created_at',
+            'updated_at'
+          ],
+          data['qaza_additions'] as List<dynamic>,
+          targetDatabase: targetDatabase,
+        );
+        await _insertMaps(
+          'qaza_deletion_actions',
+          [
+            'id',
+            'user_id',
+            'addition_id',
+            'created_at',
+            'resolved_at',
+            'entity_version'
+          ],
+          data['qaza_deletion_actions'] as List<dynamic>,
+          targetDatabase: targetDatabase,
+        );
+        await _insertMaps(
+          'qaza_deletion_action_record_snapshots',
+          [
+            'deletion_action_id',
+            'record_id',
+            'user_id',
+            'addition_id',
+            'prayer_type',
+            'original_date',
+            'status',
+            'completed_at',
+            'completion_id',
+            'created_at',
+            'updated_at',
+            'record_version',
+          ],
+          data['qaza_deletion_action_record_snapshots'] as List<dynamic>,
+          targetDatabase: targetDatabase,
+        );
+        await _insertMaps(
+          'qaza_profile_plan_provenance',
+          ['record_id', 'user_id', 'plan_revision_id', 'plan_fingerprint'],
+          data['qaza_profile_plan_provenance'] as List<dynamic>,
+          targetDatabase: targetDatabase,
+        );
+        await _insertMaps(
+          'account_profiles',
+          [
+            'local_account_id',
+            'payload_json',
+            'entity_version',
+            'updated_at',
+            'writer_device_id',
+            'operation_id',
+          ],
+          data['account_profiles'] as List<dynamic>,
+          targetDatabase: targetDatabase,
+        );
+        await _insertMaps(
+          'account_plan_revisions',
+          ['local_account_id', 'revision_id', 'payload_json', 'created_at'],
+          data['account_plan_revisions'] as List<dynamic>,
+          targetDatabase: targetDatabase,
+        );
+
+        final workspaceNames = meta['workspace_display_names_by_account'];
+        if (workspaceNames is Map && workspaceNames[id] is String) {
+          final name = (workspaceNames[id] as String).trim();
+          if (name.isNotEmpty) {
+            await targetDatabase.customInsert(
+              '''INSERT INTO meta_store (key, value) VALUES (?, ?)
+                 ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+              variables: [
+                Variable<String>('workspace_display_name:$id'),
+                Variable<String>(name),
+              ],
+            );
+          }
+        }
+
+        final enabledByAccount =
+            meta['daily_salah_tracking_enabled_by_account'];
+        final enabled = enabledByAccount is Map && enabledByAccount[id] is bool
+            ? enabledByAccount[id] as bool
+            : meta['daily_salah_tracking_enabled'] == true;
+        await targetDatabase.setDailySalahTrackingEnabledInTransaction(
+          enabled,
+          userId: id,
+        );
+
+        final dismissedByAccount =
+            meta['daily_salah_tracking_setup_dismissed_by_account'];
+        final dismissed =
+            dismissedByAccount is Map && dismissedByAccount[id] is bool
+                ? dismissedByAccount[id] as bool
+                : meta['daily_salah_tracking_setup_dismissed'] == true;
+        await targetDatabase.setDailySalahTrackingSetupDismissedInTransaction(
+          dismissed,
+          userId: id,
+        );
+
+        final owner = await targetDatabase.readWorkspaceFileOwner();
+        if (owner != id) {
+          throw const LocalBackupException(
+            'Workspace owner verification failed during restore.',
+          );
+        }
+      });
+
+      await control.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'verified', updated_at = ?, error_message = NULL
+           WHERE operation_id = ?''',
+        variables: [
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(operationId),
+        ],
+      );
+
+      final profileRows = await targetDatabase.customSelect(
+        'SELECT payload_json FROM account_profiles WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable<String>(id)],
+      ).get();
+      if (profileRows.isNotEmpty) {
+        try {
+          final profile =
+              jsonDecode(profileRows.single.read<String>('payload_json'));
+          restoredOnboardingCompleted =
+              profile is Map && profile['onboardingCompleted'] == true;
+        } catch (_) {}
+      }
+      await control.transaction(() async {
+        await control.customUpdate(
+          'UPDATE local_accounts SET lifecycle_state = ?, updated_at = ? '
+          'WHERE local_account_id = ?',
+          variables: [
+            Variable<String>(targetWorkspaceLifecycleState),
+            Variable<int>(DateTime.now().microsecondsSinceEpoch),
+            Variable<String>(id),
+          ],
+        );
+        final currentSession = await control
+            .customSelect(
+              'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+            )
+            .get();
+        final activeNow = currentSession.isEmpty
+            ? null
+            : currentSession.single.read<String?>('active_local_account_id');
+        final generationNow = currentSession.isEmpty
+            ? 1
+            : currentSession.single.read<int>('generation');
+        if (activeBefore == id &&
+            activeNow == id &&
+            generationBefore == generationNow) {
+          await control.setOnboardingCompletedInTransaction(
+            restoredOnboardingCompleted,
+          );
+        }
+        await control.customUpdate(
+          '''UPDATE workspace_operation_journal
+             SET phase = 'committed', updated_at = ?, error_message = NULL
+             WHERE operation_id = ?''',
+          variables: [
+            Variable<int>(DateTime.now().microsecondsSinceEpoch),
+            Variable<String>(operationId),
+          ],
+        );
+      });
+    } catch (error) {
+      // Keep the operation nonterminal and leave the recovery snapshot/file
+      // intact. A later explicit retry can replay the same validated payload.
+      await control.customUpdate(
+        '''UPDATE workspace_operation_journal SET error_message = ?, updated_at = ?
+           WHERE operation_id = ? AND phase != 'committed' ''',
+        variables: [
+          Variable<String>(error.toString()),
+          Variable<int>(DateTime.now().microsecondsSinceEpoch),
+          Variable<String>(operationId),
+        ],
+      );
+      rethrow;
+    }
+
+    final restoredRevision = await targetDatabase.readWorkspaceRevision(id);
+    return LocalBackupAnalysis(
+      dbRevision: restoredRevision,
+      recordCount: (data['qaza_records'] as List<dynamic>).length,
+      accountCount: 1,
+      onboardingCompleted: restoredOnboardingCompleted,
+    );
+  }
+
   Future<LocalBackupAnalysis> importJson(
     String jsonText, {
     String? targetLocalAccountId,
     String? expectedGoogleAccountId,
     String targetWorkspaceLifecycleState = 'active',
   }) async {
+    final manager = _databaseManager;
+    if (manager != null && targetLocalAccountId != null) {
+      final target = await manager.databaseForWorkspace(targetLocalAccountId);
+      if (target.isGoogleWorkspaceDatabase) {
+        return _importSeparateGoogleWorkspace(
+          jsonText,
+          target,
+          targetLocalAccountId,
+          expectedGoogleAccountId: expectedGoogleAccountId,
+          targetWorkspaceLifecycleState: targetWorkspaceLifecycleState,
+        );
+      }
+    }
     if (targetWorkspaceLifecycleState != 'active' &&
         targetWorkspaceLifecycleState != 'recovery_copy') {
       throw ArgumentError.value(
@@ -1352,7 +2382,7 @@ class LocalBackupService {
     // Before account-scoped backups, Qaza primary keys included the owning
     // workspace prefix. When adopting a legacy Guest backup into Google,
     // rewrite those IDs as well as every stored reference to them.
-    final sourceWorkspaceId = sourceAccountId!;
+    final sourceWorkspaceId = sourceAccountId;
     final remapLegacyGuestRecordIds =
         isGuestLocalWorkspaceId(sourceWorkspaceId) &&
             !isGuestLocalWorkspaceId(target);
@@ -1678,7 +2708,10 @@ class LocalBackupService {
     // Schemas 19–21 are supported predecessors of schema 22. Older
     // payloads are normalized below, including missing Daily Salah rows and
     // the link/completion-sync fields introduced after schema 20.
-    final compatibleLegacySchema = databaseSchema >= 19 && databaseSchema <= 21;
+    // Schema 26 adds control-registry routing columns only. Schema-25 backup
+    // payloads retain the same logical data shape and are safe to import.
+    final compatibleLegacySchema =
+        (databaseSchema >= 19 && databaseSchema <= 21) || databaseSchema == 25;
     if (databaseSchema > database.schemaVersion) {
       throw LocalBackupException(
         'This backup uses newer database schema $databaseSchema. '
@@ -2327,24 +3360,6 @@ class LocalBackupService {
     return root;
   }
 
-  Future<List<Map<String, dynamic>>> _selectMaps(
-    String sql,
-    List<String> columns, {
-    Set<String> integerColumns = const <String>{},
-  }) async {
-    final rows = await database.customSelect(sql).get();
-    return rows.map((row) {
-      return {
-        for (final column in columns)
-          column: _readValue(
-            row,
-            column,
-            integer: integerColumns.contains(column),
-          ),
-      };
-    }).toList(growable: false);
-  }
-
   Object? _readValue(
     QueryRow row,
     String column, {
@@ -2393,8 +3408,9 @@ class LocalBackupService {
   Future<void> _insertMaps(
     String table,
     List<String> columns,
-    List<dynamic> rawRows,
-  ) async {
+    List<dynamic> rawRows, {
+    AppDatabase? targetDatabase,
+  }) async {
     if (rawRows.isEmpty) return;
     final quotedColumns = columns.map((column) => '"$column"').join(', ');
     final placeholders = List.filled(columns.length, '?').join(', ');
@@ -2407,18 +3423,22 @@ class LocalBackupService {
       final values = <Variable<Object>>[
         for (final column in columns) Variable(raw[column]),
       ];
-      await database.customInsert(
+      await (targetDatabase ?? database).customInsert(
         'INSERT INTO "$table" ($quotedColumns) VALUES ($placeholders)',
         variables: values,
       );
     }
   }
 
-  Future<void> _clearBusinessState() async {
+  Future<void> _clearBusinessState({
+    AppDatabase? targetDatabase,
+    bool includeControlTables = true,
+  }) async {
+    final target = targetDatabase ?? database;
     // Workspace-scoped tracking settings are restored from the backup payload.
     // Remove old values first so settings from workspaces absent in the backup
     // cannot survive a full import and affect a later account recreation.
-    await database.customStatement(
+    await target.customStatement(
       "DELETE FROM meta_store WHERE key IN ("
       "'daily_salah_tracking_enabled', "
       "'daily_salah_tracking_setup_dismissed') "
@@ -2426,18 +3446,20 @@ class LocalBackupService {
       "OR key GLOB 'daily_salah_tracking_setup_dismissed:*' "
       "OR key GLOB 'workspace_display_name:*'",
     );
-    await database.customStatement('DELETE FROM daily_salah_logs');
-    await database.customStatement(
+    await target.customStatement('DELETE FROM daily_salah_logs');
+    await target.customStatement(
       'DELETE FROM qaza_deletion_action_record_snapshots',
     );
-    await database.customStatement('DELETE FROM qaza_deletion_actions');
-    await database.customStatement('DELETE FROM qaza_profile_plan_provenance');
-    await database.customStatement('DELETE FROM qaza_records');
-    await database.customStatement('DELETE FROM qaza_additions');
-    await database.customStatement('DELETE FROM account_plan_revisions');
-    await database.customStatement('DELETE FROM account_profiles');
-    await database.customStatement('DELETE FROM app_session_state');
-    await database.customStatement('DELETE FROM local_accounts');
+    await target.customStatement('DELETE FROM qaza_deletion_actions');
+    await target.customStatement('DELETE FROM qaza_profile_plan_provenance');
+    await target.customStatement('DELETE FROM qaza_records');
+    await target.customStatement('DELETE FROM qaza_additions');
+    await target.customStatement('DELETE FROM account_plan_revisions');
+    await target.customStatement('DELETE FROM account_profiles');
+    if (includeControlTables) {
+      await target.customStatement('DELETE FROM app_session_state');
+      await target.customStatement('DELETE FROM local_accounts');
+    }
   }
 
   QazaRecordsCompanion _recordCompanion(QazaRecord record) =>

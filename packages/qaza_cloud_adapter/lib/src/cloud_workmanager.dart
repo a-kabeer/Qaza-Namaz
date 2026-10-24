@@ -1,7 +1,8 @@
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
-import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:drift/drift.dart';
+import 'package:qaza_namaz/data/local/database/database_manager.dart';
 import 'package:qaza_namaz/domain/entities/local_account.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:workmanager/workmanager.dart';
@@ -55,26 +56,57 @@ void initializeQazaCloudBackgroundDispatcher() {
       return true;
     }
     final operationState = accountScopedState.scopedToAccount(accountId);
-    final appDatabase = AppDatabase();
-    // A scheduled operation must only ever read or write the workspace
-    // owned by the verified Google identity captured above. Passing null here
-    // would export/import the entire shared database and could leak or replace
-    // unrelated Guest and Google workspaces in Drive.
-    final phase1 = LocalPhase1BackupSource(
-      appDatabase,
-      localAccountId: googleLocalWorkspaceId(accountId),
-    );
+    final databaseManager = DatabaseManager();
+    final appDatabase = databaseManager.controlDatabase;
     final gateway = GoogleSignInGateway(serverClientId: serverClientId);
     var accountPinned = false;
 
     try {
+      await databaseManager.initialize();
       final localWorkspaceId = googleLocalWorkspaceId(accountId);
       final startGeneration = await appDatabase.readSessionGeneration();
       if (await appDatabase.readActiveLocalAccountId() != localWorkspaceId) {
-        // Scheduled runs must not sync an inactive Google workspace. The next
-        // activation can retry against that workspace's own pending revision.
+        // Never open an inactive workspace file from the background isolate.
         return true;
       }
+
+      final registryRows = await appDatabase
+          .customSelect(
+            'SELECT db_file_name, db_layout, db_migration_state FROM local_accounts '
+            'WHERE local_account_id = ? LIMIT 1',
+            variables: [Variable<String>(localWorkspaceId)],
+          )
+          .get();
+      if (registryRows.isEmpty) return true;
+      final registry = registryRows.single;
+      final expectedFileName = DatabaseManager.googleFileNameForWorkspaceId(
+        localWorkspaceId,
+      );
+      if (registry.read<String>('db_layout') != 'separate' ||
+          registry.read<String>('db_migration_state') != 'committed' ||
+          registry.read<String?>('db_file_name') != expectedFileName) {
+        return true;
+      }
+
+      final outstandingOperations = await appDatabase
+          .customSelect(
+            '''SELECT 1 FROM workspace_operation_journal
+           WHERE target_local_account_id = ?
+             AND phase NOT IN ('committed', 'failed', 'cleaned')
+           LIMIT 1''',
+            variables: [Variable<String>(localWorkspaceId)],
+          )
+          .get();
+      if (outstandingOperations.isNotEmpty) return true;
+
+      final workspaceDatabase = await databaseManager.databaseForWorkspace(
+        localWorkspaceId,
+      );
+      final phase1 = LocalPhase1BackupSource(
+        workspaceDatabase,
+        localAccountId: localWorkspaceId,
+        databaseManager: databaseManager,
+      );
       if (await gateway.accountIdForAuthorization() != accountId) {
         // A foreground account switch can temporarily change the persisted
         // identity binding. Stop without marking either account as broken.
@@ -94,8 +126,8 @@ void initializeQazaCloudBackgroundDispatcher() {
 
       gateway.pinAccountForOperation(accountId);
       accountPinned = true;
-      if (await appDatabase.isWorkspaceCloudUploadBlocked(
-        googleLocalWorkspaceId(accountId),
+      if (await workspaceDatabase.isWorkspaceCloudUploadBlocked(
+        localWorkspaceId,
       )) {
         // This account was left local-only because Drive state was uncertain.
         // A scheduled job must never overwrite a backup before an explicit,
@@ -115,10 +147,10 @@ void initializeQazaCloudBackgroundDispatcher() {
       )) {
         // The remote may have accepted the captured snapshot while the user
         // switched accounts. Do not mark it clean; reconcile by hash next time.
-        await appDatabase.writeWorkspaceSyncState(
+        await workspaceDatabase.writeWorkspaceSyncState(
           localWorkspaceId,
           'pending',
-          localRevision: await appDatabase.readWorkspaceRevision(
+          localRevision: await workspaceDatabase.readWorkspaceRevision(
             localWorkspaceId,
           ),
           remoteAccountId: accountId,
@@ -130,10 +162,10 @@ void initializeQazaCloudBackgroundDispatcher() {
         // the workspace so the upload block at the top of this worker stops
         // future scheduled runs, and ask the foreground to reconnect rather
         // than letting WorkManager retry a hopeless credential.
-        await appDatabase.writeWorkspaceSyncState(
+        await workspaceDatabase.writeWorkspaceSyncState(
           localWorkspaceId,
           'needs_sign_in',
-          localRevision: await appDatabase.readWorkspaceRevision(
+          localRevision: await workspaceDatabase.readWorkspaceRevision(
             localWorkspaceId,
           ),
           remoteAccountId: accountId,
@@ -175,7 +207,7 @@ void initializeQazaCloudBackgroundDispatcher() {
       return false;
     } finally {
       if (accountPinned) gateway.releaseAccountOperation(accountId);
-      await appDatabase.close();
+      await databaseManager.close();
     }
   });
 }

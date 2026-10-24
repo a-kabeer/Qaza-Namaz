@@ -2,6 +2,8 @@
 //
 // Composition root for the Qaza Namaz app.
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,12 +11,14 @@ import 'package:intl/intl.dart' as intl;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/diagnostics/diagnostics.dart';
+import '../core/diagnostics/flow_timing.dart';
 import '../core/constants/prayer_types.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
 import '../l10n/app_localizations.dart';
 import '../data/data_transfer/local_backup_service.dart';
 import '../data/local/database/app_database.dart';
+import '../data/local/database/database_manager.dart';
 import '../data/local/drift_qaza_local_store.dart';
 import '../data/local/account_local_store.dart';
 import '../data/local/account_scoped_user_profile_repository.dart';
@@ -78,7 +82,8 @@ Future<(AppThemeMode, AppPrimaryColor)> loadInitialAppearance() async {
 }
 
 Future<HomePrayerSelectionState> loadInitialHomePrayerSelection() async {
-  final database = AppDatabase();
+  final databaseManager = DatabaseManager();
+  final database = databaseManager.controlDatabase;
   try {
     final rows = await database
         .customSelect(
@@ -114,7 +119,7 @@ Future<HomePrayerSelectionState> loadInitialHomePrayerSelection() async {
   } catch (_) {
     return const HomePrayerSelectionState();
   } finally {
-    await database.close();
+    await databaseManager.close();
   }
 }
 
@@ -151,7 +156,11 @@ final startupAccountWorkspaceRestoreProvider =
   final cloudAccount = ref.watch(cloudAccountProvider);
   final session = ref.read(accountSessionManagerProvider);
   if (cloudAccount.isSupported) {
-    final snapshot = await cloudAccount.restore();
+    final snapshot = await traceAsyncStage(
+      flow: 'startup_restore',
+      stage: 'restore_google_account',
+      action: cloudAccount.restore,
+    );
     final accountId = snapshot.accountId?.trim();
     if (accountId != null &&
         accountId.isNotEmpty &&
@@ -160,21 +169,21 @@ final startupAccountWorkspaceRestoreProvider =
       // A verified Google identity selects its own workspace. When no Google
       // identity is connected, preserve the persisted local workspace rather
       // than resetting every returning Guest to the legacy fixed workspace.
-      await session.activateGoogleAccount(accountId);
+      await traceAsyncStage(
+        flow: 'startup_restore',
+        stage: 'activate_restored_google_workspace',
+        action: () => session.activateGoogleAccount(accountId),
+      );
     }
     // Disconnected, offline, and unavailable cloud states do not prove that
     // a local workspace should be replaced or cleared.
   }
 
-  // AccountSessionManager.initialize() starts from the Guest workspace.
-  // Re-read profile and routing state after the verified startup identity
-  // selects its workspace, otherwise cached Guest data can leak into routing.
+  // Profile, progress and repository providers react to activeUserIdProvider.
+  // Let the session notification rebuild those dependents once rather than
+  // invalidating them again during the same workspace transition. The route
+  // provider is independent of the active workspace, so refresh it explicitly.
   ref.invalidate(appRouteProvider);
-  ref.invalidate(userProfileProvider);
-  ref.invalidate(progressSummaryProvider);
-  ref.invalidate(qazaRepositoryProvider);
-  ref.invalidate(qazaAdditionRepositoryProvider);
-  ref.invalidate(qazaPlanRevisionRepositoryProvider);
 });
 
 final cloudSyncProvider = Provider<CloudSyncProvider>(
@@ -186,24 +195,29 @@ final cloudSyncProvider = Provider<CloudSyncProvider>(
 final packageAssetNamespaceProvider = Provider<String?>((ref) => null);
 
 final accountLocalStoreProvider = Provider<AccountLocalStore>((ref) {
-  return AccountLocalStore(database: ref.watch(appDatabaseProvider));
-});
-
-final activeLocalAccountIdStateProvider = StateProvider<String?>((ref) => null);
-
-final activeUserIdProvider = Provider<String?>((ref) {
-  return ref.watch(activeLocalAccountIdStateProvider);
+  final manager = ref.watch(databaseManagerProvider);
+  return AccountLocalStore(
+    database: manager.controlDatabase,
+    databaseManager: manager,
+  );
 });
 
 final accountSessionManagerProvider =
     ChangeNotifierProvider<AccountSessionManager>((ref) {
-  final manager = AccountSessionManager(
+  return AccountSessionManager(
     accountStore: ref.watch(accountLocalStoreProvider),
-    onActiveLocalAccountChanged: (id) {
-      ref.read(activeLocalAccountIdStateProvider.notifier).state = id;
-    },
   );
-  return manager;
+});
+
+/// Derive the active workspace from the session manager's single source of
+/// truth. Mirroring it through a separate StateProvider caused nested Riverpod
+/// graph updates while AccountSessionManager was notifying its listeners.
+final activeUserIdProvider = Provider<String?>((ref) {
+  return ref.watch(
+    accountSessionManagerProvider.select(
+      (manager) => manager.activeLocalAccountId,
+    ),
+  );
 });
 
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {
@@ -278,10 +292,24 @@ final saveProfileUseCaseProvider = Provider<SaveProfileUseCase>((ref) {
   );
 });
 
+// Recovery Stage 4 (R-02 routing): the control database is the single
+// source of truth for the provider graph. appDatabaseProvider owns the
+// control handle's creation; the DatabaseManager is built over exactly
+// that handle. (The branch had inverted this — the store derived from
+// an unrelated real manager — which silently routed provider-driven
+// flows to a different database than appDatabaseProvider exposed.)
 final appDatabaseProvider = Provider<AppDatabase>((ref) {
-  final database = AppDatabase();
-  ref.onDispose(database.close);
+  final database = AppDatabase.control();
+  ref.onDispose(() => unawaited(database.close()));
   return database;
+});
+
+final databaseManagerProvider = Provider<DatabaseManager>((ref) {
+  final manager = DatabaseManager(
+    controlDatabase: ref.watch(appDatabaseProvider),
+  );
+  ref.onDispose(() => unawaited(manager.close()));
+  return manager;
 });
 
 final cloudSetupChoiceCompleteProvider = FutureProvider<bool>((ref) async {
@@ -375,7 +403,19 @@ final skipPendingInitialCloudBackupForSessionProvider =
     StateProvider<bool>((ref) => false);
 
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
-  return DriftQazaLocalStore(database: ref.watch(appDatabaseProvider));
+  final localAccountId = ref.watch(activeUserIdProvider);
+  final manager = ref.watch(databaseManagerProvider);
+  if (localAccountId == null || localAccountId.isEmpty) {
+    // Session-less contexts (headless helpers and flows that carry an
+    // explicit user ID, e.g. Qaza undo feedback) keep the pre-split
+    // construction contract: the store over the control database, with
+    // per-query user scoping. Routing to a separate workspace file
+    // applies as soon as a session publishes an active workspace.
+    return DriftQazaLocalStore(database: manager.controlDatabase);
+  }
+  return DriftQazaLocalStore(
+    database: manager.databaseForActiveWorkspace(localAccountId),
+  );
 });
 
 final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
@@ -415,9 +455,18 @@ final qazaServiceProvider = Provider<QazaService>(
   ),
 );
 
-final qazaAdditionRepositoryProvider = Provider<QazaAdditionRepository>(
-  (ref) => DriftQazaAdditionRepository(ref.watch(appDatabaseProvider)),
-);
+final qazaAdditionRepositoryProvider = Provider<QazaAdditionRepository>((ref) {
+  final localAccountId = ref.watch(activeUserIdProvider);
+  final manager = ref.watch(databaseManagerProvider);
+  if (localAccountId == null || localAccountId.isEmpty) {
+    // See qazaLocalStoreProvider: session-less contexts keep the
+    // pre-split construction contract over the control database.
+    return DriftQazaAdditionRepository(manager.controlDatabase);
+  }
+  return DriftQazaAdditionRepository(
+    manager.databaseForActiveWorkspace(localAccountId),
+  );
+});
 
 final qazaAdditionServiceProvider = Provider<QazaAdditionService>(
   (ref) => QazaAdditionService(
@@ -442,9 +491,13 @@ final qazaUndoManagerProvider = Provider<QazaUndoManager>(
   (ref) => QazaUndoManager(),
 );
 
-final localBackupServiceProvider = Provider<LocalBackupService>(
-  (ref) => LocalBackupService(ref.watch(appDatabaseProvider)),
-);
+final localBackupServiceProvider = Provider<LocalBackupService>((ref) {
+  final manager = ref.watch(databaseManagerProvider);
+  return LocalBackupService(
+    manager.controlDatabase,
+    databaseManager: manager,
+  );
+});
 
 enum AppRoute { onboarding, home }
 

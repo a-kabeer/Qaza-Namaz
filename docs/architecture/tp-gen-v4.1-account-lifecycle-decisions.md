@@ -52,6 +52,74 @@ Known limitations (from the gap report's closure section): Scenario 11 — real 
 
 Phase 6 stays unticked: the automated gates are complete and CI will be re-confirmed on the new head, but physical-device verification remains outstanding. A manual script is prepared (`TP-GEN_Phase6_Real_Device_Test_Script.md`, 37 cases). Consistent with invariant 5, no real-device Google/Drive validation is claimed by this note.
 
+## TP-GEN — Separate encrypted database per Google account (design v2.2)
+
+Recorded during Recovery Plan Stage 3 reconciliation (2026-10-22). The design of record is *TP-GEN — Separate Encrypted Local Database per Google Account, v2.2* (decisions S1–S7, protocols §4–§7, test matrix §8). The implementation lives on branch `tp-gen/separate-google-db`; the reconciled routing design is `docs/architecture/tp-gen-google-db-separation-design.md` and the full discrepancy register is `docs/architecture/tp-gen-separate-google-db-discrepancy-register.md`. Where the implementation and these decisions disagree, the register — not this summary — is the record of truth, and the affected items are blockers until resolved.
+
+### D1 — amended
+
+D1's shared-database model is **superseded for Google workspaces only**: each verified Google account gets its own encrypted local database file (D7–D13 below). D1 **remains in force for Guest workspaces and all control state**, which stay in the shared control database (`qaza_namaz.sqlite`) with explicit workspace scoping exactly as D1 specified. Rationale (per design v2.2): physical isolation bounds the blast radius of a corrupt file, failed migration, or scoping bug to one account; the v4.1 logical isolation (workspace-owned rows, session generations, scoped snapshots) is retained inside each file.
+
+### D7. Control/Guest database and separate Google files (v2.2 S1)
+
+The control database retains the registry, session/device state, operation journal, adoption snapshots, deletion holds, global `meta_store` keys, and all Guest data. Each Google file contains only its workspace's eight owned tables, its five scoped `meta_store` keys, its `workspace_sync_metadata` row, its recovery snapshots, and a `workspace_file_owner` marker. Workspace revision triggers live with the owned tables in each file.
+
+### D8. One encryption key (v2.2 S2)
+
+All files use the existing `DatabaseEncryptionKeyStore` / `qaza_namaz_database_key_v1`. Google files are encrypted from the first write; per-account keys are out of scope.
+
+### D9. File identity and staging (v2.2 S3)
+
+Google files are named `qaza_google_<first 32 hex of SHA-256(stable Google ID)>.sqlite`; no raw ID, email, or display name appears in any filename or path. Files are created/migrated through `.staging` names and published without overwriting; the registry (D10) — never the filename alone — is authoritative.
+
+### D10. Authoritative registry (v2.2 S4)
+
+`local_accounts` is extended with `db_file_name`, `db_layout` (`shared`/`separate`), and `db_migration_state`. A workspace's database is resolved only through the registry.
+
+### D11. Database lifecycle and account switching (v2.2 S5)
+
+A single database manager owns opening, connection reuse (one handle per file per process), closure, and routing; production database construction outside the manager is policy-checked. A separate database that is missing, corrupt, or fails key/schema/owner validation yields a recoverable error for that workspace only — never a silent empty replacement and never a fallback to another account's file or to Guest.
+
+### D12. Background worker (v2.2 S6)
+
+The WorkManager dispatcher opens the control database first, verifies session/registry/durable-operation state, and opens a Google file only for the verified **active** workspace; it never opens inactive accounts' files and never runs while that workspace has a migration, adoption, or recovery operation in progress.
+
+### D13. Backup payload unchanged; compression not adopted (v2.2 S7)
+
+Drive backups remain uncompressed plain-JSON snapshots, `backup_schema_version` 1, with unchanged discovery/conflict behaviour (Keep Local / Keep Cloud / Keep Both); only the source/sink of a scoped backup moves to the workspace's file. Compression was evaluated and not adopted in this task.
+
+### Schema 25 → 26
+
+Schema version 26 adds the D10 registry columns to `local_accounts` (`db_file_name`, `db_layout` default `shared`, `db_migration_state` default `not_started`), plus the Recovery Stage 4 journal columns `source_hash` / `target_hash` on `workspace_operation_journal`, applied by the codebase's idempotent ensure-style upgrade path. **Evidence status (updated by Recovery Stage 4, 2026-10-23): DISCHARGED.** The realistic-data schema-upgrade test required by design §8 item 8 now exists and passes: `test/data/local/database/schema_upgrade_25_26_test.dart` — a populated database (Guest + two Google workspaces with records, profiles, and sync metadata) is downgraded at the raw SQLite level to the exact v25 shape (routing/journal-hash columns dropped, `user_version` 25), reopened through the production upgrade path, and verified: `user_version` 26, registry rows initialised `shared` / NULL / `not_started`, sync revision preserved, canonical content hashes identical before and after, nothing moved, duplicated, or deleted. See the Stage 4 requirement-to-test matrix in the discrepancy register, Part D.
+
+### Pre-launch note
+
+The app is pre-launch (no releases, no production users); the only shared-layout Google data is on developer devices. Design §5 is therefore a slim one-time migration — but its safety mechanics (one safety copy before the first workspace, storage pre-check, hash parity, crash reconciliation, retained superseded rows until the approval-gated cleanup) are **not** slimmed. The register records where the current branch's migration diverges from §5 (register item R-04); those divergences are blockers, not accepted simplifications.
+
+### Stage 3 recovery decisions — D-A…D-D approved by Abdul, 2026-10-23
+
+The Recovery Plan Stage 3 discrepancy register
+(`tp-gen-separate-google-db-discrepancy-register.md`, Part E.2) raised
+four architecture decisions; Abdul approved the following resolutions
+on 2026-10-23. Full text in the register; summary here so the decision
+trail lives in one record:
+
+- **D-A:** routing fix = **Shape A, registry-true resolution** —
+  `shared` resolves to the control handle; migration becomes the §5.2
+  startup run, not an activation-time action.
+- **D-B:** the Stage 4 rewrite of the `legacy shared Google data…` test
+  expectation to §5.2 behaviour is **approved** (executed and listed in
+  Stage 4).
+- **D-C:** migration mechanics §5.1–§5.4 are implemented **as
+  designed** (safety copy, storage pre-check, retained superseded rows
+  until the approval-gated cleanup, startup-run trigger, mid-operation
+  waits). §5 is **not** amended.
+- **D-D:** **as designed** on both halves — cross-file adoption gains
+  the §4 `finalizing` + staging-publish sequence (§4 not amended), and
+  the canonical hash is unified on §7's scoped-export canonicalisation
+  (the branch's `workspace-content-v1` is not adopted as the
+  definition).
+
 ## Safety invariants
 
 1. A scheduled sync captures one verified Google ID and reads/writes only its matching local workspace.

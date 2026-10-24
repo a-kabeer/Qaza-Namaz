@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../app/providers.dart';
 import '../../core/errors/app_error.dart';
 import '../../core/errors/app_error_messages.dart';
+import '../../core/diagnostics/flow_timing.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/theme/app_theme_labels.dart';
 import '../../core/widgets/language_selector.dart';
@@ -79,7 +80,11 @@ class _CloudSetupChoiceScreenState
     if (!mounted || _working) return;
     setState(() => _working = true);
     try {
-      final account = await ref.read(cloudAccountStartupRestoreProvider.future);
+      final account = await traceAsyncStage(
+        flow: 'cloud_setup',
+        stage: 'restore_existing_google_connection',
+        action: () => ref.read(cloudAccountStartupRestoreProvider.future),
+      );
       if (!mounted) return;
       if (account.isConnected) {
         final stableId = account.accountId?.trim();
@@ -133,9 +138,13 @@ class _CloudSetupChoiceScreenState
         'Google could not verify this account. Please try signing in again.',
       );
     }
-    await ref
-        .read(accountSessionManagerProvider)
-        .activateGoogleAccount(stableAccountId);
+    await traceAsyncStage(
+      flow: 'cloud_setup',
+      stage: 'activate_google_workspace',
+      action: () => ref
+          .read(accountSessionManagerProvider)
+          .activateGoogleAccount(stableAccountId),
+    );
     final localAccountId =
         ref.read(accountSessionManagerProvider).activeLocalAccountId;
     final googleName = account.displayName?.trim();
@@ -145,12 +154,9 @@ class _CloudSetupChoiceScreenState
             googleName,
           );
     }
+    // The active workspace notification refreshes account-scoped providers.
+    // Only appRouteProvider is independent of activeUserIdProvider.
     ref.invalidate(appRouteProvider);
-    ref.invalidate(userProfileProvider);
-    ref.invalidate(progressSummaryProvider);
-    ref.invalidate(qazaRepositoryProvider);
-    ref.invalidate(qazaAdditionRepositoryProvider);
-    ref.invalidate(qazaPlanRevisionRepositoryProvider);
   }
 
   Future<void> _completeChoice() async {
@@ -173,9 +179,13 @@ class _CloudSetupChoiceScreenState
         allowGuestAdoptionChoice ?? _googleWorkspaceMayAdoptGuest;
     final targetWorkspaceId = googleWorkspaceId ?? _connectedGoogleWorkspaceId;
     final targetGoogleName = googleDisplayName ?? _connectedGoogleDisplayName;
-    final result = await ref.read(cloudSyncProvider).discoverBackup(
-          allowInteractive: allowInteractive,
-        );
+    final result = await traceAsyncStage(
+      flow: 'cloud_setup',
+      stage: 'discover_google_drive_backup',
+      action: () => ref.read(cloudSyncProvider).discoverBackup(
+            allowInteractive: allowInteractive,
+          ),
+    );
     if (!mounted) return;
 
     switch (result.status) {
@@ -357,7 +367,12 @@ class _CloudSetupChoiceScreenState
       if (!mounted) return;
       final accountProvider = ref.read(cloudAccountProvider);
       _cloudAttempted = true;
-      final account = await accountProvider.signIn();
+      final account = await traceAsyncStage(
+        flow: 'cloud_setup',
+        // Keep diagnostics package-neutral; this shared screen also ships offline.
+        stage: 'google_connect_and_drive_authorization',
+        action: accountProvider.signIn,
+      );
       if (!mounted || account.wasCancelled) return;
       if (!account.isConnected) {
         _accountConnected = false;
@@ -375,7 +390,11 @@ class _CloudSetupChoiceScreenState
       final existed = workspaceId != null &&
           await ref.read(accountLocalStoreProvider).getAccount(workspaceId) !=
               null;
-      await _activateGoogleWorkspace(account);
+      await traceAsyncStage(
+        flow: 'cloud_setup',
+        stage: 'activate_google_workspace_after_sign_in',
+        action: () => _activateGoogleWorkspace(account),
+      );
       _accountConnected = true;
       _googleWorkspaceMayAdoptGuest = !existed;
       _connectedGoogleWorkspaceId = workspaceId;
@@ -419,12 +438,9 @@ class _CloudSetupChoiceScreenState
           _driveBackupInvalid ? 'legacy_unverified' : 'cloud_unverified',
           localRevision: await database.readWorkspaceRevision(workspaceId),
         );
+        // The Google workspace was activated before backup discovery. Its
+        // account-scoped providers already follow activeUserIdProvider.
         ref.invalidate(appRouteProvider);
-        ref.invalidate(userProfileProvider);
-        ref.invalidate(progressSummaryProvider);
-        ref.invalidate(qazaRepositoryProvider);
-        ref.invalidate(qazaAdditionRepositoryProvider);
-        ref.invalidate(qazaPlanRevisionRepositoryProvider);
         await _completeChoice();
         return;
       }
@@ -458,12 +474,9 @@ class _CloudSetupChoiceScreenState
       await ref
           .read(accountSessionManagerProvider)
           .activateLocalAccount(selectedGuestId);
+      // The selected Guest was published through AccountSessionManager;
+      // providers watching activeUserIdProvider refresh from that transition.
       ref.invalidate(appRouteProvider);
-      ref.invalidate(userProfileProvider);
-      ref.invalidate(progressSummaryProvider);
-      ref.invalidate(qazaRepositoryProvider);
-      ref.invalidate(qazaAdditionRepositoryProvider);
-      ref.invalidate(qazaPlanRevisionRepositoryProvider);
       ref.read(skipPendingInitialCloudBackupForSessionProvider.notifier).state =
           false;
       await _completeChoice();
@@ -489,16 +502,20 @@ class _CloudSetupChoiceScreenState
       _restoreProgress = const CloudBackupProgress.checking();
     });
     try {
-      final result = await ref.read(cloudSyncProvider).resolveConflict(
-            conflict: conflict,
-            choice: CloudConflictChoice.useRemote,
-            // This is safe only after the fresh-install database predicate and
-            // unchanged revision were verified immediately before this call.
-            confirmed: true,
-            onProgress: (progress) {
-              if (mounted) setState(() => _restoreProgress = progress);
-            },
-          );
+      final result = await traceAsyncStage(
+        flow: 'cloud_restore',
+        stage: 'restore_verified_remote_backup',
+        action: () => ref.read(cloudSyncProvider).resolveConflict(
+              conflict: conflict,
+              choice: CloudConflictChoice.useRemote,
+              // This is safe only after the fresh-install database predicate and
+              // unchanged revision were verified immediately before this call.
+              confirmed: true,
+              onProgress: (progress) {
+                if (mounted) setState(() => _restoreProgress = progress);
+              },
+            ),
+      );
       if (!mounted) return;
       if (result.status != CloudSyncStatus.synced ||
           !result.restoredRemoteBackup) {
@@ -573,14 +590,18 @@ class _CloudSetupChoiceScreenState
       _restoreProgress = const CloudBackupProgress.checking();
     });
     try {
-      final result = await ref.read(cloudSyncProvider).resolveConflict(
-            conflict: conflict,
-            choice: CloudConflictChoice.useRemote,
-            confirmed: true,
-            onProgress: (progress) {
-              if (mounted) setState(() => _restoreProgress = progress);
-            },
-          );
+      final result = await traceAsyncStage(
+        flow: 'cloud_restore',
+        stage: 'restore_verified_remote_backup',
+        action: () => ref.read(cloudSyncProvider).resolveConflict(
+              conflict: conflict,
+              choice: CloudConflictChoice.useRemote,
+              confirmed: true,
+              onProgress: (progress) {
+                if (mounted) setState(() => _restoreProgress = progress);
+              },
+            ),
+      );
       if (!mounted) return;
 
       if (result.status != CloudSyncStatus.synced ||

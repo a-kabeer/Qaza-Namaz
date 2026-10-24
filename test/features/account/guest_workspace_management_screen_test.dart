@@ -307,16 +307,21 @@ void main() {
         ),
       );
 
-      late ProviderContainer switchContainer;
-      final switchManager = AccountSessionManager(
-        accountStore: store,
-        onActiveLocalAccountChanged: (id) {
-          switchContainer
-              .read(activeLocalAccountIdStateProvider.notifier)
-              .state = id;
-        },
+      await store.saveProfile(
+        singleRecordId,
+        UserProfile(
+          gender: Gender.male,
+          madhab: Madhab.hanafi,
+          dateOfBirth: DateTime(1990, 1, 1),
+          pubertyAge: 12,
+          startPrayingAge: 15,
+          witrIncluded: true,
+          onboardingCompleted: true,
+        ),
       );
-      switchContainer = ProviderContainer(
+
+      final switchManager = AccountSessionManager(accountStore: store);
+      final switchContainer = ProviderContainer(
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           accountLocalStoreProvider.overrideWith((ref) => store),
@@ -329,35 +334,50 @@ void main() {
       await tester.pumpWidget(
         _app(
           switchContainer,
-          Builder(
-            builder: (context) => Scaffold(
-              body: Column(
-                children: [
-                  const Text('Workspace home'),
-                  ElevatedButton(
-                    key: const Key('open_guest_workspace_management'),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => GuestWorkspaceManagementScreen(),
-                      ),
+          Consumer(
+            builder: (context, ref, child) {
+              // Keep the account-scoped graph live while the workspace changes.
+              // A simplified home with no provider consumers missed regressions
+              // in profile/progress refresh during account switching.
+              final profile = ref.watch(userProfileProvider);
+              final summary = ref.watch(progressSummaryProvider);
+              return Scaffold(
+                body: Column(
+                  children: [
+                    const Text('Workspace home'),
+                    Text(
+                      'Workspace birth year: '
+                      '${profile.valueOrNull?.dateOfBirth?.year ?? 0}',
                     ),
-                    child: const Text('Open Guest workspaces'),
-                  ),
-                ],
-              ),
-              bottomNavigationBar: NavigationBar(
-                destinations: [
-                  NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    label: 'Home',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.checklist_outlined),
-                    label: 'Qaza',
-                  ),
-                ],
-              ),
-            ),
+                    Text(
+                      'Workspace Qaza total: '
+                      '${summary.valueOrNull?.overall.total ?? 0}',
+                    ),
+                    ElevatedButton(
+                      key: const Key('open_guest_workspace_management'),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => GuestWorkspaceManagementScreen(),
+                        ),
+                      ),
+                      child: const Text('Open Guest workspaces'),
+                    ),
+                  ],
+                ),
+                bottomNavigationBar: NavigationBar(
+                  destinations: [
+                    NavigationDestination(
+                      icon: Icon(Icons.home_outlined),
+                      label: 'Home',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.checklist_outlined),
+                      label: 'Qaza',
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       );
@@ -372,14 +392,50 @@ void main() {
 
       for (var i = 0; i < 100; i++) {
         await tester.pump(const Duration(milliseconds: 50));
-        if (find.text('Workspace home').evaluate().isNotEmpty) break;
+        if (find.text('Workspace Qaza total: 3').evaluate().isNotEmpty) break;
       }
       await tester.pumpAndSettle();
 
       expect(switchManager.activeLocalAccountId, manyRecordsId);
       expect(find.text('Workspace home'), findsOneWidget);
+      expect(find.text('Workspace birth year: 1990'), findsOneWidget);
+      expect(find.text('Workspace Qaza total: 3'), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.byType(GuestWorkspaceManagementScreen), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      // Exercise a second switch and then return to the first workspace while
+      // the same root provider graph remains mounted (A -> B -> A).
+      await tester.tap(
+        find.byKey(const Key('open_guest_workspace_management')),
+      );
+      await tester.pumpAndSettle();
+      final singleTile = find.byKey(Key('guest_workspace_$singleRecordId'));
+      await tester.ensureVisible(singleTile);
+      await tester.tap(singleTile);
+      for (var i = 0; i < 100; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find.text('Workspace Qaza total: 1').evaluate().isNotEmpty) break;
+      }
+      expect(switchManager.activeLocalAccountId, singleRecordId);
+      expect(find.text('Workspace birth year: 1990'), findsOneWidget);
+      expect(find.text('Workspace Qaza total: 1'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(
+        find.byKey(const Key('open_guest_workspace_management')),
+      );
+      await tester.pumpAndSettle();
+      final returnTile = find.byKey(Key('guest_workspace_$manyRecordsId'));
+      await tester.ensureVisible(returnTile);
+      await tester.tap(returnTile);
+      for (var i = 0; i < 100; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find.text('Workspace Qaza total: 3').evaluate().isNotEmpty) break;
+      }
+      expect(switchManager.activeLocalAccountId, manyRecordsId);
+      expect(find.text('Workspace birth year: 1990'), findsOneWidget);
+      expect(find.text('Workspace Qaza total: 3'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );

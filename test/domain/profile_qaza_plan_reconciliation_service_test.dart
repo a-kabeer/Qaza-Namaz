@@ -250,10 +250,15 @@ class MemoryMutationRepository implements QazaProfilePlanMutationRepository {
       processed++;
       onProgress?.call(processed, total);
     }
-    qaza.records.removeWhere((r) => removed.any((x) => x.id == r.id));
+    final removedIds = removed.map((record) => record.id).toSet();
+    qaza.records.removeWhere((record) => removedIds.contains(record.id));
     final added = <QazaRecord>[];
+    // This in-memory test fake may handle thousands of records for a plan
+    // change. Use a key set rather than scanning the growing ledger for every
+    // addition, which makes this operation quadratic and can stall the suite.
+    final existingKeys = qaza.records.map(qaza.key).toSet();
     for (final record in additions) {
-      if (qaza.records.any((x) => qaza.key(x) == qaza.key(record))) continue;
+      if (!existingKeys.add(qaza.key(record))) continue;
       qaza.records.add(record);
       added.add(record);
       processed++;
@@ -273,7 +278,8 @@ class MemoryMutationRepository implements QazaProfilePlanMutationRepository {
   @override
   Future<void> rollbackProfilePlanChanges(
       QazaProfilePlanMutationResult mutation) async {
-    qaza.records.removeWhere((r) => mutation.added.any((x) => x.id == r.id));
+    final addedIds = mutation.added.map((record) => record.id).toSet();
+    qaza.records.removeWhere((record) => addedIds.contains(record.id));
     qaza.records.addAll(mutation.removed);
   }
 }

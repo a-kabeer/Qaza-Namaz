@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:qaza_namaz/core/diagnostics/flow_timing.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 
 import 'cloud_models.dart';
@@ -368,9 +369,13 @@ class CloudSyncEngine {
     if (!await _state.isCloudSyncEnabled()) {
       return CloudSyncResult.skipped('Cloud sync was disabled.');
     }
-    final remote = await _remote.latest(
-      allowInteractive: allowInteractive,
-      onProgress: onProgress,
+    final remote = await traceAsyncStage(
+      flow: 'cloud_restore',
+      stage: 'revalidate_remote_backup',
+      action: () => _remote.latest(
+        allowInteractive: allowInteractive,
+        onProgress: onProgress,
+      ),
     );
     if (remote == null ||
         remote.backup.lineage.backupId != conflict.remoteLineage.backupId ||
@@ -456,10 +461,23 @@ class CloudSyncEngine {
         // Persist the old Phase 1 export in encrypted local SQLite before
         // replacing current application data. Import is not attempted if this
         // snapshot fails to save.
-        final recovery = await _phase1.exportBackup();
+        final recovery = await traceAsyncStage(
+          flow: 'cloud_restore',
+          stage: 'export_local_recovery_snapshot',
+          action: _phase1.exportBackup,
+        );
         final recoveryPreview = _parsePhase1Preview(recovery);
-        await _phase1.saveRecoverySnapshot(recovery);
-        if (await _phase1.readRecoverySnapshot() != recovery) {
+        await traceAsyncStage(
+          flow: 'cloud_restore',
+          stage: 'persist_local_recovery_snapshot',
+          action: () => _phase1.saveRecoverySnapshot(recovery),
+        );
+        final recoveryVerified = await traceAsyncStage(
+          flow: 'cloud_restore',
+          stage: 'verify_local_recovery_snapshot',
+          action: () async => await _phase1.readRecoverySnapshot() == recovery,
+        );
+        if (!recoveryVerified) {
           throw const CloudAdapterException(
             'The local recovery snapshot could not be verified. Remote restore was cancelled.',
           );
@@ -478,7 +496,11 @@ class CloudSyncEngine {
             'The recovery snapshot remains available.',
           );
         }
-        final latest = await _remote.latest(allowInteractive: allowInteractive);
+        final latest = await traceAsyncStage(
+          flow: 'cloud_restore',
+          stage: 'recheck_remote_backup_after_recovery_snapshot',
+          action: () => _remote.latest(allowInteractive: allowInteractive),
+        );
         if (latest == null ||
             latest.backup.lineage.backupId != remote.backup.lineage.backupId ||
             latest.remoteVersion != remote.remoteVersion) {
@@ -502,13 +524,21 @@ class CloudSyncEngine {
           );
         }
         onProgress?.call(const CloudBackupProgress.preparing());
-        await _phase1.importBackup(latest.backup.phase1BackupJson);
+        await traceAsyncStage(
+          flow: 'cloud_restore',
+          stage: 'import_verified_backup_into_local_database',
+          action: () => _phase1.importBackup(latest.backup.phase1BackupJson),
+        );
         final importedRevision = await _phase1.readDbRevision();
-        await _state.writeCursor(
-          CloudSyncCursor(
-            lastSyncedLocalRevision: importedRevision,
-            lastSyncedBackupId: latest.backup.lineage.backupId,
-            lastSyncedRemoteVersion: latest.remoteVersion,
+        await traceAsyncStage(
+          flow: 'cloud_restore',
+          stage: 'persist_restored_sync_cursor',
+          action: () => _state.writeCursor(
+            CloudSyncCursor(
+              lastSyncedLocalRevision: importedRevision,
+              lastSyncedBackupId: latest.backup.lineage.backupId,
+              lastSyncedRemoteVersion: latest.remoteVersion,
+            ),
           ),
         );
         await _state.clearPendingConflict();

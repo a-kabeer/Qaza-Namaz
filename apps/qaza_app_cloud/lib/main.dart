@@ -9,7 +9,7 @@ import 'package:qaza_namaz/core/diagnostics/diagnostics.dart';
 import 'package:qaza_namaz/core/licenses/app_license_registry.dart';
 import 'package:qaza_namaz/core/time/local_date_service.dart';
 import 'package:qaza_namaz/core/widgets/fatal_error_screen.dart';
-import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/data/local/database/database_manager.dart';
 import 'package:qaza_cloud_adapter/qaza_cloud_adapter.dart';
 
 import 'cloud_host_composition.dart';
@@ -110,11 +110,15 @@ Widget _cloudApp(
 }
 
 Future<void> _initializeDatabase() async {
-  final database = AppDatabase();
+  // Recovery Stage 4 (R-12): routed through DatabaseManager like the
+  // standalone app — no direct AppDatabase construction outside the
+  // manager/composition roots.
+  final databaseManager = DatabaseManager();
   try {
-    await database.readDbRevision();
+    await databaseManager.initialize();
+    await databaseManager.runStartupMigrations();
   } finally {
-    await database.close();
+    await databaseManager.close();
   }
 }
 

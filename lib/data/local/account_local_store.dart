@@ -8,18 +8,33 @@ import '../../domain/entities/qaza_plan_revision.dart';
 import '../../domain/entities/qaza_record.dart';
 import '../../domain/entities/user_profile.dart';
 import 'database/app_database.dart';
+import 'database/database_manager.dart';
 import 'workspace_identity_migrator.dart';
 
 class AccountLocalStore {
-  AccountLocalStore({required this.database});
+  AccountLocalStore({
+    required this.database,
+    DatabaseManager? databaseManager,
+  }) : _databaseManager =
+            databaseManager ?? DatabaseManager(controlDatabase: database);
 
+  /// Always the control + Guest handle. Registry/session/device changes live here.
   final AppDatabase database;
+  final DatabaseManager _databaseManager;
+
+  Future<AppDatabase> _workspaceDatabase(String localAccountId) =>
+      _databaseManager.databaseForWorkspace(localAccountId);
 
   Future<void> ensureInitialized() async {
     await _ensureDeviceId();
     await _ensureLocalAccount();
+    await _reconcileOnboardingCommitJournals();
     final persisted = await activeAccount();
     final activeId = persisted?.localAccountId;
+    if (activeId != null && activeId.startsWith('google_')) {
+      await _databaseManager.ensureGoogleWorkspace(activeId);
+    }
+    _databaseManager.setActiveWorkspace(activeId);
     final profile = activeId == null ? null : await loadProfile(activeId);
     await database.transaction(() async {
       await database.setOnboardingCompletedInTransaction(
@@ -29,7 +44,8 @@ class AccountLocalStore {
   }
 
   Future<bool> hasAnyQaza(String localAccountId) async {
-    final rows = await database.customSelect(
+    final workspace = await _workspaceDatabase(localAccountId);
+    final rows = await workspace.customSelect(
       'SELECT 1 FROM qaza_records WHERE user_id = ? LIMIT 1',
       variables: [Variable(localAccountId)],
     ).get();
@@ -57,7 +73,7 @@ class AccountLocalStore {
   Future<LocalAccount?> getAccount(String localAccountId) async {
     final rows = await database.customSelect(
       '''SELECT a.local_account_id, a.account_mode, a.lifecycle_state,
-                a.created_at, a.updated_at,
+                a.created_at, a.updated_at, a.db_layout,
                 (SELECT value FROM meta_store
                  WHERE key = 'workspace_display_name:' || a.local_account_id
                  LIMIT 1) AS display_name
@@ -66,26 +82,30 @@ class AccountLocalStore {
          LIMIT 1''',
       variables: [Variable(localAccountId)],
     ).get();
-    return rows.isEmpty ? null : _mapAccount(rows.first);
+    if (rows.isEmpty) return null;
+    final row = rows.single;
+    var displayName = row.read<String?>('display_name');
+    if (row.read<String?>('db_layout') == 'separate') {
+      final workspace = await _workspaceDatabase(localAccountId);
+      final names = await workspace.customSelect(
+        'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+        variables: [Variable('workspace_display_name:$localAccountId')],
+      ).get();
+      displayName = names.isEmpty ? null : names.single.read<String>('value');
+    }
+    return _mapAccount(row, displayName: displayName);
   }
 
   Future<LocalAccount?> activeAccount() async {
-    final rows = await database.customSelect(
-      '''SELECT a.local_account_id, a.account_mode, a.lifecycle_state,
-                a.created_at, a.updated_at,
-                (SELECT value FROM meta_store
-                 WHERE key = 'workspace_display_name:' || a.local_account_id
-                 LIMIT 1) AS display_name
-         FROM app_session_state s
-         LEFT JOIN local_accounts a
-           ON a.local_account_id = s.active_local_account_id
-         WHERE s.id = 1
-         LIMIT 1''',
-    ).get();
-    if (rows.isEmpty || rows.first.read<String?>('local_account_id') == null) {
-      return null;
-    }
-    return _mapAccount(rows.first);
+    final rows = await database
+        .customSelect(
+          'SELECT active_local_account_id FROM app_session_state WHERE id = 1 LIMIT 1',
+        )
+        .get();
+    if (rows.isEmpty) return null;
+    final id = rows.single.read<String?>('active_local_account_id');
+    if (id == null || id.trim().isEmpty) return null;
+    return getAccount(id);
   }
 
   Future<void> activate(String localAccountId) async {
@@ -100,8 +120,15 @@ class AccountLocalStore {
       throw StateError('This local workspace cannot become active.');
     }
 
-    // The onboarding flag is global metadata, so it must follow the active
-    // workspace rather than retaining the previous user's value.
+    // Verified Google workspaces must resolve their database before the
+    // active session is published. Resolution is registry-true (Shape A):
+    // a separate workspace resolves to its validated file; a shared
+    // workspace resolves to the control database and remains fully
+    // operational there until the §5.2 startup migration moves it.
+    if (localAccountId.startsWith('google_')) {
+      await _databaseManager.ensureGoogleWorkspace(localAccountId);
+    }
+    // The onboarding flag is global metadata, so it follows the selected profile.
     final profile = await loadProfile(localAccountId);
     await database.transaction(() async {
       final sessionRows = await database
@@ -131,6 +158,7 @@ class AccountLocalStore {
         profile?.onboardingCompleted == true,
       );
     });
+    _databaseManager.setActiveWorkspace(localAccountId);
   }
 
   /// Creates a separate local workspace when it does not exist, then activates
@@ -268,11 +296,12 @@ class AccountLocalStore {
   Future<GuestWorkspaceRecordCounts> countWorkspaceRecords(
     String localAccountId,
   ) async {
-    final qazaRows = await database.customSelect(
+    final workspace = await _workspaceDatabase(localAccountId);
+    final qazaRows = await workspace.customSelect(
       'SELECT COUNT(*) AS total FROM qaza_records WHERE user_id = ?',
       variables: [Variable(localAccountId)],
     ).get();
-    final salahRows = await database.customSelect(
+    final salahRows = await workspace.customSelect(
       'SELECT COUNT(*) AS total FROM daily_salah_logs WHERE user_id = ?',
       variables: [Variable(localAccountId)],
     ).get();
@@ -283,7 +312,8 @@ class AccountLocalStore {
   }
 
   Future<String?> loadWorkspaceDisplayName(String localAccountId) async {
-    final rows = await database.customSelect(
+    final workspace = await _workspaceDatabase(localAccountId);
+    final rows = await workspace.customSelect(
       'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
       variables: [Variable('workspace_display_name:$localAccountId')],
     ).get();
@@ -303,20 +333,21 @@ class AccountLocalStore {
     }
     final normalized = displayName.trim();
     final key = 'workspace_display_name:$localAccountId';
-    await database.transactionWithRevision(() async {
-      final rows = await database.customSelect(
+    final workspace = await _workspaceDatabase(localAccountId);
+    await workspace.transactionWithRevision(() async {
+      final rows = await workspace.customSelect(
         'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
         variables: [Variable(key)],
       ).get();
       final current = rows.isEmpty ? null : rows.first.read<String>('value');
       if ((current ?? '') == normalized) return false;
       if (normalized.isEmpty) {
-        await database.customStatement(
+        await workspace.customStatement(
           'DELETE FROM meta_store WHERE key = ?',
           [key],
         );
       } else {
-        await database.customInsert(
+        await workspace.customInsert(
           '''INSERT INTO meta_store (key, value)
              VALUES (?, ?)
              ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
@@ -573,6 +604,7 @@ class AccountLocalStore {
   }
 
   Future<bool> hasAnyAccountData(String localAccountId) async {
+    final workspace = await _workspaceDatabase(localAccountId);
     const queries = [
       'SELECT 1 FROM qaza_records WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM daily_salah_logs WHERE user_id = ? LIMIT 1',
@@ -584,7 +616,7 @@ class AccountLocalStore {
       'SELECT 1 FROM account_plan_revisions WHERE local_account_id = ? LIMIT 1',
     ];
     for (final query in queries) {
-      final rows = await database.customSelect(
+      final rows = await workspace.customSelect(
         query,
         variables: [Variable(localAccountId)],
       ).get();
@@ -594,7 +626,8 @@ class AccountLocalStore {
   }
 
   Future<UserProfile?> loadProfile(String localAccountId) async {
-    final rows = await database.customSelect(
+    final workspace = await _workspaceDatabase(localAccountId);
+    final rows = await workspace.customSelect(
       '''SELECT payload_json FROM account_profiles
          WHERE local_account_id = ? LIMIT 1''',
       variables: [Variable(localAccountId)],
@@ -610,29 +643,57 @@ class AccountLocalStore {
   }
 
   Future<void> saveProfile(String localAccountId, UserProfile profile) async {
+    final workspace = await _workspaceDatabase(localAccountId);
     final now = DateTime.now().microsecondsSinceEpoch;
     final device = await deviceInstanceId();
     final opId = _randomId('op');
-    await database.transactionWithRevision(() async {
-      final existing = await loadProfile(localAccountId);
-      final onboardingCompleted = await database.isOnboardingCompleted();
+    final beforeGeneration = await database.readSessionGeneration();
+    final changed = await workspace.transactionWithRevision<bool>(() async {
+      final existingRows = await workspace.customSelect(
+        'SELECT payload_json FROM account_profiles WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable(localAccountId)],
+      ).get();
+      UserProfile? existing;
+      if (existingRows.isNotEmpty) {
+        try {
+          final decoded =
+              jsonDecode(existingRows.single.read<String>('payload_json'));
+          if (decoded is Map) {
+            existing = UserProfile.fromJson(Map<String, dynamic>.from(decoded));
+          }
+        } catch (_) {}
+      }
       if (existing != null &&
-          jsonEncode(existing.toJson()) == jsonEncode(profile.toJson()) &&
-          onboardingCompleted == profile.onboardingCompleted) {
+          jsonEncode(existing.toJson()) == jsonEncode(profile.toJson())) {
         return false;
       }
       await _writeProfileRowInsideTransaction(
+        targetDatabase: workspace,
         localAccountId: localAccountId,
         profile: profile,
         nowMicros: now,
         writerDeviceId: device,
         operationId: opId,
       );
-      await database.setOnboardingCompletedInTransaction(
-        profile.onboardingCompleted,
-      );
+      if (identical(workspace, database)) {
+        await database.setOnboardingCompletedInTransaction(
+          profile.onboardingCompleted,
+        );
+      }
       return true;
     });
+    if (!identical(workspace, database) &&
+        changed &&
+        await database.isCurrentWorkspaceGeneration(
+          localAccountId: localAccountId,
+          generation: beforeGeneration,
+        )) {
+      await database.transaction(() async {
+        await database.setOnboardingCompletedInTransaction(
+          profile.onboardingCompleted,
+        );
+      });
+    }
   }
 
   /// Persists a draft locally.
@@ -640,31 +701,48 @@ class AccountLocalStore {
     String localAccountId,
     UserProfile profile,
   ) async {
+    final workspace = await _workspaceDatabase(localAccountId);
     final now = DateTime.now().microsecondsSinceEpoch;
     final device = await deviceInstanceId();
     final opId = _randomId('op');
-    await database.transactionWithRevision(() async {
+    final beforeGeneration = await database.readSessionGeneration();
+    await workspace.transactionWithRevision(() async {
       await _writeProfileRowInsideTransaction(
+        targetDatabase: workspace,
         localAccountId: localAccountId,
         profile: profile,
         nowMicros: now,
         writerDeviceId: device,
         operationId: opId,
       );
-      await database.setOnboardingCompletedInTransaction(
-        profile.onboardingCompleted,
-      );
+      if (identical(workspace, database)) {
+        await database.setOnboardingCompletedInTransaction(
+          profile.onboardingCompleted,
+        );
+      }
     });
+    if (!identical(workspace, database) &&
+        await database.isCurrentWorkspaceGeneration(
+          localAccountId: localAccountId,
+          generation: beforeGeneration,
+        )) {
+      await database.transaction(() async {
+        await database.setOnboardingCompletedInTransaction(
+          profile.onboardingCompleted,
+        );
+      });
+    }
   }
 
   Future<void> _writeProfileRowInsideTransaction({
+    required AppDatabase targetDatabase,
     required String localAccountId,
     required UserProfile profile,
     required int nowMicros,
     required String writerDeviceId,
     required String operationId,
   }) {
-    return database.customUpdate(
+    return targetDatabase.customUpdate(
       '''INSERT INTO account_profiles
          (local_account_id, payload_json, entity_version, updated_at,
           writer_device_id, operation_id)
@@ -694,14 +772,15 @@ class AccountLocalStore {
     required List<QazaRecord> records,
     void Function(int processed, int total)? onProgress,
   }) async {
-    if (localAccountId.isEmpty) {
+    final id = localAccountId.trim();
+    if (id.isEmpty) {
       throw StateError('Onboarding requires a local account ID.');
     }
-    if (revision.userId != localAccountId) {
+    if (revision.userId != id) {
       throw StateError('Onboarding revision is for a different local account.');
     }
     for (final record in records) {
-      if (record.userId != localAccountId) {
+      if (record.userId != id) {
         throw StateError('Onboarding Qaza record is for a different account.');
       }
       if (record.profilePlanRevisionId != revision.revisionId ||
@@ -710,150 +789,355 @@ class AccountLocalStore {
       }
     }
 
-    await database.transactionWithRevision(() async {
-      final activeRows = await database.customSelect(
-        '''SELECT active_local_account_id
-           FROM app_session_state
-           WHERE id = 1
-           LIMIT 1''',
-      ).get();
-      final activeId = activeRows.isEmpty
-          ? null
-          : activeRows.first.read<String?>('active_local_account_id');
-      if (activeId != localAccountId) {
-        throw StateError('Onboarding account is not the active local account.');
-      }
+    final workspace = await _workspaceDatabase(id);
+    final sessionRows = await database
+        .customSelect(
+          'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+        )
+        .get();
+    final activeId = sessionRows.isEmpty
+        ? null
+        : sessionRows.single.read<String?>('active_local_account_id');
+    if (activeId != id) {
+      throw StateError('Onboarding account is not the active local account.');
+    }
+    final sessionGeneration =
+        sessionRows.isEmpty ? 1 : sessionRows.single.read<int>('generation');
 
-      final accountRows = await database.customSelect(
-        '''SELECT lifecycle_state
-           FROM local_accounts
-           WHERE local_account_id = ?
-           LIMIT 1''',
-        variables: [Variable(localAccountId)],
-      ).get();
-      if (accountRows.isEmpty) {
-        throw StateError('Local onboarding account does not exist.');
-      }
-      final lifecycle = accountRows.first.read<String>('lifecycle_state');
-      if (lifecycle != 'active' && lifecycle != 'draft') {
-        throw StateError('Local onboarding account is not active.');
-      }
-      final now = DateTime.now().microsecondsSinceEpoch;
-      final device = await deviceInstanceId();
-      await _writeProfileRowInsideTransaction(
-        localAccountId: localAccountId,
-        profile: profile.copyWith(onboardingCompleted: true),
-        nowMicros: now,
-        writerDeviceId: device,
-        operationId: _randomId('onboarding_profile'),
+    final accountRows = await database.customSelect(
+      'SELECT lifecycle_state FROM local_accounts WHERE local_account_id = ? LIMIT 1',
+      variables: [Variable(id)],
+    ).get();
+    if (accountRows.isEmpty) {
+      throw StateError('Local onboarding account does not exist.');
+    }
+    final lifecycle = accountRows.single.read<String>('lifecycle_state');
+    if (lifecycle != 'active' && lifecycle != 'draft') {
+      throw StateError('Local onboarding account is not active.');
+    }
+
+    final now = DateTime.now().microsecondsSinceEpoch;
+    final device = await deviceInstanceId();
+    final operationId = 'onboarding-commit:$id:${revision.revisionId}';
+
+    // Guest remains in one database, preserving its existing atomic transaction.
+    if (identical(workspace, database)) {
+      await database.transactionWithRevision(() async {
+        await _writeOnboardingWorkspaceData(
+          targetDatabase: database,
+          localAccountId: id,
+          profile: profile,
+          revision: revision,
+          records: records,
+          nowMicros: now,
+          writerDeviceId: device,
+          operationId: operationId,
+          onProgress: onProgress,
+        );
+        await database.setOnboardingCompletedInTransaction(true);
+        await database.customUpdate(
+          '''UPDATE local_accounts SET lifecycle_state = 'active', updated_at = ?
+             WHERE local_account_id = ? AND lifecycle_state = 'draft' ''',
+          variables: [Variable(now), Variable(id)],
+        );
+      });
+      return;
+    }
+
+    // Google workspaces span two files. A durable control-side journal lets a
+    // restart finish registry promotion after the workspace transaction commits.
+    await database.customInsert(
+      '''INSERT OR IGNORE INTO workspace_operation_journal
+         (operation_id, operation_type, source_local_account_id,
+          target_local_account_id, phase, created_at, updated_at, snapshot_id)
+         VALUES (?, 'onboarding_commit', ?, ?, 'prepared', ?, ?, ?)''',
+      variables: [
+        Variable(operationId),
+        Variable(id),
+        Variable(id),
+        Variable(now),
+        Variable(now),
+        Variable(revision.revisionId),
+      ],
+    );
+    await database.customUpdate(
+      '''UPDATE workspace_operation_journal
+         SET phase = 'prepared', error_message = NULL, updated_at = ?
+         WHERE operation_id = ? AND phase != 'committed' ''',
+      variables: [
+        Variable(DateTime.now().microsecondsSinceEpoch),
+        Variable(operationId)
+      ],
+    );
+
+    try {
+      await workspace.transactionWithRevision(() async {
+        await _writeOnboardingWorkspaceData(
+          targetDatabase: workspace,
+          localAccountId: id,
+          profile: profile,
+          revision: revision,
+          records: records,
+          nowMicros: now,
+          writerDeviceId: device,
+          operationId: operationId,
+          onProgress: onProgress,
+        );
+      });
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET phase = 'verified', updated_at = ?
+           WHERE operation_id = ? AND phase != 'committed' ''',
+        variables: [
+          Variable(DateTime.now().microsecondsSinceEpoch),
+          Variable(operationId),
+        ],
       );
-      await database.setOnboardingCompletedInTransaction(true);
+      await _reconcileOnboardingCommitJournals(
+        onlyOperationId: operationId,
+        expectedSessionGeneration: sessionGeneration,
+      );
+    } catch (error) {
+      await database.customUpdate(
+        '''UPDATE workspace_operation_journal
+           SET error_message = ?, updated_at = ?
+           WHERE operation_id = ? AND phase != 'committed' ''',
+        variables: [
+          Variable(error.toString()),
+          Variable(DateTime.now().microsecondsSinceEpoch),
+          Variable(operationId),
+        ],
+      );
+      rethrow;
+    }
+  }
 
-      final revisionPayload = jsonEncode(revision.toJson());
-      final existingRevision = await database.customSelect(
-        '''SELECT payload_json
-           FROM account_plan_revisions
-           WHERE local_account_id = ? AND revision_id = ?
-           LIMIT 1''',
+  Future<void> _writeOnboardingWorkspaceData({
+    required AppDatabase targetDatabase,
+    required String localAccountId,
+    required UserProfile profile,
+    required QazaPlanRevision revision,
+    required List<QazaRecord> records,
+    required int nowMicros,
+    required String writerDeviceId,
+    required String operationId,
+    void Function(int processed, int total)? onProgress,
+  }) async {
+    await _writeProfileRowInsideTransaction(
+      targetDatabase: targetDatabase,
+      localAccountId: localAccountId,
+      profile: profile.copyWith(onboardingCompleted: true),
+      nowMicros: nowMicros,
+      writerDeviceId: writerDeviceId,
+      operationId: '${operationId}_profile',
+    );
+
+    final revisionPayload = jsonEncode(revision.toJson());
+    final existingRevision = await targetDatabase.customSelect(
+      '''SELECT payload_json FROM account_plan_revisions
+         WHERE local_account_id = ? AND revision_id = ? LIMIT 1''',
+      variables: [Variable(localAccountId), Variable(revision.revisionId)],
+    ).get();
+    if (existingRevision.isNotEmpty) {
+      if (existingRevision.single.read<String>('payload_json') !=
+          revisionPayload) {
+        throw StateError('Immutable onboarding plan revision conflict.');
+      }
+    } else {
+      await targetDatabase.customInsert(
+        '''INSERT INTO account_plan_revisions
+           (local_account_id, revision_id, payload_json, created_at)
+           VALUES (?, ?, ?, ?)''',
         variables: [
           Variable(localAccountId),
           Variable(revision.revisionId),
+          Variable(revisionPayload),
+          Variable(revision.createdAt.microsecondsSinceEpoch),
         ],
-      ).get();
-      if (existingRevision.isNotEmpty) {
-        if (existingRevision.first.read<String>('payload_json') !=
-            revisionPayload) {
-          throw StateError('Immutable onboarding plan revision conflict.');
-        }
-      } else {
-        await database.customInsert(
-          '''INSERT INTO account_plan_revisions
-             (local_account_id, revision_id, payload_json, created_at)
-             VALUES (?, ?, ?, ?)''',
-          variables: [
-            Variable(localAccountId),
-            Variable(revision.revisionId),
-            Variable(revisionPayload),
-            Variable(revision.createdAt.microsecondsSinceEpoch),
+      );
+    }
+
+    for (var start = 0; start < records.length; start += 500) {
+      final end = start + 500 < records.length ? start + 500 : records.length;
+      final chunk = records.sublist(start, end);
+      if (chunk.isNotEmpty) {
+        await targetDatabase.qazaRecordsDao.insertRecordsReturningInsertedIds(
+          [
+            for (final record in chunk)
+              QazaRecordsCompanion.insert(
+                id: record.id,
+                userId: record.userId,
+                prayerType: record.prayerType.name,
+                originalDate: record.originalDate,
+                status: record.status.name,
+                completedAt: record.completedAt == null
+                    ? const Value.absent()
+                    : Value(record.completedAt),
+                completionId: record.completionId == null
+                    ? const Value.absent()
+                    : Value(record.completionId),
+                additionId: record.additionId == null
+                    ? const Value.absent()
+                    : Value(record.additionId),
+                recordVersion: Value(record.recordVersion),
+                createdAt: record.createdAt,
+                updatedAt: record.updatedAt,
+              ),
           ],
         );
-      }
-
-      var insertedTotal = 0;
-      for (var start = 0; start < records.length; start += 500) {
-        final end = start + 500 < records.length ? start + 500 : records.length;
-        final chunk = records.sublist(start, end);
-        if (chunk.isNotEmpty) {
-          final ids =
-              await database.qazaRecordsDao.insertRecordsReturningInsertedIds(
-            [
-              for (final record in chunk)
-                QazaRecordsCompanion.insert(
-                  id: record.id,
-                  userId: record.userId,
-                  prayerType: record.prayerType.name,
-                  originalDate: record.originalDate,
-                  status: record.status.name,
-                  completedAt: record.completedAt == null
-                      ? const Value.absent()
-                      : Value(record.completedAt),
-                  completionId: record.completionId == null
-                      ? const Value.absent()
-                      : Value(record.completionId),
-                  additionId: record.additionId == null
-                      ? const Value.absent()
-                      : Value(record.additionId),
-                  recordVersion: Value(record.recordVersion),
-                  createdAt: record.createdAt,
-                  updatedAt: record.updatedAt,
-                ),
-            ],
-          );
-          insertedTotal += ids.length;
-          await _upsertProfilePlanProvenance(
-            chunk.where((record) => ids.contains(record.id)),
-          );
-        }
-        onProgress?.call(end, records.length);
-      }
-
-      if (insertedTotal != records.length) {
-        throw StateError(
-          'Onboarding Qaza dataset is incomplete: inserted '
-          '$insertedTotal of ${records.length} records.',
+        // On a retry after process death, verify existing rows match exactly.
+        // Any conflicting payload aborts without overwriting the existing data.
+        final persistedRows = await targetDatabase.qazaRecordsDao.getRowsByIds(
+          userId: localAccountId,
+          ids: chunk.map((record) => record.id).toList(growable: false),
         );
+        final persistedById = {
+          for (final row in persistedRows) row.id: row,
+        };
+        for (final record in chunk) {
+          final row = persistedById[record.id];
+          // DateTime fields are compared at storage precision: drift
+          // persists DateTime values as whole seconds, so an exact
+          // comparison against the in-memory record (which carries
+          // microseconds) could never succeed. Every field is still
+          // verified — at the precision the store actually retains.
+          bool sameInstant(DateTime? a, DateTime? b) =>
+              (a == null && b == null) ||
+              (a != null &&
+                  b != null &&
+                  a.microsecondsSinceEpoch ~/ 1000000 ==
+                      b.microsecondsSinceEpoch ~/ 1000000);
+          if (row == null ||
+              row.userId != localAccountId ||
+              row.prayerType != record.prayerType.name ||
+              !sameInstant(row.originalDate, record.originalDate) ||
+              row.status != record.status.name ||
+              !sameInstant(row.completedAt, record.completedAt) ||
+              row.completionId != record.completionId ||
+              row.additionId != record.additionId ||
+              row.recordVersion != record.recordVersion ||
+              !sameInstant(row.createdAt, record.createdAt) ||
+              !sameInstant(row.updatedAt, record.updatedAt)) {
+            throw StateError(
+              'Onboarding Qaza row verification failed for record ${record.id}.',
+            );
+          }
+        }
+        await _upsertProfilePlanProvenance(targetDatabase, chunk);
       }
-      // Promote a draft only as part of the transaction that commits the
-      // final profile, plan revision, and all planned Qaza rows.
-      await database.customUpdate(
-        '''UPDATE local_accounts SET lifecycle_state = 'active', updated_at = ?
-           WHERE local_account_id = ? AND lifecycle_state = 'draft' ''',
-        variables: [Variable(now), Variable(localAccountId)],
-      );
-    });
+      onProgress?.call(end, records.length);
+    }
+  }
+
+  Future<void> _reconcileOnboardingCommitJournals({
+    String? onlyOperationId,
+    int? expectedSessionGeneration,
+  }) async {
+    final rows = await database.customSelect(
+      '''SELECT operation_id, target_local_account_id, phase
+         FROM workspace_operation_journal
+         WHERE operation_type = 'onboarding_commit' AND phase = 'verified'
+         ${onlyOperationId == null ? '' : 'AND operation_id = ?'}
+         ORDER BY created_at''',
+      variables:
+          onlyOperationId == null ? const [] : [Variable(onlyOperationId)],
+    ).get();
+    for (final row in rows) {
+      final operationId = row.read<String>('operation_id');
+      final id = row.read<String>('target_local_account_id');
+      final workspace = await _workspaceDatabase(id);
+      final profileRows = await workspace.customSelect(
+        'SELECT payload_json FROM account_profiles WHERE local_account_id = ? LIMIT 1',
+        variables: [Variable(id)],
+      ).get();
+      if (profileRows.isEmpty) {
+        throw StateError(
+            'Verified onboarding journal has no workspace profile.');
+      }
+      dynamic decoded;
+      try {
+        decoded = jsonDecode(profileRows.single.read<String>('payload_json'));
+      } catch (_) {
+        throw StateError('Verified onboarding profile is invalid JSON.');
+      }
+      if (decoded is! Map || decoded['onboardingCompleted'] != true) {
+        throw StateError(
+            'Verified onboarding profile is not marked completed.');
+      }
+
+      await database.transaction(() async {
+        final sessionRows = await database
+            .customSelect(
+              'SELECT active_local_account_id, generation FROM app_session_state WHERE id = 1 LIMIT 1',
+            )
+            .get();
+        final activeId = sessionRows.isEmpty
+            ? null
+            : sessionRows.single.read<String?>('active_local_account_id');
+        final generation = sessionRows.isEmpty
+            ? 1
+            : sessionRows.single.read<int>('generation');
+        await database.customUpdate(
+          '''UPDATE local_accounts SET lifecycle_state = 'active', updated_at = ?
+             WHERE local_account_id = ? AND lifecycle_state = 'draft' ''',
+          variables: [
+            Variable(DateTime.now().microsecondsSinceEpoch),
+            Variable(id)
+          ],
+        );
+        if (activeId == id &&
+            (expectedSessionGeneration == null ||
+                expectedSessionGeneration == generation)) {
+          await database.setOnboardingCompletedInTransaction(true);
+        }
+        await database.customUpdate(
+          '''UPDATE workspace_operation_journal
+             SET phase = 'committed', error_message = NULL, updated_at = ?
+             WHERE operation_id = ?''',
+          variables: [
+            Variable(DateTime.now().microsecondsSinceEpoch),
+            Variable(operationId),
+          ],
+        );
+      });
+    }
   }
 
   Future<void> clearProfile(String localAccountId) async {
-    await database.transactionWithRevision(() async {
-      final rows = await database.customSelect(
+    final workspace = await _workspaceDatabase(localAccountId);
+    final beforeGeneration = await database.readSessionGeneration();
+    final changed = await workspace.transactionWithRevision<bool>(() async {
+      final rows = await workspace.customSelect(
         'SELECT 1 FROM account_profiles WHERE local_account_id = ? LIMIT 1',
         variables: [Variable(localAccountId)],
       ).get();
-      final wasOnboardingCompleted = await database.isOnboardingCompleted();
-      if (rows.isEmpty && !wasOnboardingCompleted) return false;
-      await database.customUpdate(
+      if (rows.isEmpty) return false;
+      await workspace.customUpdate(
         'DELETE FROM account_profiles WHERE local_account_id = ?',
         variables: [Variable(localAccountId)],
       );
-      await database.setOnboardingCompletedInTransaction(false);
+      if (identical(workspace, database)) {
+        await database.setOnboardingCompletedInTransaction(false);
+      }
       return true;
     });
+    if (!identical(workspace, database) &&
+        changed &&
+        await database.isCurrentWorkspaceGeneration(
+          localAccountId: localAccountId,
+          generation: beforeGeneration,
+        )) {
+      await database.transaction(() async {
+        await database.setOnboardingCompletedInTransaction(false);
+      });
+    }
   }
 
   Future<List<QazaPlanRevision>> loadPlanRevisions(
     String localAccountId,
   ) async {
-    final rows = await database.customSelect(
+    final workspace = await _workspaceDatabase(localAccountId);
+    final rows = await workspace.customSelect(
       '''SELECT payload_json FROM account_plan_revisions
          WHERE local_account_id = ?
          ORDER BY created_at DESC''',
@@ -877,8 +1161,9 @@ class AccountLocalStore {
     String localAccountId,
     QazaPlanRevision revision,
   ) async {
+    final workspace = await _workspaceDatabase(localAccountId);
     final payload = jsonEncode(revision.toJson());
-    final existing = await database.customSelect(
+    final existing = await workspace.customSelect(
       '''SELECT payload_json FROM account_plan_revisions
          WHERE local_account_id = ? AND revision_id = ? LIMIT 1''',
       variables: [
@@ -892,8 +1177,8 @@ class AccountLocalStore {
       }
       return;
     }
-    await database.transactionWithRevision(() async {
-      await database.customInsert(
+    await workspace.transactionWithRevision(() async {
+      await workspace.customInsert(
         '''INSERT INTO account_plan_revisions
            (local_account_id, revision_id, payload_json, created_at)
            VALUES (?, ?, ?, ?)''',
@@ -908,6 +1193,7 @@ class AccountLocalStore {
   }
 
   Future<void> _upsertProfilePlanProvenance(
+    AppDatabase targetDatabase,
     Iterable<QazaRecord> records,
   ) async {
     final eligible = records
@@ -918,7 +1204,7 @@ class AccountLocalStore {
         )
         .toList(growable: false);
     for (final record in eligible) {
-      await database.customInsert(
+      await targetDatabase.customInsert(
         '''INSERT INTO qaza_profile_plan_provenance
            (record_id, user_id, plan_revision_id, plan_fingerprint)
            VALUES (?, ?, ?, ?)
@@ -1003,7 +1289,7 @@ class AccountLocalStore {
     });
   }
 
-  LocalAccount _mapAccount(QueryRow row) {
+  LocalAccount _mapAccount(QueryRow row, {String? displayName}) {
     return LocalAccount(
       localAccountId: row.read<String>('local_account_id'),
       accountMode: AccountMode.local,
@@ -1014,7 +1300,7 @@ class AccountLocalStore {
           DateTime.fromMicrosecondsSinceEpoch(row.read<int>('created_at')),
       updatedAt:
           DateTime.fromMicrosecondsSinceEpoch(row.read<int>('updated_at')),
-      displayName: row.read<String?>('display_name'),
+      displayName: displayName ?? row.read<String?>('display_name'),
     );
   }
 

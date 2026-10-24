@@ -3,6 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../app/providers.dart';
 import '../../app/workspace_refresh.dart';
+import '../../core/diagnostics/diagnostics.dart';
+import '../../core/diagnostics/flow_timing.dart';
 import '../../domain/services/cloud_sync_contracts.dart';
 import '../../domain/entities/local_account.dart';
 import '../../core/widgets/app_scaffold.dart';
@@ -44,7 +46,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     }
 
     try {
-      final account = await accountProvider.restore();
+      final account = await traceAsyncStage(
+        flow: 'account_screen',
+        stage: 'restore_google_account_profile',
+        action: accountProvider.restore,
+      );
       if (!mounted) return;
       setState(() => _accountSnapshot = AsyncData(account));
     } catch (error) {
@@ -337,8 +343,16 @@ class _CloudBackupCard extends ConsumerStatefulWidget {
   ConsumerState<_CloudBackupCard> createState() => _CloudBackupCardState();
 }
 
+enum _CloudAccountOperationStage {
+  connecting,
+  checkingBackup,
+  backingUp,
+  signingOut,
+}
+
 class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   CloudSyncSnapshot _sync = const CloudSyncSnapshot.disconnected();
+  _CloudAccountOperationStage? _operationStage;
   bool _busy = false;
   bool _settingsBusy = false;
   bool _backupBusy = false;
@@ -381,7 +395,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   }
 
   Future<void> _refresh() async {
-    final sync = await ref.read(cloudSyncProvider).status();
+    final sync = await traceAsyncStage(
+      flow: 'account_screen',
+      stage: 'refresh_cloud_sync_status',
+      action: () => ref.read(cloudSyncProvider).status(),
+    );
     if (!mounted) return;
     setState(() {
       _sync = sync;
@@ -401,6 +419,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     // authentication dialogs from repeated taps.
     setState(() {
       _busy = true;
+      _operationStage = _CloudAccountOperationStage.connecting;
       _message = null;
     });
 
@@ -439,7 +458,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     }
 
     try {
-      final account = await accountProvider.signIn();
+      final account = await traceAsyncStage(
+        flow: 'account_screen',
+        stage: 'google_connect_and_drive_authorization',
+        action: accountProvider.signIn,
+      );
       if (!mounted || account.wasCancelled) return;
       widget.onAccountChanged(account);
       if (!account.isConnected) {
@@ -468,9 +491,13 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
               .getAccount(targetWorkspaceId) !=
           null;
       workspaceActivated = true;
-      await container
-          .read(accountSessionManagerProvider)
-          .activateGoogleAccount(stableAccountId);
+      await traceAsyncStage(
+        flow: 'account_screen',
+        stage: 'activate_google_workspace',
+        action: () => container
+            .read(accountSessionManagerProvider)
+            .activateGoogleAccount(stableAccountId),
+      );
       final selectedWorkspaceId =
           container.read(accountSessionManagerProvider).activeLocalAccountId;
       googleWorkspaceWasUninitialized = !googleWorkspaceExistedBefore;
@@ -708,31 +735,50 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
             .state = false;
         container.invalidate(initialCloudBackupRetryProvider);
       }
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _operationStage = null;
+        });
+      }
     }
   }
 
   Future<void> _disconnect() async {
     if (_busy || _settingsBusy || _backupBusy) return;
+
+    // Keep lifecycle-independent handles before the first await. Sign-out
+    // navigates away from this widget, so an exception arriving afterwards
+    // must not read WidgetRef from a disposed ConsumerState.
+    final container = ProviderScope.containerOf(context, listen: false);
+    final diagnostics = container.read(diagnosticsProvider);
+
     setState(() {
       _busy = true;
+      _operationStage = _CloudAccountOperationStage.checkingBackup;
       _message = null;
     });
     try {
-      final cloudSync = ref.read(cloudSyncProvider);
-      final status = await cloudSync.status();
+      final cloudSync = container.read(cloudSyncProvider);
+      final status = await traceAsyncStage(
+        flow: 'sign_out',
+        stage: 'check_local_sync_status',
+        action: cloudSync.status,
+      );
       if (!mounted) return;
       setState(() => _sync = status);
 
       if (!status.hasPendingChanges) {
-        await _finishSignOut();
+        await _finishSignOut(container);
         return;
       }
 
       // A read-only remote discovery differentiates a usable online Drive
       // session from a connection/authorization failure without uploading.
-      final discovery = await cloudSync.discoverBackup(
-        allowInteractive: false,
+      final discovery = await traceAsyncStage(
+        flow: 'sign_out',
+        stage: 'discover_remote_backup',
+        action: () => cloudSync.discoverBackup(allowInteractive: false),
       );
       if (!mounted) return;
       final canCheckRemote =
@@ -741,7 +787,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
 
       if (!canCheckRemote) {
         final signOutAnyway = await _confirmSignOutWithoutBackup();
-        if (signOutAnyway == true && mounted) await _finishSignOut();
+        if (signOutAnyway == true && mounted) await _finishSignOut(container);
         return;
       }
 
@@ -749,11 +795,16 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       // what to do if backup fails or an unresolved conflict blocks it.
       while (mounted) {
         setState(() {
+          _operationStage = _CloudAccountOperationStage.backingUp;
           _backupProgress = const CloudBackupProgress.checking();
           _message = null;
         });
-        var result = await cloudSync.backupNow(
-          onProgress: _publishBackupProgress,
+        var result = await traceAsyncStage(
+          flow: 'sign_out',
+          stage: 'backup_before_sign_out',
+          action: () => cloudSync.backupNow(
+            onProgress: _publishBackupProgress,
+          ),
         );
         if (!mounted) return;
         if (result.status == CloudSyncStatus.conflict &&
@@ -770,7 +821,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
 
         if (result.status == CloudSyncStatus.synced &&
             !result.hasPendingChanges) {
-          await _finishSignOut();
+          await _finishSignOut(container);
           return;
         }
 
@@ -804,11 +855,17 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         );
         if (!mounted || next == 'cancel' || next == null) return;
         if (next == 'sign_out') {
-          await _finishSignOut();
+          await _finishSignOut(container);
           return;
         }
       }
-    } catch (_) {
+    } catch (error, stack) {
+      diagnostics.recordFailure(
+        DiagnosticArea.sync,
+        'sign_out_flow_failed',
+        error,
+        stack: stack,
+      );
       if (mounted) {
         setState(() {
           _message = AppLocalizations.of(context).cloudConnectionFailed;
@@ -818,6 +875,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       if (mounted) {
         setState(() {
           _busy = false;
+          _operationStage = null;
           _backupProgress = null;
         });
       }
@@ -845,22 +903,51 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     );
   }
 
-  Future<void> _finishSignOut() async {
-    await ref.read(cloudAccountProvider).disconnect();
+  Future<void> _finishSignOut(ProviderContainer container) async {
+    if (mounted) {
+      setState(() {
+        _operationStage = _CloudAccountOperationStage.signingOut;
+      });
+    }
+
+    await traceAsyncStage(
+      flow: 'sign_out',
+      stage: 'disconnect_cloud_and_cancel_scheduled_work',
+      action: () => container.read(cloudAccountProvider).disconnect(),
+    );
+
+    // Persist the intended destination before changing the active workspace.
+    // If workspace activation fails or the process is interrupted, startup
+    // can still recover to account choice instead of routing a partial Guest
+    // state to onboarding.
+    await traceAsyncStage(
+      flow: 'sign_out',
+      stage: 'persist_returning_account_choice',
+      action: () => container
+          .read(appDatabaseProvider)
+          .markReturningAccountChoicePending(),
+    );
+
     // Switch away from the outgoing workspace without deleting its local data.
-    await ref.read(accountSessionManagerProvider).activateGuest();
-    ref.invalidate(appRouteProvider);
-    ref.invalidate(userProfileProvider);
-    ref.invalidate(progressSummaryProvider);
-    ref.invalidate(qazaRepositoryProvider);
-    ref.invalidate(qazaAdditionRepositoryProvider);
-    ref.invalidate(qazaPlanRevisionRepositoryProvider);
-    await ref.read(appDatabaseProvider).markReturningAccountChoicePending();
+    await traceAsyncStage(
+      flow: 'sign_out',
+      stage: 'activate_local_workspace',
+      action: () =>
+          container.read(accountSessionManagerProvider).activateGuest(),
+    );
+
+    // AccountSessionManager has already published the new Guest workspace.
+    // Its active-user dependency updates account-scoped providers. Don't
+    // manually invalidate the same provider graph during this notification;
+    // the durable marker routes StartupGate to account choice, where the next
+    // workspace selection refreshes profile and repository state.
     widget.onAccountChanged(const CloudAccountSnapshot.disconnected());
-    ref.invalidate(cloudAccountStartupRestoreProvider);
-    ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = false;
-    ref.invalidate(returningAccountChoicePendingProvider);
-    ref.invalidate(cloudSetupChoiceCompleteProvider);
+    container.invalidate(cloudAccountStartupRestoreProvider);
+    container.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state =
+        false;
+    container.invalidate(returningAccountChoicePendingProvider);
+    container.invalidate(cloudSetupChoiceCompleteProvider);
+
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const StartupGate()),
@@ -1296,6 +1383,58 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
                 child: TextButton(
                   onPressed: _busy ? null : _disconnect,
                   child: Text(l10n.cloudDisconnect),
+                ),
+              ),
+            ],
+            if (_busy && _operationStage != null) ...[
+              const SizedBox(height: 12),
+              Container(
+                key: const Key('account_cloud_operation_progress'),
+                width: double.infinity,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            switch (_operationStage!) {
+                              _CloudAccountOperationStage.connecting =>
+                                l10n.cloudRestoreConnectingTitle,
+                              _CloudAccountOperationStage.checkingBackup =>
+                                l10n.cloudBackupChecking,
+                              _CloudAccountOperationStage.backingUp =>
+                                l10n.cloudBackupUploading,
+                              _CloudAccountOperationStage.signingOut =>
+                                '${l10n.cloudDisconnect}…',
+                            },
+                            style: Theme.of(context).textTheme.titleSmall,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    const LinearProgressIndicator(),
+                    if (_operationStage ==
+                        _CloudAccountOperationStage.signingOut) ...[
+                      const SizedBox(height: 6),
+                      Text(
+                        l10n.accountSignOutExplanation,
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ],
                 ),
               ),
             ],

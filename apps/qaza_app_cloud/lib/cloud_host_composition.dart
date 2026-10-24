@@ -23,6 +23,7 @@ List<Override> cloudHostProviderOverrides({
     cloudSyncProvider.overrideWith(
       (ref) => GoogleCloudSyncProvider(
         database: ref.watch(appDatabaseProvider),
+        databaseManager: ref.watch(databaseManagerProvider),
         gateway: gateway,
         state: state,
         scheduler: scheduler,

@@ -153,4 +153,40 @@ for root in RUNTIME_ROOTS:
             if legacy_token in file_text:
                 fail(f"legacy SharedPreferences business-state path found in {relative}: {legacy_token}")
 
+# All production database connections must be constructed by DatabaseManager.
+# Test code may continue to inject NativeDatabase.memory() or file executors.
+# Recovery Stage 4 (R-12): the pattern also covers named constructors
+# (AppDatabase.control(), GoogleWorkspaceDatabase.forTesting) and the scan
+# covers the apps/ root. The two composition roots are allowlisted: the
+# manager itself, and lib/app/providers.dart, which creates the single
+# control handle that the foreground DatabaseManager is built over.
+DATABASE_CONSTRUCTION_PATTERN = re.compile(
+    r"\b(?:AppDatabase|GoogleWorkspaceDatabase)\s*(?:\.\w+)?\s*\(\s*\)"
+)
+DATABASE_CONSTRUCTION_ALLOWED = {
+    Path("lib/data/local/database/database_manager.dart"),
+    Path("lib/app/providers.dart"),
+    # The class definition itself (named-constructor declarations).
+    Path("lib/data/local/database/app_database.dart"),
+}
+for root in (
+    ROOT / "lib",
+    ROOT / "packages/qaza_cloud_adapter" / "lib",
+    ROOT / "apps",
+):
+    if not root.exists():
+        continue
+    for path in root.rglob("*.dart"):
+        relative = path.relative_to(ROOT)
+        if relative in DATABASE_CONSTRUCTION_ALLOWED or path.name.endswith(
+            ".g.dart"
+        ):
+            continue
+        source = path.read_text(errors="ignore")
+        if DATABASE_CONSTRUCTION_PATTERN.search(source):
+            fail(
+                "production database construction bypasses DatabaseManager: "
+                f"{relative}"
+            )
+
 print("Offline architecture policy: PASS")
