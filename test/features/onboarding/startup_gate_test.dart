@@ -9,6 +9,7 @@ import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
+import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:qaza_namaz/features/onboarding/cloud_setup_choice_screen.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
@@ -181,6 +182,32 @@ Future<ProviderContainer> _container({
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  testWidgets(
+      'pending sign-out shows account choice even while session restore is loading',
+      (tester) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    await database.markReturningAccountChoicePending();
+    final store = AccountLocalStore(database: database);
+    final session = AccountSessionManager(accountStore: store);
+    final container = ProviderContainer(
+      overrides: [
+        appDatabaseProvider.overrideWithValue(database),
+        accountLocalStoreProvider.overrideWithValue(store),
+        accountSessionManagerProvider.overrideWith((ref) => session),
+        cloudAccountProvider.overrideWithValue(_FakeCloudAccountProvider()),
+        cloudSyncProvider.overrideWithValue(_FakeCloudSyncProvider()),
+      ],
+    );
+    addTearDown(container.dispose);
+    addTearDown(database.close);
+
+    await tester.pumpWidget(_app(container));
+    await tester.pumpAndSettle();
+
+    expect(session.state.phase, AccountSessionPhase.loading);
+    expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
+  });
 
   setUp(() {
     SharedPreferences.setMockInitialValues({});
