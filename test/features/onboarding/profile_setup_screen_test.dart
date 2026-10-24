@@ -120,9 +120,6 @@ void main() {
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
-            activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => sessionManager.activeLocalAccountId!,
-            ),
             qazaPlanServiceProvider.overrideWithValue(
               _OneDayQazaPlanService(),
             ),
@@ -237,9 +234,6 @@ void main() {
         overrides: [
           appDatabaseProvider.overrideWithValue(database),
           accountSessionManagerProvider.overrideWith((ref) => sessionManager),
-          activeLocalAccountIdStateProvider.overrideWith(
-            (ref) => sessionManager.activeLocalAccountId!,
-          ),
           qazaPlanServiceProvider.overrideWithValue(
             const QazaPlanService(),
           ),
@@ -353,9 +347,6 @@ void main() {
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
-            activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => sessionManager.activeLocalAccountId!,
-            ),
             userProfileRepositoryProvider.overrideWithValue(repository),
             progressSummaryProvider.overrideWith(
               (ref) async => QazaProgressSummary.empty(),
@@ -402,9 +393,6 @@ void main() {
           overrides: [
             appDatabaseProvider.overrideWithValue(database),
             accountSessionManagerProvider.overrideWith((ref) => sessionManager),
-            activeLocalAccountIdStateProvider.overrideWith(
-              (ref) => sessionManager.activeLocalAccountId!,
-            ),
             userProfileRepositoryProvider.overrideWithValue(repository),
           ],
           child: const MaterialApp(
