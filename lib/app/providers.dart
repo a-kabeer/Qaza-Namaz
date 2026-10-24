@@ -206,21 +206,22 @@ final accountLocalStoreProvider = Provider<AccountLocalStore>((ref) {
   );
 });
 
-final activeLocalAccountIdStateProvider = StateProvider<String?>((ref) => null);
-
-final activeUserIdProvider = Provider<String?>((ref) {
-  return ref.watch(activeLocalAccountIdStateProvider);
-});
-
 final accountSessionManagerProvider =
     ChangeNotifierProvider<AccountSessionManager>((ref) {
-  final manager = AccountSessionManager(
+  return AccountSessionManager(
     accountStore: ref.watch(accountLocalStoreProvider),
-    onActiveLocalAccountChanged: (id) {
-      ref.read(activeLocalAccountIdStateProvider.notifier).state = id;
-    },
   );
-  return manager;
+});
+
+/// Derive the active workspace from the session manager's single source of
+/// truth. Mirroring it through a separate StateProvider caused nested Riverpod
+/// graph updates while AccountSessionManager was notifying its listeners.
+final activeUserIdProvider = Provider<String?>((ref) {
+  return ref.watch(
+    accountSessionManagerProvider.select(
+      (manager) => manager.activeLocalAccountId,
+    ),
+  );
 });
 
 final userProfileRepositoryProvider = Provider<UserProfileRepository>((ref) {

@@ -746,13 +746,20 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
 
   Future<void> _disconnect() async {
     if (_busy || _settingsBusy || _backupBusy) return;
+
+    // Keep lifecycle-independent handles before the first await. Sign-out
+    // navigates away from this widget, so an exception arriving afterwards
+    // must not read WidgetRef from a disposed ConsumerState.
+    final container = ProviderScope.containerOf(context, listen: false);
+    final diagnostics = container.read(diagnosticsProvider);
+
     setState(() {
       _busy = true;
       _operationStage = _CloudAccountOperationStage.checkingBackup;
       _message = null;
     });
     try {
-      final cloudSync = ref.read(cloudSyncProvider);
+      final cloudSync = container.read(cloudSyncProvider);
       final status = await traceAsyncStage(
         flow: 'sign_out',
         stage: 'check_local_sync_status',
@@ -762,7 +769,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
       setState(() => _sync = status);
 
       if (!status.hasPendingChanges) {
-        await _finishSignOut();
+        await _finishSignOut(container);
         return;
       }
 
@@ -780,7 +787,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
 
       if (!canCheckRemote) {
         final signOutAnyway = await _confirmSignOutWithoutBackup();
-        if (signOutAnyway == true && mounted) await _finishSignOut();
+        if (signOutAnyway == true && mounted) await _finishSignOut(container);
         return;
       }
 
@@ -814,7 +821,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
 
         if (result.status == CloudSyncStatus.synced &&
             !result.hasPendingChanges) {
-          await _finishSignOut();
+          await _finishSignOut(container);
           return;
         }
 
@@ -848,17 +855,17 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
         );
         if (!mounted || next == 'cancel' || next == null) return;
         if (next == 'sign_out') {
-          await _finishSignOut();
+          await _finishSignOut(container);
           return;
         }
       }
     } catch (error, stack) {
-      ref.read(diagnosticsProvider).recordFailure(
-            DiagnosticArea.sync,
-            'sign_out_flow_failed',
-            error,
-            stack: stack,
-          );
+      diagnostics.recordFailure(
+        DiagnosticArea.sync,
+        'sign_out_flow_failed',
+        error,
+        stack: stack,
+      );
       if (mounted) {
         setState(() {
           _message = AppLocalizations.of(context).cloudConnectionFailed;
@@ -896,40 +903,51 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     );
   }
 
-  Future<void> _finishSignOut() async {
+  Future<void> _finishSignOut(ProviderContainer container) async {
     if (mounted) {
       setState(() {
         _operationStage = _CloudAccountOperationStage.signingOut;
       });
     }
+
     await traceAsyncStage(
       flow: 'sign_out',
       stage: 'disconnect_cloud_and_cancel_scheduled_work',
-      action: () => ref.read(cloudAccountProvider).disconnect(),
+      action: () => container.read(cloudAccountProvider).disconnect(),
     );
-    // Switch away from the outgoing workspace without deleting its local data.
-    await traceAsyncStage(
-      flow: 'sign_out',
-      stage: 'activate_local_workspace',
-      action: () => ref.read(accountSessionManagerProvider).activateGuest(),
-    );
-    ref.invalidate(appRouteProvider);
-    ref.invalidate(userProfileProvider);
-    ref.invalidate(progressSummaryProvider);
-    ref.invalidate(qazaRepositoryProvider);
-    ref.invalidate(qazaAdditionRepositoryProvider);
-    ref.invalidate(qazaPlanRevisionRepositoryProvider);
+
+    // Persist the intended destination before changing the active workspace.
+    // If workspace activation fails or the process is interrupted, startup
+    // can still recover to account choice instead of routing a partial Guest
+    // state to onboarding.
     await traceAsyncStage(
       flow: 'sign_out',
       stage: 'persist_returning_account_choice',
       action: () =>
-          ref.read(appDatabaseProvider).markReturningAccountChoicePending(),
+          container.read(appDatabaseProvider).markReturningAccountChoicePending(),
     );
+
+    // Switch away from the outgoing workspace without deleting its local data.
+    await traceAsyncStage(
+      flow: 'sign_out',
+      stage: 'activate_local_workspace',
+      action: () =>
+          container.read(accountSessionManagerProvider).activateGuest(),
+    );
+
+    container.invalidate(appRouteProvider);
+    container.invalidate(userProfileProvider);
+    container.invalidate(progressSummaryProvider);
+    container.invalidate(qazaRepositoryProvider);
+    container.invalidate(qazaAdditionRepositoryProvider);
+    container.invalidate(qazaPlanRevisionRepositoryProvider);
     widget.onAccountChanged(const CloudAccountSnapshot.disconnected());
-    ref.invalidate(cloudAccountStartupRestoreProvider);
-    ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = false;
-    ref.invalidate(returningAccountChoicePendingProvider);
-    ref.invalidate(cloudSetupChoiceCompleteProvider);
+    container.invalidate(cloudAccountStartupRestoreProvider);
+    container.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state =
+        false;
+    container.invalidate(returningAccountChoicePendingProvider);
+    container.invalidate(cloudSetupChoiceCompleteProvider);
+
     if (!mounted) return;
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute<void>(builder: (_) => const StartupGate()),

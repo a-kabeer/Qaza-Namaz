@@ -817,6 +817,11 @@ void main() {
       expect(find.text('Continue as Guest'), findsOneWidget);
       expect(manager.activeAccount, isNotNull);
       expect(await database.hasReturningAccountChoicePending(), isTrue);
+      expect(
+        tester.takeException(),
+        isNull,
+        reason: 'Sign-out must not throw a provider lifecycle/concurrency error.',
+      );
     },
   );
 

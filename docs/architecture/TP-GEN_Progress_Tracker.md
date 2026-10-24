@@ -474,3 +474,27 @@ This run follows the test-only bounded-pump changes in `cad24b03`, and it supers
 These warnings should be reviewed deliberately; do not globally suppress them or confuse the expected injected retry log with a test failure.
 
 **Acceptance remains open:** full-suite green is a significant milestone but does not establish physical-device Google Drive restore/sign-out timing, explain the final grey/blank screen in the recording, or complete the separate encrypted workspace architecture/isolation/recovery audit. Static-analysis checkpoint remains 0 errors, 0 warnings and 23 info-level findings from the latest user-provided analyzer run. Four local stashes are still being preserved; review the complete diffs and `pubspec.lock` before applying or dropping anything.
+
+
+### TP-GEN — Sign-out concurrency and startup recovery
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Status:** Implementation committed for local verification; device acceptance remains open.
+
+**Audit findings from the current branch:**
+- `_disconnect()` read `WidgetRef` inside its catch handler after asynchronous work. The sign-out flow navigates away from the account widget, so a later exception could trigger the secondary `Cannot use "ref" after the widget was disposed` error and hide the original failure.
+- `activeLocalAccountIdStateProvider` duplicated `AccountSessionManager.activeLocalAccountId`. The session manager's listener callback wrote to a second Riverpod state provider synchronously before `ChangeNotifier` finished notifying listeners. This nested provider-graph update is a credible cause of the reported concurrent-modification exception; it is addressed by deriving `activeUserIdProvider` directly from the session manager's selected state.
+- `_finishSignOut()` persisted `returningAccountChoicePending` only after activating Guest and invalidating several providers. The marker is now persisted before switching workspaces so an interrupted transition has a durable route back to account choice.
+
+**Changes committed:**
+- Removed the duplicated active-account state mirror; `AccountSessionManager` is now the single source of truth for the active workspace ID.
+- Captured a `ProviderContainer` and diagnostics service before the first asynchronous gap in sign-out. The sign-out flow uses the container after awaits rather than accessing a potentially disposed `WidgetRef`.
+- Reordered sign-out so the returning-account-choice marker is persisted before Guest activation. No local workspace or cloud backup is deleted.
+- Strengthened the existing sign-out widget test to assert no uncaught framework exception occurs.
+
+**Verification:**
+- The pre-change full suite passed 804 tests; that result does not verify these new code changes.
+- Formatting, analyzer, targeted tests, full suite, debug APK build, and physical-device sign-out/restart checks are **pending**.
+- Do not treat the concurrent-modification hypothesis as confirmed until the focused regression test and device reproduction pass. If the error remains, capture its full stack trace and continue diagnosis without suppressing it.
+
+**Safety:** Existing local data, cloud backups, and user stashes must remain untouched. No uninstall, storage clear, data reset, merge, or release action is authorized by this task.
