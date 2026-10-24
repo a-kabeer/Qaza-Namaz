@@ -498,3 +498,21 @@ These warnings should be reviewed deliberately; do not globally suppress them or
 - Do not treat the concurrent-modification hypothesis as confirmed until the focused regression test and device reproduction pass. If the error remains, capture its full stack trace and continue diagnosis without suppressing it.
 
 **Safety:** Existing local data, cloud backups, and user stashes must remain untouched. No uninstall, storage clear, data reset, merge, or release action is authorized by this task.
+
+
+### Sign-out lifecycle fix — first local verification gate
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Commit under test:** `72402725` (`fix(account): make sign-out routing lifecycle-safe`)
+
+**User-provided local result:**
+- Command: `flutter test --reporter expanded test/features/account/account_screen_test.dart`
+- **PASS: 22 tests; all tests passed** (about 19 seconds).
+- The sign-out tests exercised the new order: disconnect cloud, persist returning-account-choice marker, then activate Guest workspace.
+- No test exception was reported in the captured output.
+
+**Limitations / next gates:**
+- This is a widget-test pass, not proof that the reported device-side Riverpod concurrent-modification exception is fixed.
+- Chained account journeys and startup-gate/restart persistence tests remain to run.
+- The command resolved dependencies and printed `Changed 1 dependency!`; inspect `git status` and preserve any local `pubspec.lock` modification. Do not discard it or drop existing stashes.
+- Continue with the chained account-journey suite, startup-gate tests, analysis, full suite, then rebuild/install the compatible signed debug APK and reproduce sign-out/restart on the physical device.
