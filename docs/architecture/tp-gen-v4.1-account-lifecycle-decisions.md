@@ -1,5 +1,7 @@
 # TP-GEN v4.1 — Account lifecycle decisions and implementation status
 
+> **Historical implementation record (2026-10-25):** The Google Drive authorization, backup, restore and synchronization design described in this document has been removed from the active application. The current target keeps Google Sign-In as local workspace identity only. Local encrypted SQLite and account/workspace isolation remain active. Do not implement this document's Drive-specific flows unless a separately approved future backend task explicitly supersedes this note.
+
 This record captures the account/workspace decisions for the Qaza Namaz account-lifecycle refactor. It is a living decision record, not a substitute for green CI or real-device validation.
 
 ## Phase 0 — Decisions
