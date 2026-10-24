@@ -5,8 +5,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:qaza_namaz/app/providers.dart';
+import 'package:qaza_namaz/core/constants/prayer_types.dart';
 import 'package:qaza_namaz/data/local/account_local_store.dart';
 import 'package:qaza_namaz/data/local/database/app_database.dart';
+import 'package:qaza_namaz/domain/entities/qaza_record.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/services/cloud_sync_contracts.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
@@ -14,6 +16,7 @@ import 'package:qaza_namaz/features/onboarding/cloud_setup_choice_screen.dart';
 import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
 import 'package:qaza_namaz/features/onboarding/profile_setup_screen.dart';
 import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
+import 'package:qaza_namaz/features/shell/workspace_shell.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeCloudAccountProvider implements CloudAccountProvider {
@@ -212,6 +215,99 @@ void main() {
     expect(session.state.phase.name, 'loading');
     expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
   });
+
+  testWidgets(
+    'returning account choice resumes the selected Guest and reaches Home',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      await database.markReturningAccountChoicePending();
+      await database.customUpdate(
+        '''INSERT INTO meta_store (key, value)
+           VALUES ('is_onboarding_completed', '1')
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+      );
+      final container = await _container(
+        database: database,
+        cloudEnabled: true,
+        signInResult: const CloudAccountSnapshot.disconnected(),
+      );
+      addTearDown(container.dispose);
+      addTearDown(database.close);
+
+      // Seed after session initialization so the selected Guest differs from
+      // the temporary local workspace that startup initially activated.
+      final previousWorkspaceId =
+          container.read(accountSessionManagerProvider).activeLocalAccountId;
+      final store = AccountLocalStore(database: database);
+      final guestId = await store.createGuestWorkspace(displayName: 'Saved Guest');
+      await store.saveProfile(
+        guestId,
+        UserProfile(
+          gender: Gender.male,
+          madhab: Madhab.hanafi,
+          dateOfBirth: DateTime(1990, 1, 1),
+          pubertyAge: 12,
+          startPrayingAge: 15,
+          witrIncluded: true,
+          onboardingCompleted: true,
+        ),
+      );
+      await database.qazaRecordsDao.insertRecord(
+        QazaRecordsCompanion.insert(
+          id: 'saved_guest_fajr',
+          userId: guestId,
+          prayerType: PrayerType.fajr.name,
+          originalDate: DateTime(2025, 1, 1),
+          status: QazaStatus.pending.name,
+          createdAt: DateTime(2025, 1, 1),
+          updatedAt: DateTime(2025, 1, 1),
+        ),
+      );
+      expect(previousWorkspaceId, isNot(guestId));
+
+      await tester.pumpWidget(_app(container));
+      // Startup/account-choice transitions include async reads and animated
+      // loading indicators, so use bounded pumping instead of pumpAndSettle.
+      for (var i = 0; i < 100; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find.byKey(const Key('cloud_setup_continue_local'))
+            .evaluate()
+            .isNotEmpty) {
+          break;
+        }
+      }
+      expect(find.byType(CloudSetupChoiceScreen), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
+      for (var i = 0; i < 200; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find.byKey(Key('guest_workspace_choice_$guestId'))
+            .evaluate()
+            .isNotEmpty) {
+          break;
+        }
+      }
+      expect(find.byKey(Key('guest_workspace_choice_$guestId')), findsOneWidget);
+      await tester.tap(find.byKey(Key('guest_workspace_choice_$guestId')));
+
+      for (var i = 0; i < 200; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find.byType(WorkspaceShell).evaluate().isNotEmpty) break;
+      }
+
+      expect(
+        container.read(accountSessionManagerProvider).activeLocalAccountId,
+        guestId,
+      );
+      expect(find.byType(WorkspaceShell), findsOneWidget);
+      expect(
+        (await database.qazaRecordsDao.getAll(userId: guestId))
+            .map((record) => record.id),
+        ['saved_guest_fajr'],
+      );
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets(
       'cloud startup shows unified account choice before profile onboarding',
