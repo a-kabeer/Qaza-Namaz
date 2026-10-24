@@ -101,7 +101,7 @@ class AppDatabase extends _$AppDatabase {
           await _ensureWorkspaceLifecycleSchema();
           if (isGoogleWorkspaceDatabase) {
             await _ensureWorkspaceOwnerGuardSchema();
-            if (_workspaceId == null || _workspaceId!.isEmpty) {
+            if (_workspaceId == null || _workspaceId.isEmpty) {
               throw StateError(
                   'Google workspace database requires an owner ID.');
             }
