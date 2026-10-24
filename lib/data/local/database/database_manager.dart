@@ -96,6 +96,7 @@ class DatabaseManager {
   bool _initializationInFlight = false;
   bool _startupMigrationInFlight = false;
   Future<void>? _closeFuture;
+  final Set<Future<void>> _managedOperationsInFlight = <Future<void>>{};
 
   /// Migration/reconciliation helper (database_manager_migration.dart),
   /// constructor-injected with this manager. Lazily created so it captures
@@ -192,12 +193,16 @@ class DatabaseManager {
   /// staging database starts from the target's exact baseline state
   /// (owner marker, scoped metadata, sync row).
   Future<AppDatabase> createAdoptionStagingDatabase(String localAccountId) {
-    return _migrationHelper._createAdoptionStagingDatabase(localAccountId);
+    return _trackManagedOperation(
+      () => _migrationHelper._createAdoptionStagingDatabase(localAccountId),
+    );
   }
 
   /// Deletes an unpublished adoption staging file (retry/reset path).
   Future<void> discardAdoptionStagingDatabase(String localAccountId) {
-    return _migrationHelper._discardAdoptionStagingDatabase(localAccountId);
+    return _trackManagedOperation(
+      () => _migrationHelper._discardAdoptionStagingDatabase(localAccountId),
+    );
   }
 
   /// §4 publish: swaps the verified adoption staging file into the
@@ -210,15 +215,19 @@ class DatabaseManager {
     String localAccountId, {
     required Future<void> Function(AppDatabase published) verify,
   }) {
-    return _migrationHelper._publishAdoptionStagingDatabase(
-      localAccountId,
-      verify: verify,
+    return _trackManagedOperation(
+      () => _migrationHelper._publishAdoptionStagingDatabase(
+        localAccountId,
+        verify: verify,
+      ),
     );
   }
 
   /// Deletes the retained pre-adoption file after a committed adoption.
   Future<void> discardAdoptionPreviousDatabase(String localAccountId) {
-    return _migrationHelper._discardAdoptionPreviousDatabase(localAccountId);
+    return _trackManagedOperation(
+      () => _migrationHelper._discardAdoptionPreviousDatabase(localAccountId),
+    );
   }
 
   /// Migration entry point used when a registered Google workspace still has
@@ -739,6 +748,17 @@ class DatabaseManager {
     return WorkspaceCanonicalContent.hash(workspace, id);
   }
 
+  Future<T> _trackManagedOperation<T>(Future<T> Function() operation) {
+    _throwIfClosing();
+    final future = operation();
+    late final Future<void> settled;
+    settled = _settleOperation(future).whenComplete(() {
+      _managedOperationsInFlight.remove(settled);
+    });
+    _managedOperationsInFlight.add(settled);
+    return future;
+  }
+
   Future<void> close() => _closeFuture ??= _closeAndReleaseHandles();
 
   Future<void> _closeAndReleaseHandles() async {
@@ -787,11 +807,10 @@ class DatabaseManager {
           (future) => _settleOperation(future),
         ),
       );
-      pending.addAll(
-        _provisioningGoogleWorkspaces.values.map(
-          (future) => _settleOperation(future),
-        ),
-      );
+      pending.addAll(_provisioningGoogleWorkspaces.values.map(
+        (future) => _settleOperation(future),
+      ));
+      pending.addAll(_managedOperationsInFlight);
       if (pending.isEmpty) return;
       await Future.wait(pending);
     }
