@@ -1,6 +1,6 @@
 # TP-GEN Progress Tracker — Separate Encrypted Local Database per Google Account
 
-**Last updated:** 2026-10-24 (Asia/Karachi) — full test suite passed 803 tests; analyzer has 0 warnings/errors  
+**Last updated:** 2026-10-24 (Asia/Karachi) — latest diagnostic checkpoint: 22 account tests + 8 onboarding tests passed; current `flutter analyze` reports 0 errors, 0 warnings, 23 info findings. Full-suite rerun and device validation for the latest diagnostic changes remain pending.  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/separate-google-db`  
 **Purpose:** Living checkpoint log for the TP-GEN task. Update this file after each meaningful action, test result, decision, or blocker. Record evidence and exact outcomes; never mark a phase complete based only on a plan or an unverified claim.
@@ -33,12 +33,12 @@ The planning materials are not fully aligned: the separate-database implementati
 
 | Area | Status | Evidence / notes |
 |---|---|---|
-| Branch synchronization | **Done for test checkpoint** | User's PowerShell output confirms fast-forward from `65820a1b` to `5295005a` on `tp-gen/separate-google-db`; `git pull --ff-only` succeeded and the branch was up to date with origin. |
-| Local working-tree safety | **Preserve local change** | User reported `pubspec.lock` modified and restored from stash. Do not discard, restore, or commit it without reviewing the diff and asking/confirming as appropriate. |
+| Branch synchronization | **Synced at latest diagnostic checkpoint** | User's PowerShell output confirms fast-forward from `746ed58d` to `9254e45c` on `tp-gen/separate-google-db`; `git pull --ff-only` succeeded and local branch matched `origin/tp-gen/separate-google-db`. |
+| Local working-tree safety | **Preserve local changes** | Two stashes remain preserved: `preserve local formatting before TP-GEN sync` and `preserve pubspec.lock before signout test fix`. After sync, `dart format` changed `cloud_setup_choice_screen.dart`, `sync_engine.dart`, and `account_screen_test.dart`; `flutter pub get` also modified `pubspec.lock`. Its diff shows lock metadata/order changes and `uuid` changing from transitive to direct. Keep the edits/stashes until the manifest and full diff are reviewed; do not reset or drop stashes. |
 | Database manager test teardown | **Targeted tests passed** | User ran `flutter test test/data/local/database/database_manager_test.dart test/data/local/database/database_manager_stage4_test.dart`; output ended `All tests passed!`. Drift duplicate-database warnings appeared and remain to be investigated. |
 | Qaza screen contract tests | **Passed** | User ran `flutter test test/features/qaza/qaza_tracker_screen_contract_test.dart`; output ended `+53: All tests passed!`. Windows/Unix line-ending normalization is present in the test file on GitHub. |
-| Full test suite | **Passed: 803 tests on latest reported run** | User's latest `flutter test --reporter expanded` output ends `02:53 +803: All tests passed!`, after the manager race and async undo-context updates. No test failures are shown. Non-fatal warnings remain: Settings language-selection `tap()` hit-test warnings, FlexColorScheme light-reference warnings, Drift duplicate-database messages in database tests, and an expected injected error logged by the import-controller retry test. Keep these as follow-up review items; do not suppress them globally or interpret expected retry logging as a test failure. |
-| Static analysis | **Ran: 0 errors, 4 warnings, 26 info** | User ran `flutter analyze` on 2026-10-24; output ended `30 issues found` in 158 seconds. Warnings: unnecessary non-null assertion at `local_backup_service.dart:2385`, unused `_selectMaps` at `local_backup_service.dart:3363`, unnecessary non-null assertion at `app_database.dart:104`, unused `_migrateLegacyGoogleWorkspace` at `database_manager.dart:182`. Info includes undeclared direct dependency `uuid` in `account_local_store.dart:5`, several style notices, and deprecated Radio APIs. This result is recorded, not yet treated as final acceptance; review dependency ownership and unused migration/helper code without deleting safety-critical paths blindly. |
+| Full test suite | **Previously passed 803; latest-code rerun pending** | The reported 803-test full-suite pass predates the current UX diagnostic instrumentation and `10193e50` account-test wait fix. For the latest local code, the account-screen suite passed 22 tests and the cloud-setup onboarding suite passed 8 tests; rerun the full suite before accepting the latest changes. Non-fatal warnings noted in previous runs remain follow-up items. |
+| Static analysis | **Latest diagnostic checkpoint: 0 errors, 0 warnings, 23 info** | User ran `flutter analyze` after the latest branch sync and formatter/test runs; output ended `23 issues found (ran in 109.1s)`. These are `info` lints only, including style cleanup and deprecated Radio API notices. The latest run did not report errors or warnings. Earlier analyzer results in the history table remain historical; this latest result does not replace the need to review unused migration/helper code and direct dependency ownership during the architecture audit. |
 | Database/account architecture | **Close-race and undo-context targeted tests passed; architecture not yet accepted** | The manager test logs passed with 15 Stage 4 tests and 22 combined manager tests. The latest `flutter analyze` ends `23 issues found (ran in 13.9s)` with zero errors and zero warnings; the three `use_build_context_synchronously` notices are gone after the provider-container capture change. `qaza_undo_feedback_widget_test.dart` ended `00:05 +3: All tests passed!`. Drift multiple-instance warnings remain visible in manager/migration tests and are not proof of shared-executor reuse by themselves. Full suite, build and broader architecture gates remain open. |
 | Merge/release readiness | **Not ready to declare** | Full suite, static analysis, audit gates, required isolation/recovery coverage and device verification remain outstanding. |
 
@@ -120,7 +120,7 @@ These commits are recorded from the user's Git output and prior checkpoint conte
 ### Phase 5 — Final verification and handoff
 **Status: Not started**
 
-- [x] Full test suite passes; review remaining warnings rather than suppressing them.
+- [ ] Re-run the full test suite against the latest UX diagnostic and sign-out test-fix commits. A prior full suite passed 803 tests; that result predates the current diagnostic changes. Review remaining warnings rather than suppressing them.
 - [ ] Static analysis and formatting checks run on the final diff.
 - [ ] Database manager reuses and closes connections safely; investigate the current Drift duplicate-instance warnings.
 - [ ] Account lifecycle, cloud adapter, WorkManager, migration, recovery and architecture/phase-boundary checks pass.
@@ -369,3 +369,24 @@ The user explicitly reports that this issue is fixed. Mark the original sign-in 
 4. `flutter analyze`
 
 Then run a debug build on the phone and capture `[tp-gen-timing]` logs while reproducing sign-out/restore. These unit-test timings are not evidence of real Drive performance. The final grey-screen root cause remains open until reproduced with device logs.
+
+
+### Latest local verification checkpoint — account and onboarding diagnostics
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Branch:** `tp-gen/separate-google-db` at `9254e45c`, synced with origin before local formatting and dependency resolution.
+
+**Results provided by the user:**
+- `flutter test test/features/account/account_screen_test.dart` — **passed, 22 tests**. This verifies the previous two offline sign-out tests now find the expected safety dialog while the indeterminate progress animation is active.
+- `flutter test test/features/onboarding/cloud_setup_choice_screen_test.dart` — **passed, 8 tests**, including Guest-to-Google adoption, Start Fresh keeping the saved Guest untouched, workspace activation, and repeated Connect taps.
+- `flutter analyze` — completed in 109.1 seconds with **23 info-level findings, no errors, and no warnings**. Informational findings include dangling library documentation, curly-brace/style suggestions, unnecessary imports/interpolation braces, possible super parameters, and deprecated `Radio` API usage. These findings are not test failures; review them according to scope rather than broad cleanup during this diagnosis.
+
+**Local change safety:**
+- After sync, `dart format` reported formatting changes in `lib/features/onboarding/cloud_setup_choice_screen.dart`, `packages/qaza_cloud_adapter/lib/src/sync_engine.dart`, and `test/features/account/account_screen_test.dart`.
+- Flutter dependency resolution modified `pubspec.lock`. The observed diff reorders the `flutter_localizations` entry, adds a SHA-256 to the `flutter_native_oss_licenses` entry, and changes `uuid` from transitive to direct dependency. Before committing, inspect `pubspec.yaml` and the complete diff to establish whether the lockfile change is required by the manifest and current dependency graph.
+- The user preserved two stashes: `preserve local formatting before TP-GEN sync` and `preserve pubspec.lock before signout test fix`. Do not pop/drop either stash until all diff checks are complete.
+
+**Interpretation / open gates:**
+- The two targeted test files provide **30 passing tests**, but this is not a replacement for the full-suite rerun on the latest diagnostic code.
+- Test/mock timing events do not establish real Google Drive latency. Physical-device restore/sign-out stage timings and the final grey/blank screen reproduction remain pending.
+- Next recommended gate: review the complete diff and dependency manifest, then run the full test suite on the latest branch. After that, continue the architecture/isolation audit, debug APK/device checks, and update this tracker with exact outcomes.
