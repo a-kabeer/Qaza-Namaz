@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:qaza_namaz/core/calendar/fixed_hijri_arithmetic_service.dart';
 import 'package:qaza_namaz/core/calendar/hijri_date_service.dart';
 import 'package:qaza_namaz/core/constants/prayer_types.dart';
+import 'package:qaza_namaz/core/time/local_date_service.dart';
 import 'package:qaza_namaz/domain/entities/user_profile.dart';
 import 'package:qaza_namaz/domain/services/profile_rules.dart';
 import 'package:qaza_namaz/domain/services/qaza_plan_service.dart';
@@ -224,10 +225,20 @@ void main() {
     expect(changedDob.totalDays, first.totalDays);
     expect(changedPuberty.totalDays, 720);
     expect(changedStart.totalDays, 1440);
-    expect(changedPuberty.endDate,
-        changedPuberty.startDate.add(const Duration(days: 720)));
-    expect(changedStart.endDate,
-        changedStart.startDate.add(const Duration(days: 1440)));
+    expect(
+      LocalDateService.calendarDayDifference(
+        changedPuberty.startDate,
+        changedPuberty.endDate,
+      ),
+      720,
+    );
+    expect(
+      LocalDateService.calendarDayDifference(
+        changedStart.startDate,
+        changedStart.endDate,
+      ),
+      1440,
+    );
   });
 
   test('all Fard and Witr plan counts match exactly totalDays', () {
