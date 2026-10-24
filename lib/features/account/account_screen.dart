@@ -46,7 +46,11 @@ class _AccountScreenState extends ConsumerState<AccountScreen> {
     }
 
     try {
-      final account = await accountProvider.restore();
+      final account = await traceAsyncStage(
+        flow: 'account_screen',
+        stage: 'restore_google_account_profile',
+        action: accountProvider.restore,
+      );
       if (!mounted) return;
       setState(() => _accountSnapshot = AsyncData(account));
     } catch (error) {
@@ -391,7 +395,11 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
   }
 
   Future<void> _refresh() async {
-    final sync = await ref.read(cloudSyncProvider).status();
+    final sync = await traceAsyncStage(
+      flow: 'account_screen',
+      stage: 'refresh_cloud_sync_status',
+      action: () => ref.read(cloudSyncProvider).status(),
+    );
     if (!mounted) return;
     setState(() {
       _sync = sync;
