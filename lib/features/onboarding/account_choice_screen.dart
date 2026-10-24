@@ -39,11 +39,12 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
       final identity =
           await ref.read(googleIdentityStartupRestoreProvider.future);
       if (!mounted || !identity.isSignedIn) return;
-      await _activateGoogleWorkspace(identity.accountId!, identity.displayName);
-      await _completeChoice();
+      await _completeGoogleIdentity(identity);
     } catch (_) {
-      // Local account choice must remain usable if lightweight Google identity
-      // restoration is unavailable. Explicit sign-in is offered below.
+      if (mounted) {
+        setState(() => _error =
+            AppLocalizations.of(context).accountChoiceGoogleFailed);
+      }
     } finally {
       if (mounted) setState(() => _working = false);
     }
@@ -90,9 +91,14 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
             AppLocalizations.of(context).accountChoiceGoogleFailed);
         return;
       }
-      await _activateGoogleWorkspace(identity.accountId!, identity.displayName);
-      await _completeChoice();
+      await _completeGoogleIdentity(identity);
     } catch (_) {
+      try {
+        await ref.read(accountSessionManagerProvider).refresh();
+      } catch (_) {
+        // A failed local adoption is recovered through the existing startup
+        // journal; never discard the Guest source or its recovery snapshot.
+      }
       if (mounted) {
         setState(() =>
             _error = AppLocalizations.of(context).accountChoiceGoogleFailed);
@@ -100,6 +106,101 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
     } finally {
       if (mounted) setState(() => _working = false);
     }
+  }
+
+  Future<void> _completeGoogleIdentity(
+    GoogleIdentitySnapshot identity,
+  ) async {
+    final stableId = identity.accountId?.trim();
+    if (stableId == null || stableId.isEmpty) {
+      throw StateError('Google returned an empty account ID.');
+    }
+
+    await ref.read(accountSessionManagerProvider).initialize();
+    final store = ref.read(accountLocalStoreProvider);
+    final targetId = googleLocalWorkspaceId(stableId);
+    final googleWorkspaceExists = await store.getAccount(targetId) != null;
+
+    var selectedSource = _startFreshChoice;
+    if (!googleWorkspaceExists) {
+      final guests = await store.listGuestWorkspaces();
+      if (guests.isNotEmpty) {
+        final choice = await _chooseGuestAdoption(guests);
+        if (!mounted || choice == null) {
+          await ref.read(googleIdentityProvider).signOut();
+          return;
+        }
+        selectedSource = choice;
+      }
+    }
+
+    if (googleWorkspaceExists || selectedSource == _startFreshChoice) {
+      await _activateGoogleWorkspace(stableId, identity.displayName);
+      await _completeChoice();
+      return;
+    }
+
+    // Provision the empty, account-isolated Google target first; then make the
+    // chosen Guest active because the local adoption journal requires that
+    // source to remain authoritative until the transaction commits.
+    await ref.read(accountSessionManagerProvider).activateGoogleAccount(stableId);
+    await ref
+        .read(accountSessionManagerProvider)
+        .activateLocalAccount(selectedSource);
+    await ref.read(localBackupServiceProvider).adoptGuestWorkspace(
+          sourceLocalAccountId: selectedSource,
+          targetGoogleLocalAccountId: targetId,
+          googleDisplayName: identity.displayName?.trim() ?? '',
+        );
+    // Adoption updates the durable local session and DatabaseManager. Refresh
+    // Riverpod's session mirror only after the local transaction commits.
+    await ref.read(accountSessionManagerProvider).refresh();
+    ref.invalidate(appRouteProvider);
+    await _completeChoice();
+  }
+
+  Future<String?> _chooseGuestAdoption(List<LocalAccount> guests) {
+    final l10n = AppLocalizations.of(context);
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(l10n.accountChoiceAdoptGuestTitle),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(l10n.accountChoiceAdoptGuestMessage),
+              const SizedBox(height: 8),
+              for (final guest in guests)
+                ListTile(
+                  key: Key('google_adopt_guest_${guest.localAccountId}'),
+                  leading: const Icon(Icons.move_to_inbox_outlined),
+                  title: Text(guestWorkspaceDisplayLabel(
+                    guest,
+                    guests,
+                    fallbackName: l10n.accountGuest,
+                  )),
+                  subtitle: Text(l10n.accountChoiceAdoptGuestOption),
+                  onTap: () =>
+                      Navigator.of(dialogContext).pop(guest.localAccountId),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            key: const Key('google_workspace_start_fresh'),
+            onPressed: () => Navigator.of(dialogContext).pop(_startFreshChoice),
+            child: Text(l10n.accountChoiceGoogleStartFresh),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(null),
+            child: Text(l10n.commonCancel),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<String?> _chooseGuestWorkspace(List<LocalAccount> guests) {
