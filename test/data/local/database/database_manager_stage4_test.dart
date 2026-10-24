@@ -339,8 +339,7 @@ void main() {
     );
   });
 
-  test('close waits for in-flight Google workspace provisioning',
-      () async {
+  test('close waits for in-flight Google workspace provisioning', () async {
     await manager.close();
 
     final directoryRequested = Completer<void>();
