@@ -285,7 +285,7 @@ class _AccountChoiceScreenState extends ConsumerState<AccountChoiceScreen> {
                 SizedBox(
                   height: 52,
                   child: OutlinedButton.icon(
-                    key: const Key('account_choice_google_sign_in'),
+                    key: const Key('account_choice_google_login'),
                     onPressed: _working ? null : _connectGoogle,
                     icon: const Icon(Icons.account_circle_outlined),
                     label: Text(l10n.accountChoiceContinueGoogle),
