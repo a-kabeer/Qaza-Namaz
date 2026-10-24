@@ -77,8 +77,10 @@ Future<_Harness> _createHarness({
   GoogleIdentitySnapshot signInResult =
       const GoogleIdentitySnapshot.signedOut(),
 }) async {
-  final database = AppDatabase(NativeDatabase.memory());
   final tempDirectory = await Directory.systemTemp.createTemp('qaza-id-test-');
+  final database = AppDatabase(
+    NativeDatabase(File('${tempDirectory.path}/control.sqlite')),
+  );
   final manager = DatabaseManager(
     controlDatabase: database,
     documentsDirectoryProvider: () async => tempDirectory,
@@ -87,11 +89,12 @@ Future<_Harness> _createHarness({
       required String workspaceId,
     }) =>
         GoogleWorkspaceDatabase.forTesting(
-      executor: NativeDatabase.memory(),
+      executor: NativeDatabase(File('${tempDirectory.path}/$fileName')),
       workspaceId: workspaceId,
     ),
     freeSpaceBytesProvider: (_) async => 1024 * 1024 * 1024,
   );
+  await database.readDbRevision();
   final store = AccountLocalStore(
     database: database,
     databaseManager: manager,
