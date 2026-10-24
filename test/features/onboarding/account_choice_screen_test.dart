@@ -175,7 +175,7 @@ void main() {
       harness.session.activeLocalAccountId,
       googleLocalWorkspaceId('google-account-42'),
     );
-    expect(await harness.database.isCloudSetupChoiceComplete(), isTrue);
+    expect(await harness.database.isAccountChoiceComplete(), isTrue);
     expect(tester.takeException(), isNull);
   });
 
@@ -201,7 +201,7 @@ void main() {
       isGuestLocalWorkspaceId(harness.session.activeLocalAccountId),
       isTrue,
     );
-    expect(await harness.database.isCloudSetupChoiceComplete(), isTrue);
+    expect(await harness.database.isAccountChoiceComplete(), isTrue);
     expect(harness.identity.signInCalls, 0);
     expect(tester.takeException(), isNull);
   });
@@ -220,7 +220,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('account_choice_continue_guest')), findsOneWidget);
-    expect(await harness.database.isCloudSetupChoiceComplete(), isFalse);
+    expect(await harness.database.isAccountChoiceComplete(), isFalse);
     expect(tester.takeException(), isNull);
   });
 }
