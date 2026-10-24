@@ -1,6 +1,6 @@
 # TP-GEN Progress Tracker — Separate Encrypted Local Database per Google Account
 
-**Last updated:** 2026-10-24 (Asia/Karachi)  
+**Last updated:** 2026-10-24 (Asia/Karachi) — full-suite failure triage and targeted test fixes committed  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/separate-google-db`  
 **Purpose:** Living checkpoint log for the TP-GEN task. Update this file after each meaningful action, test result, decision, or blocker. Record evidence and exact outcomes; never mark a phase complete based only on a plan or an unverified claim.
@@ -37,7 +37,7 @@ The planning materials are not fully aligned: the separate-database implementati
 | Local working-tree safety | **Preserve local change** | User reported `pubspec.lock` modified and restored from stash. Do not discard, restore, or commit it without reviewing the diff and asking/confirming as appropriate. |
 | Database manager test teardown | **Targeted tests passed** | User ran `flutter test test/data/local/database/database_manager_test.dart test/data/local/database/database_manager_stage4_test.dart`; output ended `All tests passed!`. Drift duplicate-database warnings appeared and remain to be investigated. |
 | Qaza screen contract tests | **Passed** | User ran `flutter test test/features/qaza/qaza_tracker_screen_contract_test.dart`; output ended `+53: All tests passed!`. Windows/Unix line-ending normalization is present in the test file on GitHub. |
-| Full test suite | **Blocked / awaiting latest evidence** | An earlier run ended `+786 -14: Some tests failed`, before the latest branch sync. Four observed failures were CRLF/LF contract assertions; other failures also need triage. Do not treat the earlier result as the status of current HEAD. Await the user's latest captured rerun output. |
+| Full test suite | **Failed on latest recorded run; follow-up test fixes committed, rerun pending** | User's captured run on 2026-10-24 ended `+790 -10: Some tests failed`. Ten failures: one DST-sensitive date-span assertion, one timezone-dependent UTC timestamp fixture, six Stage 4 adoption/export file-lock/teardown failures, and two Prayer Time UI source-contract failures caused by CRLF/LF comparisons. Four test-only fixes are now committed remotely; they have not yet been rerun on the user's checkout. |
 | Static analysis | **Needs re-check** | Last previously reported run had no analyzer errors but reported 4 warnings and 26 informational notices. Rerun on the current synchronized checkout before final acceptance. |
 | Database/account architecture | **Not yet accepted** | Targeted tests passing does not prove account isolation, safe key recovery, backup/restore integrity, worker routing, or real-device behavior. |
 | Merge/release readiness | **Not ready to declare** | Full suite, static analysis, audit gates, required isolation/recovery coverage and device verification remain outstanding. |
@@ -47,7 +47,11 @@ The planning materials are not fully aligned: the separate-database implementati
 - `a6136afb` — close injected control database during database-manager test teardown.
 - `c66fa661` — close injected control database during Stage 4 test teardown.
 - `72100ea5` — normalize source text across Windows line endings in Qaza contract tests.
-- `65820a1b` — format Dart sources; current synchronized HEAD reported by the user.
+- `65820a1b` — format Dart sources; last HEAD confirmed in the user's local checkout before the newest fixes.
+- `ee06d889` — make fixed-Hijri test span assertions compare calendar days (DST-safe).
+- `54437e76` — make backup timestamp fixture deterministic with an explicit `+05:00` offset.
+- `996e8d81` — close the injected control DB in Stage 4 test teardown and close the original manager before deleting an open workspace file.
+- `d5697f3e` — normalize Prayer Time UI contract-test source reads across Windows/Unix line endings.
 
 These commits are recorded from the user's Git output and prior checkpoint context; this tracker does not claim any tests ran on GitHub CI unless separately recorded below.
 
@@ -136,7 +140,8 @@ Append new entries at each checkpoint. Keep old failures for history; mark them 
 | 2026-10-23 | Earlier full `flutter test` run | **Failed: 14 tests** (`+786 -14`) | Four observed Qaza contract failures were due to line-ending-sensitive source assertions. Other failures need the latest report and targeted reproduction. |
 | 2026-10-23/24 | Database-manager and Stage 4 tests | **Passed** | Drift warns about multiple Drift database instances. Investigate safe connection ownership; do not suppress warning without understanding the cause. |
 | 2026-10-24 | Qaza screen contract test on synchronized branch | **Passed: 53 tests** | The source-reading helper normalizes CRLF/CR to LF. |
-| 2026-10-24 | Latest full-suite rerun with captured log | **Awaiting user output** | Inspect failing test names and first meaningful assertion/exception; rerun only the failing files first. |
+| 2026-10-24 | Latest full-suite rerun (`flutter test --reporter=expanded`) | **Failed: 10 tests** (`+790 -10`; ~29m45s) | `fixed_hijri_arithmetic_service_test.dart`: calendar end-date assertion expected 01:00 but received 00:00, consistent with duration-based addition crossing DST. `local_backup_service_test.dart`: local `DateTime(12:34)` expected as UTC `12:34Z`, but actual conversion was `07:34Z` in UTC+05. Six cases in `stage4_adoption_export_test.dart` failed during temp-file/directory deletion with Windows `errno=32` locked handles. Two `prayer_time_ui_contract_test.dart` cases compared LF literals to CRLF source. Qibla-specific test was separately rerun and passed. |
+| 2026-10-24 | Follow-up test-only fixes committed remotely | **Pending local sync and rerun** | `ee06d889` uses calendar-day difference for milestone spans; `54437e76` uses a deterministic explicit-offset timestamp; `996e8d81` closes the injected control DB and original manager before deleting test files; `d5697f3e` normalizes Prayer Time UI contract source line endings. No claim that these fixes pass until the targeted tests are rerun. |
 
 ### Checkpoint update template
 
@@ -155,21 +160,25 @@ Do not mark a stage complete until its acceptance gate has evidence. If no code 
 
 ## 5. Immediate next action
 
-**Await the user's latest full-suite output.** They were asked to run:
+**The failure log has been received and triaged.** The follow-up commits above are on the remote feature branch but are not yet confirmed in the user's local checkout. Preserve the local `pubspec.lock` modification while syncing:
 
 ```powershell
-flutter test --reporter=expanded *> .\flutter-test-full.log
-$testExitCode = $LASTEXITCODE
-Select-String -Path .\flutter-test-full.log -Pattern '\[E\]|Some tests failed|All tests passed' -Context 0,8
-"Exit code: $testExitCode"
+git status --short --branch
+git stash push -m "preserve pubspec.lock before TP-GEN test fixes" -- pubspec.lock
+git pull --ff-only origin tp-gen/separate-google-db
+git stash pop
+git status --short --branch
 ```
 
-Once received:
-1. Record the result in this tracker.
-2. Identify each distinct failing test and the first meaningful error (not a cascading stack trace).
-3. Reproduce failing tests individually or in small, relevant groups.
-4. Make the smallest justified fix and add/regress tests where needed.
-5. Rerun targeted tests, then the full suite when the failure set is understood.
-6. Update this file again before moving to the next TP-GEN phase.
+Then run these targeted tests individually (one command at a time):
+
+```powershell
+flutter test test/core/fixed_hijri_arithmetic_service_test.dart
+flutter test test/data/local_backup_service_test.dart
+flutter test test/data/stage4_adoption_export_test.dart
+flutter test test/features/prayer_time/prayer_time_ui_contract_test.dart
+```
+
+Capture the final output for each. If the targeted tests pass, rerun `flutter test` and update this file with the actual result. If any still fail, capture the first assertion/exception and fix the underlying cause. Do not claim the follow-up fixes passed until tested locally.
 
 Do not reset the branch, discard `pubspec.lock`, build a release APK, or declare the branch ready for merge while the full-suite and architecture gates are unresolved.
