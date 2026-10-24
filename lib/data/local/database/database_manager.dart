@@ -93,6 +93,8 @@ class DatabaseManager {
   // those operations may have created.
   bool _closing = false;
   bool _closed = false;
+  bool _initializationInFlight = false;
+  bool _startupMigrationInFlight = false;
   Future<void>? _closeFuture;
 
   /// Migration/reconciliation helper (database_manager_migration.dart),
@@ -152,7 +154,11 @@ class DatabaseManager {
     final pending = _initializeFuture;
     if (pending != null) return pending;
     _throwIfClosing();
-    return _initializeFuture ??= _initialize();
+    _initializationInFlight = true;
+    final initialization = _initialize();
+    return _initializeFuture = initialization.whenComplete(
+      () => _initializationInFlight = false,
+    );
   }
 
   Future<void> _initialize() async {
@@ -170,7 +176,11 @@ class DatabaseManager {
     final pending = _startupMigrationFuture;
     if (pending != null) return pending;
     _throwIfClosing();
-    return _startupMigrationFuture ??= _migrationHelper._runStartupMigrations();
+    _startupMigrationInFlight = true;
+    final migration = _migrationHelper._runStartupMigrations();
+    return _startupMigrationFuture = migration.whenComplete(
+      () => _startupMigrationInFlight = false,
+    );
   }
 
   /// §4 staging file for a cross-file adoption into workspace [id]:
@@ -761,18 +771,22 @@ class DatabaseManager {
     while (true) {
       final pending = <Future<void>>[];
       final initialization = _initializeFuture;
-      if (initialization != null) {
+      if (_initializationInFlight && initialization != null) {
         pending.add(_settleOperation(initialization));
       }
       final migration = _startupMigrationFuture;
-      if (migration != null) {
+      if (_startupMigrationInFlight && migration != null) {
         pending.add(_settleOperation(migration));
       }
       pending.addAll(
-        _openingWorkspaceDatabases.values.map(_settleOperation),
+        _openingWorkspaceDatabases.values.map(
+          (future) => _settleOperation(future),
+        ),
       );
       pending.addAll(
-        _provisioningGoogleWorkspaces.values.map(_settleOperation),
+        _provisioningGoogleWorkspaces.values.map(
+          (future) => _settleOperation(future),
+        ),
       );
       if (pending.isEmpty) return;
       await Future.wait(pending);
