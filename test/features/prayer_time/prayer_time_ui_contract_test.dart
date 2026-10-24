@@ -9,8 +9,8 @@ String _readSource(String path) => File(path)
 
 void main() {
   test('Prayer Time focus countdown cannot wrap', () {
-    final source =
-        _readSource('lib/features/prayer_time/presentation/prayer_time_page.dart');
+    final source = _readSource(
+        'lib/features/prayer_time/presentation/prayer_time_page.dart');
     final start =
         source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
     final end = source.indexOf(
@@ -27,8 +27,8 @@ void main() {
   });
 
   test('Prayer Time focus card renders a separate upcoming label and time', () {
-    final source =
-        _readSource('lib/features/prayer_time/presentation/prayer_time_page.dart');
+    final source = _readSource(
+        'lib/features/prayer_time/presentation/prayer_time_page.dart');
     final start =
         source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
     final end = source.indexOf(
@@ -45,8 +45,8 @@ void main() {
   });
 
   test('Prayer Time focus restricted range cannot wrap', () {
-    final source =
-        _readSource('lib/features/prayer_time/presentation/prayer_time_page.dart');
+    final source = _readSource(
+        'lib/features/prayer_time/presentation/prayer_time_page.dart');
     final start =
         source.indexOf('class _PrayerTimeFocusCard extends StatelessWidget {');
     final end = source.indexOf(
@@ -77,8 +77,8 @@ void main() {
   test(
       'Qibla summary replaces the large bearing value with the shared compass visualization',
       () {
-    final source =
-        _readSource('lib/features/prayer_time/presentation/qibla_summary_card.dart');
+    final source = _readSource(
+        'lib/features/prayer_time/presentation/qibla_summary_card.dart');
 
     expect(source, contains('class QiblaSummaryCard extends ConsumerWidget {'));
     expect(source, contains('compassSensorAvailableProvider'));
