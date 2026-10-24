@@ -273,8 +273,6 @@ void main() {
     (tester) async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
-      final guestId = await _seedSavedGuest(database);
-      final store = AccountLocalStore(database: database);
       final accountProvider = _FakeCloudAccountProvider(
         signInResult: const CloudAccountSnapshot.disconnected(),
       );
@@ -284,6 +282,15 @@ void main() {
         syncProvider: _FakeCloudSyncProvider(),
       );
       addTearDown(container.dispose);
+
+      // Initialize the default local workspace first, then add the saved Guest
+      // so this test exercises a real identity change instead of reselecting
+      // the already-active workspace.
+      final previousWorkspaceId =
+          container.read(accountSessionManagerProvider).activeLocalAccountId;
+      final guestId = await _seedSavedGuest(database);
+      final store = AccountLocalStore(database: database);
+      expect(previousWorkspaceId, isNot(guestId));
 
       await tester.pumpWidget(_app(container));
       await tester.pumpAndSettle();
