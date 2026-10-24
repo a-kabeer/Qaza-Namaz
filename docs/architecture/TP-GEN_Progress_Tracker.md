@@ -1,6 +1,6 @@
 # TP-GEN Progress Tracker — Separate Encrypted Local Database per Google Account
 
-**Last updated:** 2026-10-24 (Asia/Karachi) — four targeted test files rerun successfully; Drift warnings still open  
+**Last updated:** 2026-10-24 (Asia/Karachi) — targeted tests passed; static analysis rerun with 0 errors  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/separate-google-db`  
 **Purpose:** Living checkpoint log for the TP-GEN task. Update this file after each meaningful action, test result, decision, or blocker. Record evidence and exact outcomes; never mark a phase complete based only on a plan or an unverified claim.
@@ -38,7 +38,7 @@ The planning materials are not fully aligned: the separate-database implementati
 | Database manager test teardown | **Targeted tests passed** | User ran `flutter test test/data/local/database/database_manager_test.dart test/data/local/database/database_manager_stage4_test.dart`; output ended `All tests passed!`. Drift duplicate-database warnings appeared and remain to be investigated. |
 | Qaza screen contract tests | **Passed** | User ran `flutter test test/features/qaza/qaza_tracker_screen_contract_test.dart`; output ended `+53: All tests passed!`. Windows/Unix line-ending normalization is present in the test file on GitHub. |
 | Full test suite | **Rerun pending** | Previous full run failed with `+790 -10`. All four targeted test files for the ten failure categories have now been rerun locally and passed; the complete suite has not yet been rerun. |
-| Static analysis | **Needs re-check** | Last previously reported run had no analyzer errors but reported 4 warnings and 26 informational notices. Rerun on the current synchronized checkout before final acceptance. |
+| Static analysis | **Ran: 0 errors, 4 warnings, 26 info** | User ran `flutter analyze` on 2026-10-24; output ended `30 issues found` in 158 seconds. Warnings: unnecessary non-null assertion at `local_backup_service.dart:2385`, unused `_selectMaps` at `local_backup_service.dart:3363`, unnecessary non-null assertion at `app_database.dart:104`, unused `_migrateLegacyGoogleWorkspace` at `database_manager.dart:182`. Info includes undeclared direct dependency `uuid` in `account_local_store.dart:5`, several style notices, and deprecated Radio APIs. This result is recorded, not yet treated as final acceptance; review dependency ownership and unused migration/helper code without deleting safety-critical paths blindly. |
 | Database/account architecture | **Not yet accepted; Drift warning requires investigation** | Stage 4 adoption/export tests pass, but their output repeatedly warns that multiple `GoogleWorkspaceDatabase`/`AppDatabase` instances may share one `QueryExecutor`, which Drift says can cause race conditions/corruption. The warning is not proof of an actual corruption bug, but it is a concrete connection-ownership risk that must be traced before acceptance. |
 | Merge/release readiness | **Not ready to declare** | Full suite, static analysis, audit gates, required isolation/recovery coverage and device verification remain outstanding. |
 
@@ -144,6 +144,7 @@ Append new entries at each checkpoint. Keep old failures for history; mark them 
 | 2026-10-24 | Latest full-suite rerun (`flutter test --reporter=expanded`) | **Failed: 10 tests** (`+790 -10`; ~29m45s) | `fixed_hijri_arithmetic_service_test.dart`: calendar end-date assertion expected 01:00 but received 00:00, consistent with duration-based addition crossing DST. `local_backup_service_test.dart`: local `DateTime(12:34)` expected as UTC `12:34Z`, but actual conversion was `07:34Z` in UTC+05. Six cases in `stage4_adoption_export_test.dart` failed during temp-file/directory deletion with Windows `errno=32` locked handles. Two `prayer_time_ui_contract_test.dart` cases compared LF literals to CRLF source. Qibla-specific test was separately rerun and passed. |
 | 2026-10-24 | Follow-up test-only fixes committed remotely | **Pending local sync and rerun** | `ee06d889` uses calendar-day difference for milestone spans; `54437e76` uses a deterministic explicit-offset timestamp; `996e8d81` closes the injected control DB and original manager before deleting test files; `d5697f3e` normalizes Prayer Time UI contract source line endings. No claim that these fixes pass until the targeted tests are rerun. |
 | 2026-10-24 | User synced branch and reran targeted failure groups | **Passed: 4 targeted test files** | `git pull --ff-only origin tp-gen/separate-google-db` fast-forwarded `65820a1b..5295005a`; `pubspec.lock` was stashed/popped and remains modified, not discarded. `flutter test test/core/fixed_hijri_arithmetic_service_test.dart` passed (7 tests); `flutter test test/data/local_backup_service_test.dart` passed (36 tests); `flutter test test/data/stage4_adoption_export_test.dart` passed (6 tests); `flutter test test/features/prayer_time/prayer_time_ui_contract_test.dart` passed (5 tests). Stage 4 emitted repeated Drift warnings about multiple database instances sharing a `QueryExecutor`; investigate rather than suppress. Full-suite rerun remains pending. |
+| 2026-10-24 | Static analysis rerun after targeted fixes | **Completed: 0 errors; 4 warnings; 26 info** | User ran `flutter analyze`; completion time 158.0 seconds; final output `30 issues found`. Warnings include unused `_selectMaps` and `_migrateLegacyGoogleWorkspace`, plus unnecessary non-null assertions. An info notice says `uuid` is imported by `account_local_store.dart` but is not a direct dependency. Review code/dependency intent; don't remove migration code or edit dependencies blindly. Full-suite test run is the next gate. |
 
 ### Checkpoint update template
 
@@ -162,13 +163,12 @@ Do not mark a stage complete until its acceptance gate has evidence. If no code 
 
 ## 5. Immediate next action
 
-The user has synced the test-fix commits and confirmed all four targeted test groups pass. **Next run the full suite and static analysis, then record the actual outputs here.** Before accepting Stage 4, investigate the Drift warning in `stage4_adoption_export_test.dart`: trace the injected `GoogleWorkspaceDatabase.forTesting` factory, staging database lifecycle, and manager caches to determine whether the instances use the same executor and whether each instance is intentionally opened/closed. Do not silence `dontWarnAboutMultipleDatabases` or treat a passing test as sufficient evidence.
+The user has synced the test-fix commits and confirmed all four targeted test groups pass. `flutter analyze` has now run and reported 0 errors, 4 warnings, and 26 informational notices (details recorded in the checkpoint table and issue log). **Next run the full suite and record its exact output.** Before accepting Stage 4, investigate the Drift warning in `stage4_adoption_export_test.dart`: trace the injected `GoogleWorkspaceDatabase.forTesting` factory, staging database lifecycle, and manager caches to determine whether the instances use the same executor and whether each instance is intentionally opened/closed. Do not silence `dontWarnAboutMultipleDatabases` or treat a passing test as sufficient evidence.
 
-Run one command at a time from the repository root:
+Run the full suite from the repository root:
 
 ```powershell
 flutter test
-flutter analyze
 ```
 
 Keep `pubspec.lock` modified exactly as it is unless its diff is reviewed; do not reset it as part of syncing or test cleanup. If the full suite fails, capture each remaining failure and fix the underlying cause, then rerun the affected tests and full suite. Update this tracker after each meaningful result. Do not build a release APK or declare the branch ready for merge while the full-suite, static-analysis, Drift lifecycle, and architecture gates remain unresolved.
