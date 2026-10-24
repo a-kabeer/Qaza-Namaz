@@ -268,6 +268,70 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets(
+    'Continue as Guest resumes an existing saved workspace without errors',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final guestId = await _seedSavedGuest(database);
+      final store = AccountLocalStore(database: database);
+      final accountProvider = _FakeCloudAccountProvider(
+        signInResult: const CloudAccountSnapshot.disconnected(),
+      );
+      final container = await _cloudContainer(
+        database: database,
+        accountProvider: accountProvider,
+        syncProvider: _FakeCloudSyncProvider(),
+      );
+      addTearDown(container.dispose);
+
+      await tester.pumpWidget(_app(container));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('cloud_setup_continue_local')),
+      );
+      await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
+
+      // The working indicator is animated, so wait in bounded increments for
+      // the existing Guest choice instead of pumpAndSettle.
+      for (var i = 0; i < 200; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find
+            .byKey(Key('guest_workspace_choice_$guestId'))
+            .evaluate()
+            .isNotEmpty) {
+          break;
+        }
+      }
+      expect(find.byKey(Key('guest_workspace_choice_$guestId')), findsOneWidget);
+      await tester.tap(find.byKey(Key('guest_workspace_choice_$guestId')));
+
+      for (var i = 0; i < 200; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (container.read(startupWorkspaceRestoreSatisfiedProvider)) break;
+      }
+      await tester.pumpAndSettle();
+
+      expect(
+        container.read(accountSessionManagerProvider).activeLocalAccountId,
+        guestId,
+      );
+      final profile = await container.read(userProfileProvider.future);
+      expect(profile, isNotNull);
+      expect(profile!.dateOfBirth, DateTime(1990, 1, 1));
+      expect(profile.onboardingCompleted, isTrue);
+      expect(
+        (await database.qazaRecordsDao.getAll(userId: guestId))
+            .map((record) => record.id),
+        ['choice_guest_fajr_1'],
+      );
+      expect((await store.getAccount(guestId))?.localAccountId, guestId);
+      expect(accountProvider.signInCalls, 0);
+      expect(container.read(startupWorkspaceRestoreSatisfiedProvider), true);
+      expect(tester.takeException(), isNull);
+    },
+  );
+
   // Scenario 8(c) — with no saved Guest workspace, a new Google sign-in
   // skips the chooser entirely and goes straight to Google setup.
   testWidgets(

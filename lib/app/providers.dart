@@ -179,15 +179,11 @@ final startupAccountWorkspaceRestoreProvider =
     // a local workspace should be replaced or cleared.
   }
 
-  // AccountSessionManager.initialize() starts from the Guest workspace.
-  // Re-read profile and routing state after the verified startup identity
-  // selects its workspace, otherwise cached Guest data can leak into routing.
+  // Profile, progress and repository providers react to activeUserIdProvider.
+  // Let the session notification rebuild those dependents once rather than
+  // invalidating them again during the same workspace transition. The route
+  // provider is independent of the active workspace, so refresh it explicitly.
   ref.invalidate(appRouteProvider);
-  ref.invalidate(userProfileProvider);
-  ref.invalidate(progressSummaryProvider);
-  ref.invalidate(qazaRepositoryProvider);
-  ref.invalidate(qazaAdditionRepositoryProvider);
-  ref.invalidate(qazaPlanRevisionRepositoryProvider);
 });
 
 final cloudSyncProvider = Provider<CloudSyncProvider>(

@@ -97,12 +97,9 @@ class _GuestWorkspaceManagementScreenState
       // dependencies can strand the user on a blank/loading route with no
       // workspace navigation.
       ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = true;
+      // Account-scoped profile, progress and repository providers already react
+      // to activeUserIdProvider. Refresh only the independent route provider.
       ref.invalidate(appRouteProvider);
-      ref.invalidate(userProfileProvider);
-      ref.invalidate(progressSummaryProvider);
-      ref.invalidate(qazaRepositoryProvider);
-      ref.invalidate(qazaAdditionRepositoryProvider);
-      ref.invalidate(qazaPlanRevisionRepositoryProvider);
 
       // These providers are used by StartupGate on the root route. Wait for
       // the newly selected workspace's routing/profile state to finish loading

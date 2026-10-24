@@ -321,35 +321,50 @@ void main() {
       await tester.pumpWidget(
         _app(
           switchContainer,
-          Builder(
-            builder: (context) => Scaffold(
-              body: Column(
-                children: [
-                  const Text('Workspace home'),
-                  ElevatedButton(
-                    key: const Key('open_guest_workspace_management'),
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => GuestWorkspaceManagementScreen(),
-                      ),
+          Consumer(
+            builder: (context, ref, child) {
+              // Keep the account-scoped graph live while the workspace changes.
+              // A simplified home with no provider consumers missed regressions
+              // in profile/progress refresh during account switching.
+              final profile = ref.watch(userProfileProvider);
+              final summary = ref.watch(progressSummaryProvider);
+              return Scaffold(
+                body: Column(
+                  children: [
+                    const Text('Workspace home'),
+                    Text(
+                      'Workspace birth year: '
+                      '${profile.valueOrNull?.dateOfBirth?.year ?? 0}',
                     ),
-                    child: const Text('Open Guest workspaces'),
-                  ),
-                ],
-              ),
-              bottomNavigationBar: NavigationBar(
-                destinations: [
-                  NavigationDestination(
-                    icon: Icon(Icons.home_outlined),
-                    label: 'Home',
-                  ),
-                  NavigationDestination(
-                    icon: Icon(Icons.checklist_outlined),
-                    label: 'Qaza',
-                  ),
-                ],
-              ),
-            ),
+                    Text(
+                      'Workspace Qaza total: '
+                      '${summary.valueOrNull?.overall.total ?? 0}',
+                    ),
+                    ElevatedButton(
+                      key: const Key('open_guest_workspace_management'),
+                      onPressed: () => Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => GuestWorkspaceManagementScreen(),
+                        ),
+                      ),
+                      child: const Text('Open Guest workspaces'),
+                    ),
+                  ],
+                ),
+                bottomNavigationBar: NavigationBar(
+                  destinations: [
+                    NavigationDestination(
+                      icon: Icon(Icons.home_outlined),
+                      label: 'Home',
+                    ),
+                    NavigationDestination(
+                      icon: Icon(Icons.checklist_outlined),
+                      label: 'Qaza',
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ),
       );
@@ -364,12 +379,14 @@ void main() {
 
       for (var i = 0; i < 100; i++) {
         await tester.pump(const Duration(milliseconds: 50));
-        if (find.text('Workspace home').evaluate().isNotEmpty) break;
+        if (find.text('Workspace Qaza total: 3').evaluate().isNotEmpty) break;
       }
       await tester.pumpAndSettle();
 
       expect(switchManager.activeLocalAccountId, manyRecordsId);
       expect(find.text('Workspace home'), findsOneWidget);
+      expect(find.text('Workspace birth year: 1990'), findsOneWidget);
+      expect(find.text('Workspace Qaza total: 3'), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.byType(GuestWorkspaceManagementScreen), findsNothing);
       expect(tester.takeException(), isNull);

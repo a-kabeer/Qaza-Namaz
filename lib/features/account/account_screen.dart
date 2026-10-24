@@ -460,7 +460,7 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
     try {
       final account = await traceAsyncStage(
         flow: 'account_screen',
-        stage: 'google_sign_in_and_drive_authorization',
+        stage: 'google_connect_and_drive_authorization',
         action: accountProvider.signIn,
       );
       if (!mounted || account.wasCancelled) return;

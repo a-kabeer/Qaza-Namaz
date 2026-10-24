@@ -154,12 +154,9 @@ class _CloudSetupChoiceScreenState
             googleName,
           );
     }
+    // The active workspace notification refreshes account-scoped providers.
+    // Only appRouteProvider is independent of activeUserIdProvider.
     ref.invalidate(appRouteProvider);
-    ref.invalidate(userProfileProvider);
-    ref.invalidate(progressSummaryProvider);
-    ref.invalidate(qazaRepositoryProvider);
-    ref.invalidate(qazaAdditionRepositoryProvider);
-    ref.invalidate(qazaPlanRevisionRepositoryProvider);
   }
 
   Future<void> _completeChoice() async {
@@ -372,7 +369,7 @@ class _CloudSetupChoiceScreenState
       _cloudAttempted = true;
       final account = await traceAsyncStage(
         flow: 'cloud_setup',
-        stage: 'google_sign_in_and_drive_authorization',
+        stage: 'google_connect_and_drive_authorization',
         action: accountProvider.signIn,
       );
       if (!mounted || account.wasCancelled) return;
@@ -440,12 +437,9 @@ class _CloudSetupChoiceScreenState
           _driveBackupInvalid ? 'legacy_unverified' : 'cloud_unverified',
           localRevision: await database.readWorkspaceRevision(workspaceId),
         );
+        // The Google workspace was activated before backup discovery. Its
+        // account-scoped providers already follow activeUserIdProvider.
         ref.invalidate(appRouteProvider);
-        ref.invalidate(userProfileProvider);
-        ref.invalidate(progressSummaryProvider);
-        ref.invalidate(qazaRepositoryProvider);
-        ref.invalidate(qazaAdditionRepositoryProvider);
-        ref.invalidate(qazaPlanRevisionRepositoryProvider);
         await _completeChoice();
         return;
       }
@@ -479,12 +473,9 @@ class _CloudSetupChoiceScreenState
       await ref
           .read(accountSessionManagerProvider)
           .activateLocalAccount(selectedGuestId);
+      // The selected Guest was published through AccountSessionManager;
+      // providers watching activeUserIdProvider refresh from that transition.
       ref.invalidate(appRouteProvider);
-      ref.invalidate(userProfileProvider);
-      ref.invalidate(progressSummaryProvider);
-      ref.invalidate(qazaRepositoryProvider);
-      ref.invalidate(qazaAdditionRepositoryProvider);
-      ref.invalidate(qazaPlanRevisionRepositoryProvider);
       ref.read(skipPendingInitialCloudBackupForSessionProvider.notifier).state =
           false;
       await _completeChoice();
