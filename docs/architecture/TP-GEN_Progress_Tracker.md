@@ -407,3 +407,19 @@ Both are account-workspace and sync-lifecycle invariants. Do not weaken tests, s
 **Evidence limitation:** the user-provided output contains the final failed-test names but begins in the middle of a Flutter stack trace; the actual first exception/expectation mismatch and its adjacent assertion context are missing. No root cause is claimed yet.
 
 **Next diagnostic step:** rerun only `test/features/account/account_chained_journeys_test.dart` and capture the complete failure detail (especially the first error, expected/actual values, and test line number). Fix the underlying behavior or test harness only after identifying which assertion fails, then rerun both scenarios, the targeted account/onboarding tests, and the full suite. Keep the existing local formatting and lockfile changes and both stashes preserved. The earlier 22 account-screen tests, 8 onboarding tests, and analyzer run (0 errors/warnings, 23 info findings) remain valid for their respective commands but do not override this full-suite failure.
+
+
+### Follow-up — bounded pump fix for chained account journeys
+
+**Date:** 2026-10-24 (Asia/Karachi)  
+**Evidence:** isolated Scenario 5 run in the user's local checkout failed at line 94 with `pumpAndSettle timed out`. The trace shows Google sign-in and Google workspace activation completed; the test timed out while awaiting the conflict decision UI. The test uses an indeterminate progress panel during that wait, so `pumpAndSettle()` is not a valid wait condition.
+
+**Test-only fix committed remotely:** `cad24b03ecf1ddc0f213a78204b5762d1ade057c` (`test(account): avoid settling indeterminate journey progress`). In `test/features/account/account_chained_journeys_test.dart`, added bounded pump helpers for waiting for a specific dialog, waiting for a progress panel to disappear, and waiting for the Welcome route after sign-out. Updated the affected waits in Scenario 5 and Scenario 9. Assertions and production code are unchanged; neither account data nor cloud safety behavior was modified.
+
+**Verification status: pending.** The new test commit is on the remote branch but has not yet been pulled into the user's local checkout or run there. After safely syncing, run:
+```powershell
+dart format test/features/account/account_chained_journeys_test.dart
+flutter test --reporter expanded --plain-name "scenario 5 Case B" test/features/account/account_chained_journeys_test.dart
+flutter test --reporter expanded --plain-name "scenario 9" test/features/account/account_chained_journeys_test.dart
+```
+If either still fails, capture the first underlying exception/expectation mismatch and fix it without weakening account-isolation or data-preservation assertions. Only after both isolated journeys pass should the full suite be rerun.
