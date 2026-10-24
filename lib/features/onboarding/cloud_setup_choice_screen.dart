@@ -183,8 +183,8 @@ class _CloudSetupChoiceScreenState
       flow: 'cloud_setup',
       stage: 'discover_google_drive_backup',
       action: () => ref.read(cloudSyncProvider).discoverBackup(
-        allowInteractive: allowInteractive,
-      ),
+            allowInteractive: allowInteractive,
+          ),
     );
     if (!mounted) return;
 
@@ -506,15 +506,15 @@ class _CloudSetupChoiceScreenState
         flow: 'cloud_restore',
         stage: 'restore_verified_remote_backup',
         action: () => ref.read(cloudSyncProvider).resolveConflict(
-          conflict: conflict,
-          choice: CloudConflictChoice.useRemote,
-          // This is safe only after the fresh-install database predicate and
-          // unchanged revision were verified immediately before this call.
-          confirmed: true,
-          onProgress: (progress) {
-            if (mounted) setState(() => _restoreProgress = progress);
-          },
-        ),
+              conflict: conflict,
+              choice: CloudConflictChoice.useRemote,
+              // This is safe only after the fresh-install database predicate and
+              // unchanged revision were verified immediately before this call.
+              confirmed: true,
+              onProgress: (progress) {
+                if (mounted) setState(() => _restoreProgress = progress);
+              },
+            ),
       );
       if (!mounted) return;
       if (result.status != CloudSyncStatus.synced ||
@@ -594,13 +594,13 @@ class _CloudSetupChoiceScreenState
         flow: 'cloud_restore',
         stage: 'restore_verified_remote_backup',
         action: () => ref.read(cloudSyncProvider).resolveConflict(
-          conflict: conflict,
-          choice: CloudConflictChoice.useRemote,
-          confirmed: true,
-          onProgress: (progress) {
-            if (mounted) setState(() => _restoreProgress = progress);
-          },
-        ),
+              conflict: conflict,
+              choice: CloudConflictChoice.useRemote,
+              confirmed: true,
+              onProgress: (progress) {
+                if (mounted) setState(() => _restoreProgress = progress);
+              },
+            ),
       );
       if (!mounted) return;
 

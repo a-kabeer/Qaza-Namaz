@@ -239,7 +239,8 @@ void main() {
       final previousWorkspaceId =
           container.read(accountSessionManagerProvider).activeLocalAccountId;
       final store = AccountLocalStore(database: database);
-      final guestId = await store.createGuestWorkspace(displayName: 'Saved Guest');
+      final guestId =
+          await store.createGuestWorkspace(displayName: 'Saved Guest');
       await store.saveProfile(
         guestId,
         UserProfile(
@@ -270,7 +271,8 @@ void main() {
       // loading indicators, so use bounded pumping instead of pumpAndSettle.
       for (var i = 0; i < 100; i++) {
         await tester.pump(const Duration(milliseconds: 50));
-        if (find.byKey(const Key('cloud_setup_continue_local'))
+        if (find
+            .byKey(const Key('cloud_setup_continue_local'))
             .evaluate()
             .isNotEmpty) {
           break;
@@ -281,13 +283,15 @@ void main() {
       await tester.tap(find.byKey(const Key('cloud_setup_continue_local')));
       for (var i = 0; i < 200; i++) {
         await tester.pump(const Duration(milliseconds: 50));
-        if (find.byKey(Key('guest_workspace_choice_$guestId'))
+        if (find
+            .byKey(Key('guest_workspace_choice_$guestId'))
             .evaluate()
             .isNotEmpty) {
           break;
         }
       }
-      expect(find.byKey(Key('guest_workspace_choice_$guestId')), findsOneWidget);
+      expect(
+          find.byKey(Key('guest_workspace_choice_$guestId')), findsOneWidget);
       await tester.tap(find.byKey(Key('guest_workspace_choice_$guestId')));
 
       for (var i = 0; i < 200; i++) {

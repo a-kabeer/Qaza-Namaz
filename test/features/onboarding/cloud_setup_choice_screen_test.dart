@@ -310,7 +310,8 @@ void main() {
           break;
         }
       }
-      expect(find.byKey(Key('guest_workspace_choice_$guestId')), findsOneWidget);
+      expect(
+          find.byKey(Key('guest_workspace_choice_$guestId')), findsOneWidget);
       await tester.tap(find.byKey(Key('guest_workspace_choice_$guestId')));
 
       for (var i = 0; i < 200; i++) {
