@@ -307,6 +307,19 @@ void main() {
         ),
       );
 
+      await store.saveProfile(
+        singleRecordId,
+        UserProfile(
+          gender: Gender.male,
+          madhab: Madhab.hanafi,
+          dateOfBirth: DateTime(1990, 1, 1),
+          pubertyAge: 12,
+          startPrayingAge: 15,
+          witrIncluded: true,
+          onboardingCompleted: true,
+        ),
+      );
+
       final switchManager = AccountSessionManager(accountStore: store);
       final switchContainer = ProviderContainer(
         overrides: [
@@ -389,6 +402,40 @@ void main() {
       expect(find.text('Workspace Qaza total: 3'), findsOneWidget);
       expect(find.byType(NavigationBar), findsOneWidget);
       expect(find.byType(GuestWorkspaceManagementScreen), findsNothing);
+      expect(tester.takeException(), isNull);
+
+      // Exercise a second switch and then return to the first workspace while
+      // the same root provider graph remains mounted (A -> B -> A).
+      await tester.tap(
+        find.byKey(const Key('open_guest_workspace_management')),
+      );
+      await tester.pumpAndSettle();
+      final singleTile = find.byKey(Key('guest_workspace_$singleRecordId'));
+      await tester.ensureVisible(singleTile);
+      await tester.tap(singleTile);
+      for (var i = 0; i < 100; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find.text('Workspace Qaza total: 1').evaluate().isNotEmpty) break;
+      }
+      expect(switchManager.activeLocalAccountId, singleRecordId);
+      expect(find.text('Workspace birth year: 1990'), findsOneWidget);
+      expect(find.text('Workspace Qaza total: 1'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(
+        find.byKey(const Key('open_guest_workspace_management')),
+      );
+      await tester.pumpAndSettle();
+      final returnTile = find.byKey(Key('guest_workspace_$manyRecordsId'));
+      await tester.ensureVisible(returnTile);
+      await tester.tap(returnTile);
+      for (var i = 0; i < 100; i++) {
+        await tester.pump(const Duration(milliseconds: 50));
+        if (find.text('Workspace Qaza total: 3').evaluate().isNotEmpty) break;
+      }
+      expect(switchManager.activeLocalAccountId, manyRecordsId);
+      expect(find.text('Workspace birth year: 1990'), findsOneWidget);
+      expect(find.text('Workspace Qaza total: 3'), findsOneWidget);
       expect(tester.takeException(), isNull);
     },
   );
