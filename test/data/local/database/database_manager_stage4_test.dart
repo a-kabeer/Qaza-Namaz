@@ -370,6 +370,44 @@ void main() {
     );
   });
 
+  test('close waits for adoption publication and closes the published handle',
+      () async {
+    final live = await manager.ensureGoogleWorkspace('google_close_publish');
+    final staging = await manager.createAdoptionStagingDatabase(
+      'google_close_publish',
+    );
+    await staging.close();
+
+    final verificationEntered = Completer<void>();
+    final releaseVerification = Completer<void>();
+    final publishing = manager.publishAdoptionStagingDatabase(
+      'google_close_publish',
+      verify: (_) async {
+        if (!verificationEntered.isCompleted) {
+          verificationEntered.complete();
+        }
+        await releaseVerification.future;
+      },
+    );
+    await verificationEntered.future;
+
+    var closeCompleted = false;
+    final closing = manager.close().then((_) => closeCompleted = true);
+    await Future<void>.delayed(Duration.zero);
+    expect(closeCompleted, isFalse);
+
+    releaseVerification.complete();
+    final published = await publishing;
+    await closing;
+
+    expect(closeCompleted, isTrue);
+    expect(live, isNot(same(published)));
+    await expectLater(
+      published.customSelect('SELECT 1 AS value').get(),
+      throwsA(anything),
+    );
+  });
+
   test('§8 handle lifecycle: one handle per workspace, concurrent dedup',
       () async {
     final created = await manager.ensureGoogleWorkspace('google_handles');
