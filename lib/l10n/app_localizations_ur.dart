@@ -647,11 +647,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get splashTagline => 'نماز کی پابندی کے لیے ایک پُرسکون جگہ';
 
   @override
-  String get accountChoiceHeadline => 'اپنی قضا کی پیش رفت محفوظ رکھیں';
+  String get accountChoiceHeadline => 'گوگل سائن اِن استعمال کریں';
 
   @override
   String get accountChoiceDescription =>
-      'گوگل سے سائن اِن کریں تاکہ آپ کی پیش رفت مختلف ڈیوائسز پر محفوظ اور بحال ہو سکے۔';
+      'گوگل سے سائن اِن کریں تاکہ اس ڈیوائس پر اپنے اکاؤنٹ کی الگ مقامی ورک اسپیس استعمال کریں۔ آپ کا قضا ڈیٹا اسی ڈیوائس پر رہے گا۔';
 
   @override
   String get accountChoiceContinueGoogle => 'گوگل کے ساتھ جاری رکھیں';
@@ -661,7 +661,7 @@ class AppLocalizationsUr extends AppLocalizations {
 
   @override
   String get accountChoiceGuestDescription =>
-      'مہمان کا ڈیٹا اسی ڈیوائس پر محفوظ رہتا ہے۔ آپ بعد میں گوگل منسلک کر سکتے ہیں۔';
+      'مہمان کا ڈیٹا اسی ڈیوائس پر اس مقامی ورک اسپیس میں محفوظ رہتا ہے۔';
 
   @override
   String get accountChoiceGoogleFailed =>
@@ -2707,11 +2707,11 @@ class AppLocalizationsUr extends AppLocalizations {
   String get cloudBackupAndSignOut => 'بیک اپ لے کر سائن آؤٹ کریں';
 
   @override
-  String get guestGooglePromptTitle => 'اپنی قضا کی پیش رفت محفوظ رکھیں';
+  String get guestGooglePromptTitle => 'گوگل سائن اِن استعمال کریں';
 
   @override
   String get guestGooglePromptMessage =>
-      'اپنی قضا کا بیک اپ بنانے اور ڈیوائس تبدیل کرنے پر اسے بحال کرنے کے لیے گوگل اکاؤنٹ منسلک کریں۔';
+      'اس ڈیوائس پر الگ مقامی ورک اسپیس استعمال کرنے کے لیے گوگل سے سائن اِن کریں۔ آپ کا قضا ڈیٹا خودکار طور پر بیک اپ یا منتقل نہیں ہوگا۔';
 
   @override
   String get cloudSetupUseGoogle => 'گوگل کے ساتھ جاری رکھیں';
@@ -3569,7 +3569,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get accountChoiceDescription =>
-      'Google se sign in karein taake aap ki progress mukhtalif dioaisz par mehfooz aur bahal ho ske';
+      'Google se sign in karein taake is device par apne account ki alag local workspace istemal karein. Aap ka Qaza data isi device par rahe ga.';
 
   @override
   String get accountChoiceContinueGoogle => 'Google ke saath jari rakhein';
@@ -3579,7 +3579,7 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
 
   @override
   String get accountChoiceGuestDescription =>
-      'Mehmaan ka Data isi device par mehfooz rehta he aap baad mein Google munsalik kar sakte hin';
+      'Guest data isi device par is local workspace mein mehfooz rehta hai.';
 
   @override
   String get accountChoiceGoogleFailed =>
@@ -5645,11 +5645,11 @@ class AppLocalizationsUrLatn extends AppLocalizationsUr {
   String get cloudBackupAndSignOut => 'Backup le kar sign out karein';
 
   @override
-  String get guestGooglePromptTitle => 'Apni Qaza progress mehfooz rakhein';
+  String get guestGooglePromptTitle => 'Google sign-in istemal karein';
 
   @override
   String get guestGooglePromptMessage =>
-      'Apni Qaza ka backup banane aur device badalne par bahal karne ke liye Google account connect karein.';
+      'Is device par alag local workspace istemal karne ke liye Google se sign in karein. Aap ka Qaza data khud-ba-khud backup ya transfer nahi hoga.';
 
   @override
   String get cloudSetupUseGoogle => 'Google ke saath jari rakhein';
