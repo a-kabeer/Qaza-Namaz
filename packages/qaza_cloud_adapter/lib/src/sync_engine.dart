@@ -496,7 +496,11 @@ class CloudSyncEngine {
             'The recovery snapshot remains available.',
           );
         }
-        final latest = await _remote.latest(allowInteractive: allowInteractive);
+        final latest = await traceAsyncStage(
+          flow: 'cloud_restore',
+          stage: 'recheck_remote_backup_after_recovery_snapshot',
+          action: () => _remote.latest(allowInteractive: allowInteractive),
+        );
         if (latest == null ||
             latest.backup.lineage.backupId != remote.backup.lineage.backupId ||
             latest.remoteVersion != remote.remoteVersion) {
