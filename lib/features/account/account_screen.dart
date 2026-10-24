@@ -727,7 +727,12 @@ class _CloudBackupCardState extends ConsumerState<_CloudBackupCard> {
             .state = false;
         container.invalidate(initialCloudBackupRetryProvider);
       }
-      if (mounted) setState(() => _busy = false);
+      if (mounted) {
+        setState(() {
+          _busy = false;
+          _operationStage = null;
+        });
+      }
     }
   }
 
