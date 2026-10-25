@@ -77,20 +77,19 @@ Additional safety/diagnostic changes:
 - [Google Identity App CI run 40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703): success. Account-choice preflight and full offline-app suite passed; Google identity host tests passed; the Google identity Android release APK built successfully.
 - These runs used Flutter `3.47.4`. CI-AM is **COMPLETE / GREEN** for this baseline timeout. The original failed runs remain above as historical evidence.
 
-## 5. Environment readiness
+## 5. Environment readiness and honest execution state
 
-Not yet verified in a runnable developer environment:
-- Flutter/Dart and Android SDK matching the repository's configured toolchain.
-- Docker and Supabase CLI for local Supabase testing.
-- PowerSync local/hosted development service access.
-- Android emulator or physical device for encrypted database and release smoke tests.
-- Safe local/CI secret storage for test credentials.
+Official PowerSync documentation confirms a local-development route that self-hosts Supabase and PowerSync with Docker; a public sample repository includes a Supabase demo. Therefore, a hosted project, paid plan, or production credential is not inherently required for the PoC:
+- https://docs.powersync.com/integrations/supabase/local-development
+- https://github.com/powersync-ja/self-host-demo
 
-GitHub Actions successfully ran the root Flutter tests, the offline-app test suite, Google identity host tests, and the Android host APK build. This session still has no local checked-out working tree/Flutter executable for direct shell execution, and Docker/Supabase CLI, an Android emulator/device, and the PowerSync service remain unavailable for the Run A compatibility PoC.
+**Actual execution status: NOT RUN.** This audit has not executed Docker Compose, Supabase CLI, clean dependency resolution, Android emulator tests, or PowerSync/Drift encryption tests. Existing GitHub Actions prove the current app/CI baseline only; they do not prove that the PoC toolchain is present or that sync compatibility works. Start with PoC-0 on an isolated branch, capture actual command versions/results, then run each experiment in ADR-001's ledger. Do not state that a tool is available until its command output is captured.
 
-## 6. Architecture research and decision still pending
+The PoC should use only disposable local Docker volumes, synthetic users/data and fresh test keys. Do not configure a hosted service, add a billing subscription, reuse app keys/database files, or put secrets into Git.
 
-No sync-engine choice has been made. Run A must verify current official package versions/releases at execution time and perform the focused PowerSync spike, prioritizing encryption and Drift/SQLite integration. If the first encryption option fails, test the other supported documented option before rejecting PowerSync. Compare custom synchronization as a fallback, including implementation and operating costs.
+## 6. Architecture research summary and decision state
+
+PowerSync + Supabase is the first option to test in a local PoC; it is not selected for production. ADR-001 is the single source of the options analysis, version snapshot, privacy/security risks, workspace alternatives, Qaza conflict policy candidate, estimated costs and quantified PoC/no-go criteria. If the first documented encryption option fails, test the alternate documented cipher option before rejecting PowerSync. Custom sync remains the fallback, with higher implementation/testing/operational burden.
 
 The ADR must address:
 - One active authenticated cloud account per installation.
@@ -102,13 +101,15 @@ The ADR must address:
 - Cost and operational burden.
 - Explicit criteria for switching to custom sync.
 
-## 7. Current Run A result and remaining blocker
+## 7. Current Run A status
 
-1. **COMPLETE — source inventory and baseline:** repository, encryption opener/key store, Drift schema, database manager/workspace routing, Google identity/session boundary, manifests and CI were inspected. The current main SHA is recorded at the top of this report.
-2. **COMPLETE — official-docs research:** see Section 8 and the proposed [ADR-001](adr-001-supabase-powersync-candidate.md). Package versions and service pricing are dated snapshots and must be rechecked before provisioning.
-3. **COMPLETE — comparison and proposed architecture:** PowerSync + Supabase is the first isolated proof-of-concept candidate; custom sync is the fallback. The ADR is PROPOSED, not an approved decision.
-4. **NOT RUN — runtime compatibility proof:** current audit tools did not provide a local source checkout/executable Flutter runtime, Docker/Supabase CLI, Android emulator/device or PowerSync project. Existing GitHub CI verifies the current app baseline only. Encryption, Drift integration, offline replay and cross-account isolation remain unproven.
-5. **REQUIRED — owner approval:** do not implement backend or change production app behavior until the PoC passes its acceptance gates, the ADR is revised to Accepted/Rejected with evidence, and the owner explicitly approves.
+**Run A: OPEN — blocked on PoC execution.** Research and candidate architecture are documented in [ADR-001](adr-001-supabase-powersync-candidate.md). No sync engine is accepted and no backend code has been implemented.
+
+1. **COMPLETE — repository/code inventory:** encrypted key store/database opener, Drift schema/DAO shape, workspace manager/registry, session/Google identity boundaries, root/host manifests and architecture scripts inspected.
+2. **COMPLETE — official-docs/option research:** PowerSync encryption and upload queue, local Docker setup, Sync Streams, Drift integration package, Supabase Auth/RLS and qualitative costs recorded in ADR-001.
+3. **OPEN — topology and Qaza conflict policy:** choose W1/W2 based on actual DAO/workspace impact and establish append-only completion/reversal semantics before sync tests.
+4. **NOT RUN — POC-0 through POC-8:** local execution is possible in principle without a hosted service. No command/test result is claimed until recorded; keep all tests on a throwaway branch with synthetic data and check-only formatting.
+5. **REQUIRED — owner approval:** do not implement backend or change production app behavior until PoC evidence has been added, ADR status has a defensible decision, and the owner explicitly approves.
 
 ## 8. Official documentation research (2026-10-25)
 
