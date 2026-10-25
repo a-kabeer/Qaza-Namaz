@@ -194,7 +194,7 @@ All official documentation, version snapshots, candidate options, security impli
 - Run A closes only when every ledger row has an evidence-backed result (including POC-GOOGLE, or an explicitly owner-approved written deferral), ADR-001 is revised to **Accepted** or **Rejected**, and the owner explicitly decides whether Run B is authorized. No backend/app implementation is approved while this gate is open.
 
 
-See the authoritative list of POC-0 through POC-8 plus POC-GOOGLE, detailed commands, pass/fail criteria, timebox, licensing gate and exit conditions in [ADR-001 §9](adr-001-supabase-powersync-candidate.md). All experiments remain NOT RUN until exact commands, PoC SHA, CI run URL where applicable and evidence summary are recorded. [Stable ADR commit permalink](https://github.com/a-kabeer/Qaza-Namaz/blob/b2bbb20fb09f3492d306dcedecff9518bfe08300/docs/architecture/adr-001-supabase-powersync-candidate.md).
+See the authoritative list of POC-0 through POC-8 plus POC-GOOGLE, detailed commands, pass/fail criteria, timebox, licensing gate and exit conditions in [ADR-001 §9](adr-001-supabase-powersync-candidate.md). All experiments remain NOT RUN until exact commands, PoC SHA, CI run URL where applicable and evidence summary are recorded. [Stable ADR commit permalink](https://github.com/a-kabeer/Qaza-Namaz/blob/32b91d0ddccdeac1971bf14f4d98360573c525a2/docs/architecture/adr-001-supabase-powersync-candidate.md).
 
 ## Current main CI baseline
 
