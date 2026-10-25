@@ -47,4 +47,4 @@ The first CI run is expected to generate `pubspec.lock` and upload it as a short
 - Do not alter the root app manifest/lockfiles, database schema, or app behavior.
 - Do not use personal or production credentials, nor create a hosted/paid service.
 - Never weaken the root architecture checkers to make an experiment pass.
-- A passing POC-0 does not mean encryption, data sync, RLS, Google Auth or any later PoC has passed.
+- A passing POC-0 does not mean data sync, RLS, Google Auth or every later PoC has passed. The CI workflow additionally runs synthetic encrypted-database tests on a Linux runner and in an Android emulator, including a release APK build.
