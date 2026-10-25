@@ -183,6 +183,7 @@ All official documentation, version snapshots, candidate options, security impli
 - **Workspace topology (W1 vs W2):** OPEN; POC-1 tests minimum encryption in both layouts; decide after POC-0 and POC-2, before lifecycle experiments.
 - **Qaza completion/undo conflict policy:** OPEN; map append-only event candidate to current domain behavior and tests.
 - **PoC:** NOT RUN. Use an independently versioned package outside the production app tree; local self-hosted Docker is the intended zero-budget route, with a read-only CI fallback if the local toolchain is missing.
+- **Windows PowerShell PoC runbook:** [powersync-poc-windows-powershell-runbook.md](powersync-poc-windows-powershell-runbook.md) is drafted with isolated setup, reference stack startup, encryption/Drift checks, account-isolation experiments and evidence capture. This is documentation only; runtime PoC remains NOT RUN.
 - **ADR:** PROPOSED only; owner approval required before Run B.
 - **Implementation:** NOT APPROVED; no app/backend behavior may be changed by this documentation PR.
 
