@@ -10,7 +10,7 @@ EXPECTED = {
     "sqlite_async": "0.14.5",
     "drift_sqlite_async": "0.3.1",
     "drift": "2.35.0",
-    "sqlite3": "3.5.2",
+    "sqlite3": "3.6.0",
     "supabase_flutter": "2.18.3",
     "flutter_lints": "6.0.0",
 }
