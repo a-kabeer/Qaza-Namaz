@@ -184,26 +184,72 @@ jobs:
           cd "$POC_DIR"
           flutter test test/powersync_encryption_test.dart test/drift_powersync_adapter_test.dart --reporter expanded 2>&1 | tee "$EVIDENCE_DIR/powersync-drift-tests.txt"
 
+      - name: Upload POC-0 preflight evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: supabase-powersync-poc0-evidence-${{ github.run_id }}-preflight
+          path: ${{ github.workspace }}/poc0-evidence/
+          if-no-files-found: warn
+          retention-days: 14
+
+  android_smoke:
+    name: Android encrypted PowerSync runtime and release-build smoke test
+    needs: preflight
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    env:
+      POC_DIR: ${{ github.workspace }}/poc-checkout/poc/supabase_powersync
+      EVIDENCE_DIR: ${{ github.workspace }}/poc0-evidence
+
+    steps:
+      - name: Create evidence directory
+        shell: bash
+        run: mkdir -p "$EVIDENCE_DIR"
+
+      - name: Checkout isolated PoC commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          path: poc-checkout
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.47.4'
+          channel: stable
+          cache: true
+
+      - name: Download POC-0 preflight evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: supabase-powersync-poc0-evidence-${{ github.run_id }}-preflight
+          path: ${{ github.workspace }}/poc0-evidence/
+
       - name: Prepare disposable Android smoke project
         shell: bash
         run: |
           set -euo pipefail
           python3 "$POC_DIR/scripts/prepare_android_smoke.py" "$RUNNER_TEMP/powersync-android-smoke"
 
-      - name: Android encrypted PowerSync runtime and release-build smoke test
+      - name: Run Android encrypted runtime and release-build smoke test
+        timeout-minutes: 40
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
           arch: x86_64
           profile: pixel_6
           disable-animations: true
+          emulator-boot-timeout: 600
           script: bash "$POC_DIR/scripts/run_android_smoke.sh" "$RUNNER_TEMP/powersync-android-smoke" "$EVIDENCE_DIR"
 
-      - name: Upload POC-0 evidence
+      - name: Upload POC-0 Android evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: supabase-powersync-poc0-evidence-${{ github.run_id }}
+          name: supabase-powersync-poc0-evidence-${{ github.run_id }}-android
           path: ${{ github.workspace }}/poc0-evidence/
           if-no-files-found: warn
           retention-days: 14
