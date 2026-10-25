@@ -1,6 +1,7 @@
 # TP-GEN Progress Tracker — Supabase Offline-First Rebuild
 
-**Status:** Run A: OPEN, blocked on PoC execution; ADR-001 proposed, no backend implementation approved  
+**Status:** Run A: OPEN, blocked on PoC execution; ADR-001 proposed, no backend implementation approved
+**Run A gate:** OPEN — proceed with free, isolated local PoC only; do not start backend implementation.  
 **Last updated:** 2026-10-25 (Asia/Karachi)  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/supabase-run-a-adr`  
@@ -140,7 +141,7 @@ These requirements are accepted into the planning scope. They are design/test cr
 - **Phase 4 tests:** (1) Cancel signs out the newly authenticated account, preserves old local data, and exposes/syncs nothing during reconciliation; (2) an interrupted wipe is completed safely on next startup, including failure injection between each stage; (3) an upload with a mismatched owner is refused client-side and unauthorized server writes are denied by RLS.
 - **Phase 5 UI:** pending reconciliation/cancel flow and explicit guest adoption; local-data removal confirmation with actual pending-change count and irreversible-loss warning.
 - **Run A ADR:** ownership matrix, cancellation contract, wipe protocol, queued-change ownership, email/display-only policy, cloud-existing-data behavior, and architecture-specific proof for the chosen sync engine.
-- **Run C implementation:** only after Run A evidence is complete and the user explicitly approves the ADR.
+- **Run B implementation planning:** only after Run A evidence is complete and the user explicitly approves the ADR.
 - These criteria are planning requirements. They do not mean the ADR is decided or any app/backend implementation is complete.
 
 ## Run A: OPEN — blocked on PoC (updated 2026-10-25)
