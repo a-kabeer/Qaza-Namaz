@@ -174,7 +174,7 @@ Add the following packages to this scratch client only, using the exact versions
     flutter pub add --dev build_runner:2.16.1 drift_dev:2.35.0
     flutter pub get
 
-If dependency resolution fails, preserve the full resolver output and stop. Do not override constraints or force versions with dependency_overrides merely to obtain a green solve. Record actual resolved versions in pubspec.lock.
+If dependency resolution fails, preserve the full resolver output and stop. Do not override constraints or force versions with dependency_overrides merely to obtain a green solve. Record actual resolved versions in pubspec.lock. Review the license files for direct and transitive packages and the terms for the exact PowerSync deployment edition before recommending any hosted use; record the result without assuming a feature/pricing entitlement.
 
 Open the scratch client's pubspec.yaml and add this top-level build-hook configuration if it is absent:
 
@@ -188,6 +188,10 @@ This is the documented native encryption setup for PowerSync with SQLite3Multipl
 Confirm package resolution, then check for the encryption pragma only in the disposable PoC code. Official EncryptionOptions takes a key and supports SQLite3MultipleCiphers/SQLCipher; use the documented PowerSync constructor argument rather than manually issuing PRAGMA key on a connection owned by PowerSync:
 - https://pub.dev/documentation/powersync/latest/powersync/EncryptionOptions-class.html
 - https://pub.dev/documentation/powersync/latest/powersync/PowerSyncDatabase-class.html
+
+### Separate Google provider experiment
+
+The local starter's anonymous sign-in does not test the intended Google sign-in path. Keep POC-GOOGLE separate from the email/password or local anonymous account-isolation tests. It must verify Google provider linking/sign-in through Supabase Auth, stable Supabase user UUID behavior, cancellation during pending reconciliation, and same-owner session recovery. This experiment remains NOT RUN until the owner explicitly approves creation/configuration of a throwaway OAuth client. Do not use a production OAuth client or personal user data.
 
 ### Required test harness to implement in the scratch client
 
