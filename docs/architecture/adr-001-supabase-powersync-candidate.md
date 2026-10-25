@@ -47,11 +47,21 @@ Evaluate one encrypted local database managed by the selected engine, bound to e
 
 If this single-active-identity design cannot be implemented safely with the chosen sync engine, report the specific blocker and smallest experiment required. Do not silently expand v1 to multi-workspace architecture.
 
-### 3.2 Qaza conflict policy — prerequisite, not deferred
+### 3.2 Qaza conflict policy — fit the model to the existing domain
 
-Candidate model: represent each Qaza completion and undo as an immutable event with a globally unique client-generated UUID, owner UUID, prayer type, original prayer date, operation type/event lineage, client-created timestamp and schema version. Counts and remaining balances should be derived projections, not the authoritative mutable counter replicated with last-write-wins. An undo should append a compensating/reversal event referencing the completion it reverses; it should not erase an event already synced to another device. Uniqueness constraints should prevent the same logical event being applied twice.
+The audited `qaza_records` model represents one prayer for a particular user, prayer type, and original date. Each row has a stable ID and a mutable pending/completed state, completion metadata, and a record version; a uniqueness constraint exists over `(user_id, prayer_type, original_date)`. Separate tables represent additions, deletion/undo snapshots, profile-plan provenance/revisions, and daily-salah logs.
 
-This is a candidate, not yet a final domain decision. Map the actual existing complete/undo/revision behavior to the event model. Test duplicate completion from two devices, reversals, historical rows, profile target changes and prayer-plan edits. Prefer append-only records for factual events and an explicit conflict policy for mutable settings. Do not sync mutable per-prayer counters as authoritative state unless a conflict-free merge strategy is proven.
+**Provisional recommendation:** keep canonical prayer-state records with stable IDs and explicit version/conflict rules. Define completion, reversal/undo, edit, and deletion as explicit state transitions. Use append-only operation/event records where they add clear idempotency or auditability, but do not convert the whole ledger to event sourcing by default. Do not model the domain as a single mutable counter either.
+
+Before finalizing the cloud schema, trace every write path and multi-record transaction. Required synthetic tests:
+- Two devices complete or edit the same prayer record concurrently.
+- Two devices add distinct Qaza records independently.
+- Repeated/retried completion actions do not double-count.
+- Undo/reversal and deletion are not undone accidentally by stale sync data.
+- Bulk add, plan revisions, and daily-salah links remain consistent.
+- Unique-key collisions and version conflicts have deterministic behavior.
+
+Calculate derived counts from canonical state where practical. Never store a redundant count as separately authoritative unless the ADR proves how it remains consistent across offline devices. Keep profile/settings conflict handling separate from prayer-record state.
 
 ### 3.3 Upload/write protocol
 

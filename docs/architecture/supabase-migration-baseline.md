@@ -8,7 +8,7 @@
 
 ## 1. Repository state and current architecture
 
-The latest inspected remote `main` commit is `565d11f4db150ebcb64cb2cf5e96271821a8a997`, titled **“Remove Google Drive; keep Google identity and local storage.”**
+The audited remote `main` commit is `4e9747ed2005806ae81ede78ef2448af9b483aa7`, titled **“Fix account-choice CI timeouts and document Supabase migration baseline.”** Refresh the main SHA at the start of any future audit rerun.
 
 The repository's `AGENTS.md` confirms the application is pre-release and test data is disposable. It explicitly permits a clean storage redesign but still requires correct encryption, isolation, error handling, and meaningful tests. The current instruction text still mentions rebuilding Google authentication, per-account encrypted local databases, and Google Drive backup; this is stale relative to the current `main` commit and should be updated only as part of the approved architecture/cleanup work, not silently treated as a requirement.
 
@@ -63,6 +63,25 @@ The current code contains a database manager with a control database, a registry
 This is useful audit evidence but does not make per-account databases mandatory. The v1 product scope is one active cloud account per installation, multi-device sync, and local-only guest use. The ADR should compare a single encrypted local database bound to the current guest/authenticated identity against the selected sync engine's managed local database. Multi-account concurrent workspaces are out of scope unless the audit identifies a concrete requirement.
 
 The local-only guest adoption flow remains a product requirement. If an authenticated account already has cloud data, reconciliation must be explicit; no silent overwrite or merge.
+
+### Persistent data inventory: first-pass classification
+
+This classification is based on the inspected schema/DAO/migration code and must be refined in the ADR. It does not mean every existing local table should be copied to Postgres.
+
+| Current data/component | Observed shape | Initial v1 assessment |
+|---|---|---|
+| `qaza_records` | Stable ID; user ID; prayer type and original date; mutable pending/completed status; completion metadata; addition ID; record version; timestamps; unique key `(user_id, prayer_type, original_date)`. | Core cloud-eligible record. This is not a pure append-only event ledger: each row represents one Qaza prayer and its completion state can change. Keep stable identity and define explicit per-record conflict/version rules. |
+| `qaza_additions` | Groups records by a bulk/addition operation and stores mode/input snapshot/revision/timestamps. | Potentially cloud-eligible if needed for user-visible grouping, edit and history semantics. Inspect writes before final schema design. |
+| `qaza_deletion_actions` and record snapshots | Deletion/undo lifecycle with record snapshots and version/recovery semantics. | Determine which records are domain-level actions worth syncing versus local transactional recovery state. Do not replicate internal recovery machinery blindly. |
+| `qaza_profile_plan_provenance`, `account_profiles`, `account_plan_revisions` | Profile/plan revision and provenance data, including payloads and operation/writer metadata. | Separate current editable settings from immutable plan revisions and local writer metadata. Sync only the domain fields needed for cross-device recovery. |
+| `daily_salah_logs` | One row per user/date/prayer type with status and links to Qaza records/completion IDs. | Candidate cloud data if cross-device recovery includes daily tracking; test relationship integrity with Qaza records. |
+| `local_accounts`, `app_session_state`, `device_metadata` | Local account registry, session/workspace selection, device instance and database-routing flags. | Device/runtime bookkeeping, not automatic cloud entities. Reduce for the fixed one-active-account v1 model. |
+| `meta_store`, `workspace_sync_metadata`, revision triggers, operation journals and deletion holds | On-device onboarding, revisions, routing, recovery and workspace-lifecycle metadata. | Local implementation infrastructure. Re-design from the selected engine's needs; don't mirror wholesale to the cloud. |
+| `local_recovery_snapshots` | Encrypted device-local recovery snapshots for destructive restore. | Keep local unless the approved backup/recovery design explicitly requires otherwise. |
+| Derived analytics/counts and prayer calculations | Aggregates/computed results over records or settings. | Recompute locally where practical; avoid redundant authoritative copies. |
+| Session tokens and encryption keys | Authentication and cryptographic secrets. | Never store as cloud domain records or diagnostics. Use secure platform storage and document key-loss/recovery behavior. |
+
+The repository has repository/DAO boundaries plus custom SQL mutation paths. Do not assume all changes can be captured by a single generic event log. Enumerate multi-row operations such as bulk creation, completion/reversal, deletion/undo, and profile/plan revisions. Decide which records are authoritative domain state, which are audit/idempotency operations, and which are derived or device-local.
 
 ## 4. CI-AM baseline audit and verified fix
 
