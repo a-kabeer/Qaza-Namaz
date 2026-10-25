@@ -266,3 +266,16 @@ Next:
 - Supabase RLS and pgTAP guidance: https://supabase.com/docs/guides/database/postgres/row-level-security
 - Supabase pricing: https://supabase.com/pricing
 - PowerSync pricing: https://powersync.com/pricing
+
+
+## 12. Review addendum — explicit blockers and clarifications (2026-10-25)
+
+- **Workspace model remains a gate.** Before sync experiments beyond dependency resolution, POC-0 compares one encrypted workspace plus explicit detach/wipe with separate encrypted DB/key per owner. It must specify Guest after sign-out and Guest data handling when the user chooses Restore. No silent owner change, data loss or queue rebind.
+- **Qaza conflict model is a prerequisite.** Append-only completion/reversal events with stable UUIDs and derived counts are the leading candidate; real DAO/domain behavior and undo/revision semantics still need mapping. Use a transaction/RPC for expected-revision writes rather than assuming ordinary REST upsert is compare-and-swap.
+- **Auth/deletion:** expired or revoked auth pauses sync but retains owner-bound local data and queue for same-owner re-auth. Same email from different provider identities is not sufficient to merge accounts. Cloud account deletion runs server-side; deleted or re-created auth identities must not accept old queued writes.
+- **Key loss / Android backup:** test database-only restore, keystore key mismatch and reinstall/device transfer. Never overwrite unreadable ciphertext or silently create a new empty ledger. Define OS-backup exclusion or a deliberate recoverable key strategy.
+- **Sensitive data:** prayer completion history can reveal religious practice. Data minimization, retention, logging, access and service region need explicit treatment. Application-layer payload encryption/E2EE is an open decision and is not implemented by this PoC.
+- **Pending queue count:** verify a supported PowerSync queue-count/status API for in-flight, retrying and permanent errors. Unknown must be displayed as unknown, not zero; destructive behavior must be safe even when an exact count is unavailable.
+- **Boundaries:** run `tools/offline_architecture_check.py` and `tools/phase_boundary_check.py` on the disposable PoC. Cloud integration must not violate the one-way Phase 1 -> Phase 2 boundary.
+- **Free local path:** PowerSync documents a Docker self-hosted Supabase + PowerSync development flow, so a paid hosted project is not required in principle. Actual command/tool availability and test results remain NOT RUN.
+- **Research source of truth:** this ADR is the single source for sync architecture research/package snapshot/cost trade-offs. The tracker should link here rather than duplicate the research. Prices and package versions are dated snapshots and must be rechecked before provisioning.
