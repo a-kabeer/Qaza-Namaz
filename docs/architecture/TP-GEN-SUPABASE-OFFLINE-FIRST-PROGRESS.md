@@ -1,17 +1,19 @@
 # TP-GEN Progress Tracker — Supabase Offline-First Rebuild
 
-**Status:** Run A in progress; CI-AM timeout fix verified green; account-safety requirements tracked; PowerSync PoC and ADR remain open  
+**Status:** Run A: OPEN, blocked on PoC execution; ADR-001 proposed, no backend implementation approved
+**Run A gate:** OPEN — proceed with free, isolated local PoC only; do not start backend implementation.  
 **Last updated:** 2026-10-25 (Asia/Karachi)  
 **Repository:** `a-kabeer/Qaza-Namaz`  
-**Working branch:** `tp-gen/supabase-offline-first`  
-**Base commit:** `565d11f4db150ebcb64cb2cf5e96271821a8a997`  
+**Working branch:** `tp-gen/supabase-run-a-adr`  
+**Current documentation-review base:** `4e9747ed2005806ae81ede78ef2448af9b483aa7`  
+**Original architecture-baseline commit:** `565d11f4db150ebcb64cb2cf5e96271821a8a997`  
 **Purpose:** Living record for the Supabase architecture audit. Update after each meaningful audit, experiment, decision, test, or blocker. Do not mark a gate complete without evidence.
 
 ## Scope and guardrails
 
-- V1 supports one active authenticated cloud account per app installation; multi-device sync is required.
+- V1 supports one active authenticated cloud account per app installation; multi-device sync is required. Multi-account workspace switching is out of scope unless a concrete blocker is found and approved.
 - Local-only guest use remains supported, with explicit guest-to-cloud adoption.
-- Sign-out warns about pending changes, retains the encrypted workspace and queue, and suspends sync until the same account signs in again.
+- Sign-out warns about pending changes, allows sign-out, retains the encrypted workspace/key/queue owner-bound to that account, and suspends sync until the same account signs in again. Switching to another identity requires a separate explicit local-removal action first.
 - “Sign out and remove data from this device” is a separate explicit action; it removes local workspace data, key, queue, sync metadata, owner-binding metadata, sensitive cache, and local session. It does not delete cloud data.
 - Cloud-account deletion is separate. Any retained local copy becomes local-only; old queued work must not recreate deleted cloud data.
 - Guest and signed-in user messages must not promise cloud recovery unless a recoverable cloud copy exists.
@@ -23,25 +25,37 @@
 
 | Gate | Status | Evidence / notes |
 |---|---|---|
-| Run A — repository and CI baseline | COMPLETE | Remote main and both current workflow definitions inspected. Baseline report created. |
-| CI-AM — diagnose/fix baseline test timeouts | COMPLETE | Regression tests, full root test suite, offline-app suite, Google identity host tests, and Android host APK build passed in GitHub Actions runs [40170592701](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592701) and [40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703). |
-| Run A — environment readiness | PARTIAL / NOT VERIFIED | GitHub Actions verified Flutter tests and the Android host build. A local Windows validation, Docker/Supabase CLI setup, and PowerSync service/encryption PoC are still not verified. |
-| Run A — PowerSync/encryption/Drift PoC | NOT STARTED | Requires an executable environment; no compatibility claim made. |
-| Run A — custom-sync fallback and cost comparison | NOT STARTED | To complete after focused research. |
-| Run A — ADR | NOT STARTED | Must include evidence, package versions/date, account model, encryption/key recovery, costs, security, conflict rules, and fallback trigger. |
-| Human approval | REQUIRED | Stop after Run A and obtain explicit user approval before Run B/backend implementation. |
+| Run A — source/CI baseline | COMPLETE | Reviewed main at 4e9747ed2 and current CI workflow definitions. |
+| CI-AM — baseline test timeout repair | COMPLETE | Existing main's focused regressions and current CI are green; this validates only the app/CI repair, not sync compatibility. |
+| Run A — official-docs, options and cost research | COMPLETE — qualitative research | ADR-001 is the single source of research findings and cost snapshot. Recheck prices and terms before provisioning. |
+| V1 local workspace scope | FIXED PRODUCT REQUIREMENT | One active authenticated account per installation; prove single encrypted database bound to current Guest/cloud owner. Multi-account retained workspaces are out of scope unless a hard blocker is approved. |
+| Run A — Qaza event/conflict policy | OPEN — prerequisite | Proposed append-only completion/reversal event model and revision-checked RPC require mapping to real domain/test behavior. |
+| POC-0 — toolchain, isolated package, license/version checks and CI fallback | PARTIAL PASS | Read-only CI run 40200437779 passed dependency resolution, license inventory and unchanged architecture boundary checks. Lockfile artifact is not checked in yet; enforce-lockfile proof pending. |
+| POC-1 — encryption, wrong/missing key, plaintext header/Base64URL format | IN PROGRESS — Linux PASS | Linux encrypted database smoke tests passed in run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327). Android emulator and arm64 release build are running in [40201716063](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201716063). |
+| POC-2 — isolated Drift/data layer/schema and unchanged root architecture checks | IN PROGRESS — Linux PASS, warning recheck pending | Run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327): code generation succeeded with build_runner 2.16.2/drift_dev 2.35.2/analyzer 14.5.0; Drift reads/writes, watch propagation, reopen and queue count passed. A same-file handle warning was fixed in PoC commit `a4b73eca`; recheck pending. Root checks PASS. |
+| POC-3 — Qaza events/reversal/idempotency/revision RPC/queue status | NOT RUN | Unknown pending count must never appear as zero; classify permanent errors. |
+| POC-4 — local Docker sync, restart/offline replay and acknowledgement | NOT RUN | Use disposable local volumes, keys and synthetic data only. |
+| POC-5 — email/password test users, RLS, publication/Sync Streams and queue isolation | NOT RUN | Two-user server-side isolation is a blocking security gate. |
+| POC-6a — Guest adoption, existing cloud data, Restore, Cancel and Guest after sign-out | NOT RUN | No binding/exposure/upload before reconciliation decision. |
+| POC-6b — expiry/revocation, same-owner re-auth and permanent-error classification | NOT RUN | Retain owner-bound queue; a different user cannot claim it. |
+| POC-7a — key loss, Android backup/restore, reinstall/transfer | NOT RUN | Never silently replace unreadable data with an empty DB. |
+| POC-7b — crash-safe local wipe, cloud deletion and stale queued writes | NOT RUN | Local wipe is separate from server-side account/data deletion. |
+| POC-8 — Android builds, relevant tests and check-only formatting/root checks | NOT RUN | Do not use write-capable auto-format/push workflows for experiment evidence. |
+| POC-GOOGLE — Google-to-Supabase Auth, UUID stability and provider linking | NOT RUN | Requires explicit approval and a throwaway test OAuth client; email/password tests do not cover Google sign-in. |
+| Run A — ADR | PROPOSED, awaiting PoC evidence | ADR-001 documents the candidate and quantified no-go gates; not approved for implementation. |
+| Human approval before implementation | REQUIRED | Stop after Run A. Do not implement backend until PoC evidence and approved ADR are complete. |
 
 ## Repository baseline
 
 - Remote default branch: `main`.
-- Audited main SHA: `565d11f4db150ebcb64cb2cf5e96271821a8a997`.
-- Commit message: `Remove Google Drive; keep Google identity and local storage`.
-- Feature branch created from that SHA: `tp-gen/supabase-offline-first`.
+- Current main SHA for this review: `4e9747ed2005806ae81ede78ef2448af9b483aa7` (`Fix account-choice CI timeouts and document Supabase migration baseline`).
+- Original code-inspection baseline: `565d11f4db150ebcb64cb2cf5e96271821a8a997` (`Remove Google Drive; keep Google identity and local storage`).
+- Earlier planning branch `tp-gen/supabase-offline-first` was created from the original baseline; the current documentation-only review branch is `tp-gen/supabase-run-a-adr`.
 - Baseline report: `docs/architecture/supabase-migration-baseline.md`.
 - Root app uses Drift `^2.35.0`, SQLite `^3.5.2`, SQLite3MultipleCiphers hook, and `flutter_secure_storage` `^10.3.4`.
 - Root app database schema version is 26.
 - `apps/qaza_app_cloud` currently describes itself as Google Sign-In and local-only host; Supabase is not implemented.
-- Repository `AGENTS.md` confirms pre-release status and disposable test data. Some of its architecture-specific wording still mentions Google Drive backup and per-account databases; treat that as stale against current main and update it only with the approved redesign.
+- Repository `AGENTS.md` confirms pre-release status and disposable test data. Its storage-redesign wording still mentions Google Drive backup and per-account encrypted databases; treat it as stale where it conflicts with current main and update it after the architecture is approved.
 
 ## CI-AM — pre-implementation CI audit and fix
 
@@ -130,26 +144,18 @@ These requirements are accepted into the planning scope. They are design/test cr
 - **Phase 4 tests:** (1) Cancel signs out the newly authenticated account, preserves old local data, and exposes/syncs nothing during reconciliation; (2) an interrupted wipe is completed safely on next startup, including failure injection between each stage; (3) an upload with a mismatched owner is refused client-side and unauthorized server writes are denied by RLS.
 - **Phase 5 UI:** pending reconciliation/cancel flow and explicit guest adoption; local-data removal confirmation with actual pending-change count and irreversible-loss warning.
 - **Run A ADR:** ownership matrix, cancellation contract, wipe protocol, queued-change ownership, email/display-only policy, cloud-existing-data behavior, and architecture-specific proof for the chosen sync engine.
-- **Run C implementation:** only after Run A evidence is complete and the user explicitly approves the ADR.
+- **Run B implementation planning:** only after Run A evidence is complete and the user explicitly approves the ADR.
 - These criteria are planning requirements. They do not mean the ADR is decided or any app/backend implementation is complete.
-
-## Next actions
-
-1. **COMPLETE — CI-AM:** test harness async setup/teardown fix verified; all four regression tests, full root and offline suites, Google identity host tests, and Android APK build passed in runs 40170592701 and 40170592703.
-2. Complete remaining source inventory and environment checks.
-4. Verify current official package versions/release notes.
-5. Run the focused PowerSync/encryption/Drift compatibility spike in an isolated throwaway location. If one encryption option fails, test the other supported documented option before rejecting PowerSync.
-6. Compare custom sync as fallback, including cost and operational burden.
-7. Create the ADR and present evidence to the user.
-8. **Stop for explicit approval. Do not begin backend implementation before approval.**
 
 ## Latest CI and branch state
 
-- Latest branch head: `c4f0004b960b5afe9a0c3ce39b4f09ae28d77fee` (`style: format Dart sources`, generated by the workflow's formatter).
-- Verified green root Flutter CI: [run 40170592701](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592701).
-- Verified green Google Identity App CI: [run 40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703).
-- Both current workflows passed the account-choice preflight. The root full test-with-coverage suite and the offline-app full suite passed; the Google identity host tests and Android APK build also passed.
-- Supabase is not implemented. No PowerSync encryption/Drift PoC has run, no ADR decision has been made, and explicit user approval is still required before Run B/backend implementation.
+- Main after PR #351: 4e9747ed2005806ae81ede78ef2448af9b483aa7.
+- [Flutter CI on the merged main commit — run 40172042979](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042979): completed successfully.
+- [Google Identity App CI on the merged main commit — run 40172042972](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042972): completed successfully.
+- These runs verify the merged test/CI repair, **not** PowerSync, Supabase, encryption interoperability, two-user isolation or cross-device conflict behavior.
+- Supabase is not implemented; no PowerSync PoC has run. The proposed ADR remains unapproved.
+- Documentation branch `tp-gen/supabase-run-a-adr` was created from main at `4e9747ed2`; it contains ADR/tracker/baseline documentation only. Original prior planning branch `tp-gen/supabase-offline-first` began at `565d11f4d`; that earlier SHA is the code-inspection baseline, not the current main HEAD.
+- [Flutter CI run 40178245177](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40178245177) on documentation branch commit `b17bb2fce735fc4f41509ff8126152b893f2ad4a` completed successfully: Analyze, test, and offline architecture checks; Android release artifacts; Android offline startup smoke test all passed. This is app/repository regression evidence only, not a PoC result.
 
 ## Change log
 
@@ -161,3 +167,47 @@ These requirements are accepted into the planning scope. They are design/test cr
 - 2026-10-25: Fixed the account-choice test harness by running native filesystem/Drift setup and teardown through `tester.runAsync`; replaced `pumpAndSettle()` waits with bounded UI waits.
 - 2026-10-25: Added CI preflight commands to run each failing account-choice test individually before generated-code work/full suite.
 - 2026-10-25: CI-AM verified green: both relevant workflows passed the focused tests; root and offline full suites passed; Google identity host tests and APK build passed.
+
+
+
+- 2026-10-25: Incorporated the external review: added single-active-account v1 topology gate; Qaza append-only completion/reversal candidate; Auth expiry/deletion and provider-linking cases; key-loss/Android backup; sensitive-data treatment; queue-count requirement; local self-host PoC path; quantified no-go triggers; and POC-0 through POC-8 ledger. Runtime experiments remain NOT RUN.
+- 2026-10-25: Applied second review and recorded the subsequent green branch CI run `40178245177` for commit `b17bb2fce735fc4f41509ff8126152b893f2ad4`. All app CI jobs passed; Supabase/PowerSync PoC experiments remain NOT RUN.
+## Research source of truth
+
+All official documentation, version snapshots, candidate options, security implications and cost notes belong in [ADR-001](adr-001-supabase-powersync-candidate.md). This tracker records current gate status and links the source of truth to avoid duplicating research that can drift. The [migration baseline](supabase-migration-baseline.md) records repository facts and environment readiness.
+
+## Run A: OPEN — current status
+
+- **Source inventory and baseline:** COMPLETE.
+- **Official-docs and qualitative options review:** COMPLETE; details live in ADR-001.
+- **Workspace topology:** FIXED PRODUCT REQUIREMENT — v1 has one active Guest or authenticated cloud identity per installation. Prove the single-active-account model; retained multi-account workspaces are out of scope unless a hard blocker is demonstrated and the owner approves expansion.
+- **Qaza completion/undo conflict policy:** OPEN; map append-only event candidate to current domain behavior and tests.
+- **PoC:** NOT RUN. Use an independently versioned package outside the production app tree; local self-hosted Docker is the intended zero-budget route, with a read-only CI fallback if the local toolchain is missing.
+- **Windows PowerShell PoC runbook:** [powersync-poc-windows-powershell-runbook.md](powersync-poc-windows-powershell-runbook.md) now pins the reviewed official starter commit `eb149604014f243c6379f50c99bfdc9fa086abf6`, verifies expected starter files/ports/container before proceeding, documents Node 20+/WSL 2/Docker Desktop setup, keeps one PowerShell session for the scratch key, restores path variables safely in a new shell, passes `POC_DB_KEY` to database-backed tests and Android builds, and uses exact Pub version constraints. Official package listings confirm the versions individually, but joint dependency resolution and all runtime experiments remain NOT RUN.
+- **ADR:** PROPOSED only; owner approval required before Run B.
+- **Implementation:** NOT APPROVED; no app/backend behavior may be changed by this documentation PR.
+
+## Experiment ledger
+## Run A evidence rules and closure
+
+- Define expected outcomes before executing each experiment. Every row needs **PASS**, **FAIL**, or **BLOCKED**, exact command(s), PoC commit SHA, CI run URL if used, and an evidence summary. **NOT RUN** never implies PASS.
+- Use an independently versioned PoC package with its own manifest/lockfile outside the production app package tree. Run `tools/offline_architecture_check.py` and `tools/phase_boundary_check.py` unchanged against a clean production checkout; record the intended future integration boundary separately.
+- If local tool/version checks fail, use a Docker-capable CI path that is read-only, formatting check-only and cannot auto-format/commit/push. Preserve the local setup failure as part of the evidence.
+- Overall execution timebox: two engineering days after Step 0 prerequisites are runnable. Any extension requires an explicit owner decision.
+- Run A closes only when every ledger row has an evidence-backed result (including POC-GOOGLE, or an explicitly owner-approved written deferral), ADR-001 is revised to **Accepted** or **Rejected**, and the owner explicitly decides whether Run B is authorized. No backend/app implementation is approved while this gate is open.
+
+
+See the authoritative list of POC-0 through POC-8 plus POC-GOOGLE, detailed commands, pass/fail criteria, timebox, licensing gate and exit conditions in [ADR-001 §9](adr-001-supabase-powersync-candidate.md). All experiments remain NOT RUN until exact commands, PoC SHA, CI run URL where applicable and evidence summary are recorded. [Stable ADR commit permalink](https://github.com/a-kabeer/Qaza-Namaz/blob/32b91d0ddccdeac1971bf14f4d98360573c525a2/docs/architecture/adr-001-supabase-powersync-candidate.md).
+
+## Current main CI baseline
+
+- [Flutter CI — run 40172042979](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042979): success on merged main commit \`4e9747ed2\`.
+- [Google Identity App CI — run 40172042972](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042972): success on the same commit.
+- These runs verify current app/CI behavior, not PowerSync or Supabase compatibility.
+
+
+- 2026-10-25: Run A execution started. Created isolated POC-0 CI/package; exact pins resolved and 126 packages were inventoried with 0 missing/unclassified license files. Clean production boundary and both unchanged architecture checks passed. Linux PowerSync encryption tests (correct-key reopen, encrypted header, wrong/missing key fail-closed) passed in run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327). Updated build_runner to 2.16.2 (its changelog supports analyzer 14.5.0) and drift_dev to 2.35.2; Drift adapter codegen and Linux integration tests passed in the same run. That run showed a duplicate PowerSync-handle warning; fixed test lifecycle in `a4b73eca`, rerun pending. No production manifest/source changes. Android runtime/release, committed lockfile/enforce-lock, Docker sync, two-user server isolation, adoption, session-expiry, key-loss, deletion, and Google OAuth remain unproven.
+
+- 2026-10-25: Added a Windows PowerShell runbook with isolation guards, Supabase CLI/local stack commands, loopback-bound PowerSync service setup, reference demo checks, encryption and Drift tests, two-user safety tests, Android build steps, and explicit stop conditions. The PoC itself remains not run.
+
+- 2026-10-25: Addressed runbook review: checked the official starter at its recorded SHA; validated referenced filenames, `PS_PORT=8080`, and `powersync_demo`; added Node/WSL2/Docker setup checks, PowerShell path/key recovery rules, dart-define propagation for tests/debug/release builds, and exact version constraints. Pub.dev lists every requested version individually; the combined dependency solver and all runtime PoC experiments still need to run locally.

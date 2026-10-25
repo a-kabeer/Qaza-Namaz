@@ -2,13 +2,13 @@
 
 **Audit date:** 2026-10-25 (Asia/Karachi)  
 **Repository:** `a-kabeer/Qaza-Namaz`  
-**Audited ref:** `main` at `565d11f4db150ebcb64cb2cf5e96271821a8a997`  
+**Audited ref:** `main` at `4e9747ed2005806ae81ede78ef2448af9b483aa7`  
 **Feature branch:** `tp-gen/supabase-offline-first`  
-**Scope:** Read-only baseline inspection plus a test-harness/CI repair for TP-GEN Run A. No application behavior changes made.
+**Scope:** Baseline source audit plus an isolated, disposable Run A PowerSync/Drift proof of concept and CI harness. No production application code, root manifests, or production behavior changed.
 
 ## 1. Repository state and current architecture
 
-The latest inspected remote `main` commit is `565d11f4db150ebcb64cb2cf5e96271821a8a997`, titled **“Remove Google Drive; keep Google identity and local storage.”**
+The audited remote `main` commit is `4e9747ed2005806ae81ede78ef2448af9b483aa7`, titled **“Fix account-choice CI timeouts and document Supabase migration baseline.”** Refresh the main SHA at the start of any future audit rerun.
 
 The repository's `AGENTS.md` confirms the application is pre-release and test data is disposable. It explicitly permits a clean storage redesign but still requires correct encryption, isolation, error handling, and meaningful tests. The current instruction text still mentions rebuilding Google authentication, per-account encrypted local databases, and Google Drive backup; this is stale relative to the current `main` commit and should be updated only as part of the approved architecture/cleanup work, not silently treated as a requirement.
 
@@ -36,7 +36,25 @@ These facts establish the current design, not proof that it is the best design f
 - Android release build and reopen/integrity tests using the selected encryption configuration.
 - Key loss, reinstall, backup/restore, and signed-out workspace behavior.
 
-No encryption compatibility claim has been made yet.
+### Executed Linux proof-of-concept evidence
+
+Isolated CI run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327) completed successfully using PowerSync 2.5.0, SQLite3MultipleCiphers (sqlite3mc build hook), Drift 2.35.0, drift_sqlite_async 0.3.1, sqlite_async 0.14.6, sqlite3 3.6.0, Flutter 3.47.4, and Dart 3.13.3.
+
+Passed tests:
+- Encrypted database create/write/close/reopen with the correct 32-byte Base64URL key.
+- Encrypted database header differs from the plaintext SQLite signature.
+- Wrong and missing keys fail closed; failed probes do not rewrite the encrypted test file.
+- Drift typed inserts and queries operate on the same PowerSync-managed table.
+- Drift watchers observe a row written directly through PowerSync.
+- PowerSync upload queue count rises on local writes and persists across a close/reopen.
+
+The same run also checked out clean production main at `4e9747ed2005806ae81ede78ef2448af9b483aa7`; `tools/offline_architecture_check.py` and `tools/phase_boundary_check.py` both passed unchanged.
+
+This proves useful Linux package-level compatibility, not Android native/runtime compatibility or a complete sync integration. The passing run emitted a warning because the test harness opened a second PowerSync handle before closing the first. The harness was corrected in a later PoC commit; the corrected run and a dedicated Android emulator + arm64 release build are still in progress.
+
+Dependency resolution succeeded for 126 entries. The inventory detector found license markers for all entries and no missing/unclassified license files. This is not legal approval; actual license texts and service terms require review. The resolved lockfile is still an artifact rather than committed PoC state, so reproducible `--enforce-lockfile` verification remains outstanding.
+
+PowerSync 2.5.0 requires Dart >=3.10, while the root application declares a minimum SDK constraint >=3.5. If selected, the supported minimum SDK contract must be reconsidered in the approved architecture decision.
 
 ## 3. Database and account architecture findings
 
@@ -45,6 +63,25 @@ The current code contains a database manager with a control database, a registry
 This is useful audit evidence but does not make per-account databases mandatory. The v1 product scope is one active cloud account per installation, multi-device sync, and local-only guest use. The ADR should compare a single encrypted local database bound to the current guest/authenticated identity against the selected sync engine's managed local database. Multi-account concurrent workspaces are out of scope unless the audit identifies a concrete requirement.
 
 The local-only guest adoption flow remains a product requirement. If an authenticated account already has cloud data, reconciliation must be explicit; no silent overwrite or merge.
+
+### Persistent data inventory: first-pass classification
+
+This classification is based on the inspected schema/DAO/migration code and must be refined in the ADR. It does not mean every existing local table should be copied to Postgres.
+
+| Current data/component | Observed shape | Initial v1 assessment |
+|---|---|---|
+| `qaza_records` | Stable ID; user ID; prayer type and original date; mutable pending/completed status; completion metadata; addition ID; record version; timestamps; unique key `(user_id, prayer_type, original_date)`. | Core cloud-eligible record. This is not a pure append-only event ledger: each row represents one Qaza prayer and its completion state can change. Keep stable identity and define explicit per-record conflict/version rules. |
+| `qaza_additions` | Groups records by a bulk/addition operation and stores mode/input snapshot/revision/timestamps. | Potentially cloud-eligible if needed for user-visible grouping, edit and history semantics. Inspect writes before final schema design. |
+| `qaza_deletion_actions` and record snapshots | Deletion/undo lifecycle with record snapshots and version/recovery semantics. | Determine which records are domain-level actions worth syncing versus local transactional recovery state. Do not replicate internal recovery machinery blindly. |
+| `qaza_profile_plan_provenance`, `account_profiles`, `account_plan_revisions` | Profile/plan revision and provenance data, including payloads and operation/writer metadata. | Separate current editable settings from immutable plan revisions and local writer metadata. Sync only the domain fields needed for cross-device recovery. |
+| `daily_salah_logs` | One row per user/date/prayer type with status and links to Qaza records/completion IDs. | Candidate cloud data if cross-device recovery includes daily tracking; test relationship integrity with Qaza records. |
+| `local_accounts`, `app_session_state`, `device_metadata` | Local account registry, session/workspace selection, device instance and database-routing flags. | Device/runtime bookkeeping, not automatic cloud entities. Reduce for the fixed one-active-account v1 model. |
+| `meta_store`, `workspace_sync_metadata`, revision triggers, operation journals and deletion holds | On-device onboarding, revisions, routing, recovery and workspace-lifecycle metadata. | Local implementation infrastructure. Re-design from the selected engine's needs; don't mirror wholesale to the cloud. |
+| `local_recovery_snapshots` | Encrypted device-local recovery snapshots for destructive restore. | Keep local unless the approved backup/recovery design explicitly requires otherwise. |
+| Derived analytics/counts and prayer calculations | Aggregates/computed results over records or settings. | Recompute locally where practical; avoid redundant authoritative copies. |
+| Session tokens and encryption keys | Authentication and cryptographic secrets. | Never store as cloud domain records or diagnostics. Use secure platform storage and document key-loss/recovery behavior. |
+
+The repository has repository/DAO boundaries plus custom SQL mutation paths. Do not assume all changes can be captured by a single generic event log. Enumerate multi-row operations such as bulk creation, completion/reversal, deletion/undo, and profile/plan revisions. Decide which records are authoritative domain state, which are audit/idempotency operations, and which are derived or device-local.
 
 ## 4. CI-AM baseline audit and verified fix
 
@@ -89,7 +126,7 @@ GitHub Actions successfully ran the root Flutter tests, the offline-app test sui
 
 ## 6. Architecture research and decision still pending
 
-No sync-engine choice has been made. Run A must verify current official package versions/releases at execution time and perform the focused PowerSync spike, prioritizing encryption and Drift/SQLite integration. If the first encryption option fails, test the other supported documented option before rejecting PowerSync. Compare custom synchronization as a fallback, including implementation and operating costs.
+No sync-engine choice has been made. Linux encrypted-database and Drift tests have passed, but the corrected-run warning recheck and Android emulator/release verification remain pending. Docker sync, two-user RLS/Sync Stream isolation, offline replay, adoption/reconciliation, session expiry, key-loss/backup, deletion, and Google identity have not yet been demonstrated. Continue the focused PoC, verify current official releases, compare custom sync as a fallback, and record costs before presenting the ADR.
 
 The ADR must address:
 - One active authenticated cloud account per installation.
@@ -103,12 +140,13 @@ The ADR must address:
 
 ## 7. Next steps
 
-1. **COMPLETE — CI-AM:** verified fix and green workflow evidence are recorded in Section 4.
-2. Complete the remaining source inventory and environment checks.
-3. Perform the focused PowerSync/encryption/Drift proof of concept in an isolated throwaway location.
-4. Document custom sync as the fallback and compare costs.
-5. Finalize the ADR and present the evidence to the user.
-6. **Stop for explicit approval. Do not begin backend implementation before approval.**
+1. **COMPLETE — CI-AM:** the historical account-choice test timeouts were fixed; green baseline workflow evidence is recorded in Section 4.
+2. **PARTIAL PASS — Linux PowerSync/Drift PoC:** encryption lifecycle, wrong/missing-key rejection, Drift interoperability, watchers, and queue-count behavior passed in disposable CI. Corrected warning check and Android runtime/release build remain pending.
+3. Run local Docker Supabase + PowerSync sync/restart/replay and two-user RLS/Sync Stream isolation experiments with synthetic users.
+4. Exercise guest adoption/cancel, permanent-failure handling, key-loss/restore, and deletion lifecycle where the isolated environment permits.
+5. Review package/service terms, SDK minimum constraints, and self-hosted versus hosted costs.
+6. Finalize the ADR and present evidence, remaining unknowns, and the recommendation.
+7. **Stop for explicit approval. Do not begin backend implementation before approval.**
 
 
 ## 8. Official documentation research (2026-10-25)
@@ -132,3 +170,21 @@ Initial research is recorded here, but it does not replace the required compatib
 ### Preliminary candidate assessment (not an ADR decision)
 
 PowerSync is the leading candidate to test first because it provides the synchronization queue and local SQLite model, which can avoid a custom sync engine. The largest unresolved risk is whether its supported encryption configuration, database lifecycle, and optional Drift integration can coexist cleanly with the app's current SQLite3MultipleCiphers/native dependencies and one-active-account requirement. If supported PowerSync configurations fail the focused PoC, compare the maintenance cost of a custom transactional outbox against using PowerSync without Drift. Do not select either option until the evidence is recorded.
+
+
+## 9. Run A proof-of-concept status (2026-10-25)
+
+| Experiment | Status | Evidence / remaining work |
+|---|---|---|
+| POC-0 dependencies and production boundary | PARTIAL PASS | [Run 40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327): 126 resolved entries, exact direct pins, no missing/unclassified license files, and both root architecture checkers pass. Checked-in lockfile and enforce-lock verification remain outstanding. |
+| POC-1 encrypted DB and key handling | Linux PASS; Android pending | Correct-key reopen, encrypted header, and wrong/missing-key fail-closed passed on Linux. Android runtime and arm64 release check are running in [40201716063](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201716063). |
+| POC-2 Drift integration | Linux PASS; corrected rerun pending | Typed Drift insert/query, watcher propagation, close/reopen and queue-count assertions passed. A duplicate-handle test warning was fixed in the isolated harness; rerun pending. |
+| POC-3 Qaza events, reversal/idempotency and mutable revision protocol | NOT RUN | Requires synthetic ledger protocol tests. |
+| POC-4 local Docker sync/restart/replay | NOT RUN | Requires isolated local Supabase + PowerSync services. |
+| POC-5 two-user security/Sync Streams | NOT RUN | Requires two disposable email/password users, RLS tests, and proof that streaming is user-scoped. |
+| POC-6 adoption/session failure paths | NOT RUN | Guest adoption/cancel, owner-bound queue, expired session, permanent failure. |
+| POC-7 key loss/backup/removal/deletion | NOT RUN | Android backup/restore and crash-safe deletion tests. |
+| POC-8 Android regression | IN PROGRESS | Android encrypted DB and arm64 release smoke tests are running in the workflow above. |
+| POC-GOOGLE | BLOCKED ON OWNER APPROVAL | Google ID-token auth through Supabase Auth remains untested pending approval for a disposable OAuth client. |
+
+The current assistant runtime lacks local Flutter, Dart, Docker, and Supabase CLI executables; hosted GitHub Actions is being used for reproducible experiments. No production app source or root dependency manifest has been modified.
