@@ -28,7 +28,7 @@ jobs:
       POC_CHECKOUT: ${{ github.workspace }}/poc-checkout
       POC_DIR: ${{ github.workspace }}/poc-checkout/poc/supabase_powersync
       POC_REL: poc/supabase_powersync
-      EVIDENCE_DIR: ${{ runner.temp }}/poc0-evidence
+      EVIDENCE_DIR: ${{ github.workspace }}/poc0-evidence
 
     steps:
       - name: Create evidence directory
@@ -171,6 +171,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: supabase-powersync-poc0-evidence-${{ github.run_id }}
-          path: ${{ runner.temp }}/poc0-evidence/
+          path: ${{ github.workspace }}/poc0-evidence/
           if-no-files-found: warn
           retention-days: 14
