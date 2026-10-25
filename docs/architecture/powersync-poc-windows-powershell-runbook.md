@@ -8,6 +8,15 @@
 
 **PowerShell session rule:** use one interactive PowerShell window for all phases, including key generation in Phase 5 and tests/builds in Phase 7. `flutter run` occupies the foreground; press `Ctrl+C` to stop it and return to the same prompt. Do not close that window before encrypted-database tests complete. If a new window is unavoidable, re-create path variables from existing folders, but do not regenerate a key for an existing encrypted database; see the recovery note after Phase 0.
 
+## V1 account scope
+
+V1 supports one active authenticated cloud account per installation. Do not implement retained per-account database/key workspaces or same-device multi-account switching without a concrete blocker and owner approval.
+
+- Sign-out warns about pending changes, allows sign-out, retains the encrypted workspace/key/queue bound to the same account, and suspends sync.
+- “Sign out and remove data from this device” is a separate, confirmed action. It removes only local data and does not delete cloud data. If pending queue count cannot be determined reliably, do not show zero; block destructive operation or require the documented unknown-state recovery choice.
+- Signing into a different account requires the explicit local-removal action first. The previous account's local data must never be shown as Guest data or uploaded under another identity.
+- Guest-to-cloud adoption remains explicit and resumable.
+
 ## Safety rules
 
 - Do all work under a new sibling scratch directory, not inside the Qaza Namaz repository.
@@ -295,7 +304,7 @@ Only after the encrypted local integration tests pass should the backend experim
 7. Switch from user A to user B while A has pending writes. Verify A's queue cannot be sent with B's JWT and B cannot view A's local data.
 8. Test deletion tombstones, delayed old writes and account-deletion behavior so offline updates cannot resurrect deleted rows.
 9. Test Guest adoption and cancel when the cloud account is empty and when it already has data. Cancel must sign out the pending account and expose/sync no local Guest data.
-10. Test sign-out preserving the local encrypted database and queue. Test local wipe separately with crash injection between each stage, verifying that the recovery marker is processed before any workspace opens and that local wipe never deletes cloud data.
+10. Test sign-out preserving the encrypted database/key/queue bound to the same account and suspending sync. Test “Sign out and remove data from this device” separately with crash injection between each stage, verifying that the recovery marker is processed before any workspace opens and that local wipe never deletes cloud data. For v1, signing into a different account requires this explicit removal first; multi-account retained workspaces are out of scope.
 
 Use pgTAP and supabase test db for database authorization checks. Do not declare the ADR accepted until the test reports/logs and the exact package lockfile are attached.
 

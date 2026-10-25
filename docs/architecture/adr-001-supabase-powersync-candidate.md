@@ -31,16 +31,21 @@ At the audited baseline:
 
 These design choices precede any hosted-backend or production implementation.
 
-### 3.1 Local workspace topology — evaluate both options before deciding
+### 3.1 V1 local single-active-account topology — one active cloud account per installation
 
-The workspace topology is a prerequisite decision. The current code uses a control database, registry-based workspace resolution, and per-workspace databases. That topology should not be retained automatically just because it exists today.
+**Product scope fixed by the owner:** v1 supports one active authenticated cloud account per app installation. Do not implement concurrent or retained multi-account workspace switching unless Run A proves the simpler design cannot meet a mandatory requirement and the owner approves an expansion.
 
-- **W1 — one local encrypted workspace per installation:** when switching from account A to B, sync for A stops and the app must explicitly detach A's workspace as local-only or ask for an explicit local wipe before B can start. Any pending queue must be retained in a quarantined owner-bound state or explicitly discarded only after a clear warning showing the actual count. If the count cannot be determined, show “Unable to verify pending changes,” never “0.” This is the simpler topology but has a more destructive user experience.
-- **W2 — separate encrypted DB file and key per owner:** A's encrypted data/queue can remain on the device while B uses a separate DB/key. This preserves more local data but retains registry, key/file lifecycle, account-routing and cleanup complexity.
+Evaluate one encrypted local database managed by the selected engine, bound to either a local-only Guest identity or one Supabase Auth UUID. Do not add a separate database/key/registry for every dormant cloud account as a default.
 
-The PoC Step 0 must inventory the real DB manager, registry, DAO/query/migration paths, local control state, queue isolation and architecture-checker constraints, then compare the actual implementation changes for W1 versus W2. Select a topology only after that evidence. Do not claim either is finalized yet.
+- **Initial Guest use:** a local-only ledger remains supported. There is no remote anonymous Auth requirement.
+- **Guest → cloud account:** show an explicit adoption/reconciliation step. Do not bind the database to the authenticated UUID or start upload until the user confirms the selected outcome. If the target account already has cloud data, present explicit choices; do not overwrite or merge silently.
+- **Sign-out with pending changes:** warn the user, allow sign-out, retain the encrypted workspace and queue bound to the original account, and suspend sync. Resume only when that same Supabase account signs in again. The ADR decides key protection, not whether the workspace is retained.
+- **Switching from Account A to B:** multi-account workspace switching is out of scope for v1. If A's local workspace is retained, B must not open or reuse it. Require the separate explicit action “Sign out and remove data from this device” before B can be activated. Warn that unsynced changes may be permanently lost. If the sync engine cannot provide a trustworthy pending-change count, show “Unable to verify pending changes” and do not pretend the count is zero.
+- **Sign-out to Guest:** never expose A's account-bound data or queue as Guest data. To start a new Guest workspace while A's retained workspace exists, require the same explicit local-removal action first.
+- **Local removal:** remove the local database and sidecars, encryption key, queue/sync metadata, owner binding, sensitive cache and local session; it does not delete A's cloud account or cloud data.
+- **Cloud data and pending queue:** a queued change is never re-attributed to another identity. Cloud account deletion remains separate and must make stale queued writes unable to recreate deleted cloud records.
 
-Regardless of topology, signing out as A and choosing Guest must stop A's cloud sync and must not expose A's authenticated workspace as an unowned Guest workspace. If Guest has local data and selects “Restore” over an existing cloud account, preserve the Guest dataset unchanged as a local-only workspace if W2 is selected; if W1 is selected, require an explicit export or removal decision before restoring. Never silently discard Guest data.
+If this single-active-identity design cannot be implemented safely with the chosen sync engine, report the specific blocker and smallest experiment required. Do not silently expand v1 to multi-workspace architecture.
 
 ### 3.2 Qaza conflict policy — prerequisite, not deferred
 
@@ -135,24 +140,24 @@ Prayer completion and missed-prayer history can reveal religious practice and sh
 
 Use stable event IDs, idempotent writes, owner validation and a durable queue. Retry transient network/service failures with backoff. Classify authorization, schema, constraint and invalid-payload failures as permanent until explicitly resolved; do not retry them forever or discard them silently. Acknowledge mutations only after server acceptance or documented permanent-rejection/quarantine handling.
 
-## 7. Account lifecycle and workspace topology
+## 7. V1 account lifecycle and local workspace scope
 
-The topology must be selected after the PoC inventories current dependencies; see Section 3.1. Both W1 and W2 must satisfy:
+V1 supports one active cloud account per installation, with local-only Guest use before cloud adoption. Multi-account switching and dormant per-account databases are out of scope unless Run A demonstrates a necessary requirement and the owner approves an expansion.
 
 | State | Required result |
 |---|---|
-| User A signs out intentionally | Stop A's sync; retain A's encrypted data/queue bound to A's Supabase UUID. |
-| User A token expires/revokes | Pause sync; retain data/queue; require re-authentication as the same owner. |
-| User switches from A to B | Never bind A's local DB or queue to B. W2 uses B's separate DB/key; W1 requires quarantining/detaching A or explicitly wiping it before B starts. |
-| User signs out A and selects Guest | Guest is local-only and isolated; it must not expose A's authenticated data or queue. |
-| Data-bearing Guest adopts A | Explicit confirmation and reconciliation; owner binding only after successful resolution, no sync while pending. |
-| Guest chooses Restore while local data exists | Preserve Guest data as separate local-only workspace in W2; under W1 require explicit export/removal before restore. |
-| A already has cloud data | Offer explicit restore, import/reconcile, or cancel; never silently merge or overwrite. |
-| Cancel during reconciliation | Sign out newly authenticated identity, preserve prior workspace, expose/sync nothing while pending. |
-| Wipe marker exists | Recover wipe before opening DB or exposing account data. |
-| A deleted; same email later signs up | New Auth UUID is a new identity; old queue/data are never attached on email match. |
+| Fresh installation / Guest | Use one local-only encrypted workspace. |
+| Guest adopts a new cloud account | Explicit adoption/reconciliation; keep the source intact until verification completes. |
+| Cloud account signs out | Warn if pending changes exist; allow sign-out; retain encrypted DB/key/queue bound to the same Supabase UUID; suspend sync. |
+| Same account signs in again | Unlock/reopen the retained workspace and resume its queue after valid authentication. |
+| A different account is selected | Do not open or rebind A's workspace under B. Require explicit “Sign out and remove data from this device” before B proceeds in v1. Show a strong warning for unsynced changes. |
+| User selects Guest after signing out | Do not expose an authenticated account's data as Guest data. Explicitly remove the retained account workspace first. |
+| “Sign out and remove data from this device” | Separate explicit confirmation; delete local workspace, DB sidecars, key, pending queue, sync metadata, owner binding, sensitive cache and local session. It does not delete cloud data. |
+| Network loss / token expiry | Network failure never signs the user out. Expiry pauses sync and preserves owner-bound state until the same user re-authenticates. |
+| Cloud account deletion | Server-side cloud data and Auth deletion is separate. Stale local queue entries must not recreate the account or its records. |
+| Guest or account adoption is canceled | Preserve original local data and keep the pending authenticated identity from seeing or syncing it. |
 
-A local wipe is a separate irreversible action: persist a marker outside the DB and key; delete the key first, then DB and SQLite sidecars, queue/sync metadata, owner binding, cached identity and local session; verify cleanup before clearing the marker. Startup retries interrupted wipes idempotently. Local wipe never deletes cloud data. Cloud deletion is a separate server-side operation.
+The implementation uses one active account context, not multiple active identities. The local database may be cleared when the user explicitly switches identities; the design must never silently discard data. If a trustworthy pending-queue count is unavailable, show an unknown-state warning and block destructive action until the user resolves it safely.
 
 ## 8. Cost, vendor and privacy assessment
 
@@ -190,9 +195,9 @@ Review the region and data-processing implications for both Supabase Postgres an
 5. Run `tools/offline_architecture_check.py` and `tools/phase_boundary_check.py` **unchanged against the clean production-repository checkout** as a separate boundary check. Do not weaken, patch, or special-case either checker to accommodate the PoC package. Record separately which production package/phase boundary a future approved integration would cross; do not treat a checker result as proof that the PoC itself passed.
 6. Check current package versions, minimum SDK requirements, license files and service terms before pinning dependencies. Record the selected versions and clean resolution result.
 
-### Experiment checkpoint — workspace topology (W1 vs W2)
+### Experiment checkpoint — fixed v1 account scope
 
-After Step 0 and POC-2, the owner/reviewer must choose W1 (one encrypted workspace with explicit detach/wipe before rebinding) or W2 (a separate encrypted DB/key per owner) **before the account lifecycle and ownership experiments**. Record the actual DAO/query/migration counts, affected files, Guest-after-sign-out behavior, Restore behavior for an account that already has cloud data, and pending-queue isolation for both designs. POC-1 must exercise the minimum encryption/open/close/wrong-key behavior for both W1 and W2 shapes so the choice is not based on an untested assumption. If evidence does not distinguish them, keep the decision OPEN.
+The owner has fixed the v1 product scope to one active authenticated cloud account per app installation. Do not compare or implement a multi-account/per-owner database topology as a routine design option. The PoC should prove one encrypted local database bound to the active Guest or cloud identity, owner-bound pending changes, retained sign-out, safe explicit local removal, and clean restore/adoption. If this simpler model fails a mandatory requirement, stop and request owner approval before adding multi-workspace architecture.
 
 ### Step 1 / POC-1 — encrypted database and key-format gate
 
@@ -229,7 +234,7 @@ After Step 0 and POC-2, the owner/reviewer must choose W1 (one encrypted workspa
 
 - Test adoption into an empty cloud account; an account with existing cloud data; Restore; Cancel; and Guest behavior after sign-out.
 - During reconciliation, do not bind/expose/sync local data until the choice is resolved. Cancel signs out the newly authenticated account and preserves the prior local workspace; no data may be exposed or uploaded during the pending decision.
-- Compare the observed behavior to the previously selected W1/W2 topology.
+- Compare the observed behavior to the previously selected single-active-account topology topology.
 
 ### Step 6b / POC-6b — session expiry, revocation, and permanent failure
 
@@ -258,13 +263,13 @@ After Step 0 and POC-2, the owner/reviewer must choose W1 (one encrypted workspa
 ### Pass/fail rules, overall timebox, and Run A exit
 
 - Each experiment must have a written expected result before execution, a result of **PASS**, **FAIL**, or **BLOCKED**, the exact command(s), PoC commit SHA, CI run URL if used, and a brief evidence summary. **NOT RUN** is not a pass and must never be inferred from a related test or app CI run.
-- POC-1 passes only if correct-key reopen/integrity work, wrong/missing-key open fails closed, the file has no plaintext SQLite header, Base64URL key handling is verified, and both W1/W2 minimum layouts are covered.
+- POC-1 passes only if correct-key reopen/integrity work, wrong/missing-key open fails closed, the file has no plaintext SQLite header, Base64URL key handling is verified, and the single-active-identity database model is covered.
 - POC-2 passes only if the declared Drift operations/migrations work in the isolated package, clean resolution is reproducible, and the two root checkers pass unchanged against the clean production checkout. Any checker failure is recorded as a boundary finding, not fixed by weakening the checker.
 - POC-3 through POC-7b pass only when their described state-transition, integrity, replay, ownership/security, error-classification and deletion assertions are supported by captured output/tests. Any cross-user read/write, false-zero queue count, silent data reset, or deleted-account resurrection is a blocking FAIL.
 - POC-8 passes only when required Android builds, relevant tests and unchanged root checks complete successfully on the recorded SHA.
 - POC-GOOGLE passes only when Google ID-token sign-in, stable UUID, identity-linking semantics and repeat sign-in are demonstrated with the throwaway OAuth setup. If OAuth cannot be provisioned, it remains BLOCKED/NOT RUN, not passed.
 - Timebox the Run A execution to **two engineering days total** after Step 0 is runnable. Any experiment needing more time must record what remains, evidence so far and the reason; further work requires an explicit owner decision to extend the timebox. Missing prerequisites do not count as passing tests.
-- **Run A closes only when every experiment ledger row has a supported result/evidence (including the separate Google identity experiment, or an explicit owner-approved written deferral), the ADR is revised to Accepted or Rejected based on evidence, and the owner explicitly decides whether to authorize Run B.** Do not implement backend or production behavior while this gate is open.
+- **Run A closes only when each required experiment has supported evidence, the Google identity experiment is completed or explicitly deferred by the owner, the ADR is updated to reflect findings, and the owner explicitly decides whether to authorize Run B. The one-active-account v1 scope and sign-out retention policy are fixed product requirements, not open ADR decisions.** Do not implement backend or production behavior while this gate is open.
 
 ### Quantified NO-GO triggers
 
@@ -274,9 +279,9 @@ PowerSync is NO-GO if encrypted Android release cannot reliably create/reopen an
 
 | ID | Experiment | Result | Command / PoC SHA / CI run / evidence | Gate |
 |---|---|---|---|---|
-| POC-0 | Toolchain, package/license/version checks and CI fallback decision | NOT RUN | Not yet recorded | First prerequisite |
-| POC-1 | Encryption, W1/W2 layouts, wrong key, plaintext-header and 32-byte Base64URL key handling | NOT RUN | Not yet recorded | Blocking |
-| POC-2 | Isolated Drift/SQL/migration behavior and unchanged root architecture checks | NOT RUN | Not yet recorded | Blocking; then W1/W2 checkpoint |
+| POC-0 | Toolchain, package/license/version checks and CI fallback decision | PARTIAL PASS | CI preflight/clean production architecture checks passed at run 40200437779; lockfile is artifact-only and enforce-lockfile proof remains outstanding. Run 40200668390 exposed build_runner/analyzer incompatibility; pinning analyzer 14.5.0 and rerunning. | First prerequisite |
+| POC-1 | Encrypted single-active-identity database, wrong/missing key, plaintext-header and 32-byte Base64URL key handling | IN PROGRESS | Linux smoke test passed on PoC commit 85f5c031; rerunning after Drift-toolchain fix. Android runtime/release check remains outstanding. | Blocking |
+| POC-2 | Isolated Drift/SQL/migration behavior and unchanged root architecture checks | IN PROGRESS | Adapter test added; first codegen attempt blocked by analyzer 14.6.0 and build_runner 2.16.1 incompatibility. Pin updated in PoC and awaiting CI rerun. Root architecture checkers passed. | Blocking |
 | POC-3 | Qaza events, reversal/idempotency, expected-revision RPC and queue status/count | NOT RUN | Not yet recorded | Blocking |
 | POC-4 | Local Docker sync, offline writes, process restart, replay and acknowledgement | NOT RUN | Not yet recorded | Blocking |
 | POC-5 | Email/password test users, RLS, publication/Sync Streams and owner-bound queue | NOT RUN | Not yet recorded | Blocking security gate |
