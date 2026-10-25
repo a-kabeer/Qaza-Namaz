@@ -10,7 +10,7 @@
 | `sqlite_async 0.14.5` | MIT | [pub.dev package versions/license metadata](https://pub.dev/packages/sqlite_async/versions) |
 | `drift_sqlite_async 0.3.1` | MIT | [pub.dev package versions/license metadata](https://pub.dev/packages/drift_sqlite_async/versions) |
 | `drift 2.35.0` | MIT | [pub.dev package license](https://pub.dev/packages/drift/license) |
-| `sqlite3 3.5.2` | MIT | [pub.dev package versions/license metadata](https://pub.dev/packages/sqlite3/versions) |
+| `sqlite3 3.6.0` | MIT | [pub.dev package versions/license metadata](https://pub.dev/packages/sqlite3/versions) |
 | `supabase_flutter 2.18.3` | MIT | [pub.dev package versions/license metadata](https://pub.dev/packages/supabase_flutter/versions) |
 | `flutter_lints 6.0.0` | BSD-3-Clause | [pub.dev package versions](https://pub.dev/packages/flutter_lints/versions) |
 
