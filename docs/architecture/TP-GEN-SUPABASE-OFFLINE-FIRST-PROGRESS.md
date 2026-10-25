@@ -180,7 +180,7 @@ All official documentation, version snapshots, candidate options, security impli
 
 - **Source inventory and baseline:** COMPLETE.
 - **Official-docs and qualitative options review:** COMPLETE; details live in ADR-001.
-- **Workspace topology (W1 vs W2):** OPEN; V1 topology fixed: one active Guest/cloud identity per installation. Prove this model; retained multi-account workspaces are out of scope unless approved.
+- **Workspace topology:** FIXED PRODUCT REQUIREMENT — v1 has one active Guest or authenticated cloud identity per installation. Prove the single-active-account model; retained multi-account workspaces are out of scope unless a hard blocker is demonstrated and the owner approves expansion.
 - **Qaza completion/undo conflict policy:** OPEN; map append-only event candidate to current domain behavior and tests.
 - **PoC:** NOT RUN. Use an independently versioned package outside the production app tree; local self-hosted Docker is the intended zero-budget route, with a read-only CI fallback if the local toolchain is missing.
 - **Windows PowerShell PoC runbook:** [powersync-poc-windows-powershell-runbook.md](powersync-poc-windows-powershell-runbook.md) now pins the reviewed official starter commit `eb149604014f243c6379f50c99bfdc9fa086abf6`, verifies expected starter files/ports/container before proceeding, documents Node 20+/WSL 2/Docker Desktop setup, keeps one PowerShell session for the scratch key, restores path variables safely in a new shell, passes `POC_DB_KEY` to database-backed tests and Android builds, and uses exact Pub version constraints. Official package listings confirm the versions individually, but joint dependency resolution and all runtime experiments remain NOT RUN.
