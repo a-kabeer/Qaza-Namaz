@@ -7,7 +7,7 @@ import sys
 
 EXPECTED = {
     "powersync": "2.5.0",
-    "sqlite_async": "0.14.5",
+    "sqlite_async": "0.14.6",
     "drift_sqlite_async": "0.3.1",
     "drift": "2.35.0",
     "sqlite3": "3.6.0",

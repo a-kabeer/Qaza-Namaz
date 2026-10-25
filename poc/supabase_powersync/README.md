@@ -11,14 +11,14 @@ The first dependency snapshot is deliberately pinned to exact versions:
 | Package | Version |
 |---|---:|
 | `powersync` | `2.5.0` |
-| `sqlite_async` | `0.14.5` |
+| `sqlite_async` | `0.14.6` |
 | `drift_sqlite_async` | `0.3.1` |
 | `drift` | `2.35.0` |
 | `sqlite3` | `3.6.0` |
 | `supabase_flutter` | `2.18.3` |
 | `flutter_lints` (dev) | `6.0.0` |
 
-Versions are a PoC snapshot, not a promise that the combinations work together. Resolve them in CI before adding any implementation code. The SQLite package pin matches the root app's current locked `sqlite3` version `3.6.0`, and the build hook matches its `sqlite3mc` selection. Neither proves PowerSync encryption compatibility.
+The original dependency bootstrap reported that `sqlite_async 0.14.6` was available above the previous `0.14.5` pin, so this experiment refreshes the pin before committing its lockfile. Versions are a PoC snapshot, not a promise that the combinations work together. The SQLite package pin matches the root app's current locked `sqlite3` version `3.6.0`, and the build hook matches its `sqlite3mc` selection. Neither proves PowerSync encryption compatibility.
 
 ## Run
 
