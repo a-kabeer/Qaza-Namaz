@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
@@ -78,6 +79,7 @@ Future<_Harness> _createHarness({
   GoogleIdentitySnapshot signInResult =
       const GoogleIdentitySnapshot.signedOut(),
 }) async {
+  print('[account-choice-test] harness: create temporary directory');
   final tempDirectory = await Directory.systemTemp.createTemp('qaza-id-test-');
   final database = AppDatabase(
     NativeDatabase(File('${tempDirectory.path}/control.sqlite')),
@@ -95,7 +97,12 @@ Future<_Harness> _createHarness({
     ),
     freeSpaceBytesProvider: (_) async => 1024 * 1024 * 1024,
   );
-  await database.readDbRevision();
+  print('[account-choice-test] harness: read database revision');
+  await database.readDbRevision().timeout(
+    const Duration(seconds: 20),
+    onTimeout: () =>
+        throw TimeoutException('Harness timed out reading database revision'),
+  );
   final store = AccountLocalStore(
     database: database,
     databaseManager: manager,
@@ -114,7 +121,13 @@ Future<_Harness> _createHarness({
       googleIdentityProvider.overrideWithValue(identity),
     ],
   );
-  await session.initialize();
+  print('[account-choice-test] harness: initialize account session');
+  await session.initialize().timeout(
+    const Duration(seconds: 20),
+    onTimeout: () =>
+        throw TimeoutException('Harness timed out initializing account session'),
+  );
+  print('[account-choice-test] harness: ready');
   return _Harness(
     database: database,
     manager: manager,
@@ -148,14 +161,52 @@ Future<void> _pumpUntil(WidgetTester tester, Finder finder) async {
     await tester.pump(const Duration(milliseconds: 100));
     if (finder.evaluate().isNotEmpty) return;
   }
-  fail('Widget did not appear: $finder');
+  fail('Widget did not appear within 4 seconds: $finder');
+}
+
+Future<void> _pumpUntilEither(
+  WidgetTester tester,
+  Finder first,
+  Finder second,
+) async {
+  for (var i = 0; i < 40; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (first.evaluate().isNotEmpty || second.evaluate().isNotEmpty) return;
+  }
+  fail('Neither expected widget appeared within 4 seconds: $first OR $second');
+}
+
+Future<void> _pumpUntilCondition(
+  WidgetTester tester,
+  bool Function() condition, {
+  required String description,
+}) async {
+  for (var i = 0; i < 40; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+    if (condition()) return;
+  }
+  fail('Condition did not become true within 4 seconds: $description');
+}
+
+Future<void> _waitForLoginButton(WidgetTester tester) async {
+  const key = Key('account_choice_google_login');
+  await _pumpUntilCondition(
+    tester,
+    () {
+      final finder = find.byKey(key);
+      return finder.evaluate().isNotEmpty &&
+          tester.widget<OutlinedButton>(finder).onPressed != null;
+    },
+    description: 'Google sign-in button becomes enabled',
+  );
 }
 
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets('Google sign-in creates or resumes a local Google workspace',
-      (tester) async {
+  testWidgets(
+    'Google sign-in creates or resumes a local Google workspace',
+    (tester) async {
     final harness = await _createHarness(
       signInResult: const GoogleIdentitySnapshot.signedIn(
         accountId: 'google-account-42',
@@ -166,10 +217,23 @@ void main() {
     addTearDown(harness.dispose);
 
     await tester.pumpWidget(_app(harness.container));
-    await _pumpUntil(
-        tester, find.byKey(const Key('account_choice_google_login')));
+    await _waitForLoginButton(tester);
     await tester.tap(find.byKey(const Key('account_choice_google_login')));
-    await tester.pumpAndSettle();
+
+    // A new Google identity may require an explicit Guest decision. The
+    // screen keeps its loading indicator active while that dialog is open,
+    // so pumpAndSettle() would wait for an animation that cannot settle until
+    // the test makes the decision.
+    const startFreshKey = Key('google_workspace_start_fresh');
+    await _pumpUntilEither(
+      tester,
+      find.byType(StartupGate),
+      find.byKey(startFreshKey),
+    );
+    if (find.byKey(startFreshKey).evaluate().isNotEmpty) {
+      await tester.tap(find.byKey(startFreshKey));
+    }
+    await _pumpUntil(tester, find.byType(StartupGate));
 
     expect(harness.identity.signInCalls, 1);
     expect(
@@ -178,26 +242,34 @@ void main() {
     );
     expect(await harness.database.isAccountChoiceComplete(), isTrue);
     expect(tester.takeException(), isNull);
-  });
+  }, timeout: const Timeout(Duration(seconds: 45)));
 
-  testWidgets('Continue as Guest offers saved local workspaces and Start Fresh',
-      (tester) async {
+  testWidgets(
+    'Continue as Guest offers saved local workspaces and Start Fresh',
+    (tester) async {
     final harness = await _createHarness();
     addTearDown(harness.dispose);
 
     await harness.store.createGuestWorkspace(displayName: 'Saved Guest');
     await tester.pumpWidget(_app(harness.container));
-    await _pumpUntil(
+    const guestKey = Key('account_choice_continue_guest');
+    await _pumpUntilCondition(
       tester,
-      find.byKey(const Key('account_choice_continue_guest')),
+      () {
+        final finder = find.byKey(guestKey);
+        return finder.evaluate().isNotEmpty &&
+            tester.widget<FilledButton>(finder).onPressed != null;
+      },
+      description: 'Continue as Guest button becomes enabled',
     );
-    await tester.tap(find.byKey(const Key('account_choice_continue_guest')));
-    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(guestKey));
 
-    expect(
-        find.byKey(const Key('guest_workspace_start_fresh')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('guest_workspace_start_fresh')));
-    await tester.pumpAndSettle();
+    // The guest-choice dialog is intentionally shown while _working is true.
+    // Wait for the dialog instead of settling the continuously animated spinner.
+    const startFreshGuestKey = Key('guest_workspace_start_fresh');
+    await _pumpUntil(tester, find.byKey(startFreshGuestKey));
+    await tester.tap(find.byKey(startFreshGuestKey));
+    await _pumpUntil(tester, find.byType(StartupGate));
 
     expect(
       isGuestLocalWorkspaceId(harness.session.activeLocalAccountId),
@@ -206,10 +278,11 @@ void main() {
     expect(await harness.database.isAccountChoiceComplete(), isTrue);
     expect(harness.identity.signInCalls, 0);
     expect(tester.takeException(), isNull);
-  });
+  }, timeout: const Timeout(Duration(seconds: 45)));
 
-  testWidgets('Google sign-in offers an explicit local Guest adoption',
-      (tester) async {
+  testWidgets(
+    'Google sign-in offers an explicit local Guest adoption',
+    (tester) async {
     final harness = await _createHarness(
       signInResult: const GoogleIdentitySnapshot.signedIn(
         accountId: 'google-adopt-account',
@@ -221,10 +294,7 @@ void main() {
     final guestId =
         await harness.store.createGuestWorkspace(displayName: 'Saved Guest');
     await tester.pumpWidget(_app(harness.container));
-    await _pumpUntil(
-      tester,
-      find.byKey(const Key('account_choice_google_login')),
-    );
+    await _waitForLoginButton(tester);
     await tester.tap(find.byKey(const Key('account_choice_google_login')));
     await _pumpUntil(
       tester,
@@ -234,7 +304,7 @@ void main() {
     expect(
         find.byKey(const Key('google_workspace_start_fresh')), findsOneWidget);
     await tester.tap(find.byKey(Key('google_adopt_guest_$guestId')));
-    await tester.pumpAndSettle();
+    await _pumpUntil(tester, find.byType(StartupGate));
 
     expect(
       harness.session.activeLocalAccountId,
@@ -246,24 +316,29 @@ void main() {
     );
     expect(await harness.database.isAccountChoiceComplete(), isTrue);
     expect(tester.takeException(), isNull);
-  });
+  }, timeout: const Timeout(Duration(seconds: 45)));
 
-  testWidgets('Google identity failure leaves local account choice available',
-      (tester) async {
+  testWidgets(
+    'Google identity failure leaves local account choice available',
+    (tester) async {
     final harness = await _createHarness(
       signInResult: const GoogleIdentitySnapshot.failed('Sign-in failed'),
     );
     addTearDown(harness.dispose);
 
     await tester.pumpWidget(_app(harness.container));
-    await _pumpUntil(
-        tester, find.byKey(const Key('account_choice_google_login')));
+    await _waitForLoginButton(tester);
     await tester.tap(find.byKey(const Key('account_choice_google_login')));
-    await tester.pumpAndSettle();
+    await _pumpUntil(tester, find.text('Sign-in failed'));
+    await _pumpUntilCondition(
+      tester,
+      () => find.byType(CircularProgressIndicator).evaluate().isEmpty,
+      description: 'loading indicator clears after identity failure',
+    );
 
     expect(
         find.byKey(const Key('account_choice_continue_guest')), findsOneWidget);
     expect(await harness.database.isAccountChoiceComplete(), isFalse);
     expect(tester.takeException(), isNull);
-  });
+  }, timeout: const Timeout(Duration(seconds: 45)));
 }
