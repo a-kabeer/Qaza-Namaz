@@ -1,0 +1,28 @@
+name: qaza_supabase_powersync_poc
+description: Isolated Run A dependency/toolchain preflight; not production app code.
+publish_to: "none"
+version: 0.0.1
+
+environment:
+  sdk: ">=3.10.0 <4.0.0"
+
+dependencies:
+  # Exact pins for a reproducible, isolated compatibility assessment.
+  powersync: 2.5.0
+  sqlite_async: 0.14.5
+  drift_sqlite_async: 0.3.1
+  drift: 2.35.0
+  sqlite3: 3.5.2
+  supabase_flutter: 2.18.3
+
+dev_dependencies:
+  flutter:
+    sdk: flutter
+  flutter_lints: 6.0.0
+
+# Match the existing app's current SQLite3MultipleCiphers build-hook choice
+# for the first encryption path. This manifest does not yet prove compatibility.
+hooks:
+  user_defines:
+    sqlite3:
+      source: sqlite3mc
