@@ -136,7 +136,7 @@ The sample Supabase stack exposes its own local ports. Run it only on a trusted 
 
 ## Phase 4 — Run the unmodified reference demo first
 
-Open a second PowerShell window and use the copied client, not the official reference source:
+Continue in the same PowerShell session and use the copied client, not the official reference source. (PowerShell variables such as $ClientRoot are session-scoped.)
 
     Set-Location $ClientRoot
     Copy-Item .\lib\app_config_template.dart .\lib\app_config.dart
@@ -150,7 +150,7 @@ If using an Android emulator, replace DEVICE_ID with the exact emulator ID liste
 
     flutter run -d DEVICE_ID
 
-Expected: the reference counter demo opens and can read/modify its counters with the local Supabase + PowerSync service running. Verify:
+Expected: the reference counter demo opens and can read/modify its counters with the local Supabase + PowerSync service running. Important: the starter's counters stream is deliberately an unfiltered demo stream, so all demo users can see the synthetic counters. Never use that stream with Qaza data; POC-5 must replace it with strict owner-filtered streams and prove cross-user isolation. Verify:
 1. Add a counter while online and confirm it appears.
 2. Stop the emulator's network or stop the PowerSync container, add a local counter, and confirm the UI still operates offline.
 3. Force-stop and reopen the demo while disconnected and verify local changes remain.
@@ -169,6 +169,7 @@ Record the resolved versions before adding dependencies:
 
 Add the following packages to this scratch client only, using the exact versions first evaluated in the ADR:
 
+    flutter pub add powersync:2.5.0 supabase_flutter:2.18.3
     flutter pub add drift:2.35.0 drift_sqlite_async:0.3.1 sqlite_async:0.14.6 flutter_secure_storage:10.3.4
     flutter pub add --dev build_runner:2.16.1 drift_dev:2.35.0
     flutter pub get
@@ -189,6 +190,24 @@ Confirm package resolution, then check for the encryption pragma only in the dis
 - https://pub.dev/documentation/powersync/latest/powersync/PowerSyncDatabase-class.html
 
 ### Required test harness to implement in the scratch client
+
+### Generate an ephemeral PoC key
+
+Use a fresh random 32-byte key encoded as unpadded Base64URL, matching the current local key format. This key is for this scratch app only. Do not print it, write it into a source file or use the Qaza app's key.
+
+    $Rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $KeyBytes = New-Object byte[] 32
+    $Rng.GetBytes($KeyBytes)
+    $Rng.Dispose()
+    $CorrectPocKey = [Convert]::ToBase64String($KeyBytes).TrimEnd('=').Replace('+', '-').Replace('/', '_')
+    $env:POC_DB_KEY = $CorrectPocKey
+    "PoC key length (not the key): $($env:POC_DB_KEY.Length)"
+
+Keep this PowerShell session open while testing; the environment variable will be lost in a new session. Pass it only to the scratch app launch:
+
+    flutter run -d DEVICE_ID "--dart-define=POC_DB_KEY=$env:POC_DB_KEY"
+
+In the Dart harness, load it with String.fromEnvironment('POC_DB_KEY') and fail closed if empty. The environment define is acceptable only for this disposable experiment, because build defines are embedded in the scratch binary; production key storage must use platform-secured storage. Within the test harness, generate a separate random wrong key in memory for the wrong-key test, and never print either key.
 
 Do not simply point Drift at the existing Qaza database. In qaza_poc_client, build a minimal purpose-specific harness that:
 
