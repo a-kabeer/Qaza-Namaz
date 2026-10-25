@@ -206,3 +206,5 @@ See the authoritative list of POC-0 through POC-8 plus POC-GOOGLE, detailed comm
 
 
 - 2026-10-25: Applied second review: added separate Google OAuth experiment, standalone PoC package boundary, read-only CI fallback, after-POC-2 W1/W2 checkpoint, split lifecycle/key/wipe tests, Base64URL/plaintext-header checks, quantified pass/fail/timebox/exit criteria, and a licensing/terms gate. All runtime experiments remain NOT RUN.
+
+- 2026-10-25: Added a Windows PowerShell runbook with isolation guards, Supabase CLI/local stack commands, loopback-bound PowerSync service setup, reference demo checks, encryption and Drift tests, two-user safety tests, Android build steps, and explicit stop conditions. The PoC itself remains not run.
