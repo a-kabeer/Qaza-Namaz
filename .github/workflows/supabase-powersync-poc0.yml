@@ -66,7 +66,7 @@ jobs:
       - name: Install pinned Supabase CLI
         uses: supabase/setup-cli@v3
         with:
-          version: '2.84.2'
+          version: '2.122.0'
 
       - name: Record environment versions and source SHAs
         shell: bash
