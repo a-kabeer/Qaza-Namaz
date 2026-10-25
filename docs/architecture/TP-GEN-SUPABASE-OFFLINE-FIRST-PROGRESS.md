@@ -45,14 +45,14 @@
 ## Repository baseline
 
 - Remote default branch: `main`.
-- Audited main SHA: `565d11f4db150ebcb64cb2cf5e96271821a8a997`.
-- Commit message: `Remove Google Drive; keep Google identity and local storage`.
-- Feature branch created from that SHA: `tp-gen/supabase-offline-first`.
+- Current main SHA for this review: `4e9747ed2005806ae81ede78ef2448af9b483aa7` (`Fix account-choice CI timeouts and document Supabase migration baseline`).
+- Original code-inspection baseline: `565d11f4db150ebcb64cb2cf5e96271821a8a997` (`Remove Google Drive; keep Google identity and local storage`).
+- Earlier planning branch `tp-gen/supabase-offline-first` was created from the original baseline; the current documentation-only review branch is `tp-gen/supabase-run-a-adr`.
 - Baseline report: `docs/architecture/supabase-migration-baseline.md`.
 - Root app uses Drift `^2.35.0`, SQLite `^3.5.2`, SQLite3MultipleCiphers hook, and `flutter_secure_storage` `^10.3.4`.
 - Root app database schema version is 26.
 - `apps/qaza_app_cloud` currently describes itself as Google Sign-In and local-only host; Supabase is not implemented.
-- Repository `AGENTS.md` confirms pre-release status and disposable test data. Some of its architecture-specific wording still mentions Google Drive backup and per-account databases; treat that as stale against current main and update it only with the approved redesign.
+- Repository `AGENTS.md` confirms pre-release status and disposable test data. Its storage-redesign wording still mentions Google Drive backup and per-account encrypted databases; treat it as stale where it conflicts with current main and update it after the architecture is approved.
 
 ## CI-AM — pre-implementation CI audit and fix
 
