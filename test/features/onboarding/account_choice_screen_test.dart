@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -15,6 +16,7 @@ import 'package:qaza_namaz/data/local/database/database_manager.dart';
 import 'package:qaza_namaz/domain/services/google_identity_contracts.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
 import 'package:qaza_namaz/features/onboarding/account_choice_screen.dart';
+import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeGoogleIdentityProvider implements GoogleIdentityProvider {
@@ -79,7 +81,7 @@ Future<_Harness> _createHarness({
   GoogleIdentitySnapshot signInResult =
       const GoogleIdentitySnapshot.signedOut(),
 }) async {
-  print('[account-choice-test] harness: create temporary directory');
+  debugPrint('[account-choice-test] harness: create temporary directory');
   final tempDirectory = await Directory.systemTemp.createTemp('qaza-id-test-');
   final database = AppDatabase(
     NativeDatabase(File('${tempDirectory.path}/control.sqlite')),
@@ -97,7 +99,7 @@ Future<_Harness> _createHarness({
     ),
     freeSpaceBytesProvider: (_) async => 1024 * 1024 * 1024,
   );
-  print('[account-choice-test] harness: read database revision');
+  debugPrint('[account-choice-test] harness: read database revision');
   await database.readDbRevision().timeout(
     const Duration(seconds: 20),
     onTimeout: () =>
@@ -121,13 +123,13 @@ Future<_Harness> _createHarness({
       googleIdentityProvider.overrideWithValue(identity),
     ],
   );
-  print('[account-choice-test] harness: initialize account session');
+  debugPrint('[account-choice-test] harness: initialize account session');
   await session.initialize().timeout(
     const Duration(seconds: 20),
     onTimeout: () =>
         throw TimeoutException('Harness timed out initializing account session'),
   );
-  print('[account-choice-test] harness: ready');
+  debugPrint('[account-choice-test] harness: ready');
   return _Harness(
     database: database,
     manager: manager,
