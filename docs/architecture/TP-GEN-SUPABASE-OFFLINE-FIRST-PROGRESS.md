@@ -28,17 +28,20 @@
 | Run A — source/CI baseline | COMPLETE | Reviewed main at 4e9747ed2 and current CI workflow definitions. |
 | CI-AM — baseline test timeout repair | COMPLETE | Existing main's focused regressions and current CI are green; this validates only the app/CI repair, not sync compatibility. |
 | Run A — official-docs, options and cost research | COMPLETE — qualitative research | ADR-001 is the single source of research findings and cost snapshot. Recheck prices and terms before provisioning. |
-| Run A — workspace topology decision (W1 vs W2) | OPEN — prerequisite | Compare actual DAO/query/migration/workspace routing changes and Guest/Restore effects in PoC-0 before choosing. |
+| Run A — workspace topology decision (W1 vs W2) | OPEN — prerequisite | Test minimum encryption in both layouts in POC-1; decide after POC-0 and POC-2, before account-lifecycle experiments. |
 | Run A — Qaza event/conflict policy | OPEN — prerequisite | Proposed append-only completion/reversal event model and revision-checked RPC require mapping to real domain/test behavior. |
-| POC-0 — local toolchain/dependency resolution/checkers/topology | NOT RUN | First executable gate. Local self-hosted Supabase + PowerSync is documented; no hosted service/paid plan is needed. |
-| POC-1 — PowerSync encryption/reopen/wrong-key | NOT RUN | Test sqlite3mc first, SQLCipher fallback if needed; pin SDK/changelog. |
-| POC-2 — Drift/data layer/schema and architecture checks | NOT RUN | Include offline_architecture_check.py and phase_boundary_check.py; use check-only formatting. |
-| POC-3 — Qaza events/reversal/idempotency/RPC/queue count | NOT RUN | Determine reliable pending queue count; never report unknown as zero. |
-| POC-4 — local Docker sync/offline replay | NOT RUN | Use disposable local volumes/keys/users only. |
-| POC-5 — RLS, publication allowlist, Sync Streams, two-user queue isolation | NOT RUN | Blocking security gate. |
-| POC-6 — adoption, Guest, Restore, Cancel, expiry/revoke, permanent errors | NOT RUN | Must test explicit state transitions. |
-| POC-7 — key loss, backup/restore, wipe crash recovery and account deletion | NOT RUN | Must not replace unreadable data with empty DB silently. |
-| POC-8 — Android release and test/checker suite | NOT RUN | CI evidence must point to the exact PoC commit and use formatting check-only. |
+| POC-0 — toolchain, isolated package, license/version checks and CI fallback | NOT RUN | Capture actual tool output; if local tools are missing, use read-only Docker-capable CI with exact SHA/run. |
+| POC-1 — encryption, W1/W2 layouts, wrong key/plaintext header/Base64URL format | NOT RUN | Verify 32-byte Base64URL handling, fail-closed wrong key, no plaintext SQLite header, and both layouts. |
+| POC-2 — isolated Drift/data layer/schema and unchanged root architecture checks | NOT RUN | Own pubspec/lockfile outside production package tree; root checks run unchanged on a clean root checkout. |
+| POC-3 — Qaza events/reversal/idempotency/revision RPC/queue status | NOT RUN | Unknown pending count must never appear as zero; classify permanent errors. |
+| POC-4 — local Docker sync, restart/offline replay and acknowledgement | NOT RUN | Use disposable local volumes, keys and synthetic data only. |
+| POC-5 — email/password test users, RLS, publication/Sync Streams and queue isolation | NOT RUN | Two-user server-side isolation is a blocking security gate. |
+| POC-6a — Guest adoption, existing cloud data, Restore, Cancel and Guest after sign-out | NOT RUN | No binding/exposure/upload before reconciliation decision. |
+| POC-6b — expiry/revocation, same-owner re-auth and permanent-error classification | NOT RUN | Retain owner-bound queue; a different user cannot claim it. |
+| POC-7a — key loss, Android backup/restore, reinstall/transfer | NOT RUN | Never silently replace unreadable data with an empty DB. |
+| POC-7b — crash-safe local wipe, cloud deletion and stale queued writes | NOT RUN | Local wipe is separate from server-side account/data deletion. |
+| POC-8 — Android builds, relevant tests and check-only formatting/root checks | NOT RUN | Do not use write-capable auto-format/push workflows for experiment evidence. |
+| POC-GOOGLE — Google-to-Supabase Auth, UUID stability and provider linking | NOT RUN | Requires explicit approval and a throwaway test OAuth client; email/password tests do not cover Google sign-in. |
 | Run A — ADR | PROPOSED, awaiting PoC evidence | ADR-001 documents the candidate and quantified no-go gates; not approved for implementation. |
 | Human approval before implementation | REQUIRED | Stop after Run A. Do not implement backend until PoC evidence and approved ADR are complete. |
 
@@ -175,15 +178,23 @@ All official documentation, version snapshots, candidate options, security impli
 
 - **Source inventory and baseline:** COMPLETE.
 - **Official-docs and qualitative options review:** COMPLETE; details live in ADR-001.
-- **Workspace topology (W1 vs W2):** OPEN; decide based on actual DAO/query/migration and Guest/Restore impacts in POC-0.
+- **Workspace topology (W1 vs W2):** OPEN; POC-1 tests minimum encryption in both layouts; decide after POC-0 and POC-2, before lifecycle experiments.
 - **Qaza completion/undo conflict policy:** OPEN; map append-only event candidate to current domain behavior and tests.
-- **PoC:** NOT RUN. A local self-hosted Docker route exists in official PowerSync documentation, but actual tooling/build/test output must be captured.
+- **PoC:** NOT RUN. Use an independently versioned package outside the production app tree; local self-hosted Docker is the intended zero-budget route, with a read-only CI fallback if the local toolchain is missing.
 - **ADR:** PROPOSED only; owner approval required before Run B.
 - **Implementation:** NOT APPROVED; no app/backend behavior may be changed by this documentation PR.
 
 ## Experiment ledger
+## Run A evidence rules and closure
 
-See the authoritative list of POC-0 through POC-8, detailed commands and acceptance criteria in [ADR-001 §9](adr-001-supabase-powersync-candidate.md). All experiments remain NOT RUN until exact results and evidence URLs are recorded. Keep CI formatting check-only and use synthetic data, disposable database volumes and fresh test keys.
+- Define expected outcomes before executing each experiment. Every row needs **PASS**, **FAIL**, or **BLOCKED**, exact command(s), PoC commit SHA, CI run URL if used, and an evidence summary. **NOT RUN** never implies PASS.
+- Use an independently versioned PoC package with its own manifest/lockfile outside the production app package tree. Run `tools/offline_architecture_check.py` and `tools/phase_boundary_check.py` unchanged against a clean production checkout; record the intended future integration boundary separately.
+- If local tool/version checks fail, use a Docker-capable CI path that is read-only, formatting check-only and cannot auto-format/commit/push. Preserve the local setup failure as part of the evidence.
+- Overall execution timebox: two engineering days after Step 0 prerequisites are runnable. Any extension requires an explicit owner decision.
+- Run A closes only when every ledger row has an evidence-backed result (including POC-GOOGLE, or an explicitly owner-approved written deferral), ADR-001 is revised to **Accepted** or **Rejected**, and the owner explicitly decides whether Run B is authorized. No backend/app implementation is approved while this gate is open.
+
+
+See the authoritative list of POC-0 through POC-8 plus POC-GOOGLE, detailed commands, pass/fail criteria, timebox, licensing gate and exit conditions in [ADR-001 §9](adr-001-supabase-powersync-candidate.md). All experiments remain NOT RUN until exact commands, PoC SHA, CI run URL where applicable and evidence summary are recorded. [Stable ADR commit permalink](https://github.com/a-kabeer/Qaza-Namaz/blob/b2bbb20fb09f3492d306dcedecff9518bfe08300/docs/architecture/adr-001-supabase-powersync-candidate.md).
 
 ## Current main CI baseline
 
@@ -191,3 +202,5 @@ See the authoritative list of POC-0 through POC-8, detailed commands and accepta
 - [Google Identity App CI — run 40172042972](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042972): success on the same commit.
 - These runs verify current app/CI behavior, not PowerSync or Supabase compatibility.
 
+
+- 2026-10-25: Applied second review: added separate Google OAuth experiment, standalone PoC package boundary, read-only CI fallback, after-POC-2 W1/W2 checkpoint, split lifecycle/key/wipe tests, Base64URL/plaintext-header checks, quantified pass/fail/timebox/exit criteria, and a licensing/terms gate. All runtime experiments remain NOT RUN.
