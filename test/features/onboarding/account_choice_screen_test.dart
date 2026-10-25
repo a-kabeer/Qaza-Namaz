@@ -156,7 +156,6 @@ Future<_Harness> _createHarnessForWidgetTest(
       restoreResult: restoreResult,
       signInResult: signInResult,
     ),
-    
   );
   if (harness == null) {
     throw TimeoutException(
@@ -233,7 +232,8 @@ void main() {
 
   testWidgets('Google sign-in creates or resumes a local Google workspace',
       (tester) async {
-    final harness = await _createHarnessForWidgetTest(tester,
+    final harness = await _createHarnessForWidgetTest(
+      tester,
       signInResult: const GoogleIdentitySnapshot.signedIn(
         accountId: 'google-account-42',
         displayName: 'Test User',
@@ -243,7 +243,6 @@ void main() {
     addTearDown(() async {
       await tester.runAsync(
         harness.dispose,
-        
       );
     });
 
@@ -274,7 +273,6 @@ void main() {
     expect(
       (await tester.runAsync(
         () => harness.database.isAccountChoiceComplete(),
-        
       ))!,
       isTrue,
     );
@@ -283,17 +281,17 @@ void main() {
 
   testWidgets('Continue as Guest offers saved local workspaces and Start Fresh',
       (tester) async {
-    final harness = await _createHarnessForWidgetTest(tester,);
+    final harness = await _createHarnessForWidgetTest(
+      tester,
+    );
     addTearDown(() async {
       await tester.runAsync(
         harness.dispose,
-        
       );
     });
 
     await tester.runAsync(
       () => harness.store.createGuestWorkspace(displayName: 'Saved Guest'),
-      
     );
     await tester.pumpWidget(_app(harness.container));
     const guestKey = Key('account_choice_continue_guest');
@@ -322,7 +320,6 @@ void main() {
     expect(
       (await tester.runAsync(
         () => harness.database.isAccountChoiceComplete(),
-        
       ))!,
       isTrue,
     );
@@ -332,7 +329,8 @@ void main() {
 
   testWidgets('Google sign-in offers an explicit local Guest adoption',
       (tester) async {
-    final harness = await _createHarnessForWidgetTest(tester,
+    final harness = await _createHarnessForWidgetTest(
+      tester,
       signInResult: const GoogleIdentitySnapshot.signedIn(
         accountId: 'google-adopt-account',
         displayName: 'Adoption Test',
@@ -341,13 +339,11 @@ void main() {
     addTearDown(() async {
       await tester.runAsync(
         harness.dispose,
-        
       );
     });
 
     final guestId = (await tester.runAsync(
       () => harness.store.createGuestWorkspace(displayName: 'Saved Guest'),
-      
     ))!;
     await tester.pumpWidget(_app(harness.container));
     await _waitForLoginButton(tester);
@@ -369,14 +365,13 @@ void main() {
     expect(
       (await tester.runAsync(
         () => harness.store.getAccount(guestId),
-        
-      ))?.lifecycleState,
+      ))
+          ?.lifecycleState,
       AccountLifecycleState.adoptedRecovery,
     );
     expect(
       (await tester.runAsync(
         () => harness.database.isAccountChoiceComplete(),
-        
       ))!,
       isTrue,
     );
@@ -385,13 +380,13 @@ void main() {
 
   testWidgets('Google identity failure leaves local account choice available',
       (tester) async {
-    final harness = await _createHarnessForWidgetTest(tester,
+    final harness = await _createHarnessForWidgetTest(
+      tester,
       signInResult: const GoogleIdentitySnapshot.failed('Sign-in failed'),
     );
     addTearDown(() async {
       await tester.runAsync(
         harness.dispose,
-        
       );
     });
 
@@ -410,7 +405,6 @@ void main() {
     expect(
       (await tester.runAsync(
         () => harness.database.isAccountChoiceComplete(),
-        
       ))!,
       isFalse,
     );
