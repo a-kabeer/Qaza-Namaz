@@ -18,6 +18,8 @@ dependencies:
 dev_dependencies:
   flutter:
     sdk: flutter
+  flutter_test:
+    sdk: flutter
   flutter_lints: 6.0.0
 
 # Match the existing app's current SQLite3MultipleCiphers build-hook choice

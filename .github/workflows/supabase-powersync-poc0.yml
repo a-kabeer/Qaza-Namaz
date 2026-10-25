@@ -163,6 +163,13 @@ jobs:
           cat "$EVIDENCE_DIR/pinned-versions.txt"
           tail -n 5 "$EVIDENCE_DIR/license-inventory-console.txt"
 
+      - name: Run encrypted PowerSync database smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$POC_DIR"
+          flutter test test/powersync_encryption_test.dart --reporter expanded 2>&1 | tee "$EVIDENCE_DIR/powersync-encryption-tests.txt"
+
       - name: Upload POC-0 evidence
         if: always()
         uses: actions/upload-artifact@v4
