@@ -156,7 +156,7 @@ Future<_Harness> _createHarnessForWidgetTest(
       restoreResult: restoreResult,
       signInResult: signInResult,
     ),
-    timeout: const Duration(seconds: 20),
+    
   );
   if (harness == null) {
     throw TimeoutException(
@@ -243,7 +243,7 @@ void main() {
     addTearDown(() async {
       await tester.runAsync(
         harness.dispose,
-        timeout: const Duration(seconds: 20),
+        
       );
     });
 
@@ -274,7 +274,7 @@ void main() {
     expect(
       (await tester.runAsync(
         () => harness.database.isAccountChoiceComplete(),
-        timeout: const Duration(seconds: 20),
+        
       ))!,
       isTrue,
     );
@@ -287,13 +287,13 @@ void main() {
     addTearDown(() async {
       await tester.runAsync(
         harness.dispose,
-        timeout: const Duration(seconds: 20),
+        
       );
     });
 
     await tester.runAsync(
       () => harness.store.createGuestWorkspace(displayName: 'Saved Guest'),
-      timeout: const Duration(seconds: 20),
+      
     );
     await tester.pumpWidget(_app(harness.container));
     const guestKey = Key('account_choice_continue_guest');
@@ -322,7 +322,7 @@ void main() {
     expect(
       (await tester.runAsync(
         () => harness.database.isAccountChoiceComplete(),
-        timeout: const Duration(seconds: 20),
+        
       ))!,
       isTrue,
     );
@@ -341,13 +341,13 @@ void main() {
     addTearDown(() async {
       await tester.runAsync(
         harness.dispose,
-        timeout: const Duration(seconds: 20),
+        
       );
     });
 
     final guestId = (await tester.runAsync(
       () => harness.store.createGuestWorkspace(displayName: 'Saved Guest'),
-      timeout: const Duration(seconds: 20),
+      
     ))!;
     await tester.pumpWidget(_app(harness.container));
     await _waitForLoginButton(tester);
@@ -369,14 +369,14 @@ void main() {
     expect(
       (await tester.runAsync(
         () => harness.store.getAccount(guestId),
-        timeout: const Duration(seconds: 20),
+        
       ))?.lifecycleState,
       AccountLifecycleState.adoptedRecovery,
     );
     expect(
       (await tester.runAsync(
         () => harness.database.isAccountChoiceComplete(),
-        timeout: const Duration(seconds: 20),
+        
       ))!,
       isTrue,
     );
@@ -391,7 +391,7 @@ void main() {
     addTearDown(() async {
       await tester.runAsync(
         harness.dispose,
-        timeout: const Duration(seconds: 20),
+        
       );
     });
 
@@ -410,7 +410,7 @@ void main() {
     expect(
       (await tester.runAsync(
         () => harness.database.isAccountChoiceComplete(),
-        timeout: const Duration(seconds: 20),
+        
       ))!,
       isFalse,
     );
