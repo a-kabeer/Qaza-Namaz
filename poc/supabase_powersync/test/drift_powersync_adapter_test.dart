@@ -105,6 +105,7 @@ void main() {
     await watcher.cancel();
 
     await driftDb.close();
+    if (!powerSync.closed) await powerSync.close();
 
     final reopened = ps.PowerSyncDatabase(
       schema: _schema,
