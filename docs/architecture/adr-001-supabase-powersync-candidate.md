@@ -177,6 +177,8 @@ Review the region and data-processing implications for both Supabase Postgres an
 - https://docs.powersync.com/integrations/supabase/local-development
 - https://github.com/powersync-ja/self-host-demo
 
+**Windows execution guide:** [PowerSync PoC Windows PowerShell runbook](powersync-poc-windows-powershell-runbook.md). It contains safe local setup and command-by-command checks; it is not evidence that any runtime experiment passed.
+
 **All experiments are currently NOT RUN.** Documentation is not execution evidence. Use synthetic data, local disposable volumes and fresh test keys only. Do not create a hosted project, subscription, payment method, production credential or production data set for Run A.
 
 ### Step 0 — environment, isolated package, and CI fallback
