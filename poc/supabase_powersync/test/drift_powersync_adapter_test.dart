@@ -2,26 +2,26 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:async/async.dart';
-import 'package:drift/drift.dart' as drift;
+import 'package:drift/drift.dart';
 import 'package:drift_sqlite_async/drift_sqlite_async.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:powersync/powersync.dart';
+import 'package:powersync/powersync.dart' as ps;
 import 'package:sqlite_async/sqlite_async.dart';
 
 part 'drift_powersync_adapter_test.g.dart';
 
-class PocRecords extends drift.Table {
+class PocRecords extends Table {
   @override
   String get tableName => 'poc_records';
 
-  drift.TextColumn get id => text()();
-  drift.TextColumn get label => text()();
+  TextColumn get id => text()();
+  TextColumn get label => text()();
 
   @override
-  Set<drift.Column> get primaryKey => {id};
+  Set<Column> get primaryKey => {id};
 }
 
-@drift.DriftDatabase(tables: [PocRecords])
+@DriftDatabase(tables: [PocRecords])
 class PocDriftDatabase extends _$PocDriftDatabase {
   PocDriftDatabase(SqliteConnection connection)
       : super(SqliteAsyncDriftConnection(connection));
@@ -32,15 +32,15 @@ class PocDriftDatabase extends _$PocDriftDatabase {
   // PowerSync owns and creates the synced table/view. Drift manages typed
   // access and query generation but must not create a competing SQLite table.
   @override
-  drift.MigrationStrategy get migration => drift.MigrationStrategy(
+  MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) async {},
         onUpgrade: (m, from, to) async {},
       );
 }
 
-const _schema = Schema([
-  Table('poc_records', [
-    Column.text('label'),
+const _schema = ps.Schema([
+  ps.Table('poc_records', [
+    ps.Column.text('label'),
   ]),
 ]);
 
@@ -64,12 +64,13 @@ void main() {
   test('Drift reads and writes PowerSync-managed encrypted tables', () async {
     final path = '${temporaryDirectory.path}/drift-adapter.sqlite';
     final key = _testKey();
-    final powerSync = PowerSyncDatabase(
+    final powerSync = ps.PowerSyncDatabase(
       schema: _schema,
       path: path,
-      encryption: EncryptionOptions(key: key, sqlcipherCompatibility: false),
+      encryption: ps.EncryptionOptions(key: key, sqlcipherCompatibility: false),
     );
     await powerSync.initialize();
+    expect((await powerSync.getUploadQueueStats()).count, 0);
 
     final driftDb = PocDriftDatabase(powerSync);
     await driftDb.into(driftDb.pocRecords).insert(
@@ -79,6 +80,7 @@ void main() {
           ),
         );
 
+    expect((await powerSync.getUploadQueueStats()).count, 1);
     final fromPowerSync = await powerSync.get(
       'SELECT label FROM poc_records WHERE id = ?',
       ['drift-1'],
@@ -93,6 +95,7 @@ void main() {
       'INSERT INTO poc_records (id, label) VALUES (?, ?)',
       ['powersync-1', 'written-through-powersync'],
     );
+    expect((await powerSync.getUploadQueueStats()).count, 2);
     final updated = await watcher.next.timeout(const Duration(seconds: 5));
     expect(updated.map((row) => row.id), containsAll(['drift-1', 'powersync-1']));
     expect(
@@ -103,12 +106,13 @@ void main() {
 
     await driftDb.close();
 
-    final reopened = PowerSyncDatabase(
+    final reopened = ps.PowerSyncDatabase(
       schema: _schema,
       path: path,
       encryption: EncryptionOptions(key: key, sqlcipherCompatibility: false),
     );
     await reopened.initialize();
+    expect((await reopened.getUploadQueueStats()).count, 2);
     final persisted = await reopened.get(
       'SELECT label FROM poc_records WHERE id = ?',
       ['drift-1'],
