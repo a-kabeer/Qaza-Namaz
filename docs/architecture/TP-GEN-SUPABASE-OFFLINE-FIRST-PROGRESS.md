@@ -183,7 +183,7 @@ All official documentation, version snapshots, candidate options, security impli
 - **Workspace topology (W1 vs W2):** OPEN; POC-1 tests minimum encryption in both layouts; decide after POC-0 and POC-2, before lifecycle experiments.
 - **Qaza completion/undo conflict policy:** OPEN; map append-only event candidate to current domain behavior and tests.
 - **PoC:** NOT RUN. Use an independently versioned package outside the production app tree; local self-hosted Docker is the intended zero-budget route, with a read-only CI fallback if the local toolchain is missing.
-- **Windows PowerShell PoC runbook:** [powersync-poc-windows-powershell-runbook.md](powersync-poc-windows-powershell-runbook.md) is drafted with isolated setup, reference stack startup, encryption/Drift checks, account-isolation experiments and evidence capture. This is documentation only; runtime PoC remains NOT RUN.
+- **Windows PowerShell PoC runbook:** [powersync-poc-windows-powershell-runbook.md](powersync-poc-windows-powershell-runbook.md) now pins the reviewed official starter commit `eb149604014f243c6379f50c99bfdc9fa086abf6`, verifies expected starter files/ports/container before proceeding, documents Node 20+/WSL 2/Docker Desktop setup, keeps one PowerShell session for the scratch key, restores path variables safely in a new shell, passes `POC_DB_KEY` to database-backed tests and Android builds, and uses exact Pub version constraints. Official package listings confirm the versions individually, but joint dependency resolution and all runtime experiments remain NOT RUN.
 - **ADR:** PROPOSED only; owner approval required before Run B.
 - **Implementation:** NOT APPROVED; no app/backend behavior may be changed by this documentation PR.
 
@@ -209,3 +209,5 @@ See the authoritative list of POC-0 through POC-8 plus POC-GOOGLE, detailed comm
 - 2026-10-25: Applied second review: added separate Google OAuth experiment, standalone PoC package boundary, read-only CI fallback, after-POC-2 W1/W2 checkpoint, split lifecycle/key/wipe tests, Base64URL/plaintext-header checks, quantified pass/fail/timebox/exit criteria, and a licensing/terms gate. All runtime experiments remain NOT RUN.
 
 - 2026-10-25: Added a Windows PowerShell runbook with isolation guards, Supabase CLI/local stack commands, loopback-bound PowerSync service setup, reference demo checks, encryption and Drift tests, two-user safety tests, Android build steps, and explicit stop conditions. The PoC itself remains not run.
+
+- 2026-10-25: Addressed runbook review: checked the official starter at its recorded SHA; validated referenced filenames, `PS_PORT=8080`, and `powersync_demo`; added Node/WSL2/Docker setup checks, PowerShell path/key recovery rules, dart-define propagation for tests/debug/release builds, and exact version constraints. Pub.dev lists every requested version individually; the combined dependency solver and all runtime PoC experiments still need to run locally.
