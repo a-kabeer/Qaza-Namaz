@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/native.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -81,7 +80,7 @@ Future<_Harness> _createHarness({
   GoogleIdentitySnapshot signInResult =
       const GoogleIdentitySnapshot.signedOut(),
 }) async {
-  debugPrint('[account-choice-test] harness: create temporary directory');
+  stderr.writeln('[account-choice-test] harness: create temporary directory');
   final tempDirectory = await Directory.systemTemp.createTemp('qaza-id-test-');
   final database = AppDatabase(
     NativeDatabase(File('${tempDirectory.path}/control.sqlite')),
@@ -99,7 +98,7 @@ Future<_Harness> _createHarness({
     ),
     freeSpaceBytesProvider: (_) async => 1024 * 1024 * 1024,
   );
-  debugPrint('[account-choice-test] harness: read database revision');
+  stderr.writeln('[account-choice-test] harness: read database revision');
   await database.readDbRevision().timeout(
         const Duration(seconds: 20),
         onTimeout: () => throw TimeoutException(
@@ -123,13 +122,13 @@ Future<_Harness> _createHarness({
       googleIdentityProvider.overrideWithValue(identity),
     ],
   );
-  debugPrint('[account-choice-test] harness: initialize account session');
+  stderr.writeln('[account-choice-test] harness: initialize account session');
   await session.initialize().timeout(
         const Duration(seconds: 20),
         onTimeout: () => throw TimeoutException(
             'Harness timed out initializing account session'),
       );
-  debugPrint('[account-choice-test] harness: ready');
+  stderr.writeln('[account-choice-test] harness: ready');
   return _Harness(
     database: database,
     manager: manager,
@@ -139,6 +138,32 @@ Future<_Harness> _createHarness({
     identity: identity,
     tempDirectory: tempDirectory,
   );
+}
+
+Future<_Harness> _createHarnessForWidgetTest(
+  WidgetTester tester, {
+  GoogleIdentitySnapshot restoreResult =
+      const GoogleIdentitySnapshot.signedOut(),
+  GoogleIdentitySnapshot signInResult =
+      const GoogleIdentitySnapshot.signedOut(),
+}) async {
+  // File-system IO and Drift's native executor are real asynchronous work.
+  // testWidgets otherwise runs in a fake-async zone that can leave this setup
+  // pending before the widget is mounted. Execute setup in the test binding's
+  // real async zone, with a bounded diagnostic timeout.
+  final harness = await tester.runAsync(
+    () => _createHarness(
+      restoreResult: restoreResult,
+      signInResult: signInResult,
+    ),
+    timeout: const Duration(seconds: 20),
+  );
+  if (harness == null) {
+    throw TimeoutException(
+      'Real-async account-choice harness setup returned without a harness',
+    );
+  }
+  return harness;
 }
 
 Widget _app(ProviderContainer container) {
@@ -208,14 +233,19 @@ void main() {
 
   testWidgets('Google sign-in creates or resumes a local Google workspace',
       (tester) async {
-    final harness = await _createHarness(
+    final harness = await _createHarnessForWidgetTest(tester,
       signInResult: const GoogleIdentitySnapshot.signedIn(
         accountId: 'google-account-42',
         displayName: 'Test User',
         email: 'test@example.com',
       ),
     );
-    addTearDown(harness.dispose);
+    addTearDown(() async {
+      await tester.runAsync(
+        harness.dispose,
+        timeout: const Duration(seconds: 20),
+      );
+    });
 
     await tester.pumpWidget(_app(harness.container));
     await _waitForLoginButton(tester);
@@ -241,16 +271,30 @@ void main() {
       harness.session.activeLocalAccountId,
       googleLocalWorkspaceId('google-account-42'),
     );
-    expect(await harness.database.isAccountChoiceComplete(), isTrue);
+    expect(
+      (await tester.runAsync(
+        () => harness.database.isAccountChoiceComplete(),
+        timeout: const Duration(seconds: 20),
+      ))!,
+      isTrue,
+    );
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 45)));
 
   testWidgets('Continue as Guest offers saved local workspaces and Start Fresh',
       (tester) async {
-    final harness = await _createHarness();
-    addTearDown(harness.dispose);
+    final harness = await _createHarnessForWidgetTest(tester,);
+    addTearDown(() async {
+      await tester.runAsync(
+        harness.dispose,
+        timeout: const Duration(seconds: 20),
+      );
+    });
 
-    await harness.store.createGuestWorkspace(displayName: 'Saved Guest');
+    await tester.runAsync(
+      () => harness.store.createGuestWorkspace(displayName: 'Saved Guest'),
+      timeout: const Duration(seconds: 20),
+    );
     await tester.pumpWidget(_app(harness.container));
     const guestKey = Key('account_choice_continue_guest');
     await _pumpUntilCondition(
@@ -275,23 +319,36 @@ void main() {
       isGuestLocalWorkspaceId(harness.session.activeLocalAccountId),
       isTrue,
     );
-    expect(await harness.database.isAccountChoiceComplete(), isTrue);
+    expect(
+      (await tester.runAsync(
+        () => harness.database.isAccountChoiceComplete(),
+        timeout: const Duration(seconds: 20),
+      ))!,
+      isTrue,
+    );
     expect(harness.identity.signInCalls, 0);
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 45)));
 
   testWidgets('Google sign-in offers an explicit local Guest adoption',
       (tester) async {
-    final harness = await _createHarness(
+    final harness = await _createHarnessForWidgetTest(tester,
       signInResult: const GoogleIdentitySnapshot.signedIn(
         accountId: 'google-adopt-account',
         displayName: 'Adoption Test',
       ),
     );
-    addTearDown(harness.dispose);
+    addTearDown(() async {
+      await tester.runAsync(
+        harness.dispose,
+        timeout: const Duration(seconds: 20),
+      );
+    });
 
-    final guestId =
-        await harness.store.createGuestWorkspace(displayName: 'Saved Guest');
+    final guestId = (await tester.runAsync(
+      () => harness.store.createGuestWorkspace(displayName: 'Saved Guest'),
+      timeout: const Duration(seconds: 20),
+    ))!;
     await tester.pumpWidget(_app(harness.container));
     await _waitForLoginButton(tester);
     await tester.tap(find.byKey(const Key('account_choice_google_login')));
@@ -310,19 +367,33 @@ void main() {
       googleLocalWorkspaceId('google-adopt-account'),
     );
     expect(
-      (await harness.store.getAccount(guestId))?.lifecycleState,
+      (await tester.runAsync(
+        () => harness.store.getAccount(guestId),
+        timeout: const Duration(seconds: 20),
+      ))?.lifecycleState,
       AccountLifecycleState.adoptedRecovery,
     );
-    expect(await harness.database.isAccountChoiceComplete(), isTrue);
+    expect(
+      (await tester.runAsync(
+        () => harness.database.isAccountChoiceComplete(),
+        timeout: const Duration(seconds: 20),
+      ))!,
+      isTrue,
+    );
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 45)));
 
   testWidgets('Google identity failure leaves local account choice available',
       (tester) async {
-    final harness = await _createHarness(
+    final harness = await _createHarnessForWidgetTest(tester,
       signInResult: const GoogleIdentitySnapshot.failed('Sign-in failed'),
     );
-    addTearDown(harness.dispose);
+    addTearDown(() async {
+      await tester.runAsync(
+        harness.dispose,
+        timeout: const Duration(seconds: 20),
+      );
+    });
 
     await tester.pumpWidget(_app(harness.container));
     await _waitForLoginButton(tester);
@@ -336,7 +407,13 @@ void main() {
 
     expect(
         find.byKey(const Key('account_choice_continue_guest')), findsOneWidget);
-    expect(await harness.database.isAccountChoiceComplete(), isFalse);
+    expect(
+      (await tester.runAsync(
+        () => harness.database.isAccountChoiceComplete(),
+        timeout: const Duration(seconds: 20),
+      ))!,
+      isFalse,
+    );
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 45)));
 }
