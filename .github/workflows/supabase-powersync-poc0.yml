@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - poc/supabase-run-a-poc0-ci
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'poc/supabase_powersync/**'
+      - '.github/workflows/supabase-powersync-poc0.yml'
 
 permissions:
   contents: read
@@ -40,7 +46,7 @@ jobs:
       - name: Checkout isolated PoC branch
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           path: poc-checkout
           fetch-depth: 0
           persist-credentials: false
@@ -69,7 +75,8 @@ jobs:
           {
             echo "POC-0 environment evidence"
             echo "Workflow: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
-            echo "Workflow source SHA: $GITHUB_SHA"
+            echo "Event: $GITHUB_EVENT_NAME"
+            echo "Workflow event SHA: $GITHUB_SHA"
             echo "PoC checkout SHA: $(git -C "$POC_CHECKOUT" rev-parse HEAD)"
             echo "Clean production main SHA: $(git -C "$PRODUCTION_CHECKOUT" rev-parse HEAD)"
             echo
@@ -95,18 +102,22 @@ jobs:
             echo "### Supabase CLI"
             supabase --version
           } 2>&1 | tee "$EVIDENCE_DIR/toolchain.txt"
-          cp "$EVIDENCE_DIR/toolchain.txt" "$GITHUB_STEP_SUMMARY" || true
+          {
+            echo "### POC-0 environment"
+            echo
+            echo "- Workflow run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo "- Event: $GITHUB_EVENT_NAME"
+            echo "- PoC checkout SHA: $(git -C "$POC_CHECKOUT" rev-parse HEAD)"
+            echo "- Clean production main SHA: $(git -C "$PRODUCTION_CHECKOUT" rev-parse HEAD)"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Verify production-source boundary is unchanged
         shell: bash
         run: |
           set -euo pipefail
           cd "$POC_CHECKOUT"
-          git diff --exit-code origin/main...HEAD -- \
-            AGENTS.md lib android apps packages pubspec.yaml pubspec.lock tools
-          echo "PASS: no changes to production source, root manifests/lockfiles, or architecture tools."
-          echo "PASS: isolated PoC branch delta is outside the production app packages." \
-            | tee "$EVIDENCE_DIR/production-boundary.txt"
+          git diff --exit-code origin/main...HEAD -- AGENTS.md lib android apps packages pubspec.yaml pubspec.lock tools
+          echo "PASS: no changes to production source, root manifests/lockfiles, or architecture tools." | tee "$EVIDENCE_DIR/production-boundary.txt"
 
       - name: Run unchanged architecture checks on clean production main
         shell: bash
@@ -124,38 +135,36 @@ jobs:
             python3 tools/phase_boundary_check.py
           } 2>&1 | tee "$EVIDENCE_DIR/architecture-checks.txt"
 
+      - name: Compile POC-0 helper scripts without writing formatted sources
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$POC_DIR"
+          python3 -m py_compile scripts/check_pinned_versions.py scripts/license_inventory.py
+          echo "PASS: Python helper scripts compile. No write-capable formatter/commit/push step is present." | tee "$EVIDENCE_DIR/helper-checks.txt"
+
       - name: Resolve isolated PoC dependencies
         shell: bash
         run: |
           set -euo pipefail
           cd "$POC_DIR"
-
           if git -C "$POC_CHECKOUT" ls-files --error-unmatch "$POC_REL/pubspec.lock" >/dev/null 2>&1; then
-            echo "Using checked-in PoC lockfile with enforce-lockfile."               | tee "$EVIDENCE_DIR/dependency-resolution.txt"
-            flutter pub get --enforce-lockfile 2>&1               | tee -a "$EVIDENCE_DIR/dependency-resolution.txt"
+            echo "Using checked-in PoC lockfile with enforce-lockfile." | tee "$EVIDENCE_DIR/dependency-resolution.txt"
+            flutter pub get --enforce-lockfile 2>&1 | tee -a "$EVIDENCE_DIR/dependency-resolution.txt"
             git -C "$POC_CHECKOUT" diff --exit-code -- "$POC_REL/pubspec.lock"
           else
-            echo "BOOTSTRAP: no PoC lockfile is checked in yet; generating a first resolved lockfile."               | tee "$EVIDENCE_DIR/dependency-resolution.txt"
-            flutter pub get 2>&1               | tee -a "$EVIDENCE_DIR/dependency-resolution.txt"
-            echo "POC-0 remains incomplete until the generated lockfile is committed and a second run passes --enforce-lockfile."               | tee -a "$EVIDENCE_DIR/dependency-resolution.txt"
+            echo "BOOTSTRAP: no PoC lockfile is checked in yet; generating a first resolved lockfile." | tee "$EVIDENCE_DIR/dependency-resolution.txt"
+            flutter pub get 2>&1 | tee -a "$EVIDENCE_DIR/dependency-resolution.txt"
+            echo "POC-0 remains incomplete until the generated lockfile is committed and a second run passes --enforce-lockfile." | tee -a "$EVIDENCE_DIR/dependency-resolution.txt"
           fi
-
-          dart pub deps --style=compact 2>&1             | tee "$EVIDENCE_DIR/dependency-tree.txt"
+          dart pub deps --style=compact 2>&1 | tee "$EVIDENCE_DIR/dependency-tree.txt"
           dart pub deps --json > "$EVIDENCE_DIR/pub-deps.json"
-          python3 scripts/check_pinned_versions.py 2>&1             | tee "$EVIDENCE_DIR/pinned-versions.txt"
-          python3 scripts/license_inventory.py             --config .dart_tool/package_config.json             --output "$EVIDENCE_DIR/license-inventory.md"             > "$EVIDENCE_DIR/license-inventory-console.txt"
+          python3 scripts/check_pinned_versions.py 2>&1 | tee "$EVIDENCE_DIR/pinned-versions.txt"
+          python3 scripts/license_inventory.py --config .dart_tool/package_config.json --output "$EVIDENCE_DIR/license-inventory.md" > "$EVIDENCE_DIR/license-inventory-console.txt"
           cp pubspec.lock "$EVIDENCE_DIR/resolved-pubspec.lock"
           cp .dart_tool/package_config.json "$EVIDENCE_DIR/package-config.json"
           cat "$EVIDENCE_DIR/pinned-versions.txt"
           tail -n 5 "$EVIDENCE_DIR/license-inventory-console.txt"
-
-      - name: Check formatting without modifying files
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd "$POC_DIR"
-          dart format --output=none --set-exit-if-changed scripts
-          echo "PASS: formatting checked only; no files were rewritten."             | tee "$EVIDENCE_DIR/format-check.txt"
 
       - name: Upload POC-0 evidence
         if: always()
