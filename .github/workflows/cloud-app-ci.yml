@@ -47,6 +47,15 @@ jobs:
           cache: true
       - name: Install offline dependencies
         run: flutter pub get
+
+      - name: Run account-choice regression tests first
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter test test/features/onboarding/account_choice_screen_test.dart --plain-name "Google sign-in creates or resumes a local Google workspace" --reporter expanded
+          flutter test test/features/onboarding/account_choice_screen_test.dart --plain-name "Continue as Guest offers saved local workspaces and Start Fresh" --reporter expanded
+          flutter test test/features/onboarding/account_choice_screen_test.dart --plain-name "Google sign-in offers an explicit local Guest adoption" --reporter expanded
+          flutter test test/features/onboarding/account_choice_screen_test.dart --plain-name "Google identity failure leaves local account choice available" --reporter expanded
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
       - name: Offline architecture policy
@@ -55,6 +64,7 @@ jobs:
         run: python3 tools/phase_boundary_check.py
       - name: Analyze offline application
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
+
       - name: Test offline application
         run: flutter test --coverage
 

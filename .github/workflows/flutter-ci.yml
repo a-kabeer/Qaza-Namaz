@@ -42,6 +42,15 @@ jobs:
       - name: Generate localization code
         run: flutter gen-l10n
 
+      - name: Run account-choice regression tests first
+        shell: bash
+        run: |
+          set -euo pipefail
+          flutter test test/features/onboarding/account_choice_screen_test.dart --plain-name "Google sign-in creates or resumes a local Google workspace" --reporter expanded
+          flutter test test/features/onboarding/account_choice_screen_test.dart --plain-name "Continue as Guest offers saved local workspaces and Start Fresh" --reporter expanded
+          flutter test test/features/onboarding/account_choice_screen_test.dart --plain-name "Google sign-in offers an explicit local Guest adoption" --reporter expanded
+          flutter test test/features/onboarding/account_choice_screen_test.dart --plain-name "Google identity failure leaves local account choice available" --reporter expanded
+
       - name: Generate Drift code
         run: dart run build_runner build --delete-conflicting-outputs
 
@@ -78,6 +87,8 @@ jobs:
         run: |
           set -euo pipefail
           dart format --output=none --set-exit-if-changed lib test
+
+
 
       - name: Test with coverage
         run: flutter test --coverage
