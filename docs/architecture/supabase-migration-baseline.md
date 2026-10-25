@@ -104,3 +104,26 @@ The ADR must address:
 4. Document custom sync as the fallback and compare costs.
 5. Finalize the ADR and present the evidence to the user.
 6. **Stop for explicit approval. Do not begin backend implementation before approval.**
+
+
+## 8. Official documentation research (2026-10-25)
+
+Initial research is recorded here, but it does not replace the required compatibility PoC.
+
+- PowerSync Dart/Flutter SDK `powersync 2.5.0` is published as stable; release notes dated 2026-10-19 describe a web worker protocol change affecting web builds, not native Android. Native SQLCipher support was restored in 2.3.1, while v2.0 added built-in `EncryptionOptions` support for SQLite3 Multiple Ciphers. The PoC must verify the actual native configuration used by this project rather than infer compatibility from release notes.
+  - https://releases.powersync.com/announcements/flutter-client-sdk
+  - https://pub.dev/packages/powersync
+- `drift_sqlite_async 0.3.1` is published as stable and documents Drift query support, transactions/nested transactions, update propagation, and optional Drift migrations over `sqlite_async`. Its package dependencies include `drift`, `sqlite3`, and `sqlite_async`; compatibility with PowerSync's selected encrypted connection remains unproven until tested.
+  - https://pub.dev/packages/drift_sqlite_async
+  - https://pub.dev/packages/drift_sqlite_async/versions
+- Supabase's PowerSync integration describes a client-side SQLite database, Sync Rules/Streams, upload queue, Supabase Auth integration, and server-side custom conflict handling. PowerSync is therefore a credible leading candidate, not yet the selected architecture.
+  - https://supabase.com/partners/catalog/powersync
+- Pricing observed during this audit: Supabase Free is $0 with 500 MB database, 50,000 MAU, and projects paused after one week of inactivity; Supabase Pro starts at $25/month. PowerSync Cloud Free is $0 with soft limits, 2 GB synced/month, 500 MB hosted data, 50 peak concurrent clients, and project deactivation after one week of inactivity; PowerSync Cloud Pro starts at $49/month. Prices and plan limits can change; verify before provisioning. No paid service is authorized by this audit.
+  - https://supabase.com/pricing
+  - https://powersync.com/pricing
+- Supabase RLS guidance recommends explicit per-operation policies, roles such as `to authenticated`, ownership expressions using `(select auth.uid())`, indexes for policy predicates, and `security_invoker = true` for exposed views where appropriate. The future implementation should include pgTAP tests in `supabase/tests/` and run `supabase test db` in CI.
+  - https://supabase.com/docs/guides/database/postgres/row-level-security
+
+### Preliminary candidate assessment (not an ADR decision)
+
+PowerSync is the leading candidate to test first because it provides the synchronization queue and local SQLite model, which can avoid a custom sync engine. The largest unresolved risk is whether its supported encryption configuration, database lifecycle, and optional Drift integration can coexist cleanly with the app's current SQLite3MultipleCiphers/native dependencies and one-active-account requirement. If supported PowerSync configurations fail the focused PoC, compare the maintenance cost of a custom transactional outbox against using PowerSync without Drift. Do not select either option until the evidence is recorded.
