@@ -2,15 +2,13 @@
 
 **Audit date:** 2026-10-25 (Asia/Karachi)  
 **Repository:** `a-kabeer/Qaza-Namaz`  
-**Current main reviewed for Run A update:** `4e9747ed2005806ae81ede78ef2448af9b483aa7`  
-**Original architecture-code inspection baseline:** `565d11f4db150ebcb64cb2cf5e96271821a8a997`  
-**Documentation branch:** `tp-gen/supabase-run-a-adr`  
-**Original investigation branch:** `tp-gen/supabase-offline-first`  
-**Scope:** Read-only baseline inspection plus a test-harness/CI repair for TP-GEN Run A. No application behavior changes made.
+**Audited ref:** `main` at `4e9747ed2005806ae81ede78ef2448af9b483aa7`  
+**Feature branch:** `tp-gen/supabase-offline-first`  
+**Scope:** Baseline source audit plus an isolated, disposable Run A PowerSync/Drift proof of concept and CI harness. No production application code, root manifests, or production behavior changed.
 
 ## 1. Repository state and current architecture
 
-The original storage/code inspection baseline was commit `565d11f4db150ebcb64cb2cf5e96271821a8a997`, titled **“Remove Google Drive; keep Google identity and local storage.”** The current `main` was revalidated at `4e9747ed2005806ae81ede78ef2448af9b483aa7` after PR #351. That merge fixed CI test timeouts and updated planning documentation; it did not implement Supabase or change production app behavior.
+The latest inspected remote `main` commit is `565d11f4db150ebcb64cb2cf5e96271821a8a997`, titled **“Remove Google Drive; keep Google identity and local storage.”**
 
 The repository's `AGENTS.md` confirms the application is pre-release and test data is disposable. It explicitly permits a clean storage redesign but still requires correct encryption, isolation, error handling, and meaningful tests. The current instruction text still mentions rebuilding Google authentication, per-account encrypted local databases, and Google Drive backup; this is stale relative to the current `main` commit and should be updated only as part of the approved architecture/cleanup work, not silently treated as a requirement.
 
@@ -38,7 +36,25 @@ These facts establish the current design, not proof that it is the best design f
 - Android release build and reopen/integrity tests using the selected encryption configuration.
 - Key loss, reinstall, backup/restore, and signed-out workspace behavior.
 
-No encryption compatibility claim has been made yet.
+### Executed Linux proof-of-concept evidence
+
+Isolated CI run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327) completed successfully using PowerSync 2.5.0, SQLite3MultipleCiphers (sqlite3mc build hook), Drift 2.35.0, drift_sqlite_async 0.3.1, sqlite_async 0.14.6, sqlite3 3.6.0, Flutter 3.47.4, and Dart 3.13.3.
+
+Passed tests:
+- Encrypted database create/write/close/reopen with the correct 32-byte Base64URL key.
+- Encrypted database header differs from the plaintext SQLite signature.
+- Wrong and missing keys fail closed; failed probes do not rewrite the encrypted test file.
+- Drift typed inserts and queries operate on the same PowerSync-managed table.
+- Drift watchers observe a row written directly through PowerSync.
+- PowerSync upload queue count rises on local writes and persists across a close/reopen.
+
+The same run also checked out clean production main at `4e9747ed2005806ae81ede78ef2448af9b483aa7`; `tools/offline_architecture_check.py` and `tools/phase_boundary_check.py` both passed unchanged.
+
+This proves useful Linux package-level compatibility, not Android native/runtime compatibility or a complete sync integration. The passing run emitted a warning because the test harness opened a second PowerSync handle before closing the first. The harness was corrected in a later PoC commit; the corrected run and a dedicated Android emulator + arm64 release build are still in progress.
+
+Dependency resolution succeeded for 126 entries. The inventory detector found license markers for all entries and no missing/unclassified license files. This is not legal approval; actual license texts and service terms require review. The resolved lockfile is still an artifact rather than committed PoC state, so reproducible `--enforce-lockfile` verification remains outstanding.
+
+PowerSync 2.5.0 requires Dart >=3.10, while the root application declares a minimum SDK constraint >=3.5. If selected, the supported minimum SDK contract must be reconsidered in the approved architecture decision.
 
 ## 3. Database and account architecture findings
 
@@ -78,19 +94,20 @@ Additional safety/diagnostic changes:
 - [Google Identity App CI run 40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703): success. Account-choice preflight and full offline-app suite passed; Google identity host tests passed; the Google identity Android release APK built successfully.
 - These runs used Flutter `3.47.4`. CI-AM is **COMPLETE / GREEN** for this baseline timeout. The original failed runs remain above as historical evidence.
 
-## 5. Environment readiness and honest execution state
+## 5. Environment readiness
 
-Official PowerSync documentation confirms a local-development route that self-hosts Supabase and PowerSync with Docker; a public sample repository includes a Supabase demo. Therefore, a hosted project, paid plan, or production credential is not inherently required for the PoC:
-- https://docs.powersync.com/integrations/supabase/local-development
-- https://github.com/powersync-ja/self-host-demo
+Not yet verified in a runnable developer environment:
+- Flutter/Dart and Android SDK matching the repository's configured toolchain.
+- Docker and Supabase CLI for local Supabase testing.
+- PowerSync local/hosted development service access.
+- Android emulator or physical device for encrypted database and release smoke tests.
+- Safe local/CI secret storage for test credentials.
 
-**Actual execution status: NOT RUN.** This audit has not executed Docker Compose, Supabase CLI, clean dependency resolution, Android emulator tests, or PowerSync/Drift encryption tests. Existing GitHub Actions prove the current app/CI baseline only; they do not prove that the PoC toolchain is present or that sync compatibility works. Start with PoC-0 on an isolated branch, capture actual command versions/results, then run each experiment in ADR-001's ledger. Do not state that a tool is available until its command output is captured.
+GitHub Actions successfully ran the root Flutter tests, the offline-app test suite, Google identity host tests, and the Android host APK build. This session still has no local checked-out working tree/Flutter executable for direct shell execution, and Docker/Supabase CLI, an Android emulator/device, and the PowerSync service remain unavailable for the Run A compatibility PoC.
 
-The PoC should use only disposable local Docker volumes, synthetic users/data and fresh test keys. Do not configure a hosted service, add a billing subscription, reuse app keys/database files, or put secrets into Git.
+## 6. Architecture research and decision still pending
 
-## 6. Architecture research summary and decision state
-
-PowerSync + Supabase is the first option to test in a local PoC; it is not selected for production. ADR-001 is the single source of the options analysis, version snapshot, privacy/security risks, workspace alternatives, Qaza conflict policy candidate, estimated costs and quantified PoC/no-go criteria. If the first documented encryption option fails, test the alternate documented cipher option before rejecting PowerSync. Custom sync remains the fallback, with higher implementation/testing/operational burden.
+No sync-engine choice has been made. Linux encrypted-database and Drift tests have passed, but the corrected-run warning recheck and Android emulator/release verification remain pending. Docker sync, two-user RLS/Sync Stream isolation, offline replay, adoption/reconciliation, session expiry, key-loss/backup, deletion, and Google identity have not yet been demonstrated. Continue the focused PoC, verify current official releases, compare custom sync as a fallback, and record costs before presenting the ADR.
 
 The ADR must address:
 - One active authenticated cloud account per installation.
@@ -102,19 +119,53 @@ The ADR must address:
 - Cost and operational burden.
 - Explicit criteria for switching to custom sync.
 
-## 7. Current Run A status
+## 7. Next steps
 
-**Run A: OPEN — blocked on PoC execution.** Research and candidate architecture are documented in [ADR-001](adr-001-supabase-powersync-candidate.md). No sync engine is accepted and no backend code has been implemented.
+1. **COMPLETE — CI-AM:** the historical account-choice test timeouts were fixed; green baseline workflow evidence is recorded in Section 4.
+2. **PARTIAL PASS — Linux PowerSync/Drift PoC:** encryption lifecycle, wrong/missing-key rejection, Drift interoperability, watchers, and queue-count behavior passed in disposable CI. Corrected warning check and Android runtime/release build remain pending.
+3. Run local Docker Supabase + PowerSync sync/restart/replay and two-user RLS/Sync Stream isolation experiments with synthetic users.
+4. Exercise guest adoption/cancel, permanent-failure handling, key-loss/restore, and deletion lifecycle where the isolated environment permits.
+5. Review package/service terms, SDK minimum constraints, and self-hosted versus hosted costs.
+6. Finalize the ADR and present evidence, remaining unknowns, and the recommendation.
+7. **Stop for explicit approval. Do not begin backend implementation before approval.**
 
-1. **COMPLETE — repository/code inventory:** encrypted key store/database opener, Drift schema/DAO shape, workspace manager/registry, session/Google identity boundaries, root/host manifests and architecture scripts inspected.
-2. **COMPLETE — official-docs/option research:** PowerSync encryption and upload queue, local Docker setup, Sync Streams, Drift integration package, Supabase Auth/RLS and qualitative costs recorded in ADR-001.
-3. **OPEN — topology and Qaza conflict policy:** choose W1/W2 based on actual DAO/workspace impact and establish append-only completion/reversal semantics before sync tests.
-4. **NOT RUN — POC-0 through POC-8:** local execution is possible in principle without a hosted service. No command/test result is claimed until recorded; keep all tests on a throwaway branch with synthetic data and check-only formatting.
-5. **REQUIRED — owner approval:** do not implement backend or change production app behavior until PoC evidence has been added, ADR status has a defensible decision, and the owner explicitly approves.
 
-## 8. Research reference
+## 8. Official documentation research (2026-10-25)
 
-The original official-documentation research has been consolidated into [ADR-001](adr-001-supabase-powersync-candidate.md), which is the single source for package-version snapshots, options, security and privacy findings, pricing notes and PoC acceptance criteria. This baseline is intentionally focused on repository evidence and environment state so the research narrative does not drift across documents.
+Initial research is recorded here, but it does not replace the required compatibility PoC.
 
-Primary links are maintained in ADR-001 §11. Official PowerSync documentation confirms a self-hosted Supabase + PowerSync local development path via Docker. Current PoC execution status remains **NOT RUN**; do not treat documentation support as evidence that this repository's encrypted Drift database works with PowerSync.
+- PowerSync Dart/Flutter SDK `powersync 2.5.0` is published as stable; release notes dated 2026-10-19 describe a web worker protocol change affecting web builds, not native Android. Native SQLCipher support was restored in 2.3.1, while v2.0 added built-in `EncryptionOptions` support for SQLite3 Multiple Ciphers. The PoC must verify the actual native configuration used by this project rather than infer compatibility from release notes.
+  - https://releases.powersync.com/announcements/flutter-client-sdk
+  - https://pub.dev/packages/powersync
+- `drift_sqlite_async 0.3.1` is published as stable and documents Drift query support, transactions/nested transactions, update propagation, and optional Drift migrations over `sqlite_async`. Its package dependencies include `drift`, `sqlite3`, and `sqlite_async`; compatibility with PowerSync's selected encrypted connection remains unproven until tested.
+  - https://pub.dev/packages/drift_sqlite_async
+  - https://pub.dev/packages/drift_sqlite_async/versions
+- Supabase's PowerSync integration describes a client-side SQLite database, Sync Rules/Streams, upload queue, Supabase Auth integration, and server-side custom conflict handling. PowerSync is therefore a credible leading candidate, not yet the selected architecture.
+  - https://supabase.com/partners/catalog/powersync
+- Pricing observed during this audit: Supabase Free is $0 with 500 MB database, 50,000 MAU, and projects paused after one week of inactivity; Supabase Pro starts at $25/month. PowerSync Cloud Free is $0 with soft limits, 2 GB synced/month, 500 MB hosted data, 50 peak concurrent clients, and project deactivation after one week of inactivity; PowerSync Cloud Pro starts at $49/month. Prices and plan limits can change; verify before provisioning. No paid service is authorized by this audit.
+  - https://supabase.com/pricing
+  - https://powersync.com/pricing
+- Supabase RLS guidance recommends explicit per-operation policies, roles such as `to authenticated`, ownership expressions using `(select auth.uid())`, indexes for policy predicates, and `security_invoker = true` for exposed views where appropriate. The future implementation should include pgTAP tests in `supabase/tests/` and run `supabase test db` in CI.
+  - https://supabase.com/docs/guides/database/postgres/row-level-security
 
+### Preliminary candidate assessment (not an ADR decision)
+
+PowerSync is the leading candidate to test first because it provides the synchronization queue and local SQLite model, which can avoid a custom sync engine. The largest unresolved risk is whether its supported encryption configuration, database lifecycle, and optional Drift integration can coexist cleanly with the app's current SQLite3MultipleCiphers/native dependencies and one-active-account requirement. If supported PowerSync configurations fail the focused PoC, compare the maintenance cost of a custom transactional outbox against using PowerSync without Drift. Do not select either option until the evidence is recorded.
+
+
+## 9. Run A proof-of-concept status (2026-10-25)
+
+| Experiment | Status | Evidence / remaining work |
+|---|---|---|
+| POC-0 dependencies and production boundary | PARTIAL PASS | [Run 40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327): 126 resolved entries, exact direct pins, no missing/unclassified license files, and both root architecture checkers pass. Checked-in lockfile and enforce-lock verification remain outstanding. |
+| POC-1 encrypted DB and key handling | Linux PASS; Android pending | Correct-key reopen, encrypted header, and wrong/missing-key fail-closed passed on Linux. Android runtime and arm64 release check are running in [40201716063](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201716063). |
+| POC-2 Drift integration | Linux PASS; corrected rerun pending | Typed Drift insert/query, watcher propagation, close/reopen and queue-count assertions passed. A duplicate-handle test warning was fixed in the isolated harness; rerun pending. |
+| POC-3 Qaza events, reversal/idempotency and mutable revision protocol | NOT RUN | Requires synthetic ledger protocol tests. |
+| POC-4 local Docker sync/restart/replay | NOT RUN | Requires isolated local Supabase + PowerSync services. |
+| POC-5 two-user security/Sync Streams | NOT RUN | Requires two disposable email/password users, RLS tests, and proof that streaming is user-scoped. |
+| POC-6 adoption/session failure paths | NOT RUN | Guest adoption/cancel, owner-bound queue, expired session, permanent failure. |
+| POC-7 key loss/backup/removal/deletion | NOT RUN | Android backup/restore and crash-safe deletion tests. |
+| POC-8 Android regression | IN PROGRESS | Android encrypted DB and arm64 release smoke tests are running in the workflow above. |
+| POC-GOOGLE | BLOCKED ON OWNER APPROVAL | Google ID-token auth through Supabase Auth remains untested pending approval for a disposable OAuth client. |
+
+The current assistant runtime lacks local Flutter, Dart, Docker, and Supabase CLI executables; hosted GitHub Actions is being used for reproducible experiments. No production app source or root dependency manifest has been modified.
