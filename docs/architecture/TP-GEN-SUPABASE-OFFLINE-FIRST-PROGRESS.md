@@ -1,6 +1,6 @@
 # TP-GEN Progress Tracker — Supabase Offline-First Rebuild
 
-**Status:** Run A in progress; account-safety requirements added to plan; CI-AM remains RED pending diagnosis/fix  
+**Status:** Run A in progress; CI-AM timeout fix verified green; account-safety requirements tracked; PowerSync PoC and ADR remain open  
 **Last updated:** 2026-10-25 (Asia/Karachi)  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/supabase-offline-first`  
@@ -24,8 +24,8 @@
 | Gate | Status | Evidence / notes |
 |---|---|---|
 | Run A — repository and CI baseline | COMPLETE | Remote main and both current workflow definitions inspected. Baseline report created. |
-| CI-AM — diagnose/fix baseline test timeouts | BLOCKED | Four identical 10-minute timeouts confirmed; fixing requires running targeted Flutter tests. This session has no checked-out working tree, Flutter executable, or Android SDK. No test fix is claimed. |
-| Run A — environment readiness | BLOCKED / NOT VERIFIED | GitHub-connected inspection only; local Windows working tree, Docker/Supabase CLI, Android SDK/emulator, and PowerSync service are not available in this session. |
+| CI-AM — diagnose/fix baseline test timeouts | COMPLETE | Regression tests, full root test suite, offline-app suite, Google identity host tests, and Android host APK build passed in GitHub Actions runs [40170592701](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592701) and [40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703). |
+| Run A — environment readiness | PARTIAL / NOT VERIFIED | GitHub Actions verified Flutter tests and the Android host build. A local Windows validation, Docker/Supabase CLI setup, and PowerSync service/encryption PoC are still not verified. |
 | Run A — PowerSync/encryption/Drift PoC | NOT STARTED | Requires an executable environment; no compatibility claim made. |
 | Run A — custom-sync fallback and cost comparison | NOT STARTED | To complete after focused research. |
 | Run A — ADR | NOT STARTED | Must include evidence, package versions/date, account model, encryption/key recovery, costs, security, conflict rules, and fallback trigger. |
@@ -43,24 +43,32 @@
 - `apps/qaza_app_cloud` currently describes itself as Google Sign-In and local-only host; Supabase is not implemented.
 - Repository `AGENTS.md` confirms pre-release status and disposable test data. Some of its architecture-specific wording still mentions Google Drive backup and per-account databases; treat that as stale against current main and update it only with the approved redesign.
 
-## CI-AM — pre-implementation CI audit
+## CI-AM — pre-implementation CI audit and fix
 
-**Baseline result: RED.**
+**Historical baseline result: RED; current status: FIXED AND VERIFIED.**
 
-- Flutter CI run [40131841997](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40131841997): test job failed; Android release artifacts job succeeded.
-- Google Identity App CI run [40131842012](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40131842012): offline test job failed; Google identity Android host analyze/build job succeeded.
-- Both failed test runs report 758 tests passed and four failures. The same four tests each timed out after 10 minutes:
+Baseline evidence from `main`:
+- Flutter CI run [40131841997](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40131841997) and Google Identity App CI run [40131842012](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40131842012) both showed 758 tests passed and four 10-minute timeouts in `test/features/onboarding/account_choice_screen_test.dart`.
+- Failing cases were:
   1. `Google sign-in creates or resumes a local Google workspace`
   2. `Continue as Guest offers saved local workspaces and Start Fresh`
   3. `Google sign-in offers an explicit local Guest adoption`
   4. `Google identity failure leaves local account choice available`
-- Analysis, formatting, offline architecture policy, phase-boundary policy, and dead-code/dependency audit passed in the inspected runs.
-- The failing tests use asynchronous account/session/database flows and `pumpAndSettle()` in the relevant journeys. This is a diagnostic lead only; logs do not establish the root cause.
-- Both workflows use Flutter 3.47.4. Confirm whether this is intentional against the repo's current SDK policy before changing it.
-- Workflows have `contents: write` and may auto-format/commit/push on branch pushes. Account for this before interpreting branch CI.
-- Do not remove tests, weaken assertions, or change product behavior to hide the failures.
-- A remote re-run alone would likely spend up to 40 minutes timing out again without new diagnostic instrumentation; targeted local reproduction is the next useful action.
-- This session could not run Flutter tests, Android builds, Docker, Supabase CLI, or the PowerSync PoC: there is no checked-out repository and shell network access to GitHub is unavailable. Remote source and CI evidence were inspected instead.
+
+### Fix applied
+
+- The shared test harness did real temporary-directory I/O and native Drift database/session setup directly inside `testWidgets`' fake-async zone. The tests timed out before mounting the account-choice UI.
+- The test harness now runs real filesystem/native database setup and teardown via `tester.runAsync`; direct database setup and readback in test bodies also use the real async path.
+- Replaced unbounded `pumpAndSettle()` calls with bounded waits for expected UI states. Each of the four regression tests has a 45-second limit.
+- Added a preflight that runs the four named regression tests individually before code generation and the full suite, so a recurrence fails early with a specific test result.
+- No application behavior was changed, no test was deleted, and no assertion was weakened.
+
+### Verification evidence
+
+- [Flutter CI run 40170592701](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592701) completed successfully. The four-test preflight passed, then the full root `flutter test --coverage` suite passed. The workflow ran Dart formatting and pushed the formatting-only follow-up commit `c4f0004b960b5afe9a0c3ce39b4f09ae28d77fee` during the successful job.
+- [Google Identity App CI run 40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703) completed successfully. The preflight passed, the full offline-app suite passed, Google identity host tests passed, and the Google identity Android release APK built successfully.
+- Both workflows use Flutter `3.47.4`. These checks verify CI-AM for the current test-harness fix. The original failing runs remain linked above as historical baseline evidence.
+- CI workflows contain `contents: write` and can auto-format/commit/push on branch pushes; account for that when comparing run head SHA with the latest branch head.
 
 ## Architecture findings
 
@@ -123,26 +131,25 @@ These requirements are accepted into the planning scope. They are design/test cr
 - **Phase 5 UI:** pending reconciliation/cancel flow and explicit guest adoption; local-data removal confirmation with actual pending-change count and irreversible-loss warning.
 - **Run A ADR:** ownership matrix, cancellation contract, wipe protocol, queued-change ownership, email/display-only policy, cloud-existing-data behavior, and architecture-specific proof for the chosen sync engine.
 - **Run C implementation:** only after Run A evidence is complete and the user explicitly approves the ADR.
-- These criteria do not mean the ADR is decided, CI-AM is fixed, or any app implementation is complete.
+- These criteria are planning requirements. They do not mean the ADR is decided or any app/backend implementation is complete.
 
 ## Next actions
 
-1. In a runnable Windows/Flutter environment, reproduce the four timeouts individually with expanded test output; identify the shared hang and apply the smallest justified fix.
-2. Re-run targeted tests, then the full Flutter test suite and both CI workflows. Record exact results; do not claim CI-AM complete until green or a justified, explicitly documented external blocker is accepted.
-3. Complete remaining source inventory and environment checks.
+1. **COMPLETE — CI-AM:** test harness async setup/teardown fix verified; all four regression tests, full root and offline suites, Google identity host tests, and Android APK build passed in runs 40170592701 and 40170592703.
+2. Complete remaining source inventory and environment checks.
 4. Verify current official package versions/release notes.
 5. Run the focused PowerSync/encryption/Drift compatibility spike in an isolated throwaway location. If one encryption option fails, test the other supported documented option before rejecting PowerSync.
 6. Compare custom sync as fallback, including cost and operational burden.
 7. Create the ADR and present evidence to the user.
 8. **Stop for explicit approval. Do not begin backend implementation before approval.**
 
-## Current branch CI
+## Latest CI and branch state
 
-- Latest branch head at last status check: `4ae584b18e239b328a5e4ba4488428b8a7fdb924` (`docs: track initial PowerSync research and branch CI`).
-- Latest Flutter CI run: [40166108911](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166108911), status `in_progress` when checked. Setup, pub get, localization/Drift code generation, offline architecture policy, phase-boundary policy, dead-code/dependency audit, analysis, and formatting completed successfully; `Test with coverage` was still running. This is **not a green CI result**.
-- Earlier docs-only runs [40166074570](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166074570) and [40166098688](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166098688) were cancelled by newer branch pushes; they do not provide a complete test result.
-- The known main-branch baseline remains RED due to four 10-minute account-choice test timeouts. No fix is claimed.
-- No application/backend code has been changed. No PowerSync encryption/Drift proof of concept has run. CI-AM remains unresolved until the shared timeout is diagnosed and a justified fix passes targeted tests and full CI.
+- Latest branch head: `c4f0004b960b5afe9a0c3ce39b4f09ae28d77fee` (`style: format Dart sources`, generated by the workflow's formatter).
+- Verified green root Flutter CI: [run 40170592701](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592701).
+- Verified green Google Identity App CI: [run 40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703).
+- Both current workflows passed the account-choice preflight. The root full test-with-coverage suite and the offline-app full suite passed; the Google identity host tests and Android APK build also passed.
+- Supabase is not implemented. No PowerSync encryption/Drift PoC has run, no ADR decision has been made, and explicit user approval is still required before Run B/backend implementation.
 
 ## Change log
 
@@ -151,4 +158,6 @@ These requirements are accepted into the planning scope. They are design/test cr
 - 2026-10-25: Recorded the shared four-test CI timeout baseline and created the migration baseline report.
 - 2026-10-25: Added official package, RLS, and pricing research.
 - 2026-10-25: Added account-reconciliation, crash-safe wipe, ownership matrix, queued-change ownership, masked-email, destructive-warning, test, and phase-mapping criteria to the tracker. Planning documentation only; no application code has been changed.
-- 2026-10-25: Refreshed branch CI status; test-with-coverage remains in progress and CI-AM remains unresolved.
+- 2026-10-25: Fixed the account-choice test harness by running native filesystem/Drift setup and teardown through `tester.runAsync`; replaced `pumpAndSettle()` waits with bounded UI waits.
+- 2026-10-25: Added CI preflight commands to run each failing account-choice test individually before generated-code work/full suite.
+- 2026-10-25: CI-AM verified green: both relevant workflows passed the focused tests; root and offline full suites passed; Google identity host tests and APK build passed.
