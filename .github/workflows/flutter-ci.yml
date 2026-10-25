@@ -79,6 +79,9 @@ jobs:
           set -euo pipefail
           dart format --output=none --set-exit-if-changed lib test
 
+      - name: Run account-choice regression tests first
+        run: flutter test test/features/onboarding/account_choice_screen_test.dart --reporter expanded
+
       - name: Test with coverage
         run: flutter test --coverage
 

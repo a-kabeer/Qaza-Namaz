@@ -55,6 +55,8 @@ jobs:
         run: python3 tools/phase_boundary_check.py
       - name: Analyze offline application
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
+      - name: Run account-choice regression tests first
+        run: flutter test test/features/onboarding/account_choice_screen_test.dart --reporter expanded
       - name: Test offline application
         run: flutter test --coverage
 
