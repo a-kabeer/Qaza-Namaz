@@ -7,4 +7,6 @@ analyzer:
     # Phase 2 is an independent Dart package with its own dependencies and CI.
     # Analyze it from packages/qaza_cloud_adapter, never in Phase 1's context.
     - packages/qaza_cloud_adapter/**
+    # The Supabase/PowerSync experiment is a separate package with its own dependencies and CI.
+    - poc/supabase_powersync/**
 include: package:flutter_lints/flutter.yaml
