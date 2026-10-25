@@ -184,6 +184,12 @@ jobs:
           cd "$POC_DIR"
           flutter test test/powersync_encryption_test.dart test/drift_powersync_adapter_test.dart --reporter expanded 2>&1 | tee "$EVIDENCE_DIR/powersync-drift-tests.txt"
 
+      - name: Prepare disposable Android smoke project
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 "$POC_DIR/scripts/prepare_android_smoke.py" "$RUNNER_TEMP/powersync-android-smoke"
+
       - name: Android encrypted PowerSync runtime and release-build smoke test
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -191,136 +197,7 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          script: |
-            set -eu
-            ANDROID_APP="$RUNNER_TEMP/powersync-android-smoke"
-            flutter create --platforms=android --project-name qaza_powersync_android_smoke "$ANDROID_APP"
-            python3 - "$ANDROID_APP/pubspec.yaml" <<'PY'
-            from pathlib import Path
-            import sys
-
-            path = Path(sys.argv[1])
-            text = path.read_text(encoding="utf-8")
-            if "  powersync: 2.5.0" not in text:
-                text = text.replace(
-                    "dependencies:\n",
-                    "dependencies:\n  powersync: 2.5.0\n  path_provider: ^2.1.5\n",
-                    1,
-                )
-            if "  integration_test:\n    sdk: flutter" not in text:
-                text = text.replace(
-                    "dev_dependencies:\n",
-                    "dev_dependencies:\n  integration_test:\n    sdk: flutter\n",
-                    1,
-                )
-            if "\nhooks:\n" not in text:
-                text += "\nhooks:\n  user_defines:\n    sqlite3:\n      source: sqlite3mc\n"
-            path.write_text(text, encoding="utf-8")
-            PY
-            mkdir -p "$ANDROID_APP/integration_test"
-            cat > "$ANDROID_APP/lib/main.dart" <<'DART'
-            import 'package:flutter/material.dart';
-
-            void main() => runApp(const MaterialApp(home: Scaffold(body: Text('PowerSync encryption PoC'))));
-            DART
-            cat > "$ANDROID_APP/integration_test/powersync_encryption_test.dart" <<'DART'
-            import 'dart:convert';
-            import 'dart:io';
-
-            import 'package:flutter_test/flutter_test.dart';
-            import 'package:integration_test/integration_test.dart';
-            import 'package:path_provider/path_provider.dart';
-            import 'package:powersync/powersync.dart';
-
-            const schema = Schema([
-              Table('android_smoke_records', [Column.text('label')]),
-            ]);
-
-            String keyFor(int seed) =>
-                base64UrlEncode(List<int>.generate(32, (i) => (i + seed) & 0xff));
-
-            PowerSyncDatabase openDb(String path, {String? key}) => PowerSyncDatabase(
-                  schema: schema,
-                  path: path,
-                  encryption: key == null
-                      ? null
-                      : EncryptionOptions(key: key, sqlcipherCompatibility: false),
-                );
-
-            Future<Object?> tryOpen(String path, {String? key}) async {
-              PowerSyncDatabase? db;
-              try {
-                db = openDb(path, key: key);
-                await db.initialize();
-                await db.get('SELECT label FROM android_smoke_records LIMIT 1');
-                return null;
-              } catch (error) {
-                return error;
-              } finally {
-                try {
-                  if (db != null && !db.closed) await db.close();
-                } catch (_) {}
-              }
-            }
-
-            void main() {
-              IntegrationTestWidgetsFlutterBinding.ensureInitialized();
-
-              testWidgets('Android encrypted database persists and rejects wrong keys', (tester) async {
-                final dir = await getApplicationSupportDirectory();
-                final path = '${dir.path}${Platform.pathSeparator}powersync-${DateTime.now().microsecondsSinceEpoch}.sqlite';
-                final key = keyFor(0);
-
-                final db = openDb(path, key: key);
-                await db.initialize();
-                expect((await db.getUploadQueueStats()).count, 0);
-                await db.execute(
-                  'INSERT INTO android_smoke_records (id, label) VALUES (?, ?)',
-                  ['android-record-1', 'synthetic-android-encrypted-record'],
-                );
-                expect((await db.getUploadQueueStats()).count, 1);
-                await db.close();
-
-                final file = File(path);
-                final original = await file.readAsBytes();
-                expect(original, isNotEmpty);
-                expect(
-                  String.fromCharCodes(original.take(16)),
-                  isNot('SQLite format 3\u0000'),
-                  reason: 'Encrypted SQLite file must not have the plaintext header.',
-                );
-
-                final reopened = openDb(path, key: key);
-                await reopened.initialize();
-                expect((await reopened.getUploadQueueStats()).count, 1);
-                final row = await reopened.get(
-                  'SELECT label FROM android_smoke_records WHERE id = ?',
-                  ['android-record-1'],
-                );
-                expect(row['label'], 'synthetic-android-encrypted-record');
-                await reopened.close();
-
-                final wrongCopy = await file.copy('$path.wrong-key-copy');
-                final wrongBytes = await wrongCopy.readAsBytes();
-                expect(await tryOpen(wrongCopy.path, key: keyFor(71)), isNotNull);
-                expect(await wrongCopy.readAsBytes(), equals(wrongBytes));
-
-                final noKeyCopy = await file.copy('$path.no-key-copy');
-                final noKeyBytes = await noKeyCopy.readAsBytes();
-                expect(await tryOpen(noKeyCopy.path), isNotNull);
-                expect(await noKeyCopy.readAsBytes(), equals(noKeyBytes));
-                expect(await file.readAsBytes(), equals(original));
-              });
-            }
-            DART
-            cd "$ANDROID_APP"
-            if ! flutter pub get >"$EVIDENCE_DIR/android-pub-get.txt" 2>&1; then cat "$EVIDENCE_DIR/android-pub-get.txt"; exit 1; fi
-            cat "$EVIDENCE_DIR/android-pub-get.txt"
-            if ! flutter test integration_test/powersync_encryption_test.dart -d emulator-5554 --reporter expanded >"$EVIDENCE_DIR/android-encryption-test.txt" 2>&1; then cat "$EVIDENCE_DIR/android-encryption-test.txt"; exit 1; fi
-            cat "$EVIDENCE_DIR/android-encryption-test.txt"
-            if ! flutter build apk --release --target-platform android-arm64 >"$EVIDENCE_DIR/android-release-build.txt" 2>&1; then cat "$EVIDENCE_DIR/android-release-build.txt"; exit 1; fi
-            stat --format='release_apk_bytes=%s' build/app/outputs/flutter-apk/app-release.apk >>"$EVIDENCE_DIR/android-release-build.txt"
-            cat "$EVIDENCE_DIR/android-release-build.txt"
+          script: bash "$POC_DIR/scripts/run_android_smoke.sh" "$RUNNER_TEMP/powersync-android-smoke" "$EVIDENCE_DIR"
 
       - name: Upload POC-0 evidence
         if: always()
