@@ -4,7 +4,8 @@
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Current main reviewed for Run A update:** `4e9747ed2005806ae81ede78ef2448af9b483aa7`  
 **Original architecture-code inspection baseline:** `565d11f4db150ebcb64cb2cf5e96271821a8a997`  
-**Feature branch:** `tp-gen/supabase-offline-first`  
+**Documentation branch:** `tp-gen/supabase-run-a-adr`  
+**Original investigation branch:** `tp-gen/supabase-offline-first`  
 **Scope:** Read-only baseline inspection plus a test-harness/CI repair for TP-GEN Run A. No application behavior changes made.
 
 ## 1. Repository state and current architecture
