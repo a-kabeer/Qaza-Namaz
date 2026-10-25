@@ -147,8 +147,8 @@ These requirements are accepted into the planning scope. They are design/test cr
 ## Run A: OPEN — blocked on PoC (updated 2026-10-25)
 
 1. **COMPLETE — repository/code inventory:** inspected the encrypted database opener and key store, Drift schema/DAO shape, workspace manager and registry, account session and Google identity boundary, root/host manifests, architecture scripts and current CI evidence.
-2. **COMPLETE — official-documentation review:** checked PowerSync Flutter/encryption docs, PowerSync + Supabase setup, Sync Streams lifecycle, Drift-on-sqlite_async package docs, Supabase Auth/RLS docs, and current package/pricing pages. Sources and version snapshot are in ADR-001.
-3. **COMPLETE — alternatives and cost comparison:** custom sync is documented as fallback; Supabase Realtime alone is not sufficient as a durable offline sync protocol.
+2. **COMPLETE — official-documentation review:** checked PowerSync Flutter/encryption docs, PowerSync + Supabase setup, Sync Streams lifecycle, Drift-on-sqlite_async package docs, Supabase Auth/RLS docs and pricing pages. ADR-001 is the single source for the current version snapshot, options and cost notes.
+3. **COMPLETE (qualitative only) — alternatives and cost comparison:** custom sync is documented as fallback; Supabase Realtime alone is not a complete durable offline sync protocol. No workload-based usage model or measured implementation cost has been validated.
 4. **COMPLETE — proposed ADR draft:** options, workspace alternatives, Qaza conflict-policy candidate, session/deletion/key-loss, backup/recovery, sensitive-data and queue-count requirements plus go/no-go thresholds are recorded in [ADR-001](adr-001-supabase-powersync-candidate.md). It is not approved for production.
 5. **NOT RUN — compatibility PoC:** PowerSync officially documents a self-hosted local Supabase + PowerSync Docker workflow, so hosted credentials are not a prerequisite. Runtime execution still requires verifying actual local/runner tooling; first execute POC-0, then POC-1 through POC-8 in the experiment ledger. No test is marked passed until results/logs exist.
 6. **REQUIRED — owner review:** no Run B and no backend implementation before the PoC evidence is attached, the ADR is updated to Accepted/Rejected, and the owner explicitly approves.
@@ -174,47 +174,28 @@ These requirements are accepted into the planning scope. They are design/test cr
 - 2026-10-25: CI-AM verified green: both relevant workflows passed the focused tests; root and offline full suites passed; Google identity host tests and APK build passed.
 
 
-## 9. Run A official-docs assessment and candidate recommendation (2026-10-25)
 
-### What the research establishes
+## Research source of truth
 
-- The latest package listing observed is PowerSync Flutter SDK 2.5.0 (Dart minimum 3.10), sqlite_async 0.14.6, drift_sqlite_async 0.3.1 and supabase_flutter 2.18.3. These are dated observations, not lockfile entries or proof they work together. The root pubspec advertises a Dart lower bound of 3.5; adding PowerSync 2.5.x may require raising that lower-bound contract even though current CI used a newer Dart SDK.
-- PowerSync's current native encryption API explicitly documents both SQLite3MultipleCiphers (the current root build hook is sqlite3mc) and SQLCipher. This is positive package-level evidence. The precise encryption option, key format, native dependency graph, Android release artifact and Drift connection lifecycle have not been exercised in this app.
-- PowerSync's Flutter reference documents a client-side schema managed from backend schema/Sync Streams, and separately handled raw/local-only tables. The app currently uses a custom Drift schema v26, numerous DAOs/custom queries, migrations, and control/workspace database routing. This implies a data-layer/schema migration decision, not just adding a dependency.
-- PowerSync's Supabase guide uses a replication role that can bypass RLS and explains that data in a Postgres publication is read by the service regardless of whether every table appears in a Sync Stream. Therefore the design requires least-privilege table grants/publication allowlisting and strict owner-filtered Sync Streams in addition to client-facing RLS; cross-user stream isolation must be tested directly.
-- The PowerSync SDK queues client-side writes, calls the app-supplied upload handler and retries when that handler errors. It does not define Qaza-specific conflict semantics. Stable IDs, idempotency, owner validation, revision/conflict rules, deletion tombstones and account-deletion handling remain application responsibilities.
-- Supabase RLS docs call for explicit operation/role policies, owner checks, appropriate indexes and automated tests. The intended test path is pgTAP / supabase test db.
-- Pricing snapshot in the proposed ADR: Supabase Free $0 with 500 MB database/50,000 MAU and pausing after inactivity; Supabase Pro from $25/month. PowerSync Cloud Free has 2 GB sync/month, 500 MB hosted data/50 peak concurrent clients and inactivity deactivation; Pro starts at $49/month. Both-plan Pro baseline is approximately $74/month before applicable overages/other costs. Recheck price, compute and region before provisioning. No paid plan or project was provisioned.
+All official documentation, version snapshots, candidate options, security implications and cost notes belong in [ADR-001](adr-001-supabase-powersync-candidate.md). This tracker records current gate status and links the source of truth to avoid duplicating research that can drift. The [migration baseline](supabase-migration-baseline.md) records repository facts and proof-of-concept environment readiness.
 
-### Recommendation status
+## Run A: OPEN — current status
 
-PowerSync + Supabase is the first option to test in an isolated PoC because it removes the need to build the core change queue and replication loop from scratch. It is not selected for production until a proof of concept demonstrates encryption, Drift/data-layer integration, offline replay, two-account ownership isolation, guest adoption/cancel, account switching, conflict/deletion semantics and Android release builds. If those gates fail, prepare a custom-sync design and estimate its durable outbox, retry, cursor, tombstone, monitoring and conflict-policy burden before deciding.
+- **Source inventory and baseline:** COMPLETE.
+- **Official-docs and qualitative options review:** COMPLETE; details live in ADR-001.
+- **Workspace topology (W1 vs W2):** OPEN; decide based on actual DAO/query/migration and Guest/Restore impacts in POC-0.
+- **Qaza completion/undo conflict policy:** OPEN; map append-only event candidate to current domain behavior and tests.
+- **PoC:** NOT RUN. A local self-hosted Docker route exists in official PowerSync documentation, but actual tooling/build/test output must be captured.
+- **ADR:** PROPOSED only; owner approval required before Run B.
+- **Implementation:** NOT APPROVED; no app/backend behavior may be changed by this documentation PR.
 
-### Official source links
+## Experiment ledger
 
-- PowerSync Flutter SDK: https://docs.powersync.com/client-sdks/reference/flutter
-- PowerSync encryption options: https://pub.dev/documentation/powersync/latest/powersync/EncryptionOptions-class.html
-- PowerSync + Supabase: https://docs.powersync.com/integrations/supabase/guide
-- Sync Streams / legacy Sync Rules status: https://docs.powersync.com/sync/rules/overview
-- Drift integration: https://pub.dev/packages/drift_sqlite_async
-- sqlite_async: https://pub.dev/packages/sqlite_async
-- Supabase Auth: https://supabase.com/docs/guides/auth
-- Supabase RLS: https://supabase.com/docs/guides/database/postgres/row-level-security
-- Supabase pricing: https://supabase.com/pricing
-- PowerSync pricing: https://powersync.com/pricing
+See the authoritative list of POC-0 through POC-8, detailed commands and acceptance criteria in [ADR-001 §9](adr-001-supabase-powersync-candidate.md). All experiments remain NOT RUN until exact results and evidence URLs are recorded. Keep CI formatting check-only and use synthetic data, disposable database volumes and fresh test keys.
 
+## Current main CI baseline
 
-- 2026-10-25: Added ADR-001 as a proposed PowerSync-first candidate; review gaps are being resolved. Local self-hosted PoC is available in principle without a hosted project. No encryption/Drift/cross-account runtime test is marked complete until run evidence exists; backend implementation remains blocked pending evidence and owner approval.
+- [Flutter CI — run 40172042979](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042979): success on merged main commit `4e9747ed2`.
+- [Google Identity App CI — run 40172042972](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042972): success on the same commit.
+- These runs verify current app/CI behavior, not PowerSync or Supabase compatibility.
 
-
-## Review follow-up — Claude review issues (2026-10-25)
-
-The second review has been incorporated into ADR-001 and the experiment ledger. The ADR is the single source of architecture research; this tracker points to it rather than repeating the research narrative.
-
-Key additions:
-- Workspace topology W1 versus W2 is now a prerequisite decision. Guest-after-sign-out and Guest data when choosing Restore are specified for both.
-- Append-only Qaza completion/reversal events with client UUIDs are a conflict-policy candidate; mutable settings require revision conflict handling. This remains to be mapped and verified against existing domain semantics.
-- Expired/revoked auth, provider identity linking, server-side account deletion, permanent upload failures, key loss, Android backup/restore, religious-data sensitivity and pending-queue count are explicit PoC/design items.
-- PoC Step 0 covers a clean isolated dependency resolution, SDK/host tooling, architecture checkers and topology inventory.
-- Official PowerSync guidance describes self-hosted Supabase + PowerSync via Docker for local integration testing, so the local PoC does not inherently require a hosted service or payment. The exact environment readiness remains NOT RUN until command output is recorded.
-- All runtime POC rows remain NOT RUN. No app runtime/backend implementation was made.
