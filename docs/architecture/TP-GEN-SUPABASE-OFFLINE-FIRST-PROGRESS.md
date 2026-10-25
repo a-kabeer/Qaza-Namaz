@@ -82,8 +82,15 @@
 7. Create the ADR and present evidence to the user.
 8. **Stop for explicit approval. Do not begin backend implementation before approval.**
 
+## Current branch CI after documentation-only commits
+
+- Latest inspected feature-branch commit: `b174564735c0188aa6935157e7071b7baa8563a1`.
+- CI for the previous tracker commit is still running: [Flutter CI run 40166074570](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166074570). A newer run for the baseline research document is pending: [Flutter CI run 40166098688](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166098688). These are documentation-only commits; test outcomes are not yet known.
+- Official research added to the baseline report: PowerSync 2.5.0 release notes (2026-10-19), `drift_sqlite_async` 0.3.1 stable documentation, Supabase RLS guidance, and published Supabase/PowerSync Cloud pricing. Links are in `docs/architecture/supabase-migration-baseline.md`.
+
 ## Change log
 
 - 2026-10-25: Created feature branch from audited main SHA.
 - 2026-10-25: Inspected root and host dependency manifests, AGENTS.md, encryption/database/session code, account-choice tests, architecture policy scripts, and both CI workflows.
 - 2026-10-25: Recorded the shared four-test CI timeout baseline and created the migration baseline report.
+- 2026-10-25: Added official package, RLS, and pricing research. Documentation-only feature-branch CI runs are pending/in progress; no application code has been changed.
