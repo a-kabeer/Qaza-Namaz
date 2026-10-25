@@ -101,10 +101,10 @@ Future<_Harness> _createHarness({
   );
   debugPrint('[account-choice-test] harness: read database revision');
   await database.readDbRevision().timeout(
-    const Duration(seconds: 20),
-    onTimeout: () =>
-        throw TimeoutException('Harness timed out reading database revision'),
-  );
+        const Duration(seconds: 20),
+        onTimeout: () => throw TimeoutException(
+            'Harness timed out reading database revision'),
+      );
   final store = AccountLocalStore(
     database: database,
     databaseManager: manager,
@@ -125,10 +125,10 @@ Future<_Harness> _createHarness({
   );
   debugPrint('[account-choice-test] harness: initialize account session');
   await session.initialize().timeout(
-    const Duration(seconds: 20),
-    onTimeout: () =>
-        throw TimeoutException('Harness timed out initializing account session'),
-  );
+        const Duration(seconds: 20),
+        onTimeout: () => throw TimeoutException(
+            'Harness timed out initializing account session'),
+      );
   debugPrint('[account-choice-test] harness: ready');
   return _Harness(
     database: database,
@@ -206,9 +206,8 @@ Future<void> _waitForLoginButton(WidgetTester tester) async {
 void main() {
   setUp(() => SharedPreferences.setMockInitialValues({}));
 
-  testWidgets(
-    'Google sign-in creates or resumes a local Google workspace',
-    (tester) async {
+  testWidgets('Google sign-in creates or resumes a local Google workspace',
+      (tester) async {
     final harness = await _createHarness(
       signInResult: const GoogleIdentitySnapshot.signedIn(
         accountId: 'google-account-42',
@@ -246,9 +245,8 @@ void main() {
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 45)));
 
-  testWidgets(
-    'Continue as Guest offers saved local workspaces and Start Fresh',
-    (tester) async {
+  testWidgets('Continue as Guest offers saved local workspaces and Start Fresh',
+      (tester) async {
     final harness = await _createHarness();
     addTearDown(harness.dispose);
 
@@ -282,9 +280,8 @@ void main() {
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 45)));
 
-  testWidgets(
-    'Google sign-in offers an explicit local Guest adoption',
-    (tester) async {
+  testWidgets('Google sign-in offers an explicit local Guest adoption',
+      (tester) async {
     final harness = await _createHarness(
       signInResult: const GoogleIdentitySnapshot.signedIn(
         accountId: 'google-adopt-account',
@@ -320,9 +317,8 @@ void main() {
     expect(tester.takeException(), isNull);
   }, timeout: const Timeout(Duration(seconds: 45)));
 
-  testWidgets(
-    'Google identity failure leaves local account choice available',
-    (tester) async {
+  testWidgets('Google identity failure leaves local account choice available',
+      (tester) async {
     final harness = await _createHarness(
       signInResult: const GoogleIdentitySnapshot.failed('Sign-in failed'),
     );
