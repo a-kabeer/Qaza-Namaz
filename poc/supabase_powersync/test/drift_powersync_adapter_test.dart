@@ -109,7 +109,7 @@ void main() {
     final reopened = ps.PowerSyncDatabase(
       schema: _schema,
       path: path,
-      encryption: EncryptionOptions(key: key, sqlcipherCompatibility: false),
+      encryption: ps.EncryptionOptions(key: key, sqlcipherCompatibility: false),
     );
     await reopened.initialize();
     expect((await reopened.getUploadQueueStats()).count, 2);
