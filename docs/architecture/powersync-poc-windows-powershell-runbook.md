@@ -51,7 +51,7 @@ Requirements:
 - Flutter/Dart and an Android emulator or test device that your current project toolchain can build for.
 - Adequate disk space for the local Supabase stack, Docker images and Android build.
 
-If any tool is missing, stop and install/configure it first. Do not install tools or restart Windows mid-run without saving your notes. Official references:
+If Node.js is missing, use the installation command above, then reopen PowerShell. If WSL is missing, open an elevated PowerShell window and follow Microsoft's `wsl --install` instructions; restart if prompted, then run `wsl --update` and re-check `wsl --version`. Install Docker Desktop from the official Windows installer and select/enable the WSL 2 backend in Docker Desktop settings. Start Docker Desktop and wait for `docker version` and `docker compose version` to succeed before continuing. Do not install tools or restart Windows mid-run without saving your notes. Official references:
 - https://supabase.com/docs/guides/local-development/cli/getting-started
 - https://supabase.com/docs/guides/local-development
 
