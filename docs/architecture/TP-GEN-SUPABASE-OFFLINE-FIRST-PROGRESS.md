@@ -1,6 +1,6 @@
 # TP-GEN Progress Tracker — Supabase Offline-First Rebuild
 
-**Status:** Run A documentation and architecture comparison recorded; ADR proposed; runtime PowerSync/Drift/encryption proof of concept remains blocked and no implementation is approved  
+**Status:** Run A: OPEN, blocked on PoC execution; ADR-001 proposed, no backend implementation approved  
 **Last updated:** 2026-10-25 (Asia/Karachi)  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/supabase-run-a-adr`  
@@ -24,13 +24,22 @@
 
 | Gate | Status | Evidence / notes |
 |---|---|---|
-| Run A — repository and CI baseline | COMPLETE | Remote main and both current workflow definitions inspected. Baseline report created. |
-| CI-AM — diagnose/fix baseline test timeouts | COMPLETE | Regression tests, full root test suite, offline-app suite, Google identity host tests, and Android host APK build passed in GitHub Actions runs [40170592701](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592701) and [40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703). |
-| Run A — environment readiness | PARTIAL / NOT VERIFIED | GitHub Actions verified Flutter tests and the Android host build. A local Windows validation, Docker/Supabase CLI setup, and PowerSync service/encryption PoC are still not verified. |
-| Run A — PowerSync/encryption/Drift PoC | NOT STARTED | Requires an executable environment; no compatibility claim made. |
-| Run A — custom-sync fallback and cost comparison | COMPLETE — research only | Options, operational burden and current listed prices are compared in the proposed ADR. Pricing must be rechecked before provisioning. |
-| Run A — ADR | PROPOSED — pending PoC and owner approval | [ADR-001 candidate architecture](adr-001-supabase-powersync-candidate.md) records options, package versions, account safety, encryption caveats, cost, fallback and go/no-go gates. It is not an approved implementation decision. |
-| Human approval | REQUIRED | Stop after Run A and obtain explicit user approval before Run B/backend implementation. |
+| Run A — source/CI baseline | COMPLETE | Reviewed main at 4e9747ed2 and current CI workflow definitions. |
+| CI-AM — baseline test timeout repair | COMPLETE | Existing main's focused regressions and current CI are green; this validates only the app/CI repair, not sync compatibility. |
+| Run A — official-docs, options and cost research | COMPLETE — qualitative research | ADR-001 is the single source of research findings and cost snapshot. Recheck prices and terms before provisioning. |
+| Run A — workspace topology decision (W1 vs W2) | OPEN — prerequisite | Compare actual DAO/query/migration/workspace routing changes and Guest/Restore effects in PoC-0 before choosing. |
+| Run A — Qaza event/conflict policy | OPEN — prerequisite | Proposed append-only completion/reversal event model and revision-checked RPC require mapping to real domain/test behavior. |
+| POC-0 — local toolchain/dependency resolution/checkers/topology | NOT RUN | First executable gate. Local self-hosted Supabase + PowerSync is documented; no hosted service/paid plan is needed. |
+| POC-1 — PowerSync encryption/reopen/wrong-key | NOT RUN | Test sqlite3mc first, SQLCipher fallback if needed; pin SDK/changelog. |
+| POC-2 — Drift/data layer/schema and architecture checks | NOT RUN | Include offline_architecture_check.py and phase_boundary_check.py; use check-only formatting. |
+| POC-3 — Qaza events/reversal/idempotency/RPC/queue count | NOT RUN | Determine reliable pending queue count; never report unknown as zero. |
+| POC-4 — local Docker sync/offline replay | NOT RUN | Use disposable local volumes/keys/users only. |
+| POC-5 — RLS, publication allowlist, Sync Streams, two-user queue isolation | NOT RUN | Blocking security gate. |
+| POC-6 — adoption, Guest, Restore, Cancel, expiry/revoke, permanent errors | NOT RUN | Must test explicit state transitions. |
+| POC-7 — key loss, backup/restore, wipe crash recovery and account deletion | NOT RUN | Must not replace unreadable data with empty DB silently. |
+| POC-8 — Android release and test/checker suite | NOT RUN | CI evidence must point to the exact PoC commit and use formatting check-only. |
+| Run A — ADR | PROPOSED, awaiting PoC evidence | ADR-001 documents the candidate and quantified no-go gates; not approved for implementation. |
+| Human approval before implementation | REQUIRED | Stop after Run A. Do not implement backend until PoC evidence and approved ADR are complete. |
 
 ## Repository baseline
 
@@ -134,13 +143,13 @@ These requirements are accepted into the planning scope. They are design/test cr
 - **Run C implementation:** only after Run A evidence is complete and the user explicitly approves the ADR.
 - These criteria are planning requirements. They do not mean the ADR is decided or any app/backend implementation is complete.
 
-## Run A result and remaining gate (updated 2026-10-25)
+## Run A: OPEN — blocked on PoC (updated 2026-10-25)
 
 1. **COMPLETE — repository/code inventory:** inspected the encrypted database opener and key store, Drift schema/DAO shape, workspace manager and registry, account session and Google identity boundary, root/host manifests, architecture scripts and current CI evidence.
 2. **COMPLETE — official-documentation review:** checked PowerSync Flutter/encryption docs, PowerSync + Supabase setup, Sync Streams lifecycle, Drift-on-sqlite_async package docs, Supabase Auth/RLS docs, and current package/pricing pages. Sources and version snapshot are in ADR-001.
 3. **COMPLETE — alternatives and cost comparison:** custom sync is documented as fallback; Supabase Realtime alone is not sufficient as a durable offline sync protocol.
-4. **COMPLETE — ADR draft:** a proposed candidate architecture and objective go/no-go gates are recorded in [ADR-001](adr-001-supabase-powersync-candidate.md). It recommends a PowerSync-first isolated PoC, not production adoption.
-5. **BLOCKED / NOT RUN — compatibility PoC:** this session has no local checked-out source tree or executable Flutter/Docker/Supabase CLI/Android emulator/PowerSync environment. Official package support is promising but does not prove integration with this app. Test both SQLite3MultipleCiphers and SQLCipher if needed; do not change the production app.
+4. **COMPLETE — proposed ADR draft:** options, workspace alternatives, Qaza conflict-policy candidate, session/deletion/key-loss, backup/recovery, sensitive-data and queue-count requirements plus go/no-go thresholds are recorded in [ADR-001](adr-001-supabase-powersync-candidate.md). It is not approved for production.
+5. **NOT RUN — compatibility PoC:** PowerSync officially documents a self-hosted local Supabase + PowerSync Docker workflow, so hosted credentials are not a prerequisite. Runtime execution still requires verifying actual local/runner tooling; first execute POC-0, then POC-1 through POC-8 in the experiment ledger. No test is marked passed until results/logs exist.
 6. **REQUIRED — owner review:** no Run B and no backend implementation before the PoC evidence is attached, the ADR is updated to Accepted/Rejected, and the owner explicitly approves.
 
 ## Latest CI and branch state
@@ -150,7 +159,7 @@ These requirements are accepted into the planning scope. They are design/test cr
 - [Google Identity App CI on the merged main commit — run 40172042972](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042972): completed successfully.
 - These runs verify the merged test/CI repair, **not** PowerSync, Supabase, encryption interoperability, two-user isolation or cross-device conflict behavior.
 - Supabase is not implemented; no PowerSync PoC has run. The proposed ADR remains unapproved.
-- Current documentation branch: tp-gen/supabase-run-a-adr, created from main at 4e9747ed2. This branch contains documentation only.
+- Documentation branch `tp-gen/supabase-run-a-adr` was created from main at `4e9747ed2`; it contains ADR/tracker/baseline documentation only. Original prior planning branch `tp-gen/supabase-offline-first` began at `565d11f4d`; that earlier SHA is the code-inspection baseline, not the current main HEAD.
 
 ## Change log
 
@@ -194,4 +203,17 @@ PowerSync + Supabase is the first option to test in an isolated PoC because it r
 - PowerSync pricing: https://powersync.com/pricing
 
 
-- 2026-10-25: Added ADR-001 as a proposed PowerSync-first candidate; official-documentation review and fallback/cost comparison are recorded. The encryption/Drift/cross-account runtime PoC is explicitly not run, and backend implementation remains blocked pending evidence and owner approval.
+- 2026-10-25: Added ADR-001 as a proposed PowerSync-first candidate; review gaps are being resolved. Local self-hosted PoC is available in principle without a hosted project. No encryption/Drift/cross-account runtime test is marked complete until run evidence exists; backend implementation remains blocked pending evidence and owner approval.
+
+
+## Review follow-up — Claude review issues (2026-10-25)
+
+The second review has been incorporated into ADR-001 and the experiment ledger. The ADR is the single source of architecture research; this tracker points to it rather than repeating the research narrative.
+
+Key additions:
+- Workspace topology W1 versus W2 is now a prerequisite decision. Guest-after-sign-out and Guest data when choosing Restore are specified for both.
+- Append-only Qaza completion/reversal events with client UUIDs are a conflict-policy candidate; mutable settings require revision conflict handling. This remains to be mapped and verified against existing domain semantics.
+- Expired/revoked auth, provider identity linking, server-side account deletion, permanent upload failures, key loss, Android backup/restore, religious-data sensitivity and pending-queue count are explicit PoC/design items.
+- PoC Step 0 covers a clean isolated dependency resolution, SDK/host tooling, architecture checkers and topology inventory.
+- Official PowerSync guidance describes self-hosted Supabase + PowerSync via Docker for local integration testing, so the local PoC does not inherently require a hosted service or payment. The exact environment readiness remains NOT RUN until command output is recorded.
+- All runtime POC rows remain NOT RUN. No app runtime/backend implementation was made.
