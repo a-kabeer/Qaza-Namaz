@@ -1,9 +1,6 @@
 name: Supabase PowerSync POC-0 (read-only)
 
 on:
-  push:
-    branches:
-      - poc/supabase-run-a-poc0-ci
   pull_request:
     branches:
       - main
