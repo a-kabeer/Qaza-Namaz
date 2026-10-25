@@ -144,15 +144,6 @@ These requirements are accepted into the planning scope. They are design/test cr
 - **Run B implementation planning:** only after Run A evidence is complete and the user explicitly approves the ADR.
 - These criteria are planning requirements. They do not mean the ADR is decided or any app/backend implementation is complete.
 
-## Run A: OPEN — blocked on PoC (updated 2026-10-25)
-
-1. **COMPLETE — repository/code inventory:** inspected the encrypted database opener and key store, Drift schema/DAO shape, workspace manager and registry, account session and Google identity boundary, root/host manifests, architecture scripts and current CI evidence.
-2. **COMPLETE — official-documentation review:** checked PowerSync Flutter/encryption docs, PowerSync + Supabase setup, Sync Streams lifecycle, Drift-on-sqlite_async package docs, Supabase Auth/RLS docs and pricing pages. ADR-001 is the single source for the current version snapshot, options and cost notes.
-3. **COMPLETE (qualitative only) — alternatives and cost comparison:** custom sync is documented as fallback; Supabase Realtime alone is not a complete durable offline sync protocol. No workload-based usage model or measured implementation cost has been validated.
-4. **COMPLETE — proposed ADR draft:** options, workspace alternatives, Qaza conflict-policy candidate, session/deletion/key-loss, backup/recovery, sensitive-data and queue-count requirements plus go/no-go thresholds are recorded in [ADR-001](adr-001-supabase-powersync-candidate.md). It is not approved for production.
-5. **NOT RUN — compatibility PoC:** PowerSync officially documents a self-hosted local Supabase + PowerSync Docker workflow, so hosted credentials are not a prerequisite. Runtime execution still requires verifying actual local/runner tooling; first execute POC-0, then POC-1 through POC-8 in the experiment ledger. No test is marked passed until results/logs exist.
-6. **REQUIRED — owner review:** no Run B and no backend implementation before the PoC evidence is attached, the ADR is updated to Accepted/Rejected, and the owner explicitly approves.
-
 ## Latest CI and branch state
 
 - Main after PR #351: 4e9747ed2005806ae81ede78ef2448af9b483aa7.
@@ -177,7 +168,7 @@ These requirements are accepted into the planning scope. They are design/test cr
 
 ## Research source of truth
 
-All official documentation, version snapshots, candidate options, security implications and cost notes belong in [ADR-001](adr-001-supabase-powersync-candidate.md). This tracker records current gate status and links the source of truth to avoid duplicating research that can drift. The [migration baseline](supabase-migration-baseline.md) records repository facts and proof-of-concept environment readiness.
+All official documentation, version snapshots, candidate options, security implications and cost notes belong in [ADR-001](adr-001-supabase-powersync-candidate.md). This tracker records current gate status and links the source of truth to avoid duplicating research that can drift. The [migration baseline](supabase-migration-baseline.md) records repository facts and environment readiness.
 
 ## Run A: OPEN — current status
 
@@ -195,7 +186,7 @@ See the authoritative list of POC-0 through POC-8, detailed commands and accepta
 
 ## Current main CI baseline
 
-- [Flutter CI — run 40172042979](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042979): success on merged main commit `4e9747ed2`.
+- [Flutter CI — run 40172042979](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042979): success on merged main commit \`4e9747ed2\`.
 - [Google Identity App CI — run 40172042972](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042972): success on the same commit.
 - These runs verify current app/CI behavior, not PowerSync or Supabase compatibility.
 
