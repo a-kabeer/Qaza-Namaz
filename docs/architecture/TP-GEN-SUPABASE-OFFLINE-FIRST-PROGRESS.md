@@ -155,6 +155,7 @@ These requirements are accepted into the planning scope. They are design/test cr
 - These runs verify the merged test/CI repair, **not** PowerSync, Supabase, encryption interoperability, two-user isolation or cross-device conflict behavior.
 - Supabase is not implemented; no PowerSync PoC has run. The proposed ADR remains unapproved.
 - Documentation branch `tp-gen/supabase-run-a-adr` was created from main at `4e9747ed2`; it contains ADR/tracker/baseline documentation only. Original prior planning branch `tp-gen/supabase-offline-first` began at `565d11f4d`; that earlier SHA is the code-inspection baseline, not the current main HEAD.
+- [Flutter CI run 40178245177](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40178245177) on documentation branch commit `b17bb2fce735fc4f41509ff8126152b893f2ad4d` completed successfully: Analyze, test, and offline architecture checks; Android release artifacts; Android offline startup smoke test all passed. This is app/repository regression evidence only, not a PoC result.
 
 ## Change log
 
@@ -170,6 +171,7 @@ These requirements are accepted into the planning scope. They are design/test cr
 
 
 - 2026-10-25: Incorporated the external review: added W1/W2 topology gate; Qaza append-only completion/reversal candidate; Auth expiry/deletion and provider-linking cases; key-loss/Android backup; sensitive-data treatment; queue-count requirement; local self-host PoC path; quantified no-go triggers; and POC-0 through POC-8 ledger. Runtime experiments remain NOT RUN.
+- 2026-10-25: Applied second review and recorded the subsequent green branch CI run `40178245177` for commit `b17bb2fce735fc4f41509ff8126152b893f2ad4`. All app CI jobs passed; Supabase/PowerSync PoC experiments remain NOT RUN.
 ## Research source of truth
 
 All official documentation, version snapshots, candidate options, security implications and cost notes belong in [ADR-001](adr-001-supabase-powersync-candidate.md). This tracker records current gate status and links the source of truth to avoid duplicating research that can drift. The [migration baseline](supabase-migration-baseline.md) records repository facts and environment readiness.
