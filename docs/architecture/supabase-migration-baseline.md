@@ -111,64 +111,9 @@ The ADR must address:
 4. **NOT RUN — POC-0 through POC-8:** local execution is possible in principle without a hosted service. No command/test result is claimed until recorded; keep all tests on a throwaway branch with synthetic data and check-only formatting.
 5. **REQUIRED — owner approval:** do not implement backend or change production app behavior until PoC evidence has been added, ADR status has a defensible decision, and the owner explicitly approves.
 
-## 8. Official documentation research (2026-10-25)
+## 8. Research reference
 
-Initial research is recorded here, but it does not replace the required compatibility PoC.
+The original official-documentation research has been consolidated into [ADR-001](adr-001-supabase-powersync-candidate.md), which is the single source for package-version snapshots, options, security and privacy findings, pricing notes and PoC acceptance criteria. This baseline is intentionally focused on repository evidence and environment state so the research narrative does not drift across documents.
 
-- PowerSync Dart/Flutter SDK `powersync 2.5.0` is published as stable; release notes dated 2026-10-19 describe a web worker protocol change affecting web builds, not native Android. Native SQLCipher support was restored in 2.3.1, while v2.0 added built-in `EncryptionOptions` support for SQLite3 Multiple Ciphers. The PoC must verify the actual native configuration used by this project rather than infer compatibility from release notes.
-  - https://releases.powersync.com/announcements/flutter-client-sdk
-  - https://pub.dev/packages/powersync
-- `drift_sqlite_async 0.3.1` is published as stable and documents Drift query support, transactions/nested transactions, update propagation, and optional Drift migrations over `sqlite_async`. Its package dependencies include `drift`, `sqlite3`, and `sqlite_async`; compatibility with PowerSync's selected encrypted connection remains unproven until tested.
-  - https://pub.dev/packages/drift_sqlite_async
-  - https://pub.dev/packages/drift_sqlite_async/versions
-- Supabase's PowerSync integration describes a client-side SQLite database, Sync Rules/Streams, upload queue, Supabase Auth integration, and server-side custom conflict handling. PowerSync is therefore a credible leading candidate, not yet the selected architecture.
-  - https://supabase.com/partners/catalog/powersync
-- Pricing observed during this audit: Supabase Free is $0 with 500 MB database, 50,000 MAU, and projects paused after one week of inactivity; Supabase Pro starts at $25/month. PowerSync Cloud Free is $0 with soft limits, 2 GB synced/month, 500 MB hosted data, 50 peak concurrent clients, and project deactivation after one week of inactivity; PowerSync Cloud Pro starts at $49/month. Prices and plan limits can change; verify before provisioning. No paid service is authorized by this audit.
-  - https://supabase.com/pricing
-  - https://powersync.com/pricing
-- Supabase RLS guidance recommends explicit per-operation policies, roles such as `to authenticated`, ownership expressions using `(select auth.uid())`, indexes for policy predicates, and `security_invoker = true` for exposed views where appropriate. The future implementation should include pgTAP tests in `supabase/tests/` and run `supabase test db` in CI.
-  - https://supabase.com/docs/guides/database/postgres/row-level-security
-
-### Preliminary candidate assessment (not an ADR decision)
-
-PowerSync is the leading candidate to test first because it provides the synchronization queue and local SQLite model, which can avoid a custom sync engine. The largest unresolved risk is whether its supported encryption configuration, database lifecycle, and optional Drift integration can coexist cleanly with the app's current SQLite3MultipleCiphers/native dependencies and one-active-account requirement. If supported PowerSync configurations fail the focused PoC, compare the maintenance cost of a custom transactional outbox against using PowerSync without Drift. Do not select either option until the evidence is recorded.
-
-
-## 9. Run A update after official-docs verification (2026-10-25)
-
-### Verified documentation findings
-
-- PowerSync Flutter 2.5.0 is the latest stable package listing observed on 2026-10-25 and requires Dart 3.10 or newer. The repository pubspec declares a lower bound of Dart 3.5, so adding this version may require changing the supported minimum SDK contract. The active GitHub CI environment used a newer Dart SDK; this does not automatically redefine the declared package contract.
-- Current PowerSync EncryptionOptions documentation explicitly names SQLite3MultipleCiphers (sqlite3mc) or SQLCipher for native encrypted databases. This is positive package-level support because the app uses the sqlite3mc build hook. It does not prove the exact app dependency graph, key format, connection lifecycle or Android release binary works.
-- The PowerSync client uses a managed client-side schema derived from the backend schema/Sync Streams, and raw/local-only tables require separate handling. The app's current Drift schema version 26, DAOs, custom migrations, control database and workspace routing need a deliberate mapping. Treat this as an architecture/data-layer integration rather than a package-only addition.
-- PowerSync's SDK exposes a durable local CRUD queue and calls an application-supplied uploadData handler; failed uploads are retried. The app still has to implement idempotent server mutations, authorization failures, conflict policy, tombstones and account-deletion safety.
-- The current Supabase + PowerSync guide creates a replication role with BYPASSRLS and notes that the service reads updates in the Postgres publication independent of what every Sync Stream selects. Therefore least-privilege source grants, an explicit publication allowlist and per-user Sync Stream predicates are additional privacy boundaries; RLS on the client API alone does not establish stream isolation.
-- Supabase RLS official guidance recommends explicit per-operation policies and role targets, owner checks using auth.uid(), appropriate predicate indexes and pgTAP tests. Plan automated authorization tests using supabase test db.
-- Sync Streams are the recommended starting point for a new PowerSync configuration; legacy Sync Rules are documented as deprecated.
-- Current listed prices: Supabase Free $0 with 500 MB database/50,000 MAU and a pause after one week inactive; Pro starts at $25/month. PowerSync Cloud Free includes 2 GB synced/month, 500 MB hosted data and 50 peak concurrent clients, with deactivation after one week inactive; Pro starts at $49/month. Combined paid-plan baseline is approximately $74/month before applicable usage or extra services. Recheck pricing, compute, regional availability and data-processing terms before provisioning. No service has been provisioned and no paid plan is authorized.
-
-### Proposed recommendation and PoC gates
-
-The candidate ADR recommends testing Supabase Auth/Postgres/RLS plus PowerSync first because this reduces the amount of synchronization machinery we must build and maintain. It is explicitly **not selected for production**. Required PoC gates are encrypted database create/reopen/wrong-key failure in Android release, Drift integration across queries/transactions/watch/migrations, durable offline writes and retry, two-account RLS plus Sync Stream isolation, explicit guest adoption/cancel, pending queue behavior on sign-out/account switch, concurrent edit/delete/account-deletion handling, crash-safe local wipe and Android/full-CI verification. If those gates fail, prepare an evidence-based custom-sync design; do not fall back to Realtime-only writes without a durable protocol.
-
-### Current main CI evidence
-
-- [Flutter CI — run 40172042979](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042979): success on merged main commit 4e9747ed2.
-- [Google Identity App CI — run 40172042972](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40172042972): success on the same commit.
-- These are app/CI baseline checks, not PowerSync compatibility evidence.
-
-### Primary references
-
-- https://pub.dev/packages/powersync
-- https://docs.powersync.com/client-sdks/reference/flutter
-- https://pub.dev/documentation/powersync/latest/powersync/EncryptionOptions-class.html
-- https://docs.powersync.com/integrations/supabase/guide
-- https://docs.powersync.com/sync/rules/overview
-- https://pub.dev/packages/sqlite_async
-- https://pub.dev/packages/drift_sqlite_async
-- https://pub.dev/packages/supabase_flutter
-- https://supabase.com/docs/guides/auth
-- https://supabase.com/docs/guides/database/postgres/row-level-security
-- https://supabase.com/pricing
-- https://powersync.com/pricing
+Primary links are maintained in ADR-001 §11. Official PowerSync documentation confirms a self-hosted Supabase + PowerSync local development path via Docker. Current PoC execution status remains **NOT RUN**; do not treat documentation support as evidence that this repository's encrypted Drift database works with PowerSync.
 
