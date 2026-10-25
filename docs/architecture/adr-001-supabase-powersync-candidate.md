@@ -27,19 +27,52 @@ At the audited baseline:
 - Google identity is currently used to select a local workspace; Google sign-in is not a cloud-storage service.
 - The repository was verified after merge commit 4e9747ed2. The merged change fixed CI test timeouts and documented the migration baseline; it did not implement Supabase or alter production storage behavior.
 
-## 3. Requirements the architecture must satisfy
+## 3. Decisions required before the sync PoC
 
-1. **Offline-first:** read and mutate Qaza data locally with no network; durable local writes must survive process death and app restart.
-2. **Multi-device:** authenticated users can safely use the same cloud account on more than one device.
-3. **Guest path:** local-only Guest use is supported. No cloud account is required to use the offline app.
-4. **One active cloud identity per installation:** the first version does not need simultaneous multi-account editing. Local datasets and queued changes must nevertheless remain isolated by owner.
-5. **Authoritative cloud owner:** use the immutable Supabase Auth user UUID as the cloud owner key. Email and provider display fields are not authorization identifiers.
-6. **Explicit adoption:** Guest-to-cloud adoption is a deliberate user-confirmed transition. If the target cloud account already has data, show an explicit restore/adopt/reconcile choice; never silently merge or overwrite.
-7. **No cross-account leakage:** sign-in completion alone must not bind a local workspace or start sync before reconciliation completes. A different account cannot inherit or upload the previous account's local queue.
-8. **Safe sign-out:** retain the encrypted local workspace and pending changes, disconnect/pause sync, and resume only when the same account authenticates again. Do not silently reassign the queue to another account.
-9. **Separate local wipe:** explicit device-data removal is separate from cloud-account deletion. A crash-safe wipe must remove the relevant key before deleting encrypted database files, sidecars, pending mutations, sync metadata, cached identity and session data; the durable recovery marker remains until cleanup is verified. Local wipe must not delete cloud data.
-10. **Deletion safety:** server-side account/data deletion is explicit. An old offline queue must not recreate cloud data after account deletion or invalidation.
-11. **Security and maintainability:** enforce ownership on the server, support deterministic/idempotent writes and conflict handling, keep secrets out of the client, and test failures and retries.
+These design choices precede any hosted-backend or production implementation.
+
+### 3.1 Local workspace topology — evaluate both options before deciding
+
+The workspace topology is a prerequisite decision. The current code uses a control database, registry-based workspace resolution, and per-workspace databases. That topology should not be retained automatically just because it exists today.
+
+- **W1 — one local encrypted workspace per installation:** when switching from account A to B, sync for A stops and the app must explicitly detach A's workspace as local-only or ask for an explicit local wipe before B can start. Any pending queue must be retained in a quarantined owner-bound state or explicitly discarded only after a clear warning showing the actual count. If the count cannot be determined, show “Unable to verify pending changes,” never “0.” This is the simpler topology but has a more destructive user experience.
+- **W2 — separate encrypted DB file and key per owner:** A's encrypted data/queue can remain on the device while B uses a separate DB/key. This preserves more local data but retains registry, key/file lifecycle, account-routing and cleanup complexity.
+
+The PoC Step 0 must inventory the real DB manager, registry, DAO/query/migration paths, local control state, queue isolation and architecture-checker constraints, then compare the actual implementation changes for W1 versus W2. Select a topology only after that evidence. Do not claim either is finalized yet.
+
+Regardless of topology, signing out as A and choosing Guest must stop A's cloud sync and must not expose A's authenticated workspace as an unowned Guest workspace. If Guest has local data and selects “Restore” over an existing cloud account, preserve the Guest dataset unchanged as a local-only workspace if W2 is selected; if W1 is selected, require an explicit export or removal decision before restoring. Never silently discard Guest data.
+
+### 3.2 Qaza conflict policy — prerequisite, not deferred
+
+Candidate model: represent each Qaza completion and undo as an immutable event with a globally unique client-generated UUID, owner UUID, prayer type, original prayer date, operation type/event lineage, client-created timestamp and schema version. Counts and remaining balances should be derived projections, not the authoritative mutable counter replicated with last-write-wins. An undo should append a compensating/reversal event referencing the completion it reverses; it should not erase an event already synced to another device. Uniqueness constraints should prevent the same logical event being applied twice.
+
+This is a candidate, not yet a final domain decision. Map the actual existing complete/undo/revision behavior to the event model. Test duplicate completion from two devices, reversals, historical rows, profile target changes and prayer-plan edits. Prefer append-only records for factual events and an explicit conflict policy for mutable settings. Do not sync mutable per-prayer counters as authoritative state unless a conflict-free merge strategy is proven.
+
+### 3.3 Upload/write protocol
+
+Plain PostgREST upsert by itself does not provide an expected-revision compare-and-swap protocol. For revision-checked mutable records, use a narrow Postgres RPC/transaction or carefully specified database function that checks owner, expected revision and idempotency key atomically. Return typed accepted/conflict/permanent-rejection outcomes. Append-only event inserts should use stable IDs and idempotency constraints. Do not acknowledge queue entries until server acceptance or an explicit permanent-rejection/quarantine result. Classify transient failures for retry with backoff; permanent authorization/validation/schema errors must not retry forever or disappear silently.
+
+### 3.4 Cloud and local identity semantics
+
+Use the Supabase Auth UUID as the only cloud owner key. Google provider subjects, email, casing and masked email are not authorization keys. If the same email appears from different providers, treat identities as distinct until a trusted explicit linking flow confirms they belong to the same Supabase Auth user. Do not merge on email alone.
+
+An expired or revoked token is not the same as intentional sign-out: pause sync, keep the encrypted dataset/queue bound to the same UUID, require re-authentication as that same identity, and resume only after verification.
+
+Account deletion is a separate operation initiated by a server-side administrative/Edge Function path, never by shipping a service-role key to the mobile app. Design foreign keys/cascade and deletion/tombstone behavior so inserts with a still-valid old JWT fail after the user is deleted; account recreation must receive a new UUID and must not inherit old queues/data. Classify permanent errors and allow explicit recovery.
+
+### 3.5 Key loss and mobile backup
+
+Key loss may make ciphertext unrecoverable. Never silently reset the key and create an empty DB as if the old data were recovered. Test Android auto-backup/device transfer restoring ciphertext without its keystore-backed key, data-only restore, reinstall and database restore. Either exclude database files from OS backup or define a deliberate secure key/backup recovery design. Local-only unsynced changes cannot be promised recoverable if both the database and key are lost.
+
+### 3.6 Sensitive data and application-level encryption
+
+Prayer-completion and missed-prayer history can reveal religious practice and must be treated as sensitive personal data. Minimize fields, restrict access to the owner, avoid storing history in logs/analytics, and define retention/deletion and service-region handling.
+
+Application-level payload encryption is an explicit open decision. The proposed PoC default is **not to implement E2EE yet**; document this as a non-goal because server-side row filtering requires readable metadata and app-level encryption adds key-management complexity. The final ADR must explicitly accept or reject this non-goal before any real-user data is used. Local DB encryption and TLS do not mean the sync service cannot read cloud-synced fields.
+
+### 3.7 Pending upload count
+
+PoC must verify whether the pinned PowerSync SDK exposes a supported, reliable pending-queue count and its behavior for in-flight/retrying/permanently rejected mutations. Sign-out/removal UI must never display a fabricated zero. If an exact trustworthy count is unavailable, show “Unable to verify pending changes” and block any destructive operation whose safety depends on a known count.
 
 ## 4. Options considered
 
@@ -76,62 +109,50 @@ PowerSync's current Flutter reference documents a managed client-side schema der
 
 Use **Sync Streams** for a new configuration. PowerSync's docs identify legacy Sync Rules as deprecated in favor of Sync Streams: https://docs.powersync.com/sync/rules/overview
 
-## 6. Security, account ownership and data semantics
+## 6. Security and cross-service trust boundaries
 
-### Authentication and owner identity
+### Supabase Auth and RLS
 
-- Use Supabase Auth to establish a server-issued user identity. For Google sign-in, test linking the app's current Google credential flow to Supabase Auth (for example, supported ID-token sign-in). Do not map a Google subject or email directly to a cloud row owner.
-- After successful Supabase authentication, the server-issued Auth user UUID is the immutable owner key. Use UUID ownership in cloud schemas and bind the local sync workspace to that UUID only after reconciliation succeeds.
-- Never ship a Supabase secret/service-role key in the mobile app. A publishable key is not a substitute for server-side authorization.
+Use Supabase Auth to establish the authenticated identity and bind every synchronized row to immutable auth.uid() UUID. Never use email/provider subject as an authorization identifier. Never ship a service-role or secret key inside the mobile app.
 
-### Supabase RLS is mandatory
+Every client-exposed table must enable RLS and define explicit policies for relevant operations. Test unauthorized reads/inserts/updates/deletes, spoofed owner IDs, and attempts to change an owner's ID. Include pgTAP tests and run supabase test db.
 
-Every client-exposed data table must enable RLS and have explicit policies for each relevant operation (select, insert, update, delete) granted to the authenticated role. Enforce owner equality through auth.uid() for existing and resulting rows, index policy predicate columns, and test both permitted and denied operations using pgTAP / supabase test db.
+Official guidance: https://supabase.com/docs/guides/database/postgres/row-level-security
 
-Official RLS guidance: https://supabase.com/docs/guides/database/postgres/row-level-security
+### PowerSync replication and Sync Streams
 
-**PowerSync-specific caution:** the official Supabase integration guide's example creates a replication role with BYPASSRLS and reads tables in the Postgres publication; Sync Streams then determine which rows are synchronized to each authenticated client. Therefore RLS cannot be treated as the only privacy boundary for sync distribution. Use least-privilege source-table grants and an explicit publication allowlist; configure each Sync Stream to filter strictly by the authenticated user UUID; test cross-user reads on two test accounts. Never begin with a broad FOR ALL TABLES publication for production data. The service must only replicate approved app tables, and Sync Streams must only publish rows whose owner matches the authenticated client.
+PowerSync's official Supabase guide describes a replication role with BYPASSRLS in its example; therefore RLS alone is not the security boundary for rows copied by PowerSync. Limit source-table grants and publications to explicitly approved tables. Use strict user-specific Sync Stream filters and test directly that one user cannot receive another user's rows. Do not synchronize sensitive tables until two-user isolation passes.
 
-References:
-- Supabase + PowerSync: https://docs.powersync.com/integrations/supabase/guide
-- Supabase RLS: https://supabase.com/docs/guides/database/postgres/row-level-security
-- Supabase Auth: https://supabase.com/docs/guides/auth
+### Local encryption and key recovery
 
-### Local database and encryption
+The existing key store uses flutter_secure_storage and a random 32-byte key; that does not prove OS backup/device-transfer compatibility. Test cold open, wrong key, reinstall, Android backup/device transfer, database-only restore and key loss. Exclude the encrypted database from OS backup unless a deliberate recoverable key design is provided. If key loss occurs, do not overwrite the old ciphertext or silently initialize an empty ledger; tell the user that unsynced data may be unrecoverable.
 
-- Treat local encryption and cloud/server encryption as different controls. A local encrypted SQLite file does not make the cloud end-to-end encrypted; Supabase and the sync service may process readable row values unless application-level encryption is deliberately designed.
-- Preserve a device-secured key store; never place keys in SQLite, SharedPreferences, exported backups, logs or source control.
-- Prefer a distinct random local database key per workspace/owner if the chosen local file layout supports it. Keep the key identifier and owner binding outside user-editable data; a file name alone is not authorization.
-- Never point the PoC at the real app database or reuse its production/test key. Use disposable files and random test keys.
-- PowerSync's local database should be created/opened and keyed using the SDK's documented encryption configuration, rather than adding an independent PRAGMA key call to a connection PowerSync manages. The PoC must establish the supported cipher mode and correct option values.
+### Sensitive personal data
 
-### Conflict, retry and deletion semantics
+Prayer completion and missed-prayer history can reveal religious practice and should be treated as sensitive personal data. Collect only necessary fields, restrict access, minimize logs/analytics, and define retention/deletion. Application-level payload encryption is an explicit open decision; local SQLite encryption and TLS do not mean cloud-synced values are unreadable to the service. Decide before any real-user data is used.
 
-PowerSync supplies client-side queuing/retry mechanics but the application still implements the backend upload handler and Qaza-specific mutation semantics. Define and test:
-- stable client-generated UUIDs for offline-created records and idempotent upserts;
-- owner validation for every upload; reject/quarantine a queue whose owner differs from the current session, never rewrite owner to make an upload pass;
-- server-side version/expected-revision or another deterministic conflict policy for concurrent edits to the same record;
-- delete tombstones/epochs (or an equivalent explicit protocol) so delayed offline writes cannot resurrect a deleted record or recreate an account's cloud data;
-- retry-safe batch acknowledgement only after server acceptance, plus explicit handling for permanent validation/authorization failures;
-- catch-up after disconnect from a durable cursor/snapshot. Do not depend on an ephemeral realtime event alone for correctness.
+### Upload failures and acknowledgement
 
-The precise Qaza domain conflict policy (including completion, undo, profile-plan edits and concurrent device activity) is not decided by this ADR and must be specified/tested before data sync is enabled.
+Use stable event IDs, idempotent writes, owner validation and a durable queue. Retry transient network/service failures with backoff. Classify authorization, schema, constraint and invalid-payload failures as permanent until explicitly resolved; do not retry them forever or discard them silently. Acknowledge mutations only after server acceptance or documented permanent-rejection/quarantine handling.
 
-## 7. Account lifecycle and workspace matrix
+## 7. Account lifecycle and workspace topology
 
-| Local state | Account selected | Required result |
-|---|---|---|
-| Empty/unbound local workspace | Supabase user A | Bind only after successful reconciliation. |
-| Data-bearing local Guest workspace | User A | Explicit Guest adoption only; do not auto-adopt. |
-| Local workspace bound to user A | User A signs in again | Resume that user's isolated workspace and queue after verifying owner binding. |
-| Workspace/queue for A is present | User B signs in | Keep A's data inaccessible and sync disconnected; B receives a separate workspace. Never reassign A's queue to B. |
-| User A already has cloud data during adoption | User A | Show explicit restore, adoption/import, or cancel decision. No silent overwrite or merge. |
-| Wipe-in-progress marker exists | Any identity | Complete/recover wipe before opening a workspace or exposing data. |
-| Cloud account deleted | Any later sign-in | Old queued changes must not recreate the deleted cloud account's data; local remnants remain local-only until separately removed. |
+The topology must be selected after the PoC inventories current dependencies; see Section 3.1. Both W1 and W2 must satisfy:
 
-Sign-in and data reconciliation are distinct phases. While reconciliation is pending, the newly authenticated account must not receive workspace access or start syncing. Cancel must sign out that pending account and leave the previous local workspace unchanged. Do not promise restoration of a previous provider session; requesting that account to sign in again is acceptable.
+| State | Required result |
+|---|---|
+| User A signs out intentionally | Stop A's sync; retain A's encrypted data/queue bound to A's Supabase UUID. |
+| User A token expires/revokes | Pause sync; retain data/queue; require re-authentication as the same owner. |
+| User switches from A to B | Never bind A's local DB or queue to B. W2 uses B's separate DB/key; W1 requires quarantining/detaching A or explicitly wiping it before B starts. |
+| User signs out A and selects Guest | Guest is local-only and isolated; it must not expose A's authenticated data or queue. |
+| Data-bearing Guest adopts A | Explicit confirmation and reconciliation; owner binding only after successful resolution, no sync while pending. |
+| Guest chooses Restore while local data exists | Preserve Guest data as separate local-only workspace in W2; under W1 require explicit export/removal before restore. |
+| A already has cloud data | Offer explicit restore, import/reconcile, or cancel; never silently merge or overwrite. |
+| Cancel during reconciliation | Sign out newly authenticated identity, preserve prior workspace, expose/sync nothing while pending. |
+| Wipe marker exists | Recover wipe before opening DB or exposing account data. |
+| A deleted; same email later signs up | New Auth UUID is a new identity; old queue/data are never attached on email match. |
 
-Signing out retains the encrypted local workspace/queue but disconnects sync. An explicit “remove data from this device” action first records a durable wipe marker outside the encrypted database and key, then removes the encryption key, database files and SQLite sidecars, queue/sync metadata, owner bindings, cached identity and local session. Startup must finish a marked wipe before opening affected state. Cloud-account deletion is separate and must not be triggered by local wipe.
+A local wipe is a separate irreversible action: persist a marker outside the DB and key; delete the key first, then DB and SQLite sidecars, queue/sync metadata, owner binding, cached identity and local session; verify cleanup before clearing the marker. Startup retries interrupted wipes idempotently. Local wipe never deletes cloud data. Cloud deletion is a separate server-side operation.
 
 ## 8. Cost, vendor and privacy assessment
 
@@ -150,35 +171,75 @@ Official pricing:
 
 Review the region and data-processing implications for both Supabase Postgres and PowerSync's synced-data service before creating production resources. PowerSync Cloud stores and streams a copy of approved synced rows, so this is not simply “Supabase only.” If policy requires that no third party beyond Supabase holds synced data, evaluate self-hosting PowerSync or the custom-sync fallback explicitly. No paid service or cloud project is authorized by this ADR.
 
-## 9. Required proof of concept and go/no-go criteria
+## 9. Zero-budget proof of concept and go/no-go criteria
 
-The current environment used for this audit did not provide a local repository checkout, runnable Flutter toolchain, Docker/Supabase CLI, Android emulator/device, or PowerSync service credentials. GitHub Actions has verified the existing app/tests but has **not** verified any PowerSync integration. Thus this proof of concept is still a blocker, not a completed experiment.
+**A local PoC is possible without hosted services or paid plans.** PowerSync's official guide recommends self-hosting Supabase + PowerSync locally via Docker for integration testing, and its public self-host-demo repository contains a Supabase example:
+- https://docs.powersync.com/integrations/supabase/local-development
+- https://github.com/powersync-ja/self-host-demo
 
-Build a disposable spike outside production app code and use test projects/accounts only. Pin the exact package versions in the spike lockfile. At minimum, evaluate the observed versions above and record any required minimum-Dart-SDK change.
+**Execution status remains NOT RUN.** The docs establish a free route, not that the user's Windows toolchain is ready. Record the actual outputs before claiming a test passed.
 
-### Required experiments
+### Step 0 — environment, dependency resolution, topology and package boundaries
 
-1. **Encrypted database:** create, close, reopen and query a disposable PowerSync database with SQLite3MultipleCiphers using the documented encryption options and a fresh random test key. Verify wrong-key failure and integrity. If SQLite3MultipleCiphers fails, repeat with the officially documented SQLCipher option before rejecting PowerSync. Verify the built APK includes the intended native implementation and does not silently open a plaintext database.
-2. **Drift integration and data layer:** demonstrate the required Drift reads/writes, joins/custom queries, transactions/nested transactions, query-watch notifications and teardown/reopen on the same PowerSync-managed database. Test schema changes and local-only/raw tables. If the current database's DAO/migration design cannot run over PowerSync, quantify the required repository/data-layer refactor before deciding whether to retain Drift.
-3. **Offline lifecycle:** write while offline, kill the process, reopen offline, then reconnect and confirm the mutation is uploaded exactly once logically and acknowledged only after server acceptance. Exercise retries, duplicate upload attempts and permanent authorization errors.
-4. **Two-account isolation:** use two disposable Supabase Auth users. Prove Sync Streams never deliver user A's rows to B, that RLS denies spoofed owner IDs for each operation, and that an A-owned pending queue cannot upload under B. Include automated pgTAP tests and an explicit publication/Sync Stream allowlist.
-5. **Cross-device conflict/deletion:** make concurrent changes on two clients; test the proposed revision/conflict rule, out-of-order changes, deletion tombstones, delayed offline upload and account deletion.
-6. **Guest adoption and cancel:** exercise empty cloud, cloud with existing data, local Guest with data, explicit adoption, restore and cancel. Cancel must leave old local data unchanged and must not expose or sync it during reconciliation.
-7. **Sign-out and wipe:** prove sign-out pauses sync while preserving local data/queue for the same owner; a different account cannot access it. Inject crashes between every wipe stage and prove the next startup recovers before database open. Wipe must never delete remote cloud data.
-8. **Android and CI:** run unit/integration tests, Android debug and release builds, encrypted file reopen/integrity smoke tests, RLS tests and the full app test suite. Capture logs/results without secrets or personal data.
+1. On a throwaway branch, inventory Flutter/Dart/JDK/Android SDK/Docker/Compose/Supabase CLI versions and disk/RAM.
+2. Build a disposable PoC project outside production source packages. Pin PowerSync, sqlite_async, drift_sqlite_async and encryption packages in the lockfile. Run clean dependency resolution against current root constraints; record conflicts and minimum Dart SDK. Do not change root pubspec.
+3. Read `tools/offline_architecture_check.py` and `tools/phase_boundary_check.py`, record their invariants and run them from the test branch. Keep cloud-only imports out of root Phase 1 source until approved. Evaluate whether cloud integration belongs in `apps/qaza_app_cloud` or a separate package that honors these checks.
+4. Compare W1 single-workspace/detach and W2 per-owner DB/key against actual DAO/query/transaction/migration counts, account routing, local metadata and queue isolation. Record concrete touched items and choose a topology before adoption/account-switch experiments.
+5. Check Docker/Compose/Supabase CLI/Flutter availability. The PowerSync self-hosted demo is the starting reference. No hosted project, credentials or payment card is required for this local route.
 
-### Go/no-go acceptance gates
+### Step 1 — encrypted database and package/version gate
 
-**GO only if all are true:**
-- The documented cipher option works in Android debug and release, survives process restart and refuses an incorrect key.
-- Drift integration is either demonstrably sound or a bounded/approved repository refactor is fully scoped.
-- Offline changes survive restart, retry safely and converge across two devices.
-- RLS and Sync Streams jointly prevent cross-user leakage; mismatched owners and obsolete queues cannot be rebound to another user.
-- Guest adoption, existing-cloud-data choices, cancellation, sign-out, wipe and cloud deletion all have deterministic, tested state transitions.
-- Costs, provider data residency/retention, package/toolchain constraints and ongoing service ownership are accepted by the owner.
-- A written conflict policy and automated tests cover Qaza records/profile data.
+- Create, close, reopen and query a disposable PowerSync DB with SQLite3MultipleCiphers using documented EncryptionOptions and a random test key. Test wrong-key rejection and integrity.
+- If SQLite3MultipleCiphers fails, try the documented SQLCipher mode. Encryption support shifted across PowerSync SDK releases; pin the version and inspect that version's changelog. Verify the APK actually includes the intended cipher and does not silently create/open plaintext.
+- Test database-only restore, reinstall/device transfer, key loss and missing-key behavior. Never wipe ciphertext or silently start an empty database after key failure.
 
-**NO-GO for PowerSync** if encrypted native builds are unreliable, Drift integration requires an unacceptably invasive rewrite, the Sync Stream ownership boundary cannot be convincingly tested, or pricing/vendor/data-processing constraints are unacceptable. At NO-GO, estimate custom-sync complexity and produce a separate design before any backend implementation. Do not silently fall back to Supabase Realtime-only writes.
+### Step 2 — Drift, raw/local tables and app boundaries
+
+- Demonstrate Qaza-like reads/writes, joins/custom queries, transactions/nested transactions, watch notifications, close/reopen, schema migration and local-only/control rows on the same PowerSync DB through Drift.
+- Quantify necessary DAO/query/migration changes. Initial NO-GO thresholds: more than 25 DAO/query implementations require rewriting, or the PoC cannot demonstrate a viable migration plan within a two-engineering-day timebox. These are review thresholds, not universal quality laws.
+- Run both architecture checker scripts; do not weaken them to make the PoC pass. CI uses format-check only, never a format-and-push step for experiment evidence.
+
+### Step 3 — Qaza event/conflict protocol and queue count
+
+- Map real complete/undo/revision behavior. Test append-only completion/reversal events with stable UUIDs and derived counts; concurrent duplicates must not double-count.
+- Test mutable profile/target changes with an expected-revision RPC/transaction, not plain PostgREST upsert alone.
+- Verify supported PowerSync pending-change count/status API with in-flight, retrying and permanent-error items. If exact count is not trustworthy, removal UI must say “Unable to verify pending changes” and never show a false zero.
+- Prove transient errors retry with backoff and permanent authorization/validation errors are surfaced without infinite retry.
+
+### Step 4 — local Docker Supabase + PowerSync and offline replay
+
+- Use the official self-host-demo Supabase setup as a reference. Keep DB volumes, JWT keys, accounts, rows and encryption keys disposable and local. No paid cloud project or personal data.
+- Create a local write while offline, terminate app/process, reopen offline, reconnect and verify exactly one logical server mutation and correct acknowledgement only after acceptance.
+
+### Step 5 — two-account security and lifecycle
+
+- Create two disposable Auth users. Test RLS for all CRUD operations, spoofed owners, explicit publication allowlisting, per-user Sync Stream isolation and A-queue rejection under B.
+- Test same email via different providers; no merge absent trusted explicit linking. Test deletion while a token remains valid, deleted/re-created UUID, delayed inserts and permanent upload failures.
+- Test Guest adoption with empty cloud, existing cloud rows, Restore and Cancel; sign-out versus token expiry/revocation; pending queue on switching; Guest after sign-out; crash injection at each wipe stage; Android backup/restore with missing key.
+- Include religious-practice data sensitivity and explicitly record the payload-encryption decision before real-user use.
+
+### Step 6 — Android, tests and result ledger
+
+- Run Android debug/release build, wrong-key/reopen smoke tests, app tests, pgTAP/RLS tests and architecture checks. Use check-only formatting in CI.
+- Record each experiment independently and link the exact commit/run. Do not infer PoC success from existing app CI.
+
+### Quantified NO-GO triggers
+
+PowerSync is NO-GO if any occurs: encrypted Android release cannot reliably create/reopen and reject wrong keys; a two-user stream leakage test fails; a queue can be uploaded under a different owner; the queue count cannot support safe sign-out/removal semantics and no safe “unknown” UI is accepted; key loss/backup behavior silently loses or replaces data; more than 25 DAO/query implementations require rewrite; or no viable integration/migration plan can be demonstrated in two engineering days. If a trigger fires, record evidence and separately estimate a custom-sync implementation before approval.
+
+### Experiment ledger
+
+| ID | Experiment | Result | Evidence | Gate |
+|---|---|---|---|---|
+| POC-0 | Toolchain, clean dependency resolution, package boundaries, W1/W2 topology | NOT RUN | No run log yet | First prerequisite |
+| POC-1 | Encrypted create/close/reopen, wrong key, SQLite3MultipleCiphers then SQLCipher if needed | NOT RUN | No run log yet | Blocking |
+| POC-2 | Drift DAOs/transactions/watch/migrations and checker scripts | NOT RUN | No run log yet | Blocking |
+| POC-3 | Append-only completion/reversal model, idempotency, revision RPC, queue count | NOT RUN | No run log yet | Blocking |
+| POC-4 | Local Docker Supabase + PowerSync, offline replay and acknowledgement | NOT RUN | No run log yet | Blocking |
+| POC-5 | Two-user RLS + publication/Sync Streams + owner-bound queue | NOT RUN | No run log yet | Blocking |
+| POC-6 | Guest restore/adoption/cancel, expiry/revoke, switching and permanent errors | NOT RUN | No run log yet | Blocking |
+| POC-7 | Key loss, Android backup/reinstall, crash-safe wipe and server deletion | NOT RUN | No run log yet | Blocking |
+| POC-8 | Android release build, full tests and architecture checks with check-only formatting | NOT RUN | No run log yet | Final gate |
 
 ## 10. Decision and approval state
 
