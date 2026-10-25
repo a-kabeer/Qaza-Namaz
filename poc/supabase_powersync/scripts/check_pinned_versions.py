@@ -15,6 +15,7 @@ EXPECTED = {
     "flutter_lints": "6.0.0",
     "build_runner": "2.16.1",
     "drift_dev": "2.35.0",
+    "analyzer": "14.5.0",
     "async": "2.13.1",
 }
 

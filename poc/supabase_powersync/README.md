@@ -17,8 +17,12 @@ The first dependency snapshot is deliberately pinned to exact versions:
 | `sqlite3` | `3.6.0` |
 | `supabase_flutter` | `2.18.3` |
 | `flutter_lints` (dev) | `6.0.0` |
+| `build_runner` (dev) | `2.16.1` |
+| `drift_dev` (dev) | `2.35.0` |
+| `analyzer` (dev-tool compatibility pin) | `14.5.0` |
+| `async` (dev/test utility) | `2.13.1` |
 
-The original dependency bootstrap reported that `sqlite_async 0.14.6` was available above the previous `0.14.5` pin, so this experiment refreshes the pin before committing its lockfile. Versions are a PoC snapshot, not a promise that the combinations work together. The SQLite package pin matches the root app's current locked `sqlite3` version `3.6.0`, and the build hook matches its `sqlite3mc` selection. Neither proves PowerSync encryption compatibility.
+The original dependency bootstrap reported that `sqlite_async 0.14.6` was available above the previous `0.14.5` pin, so this experiment refreshes the pin before committing its lockfile. The first code-generation run failed because build_runner 2.16.1's resolver does not compile against analyzer 14.6.0 (missing `AnalysisOptionsImpl.contextFeatures`). The PoC temporarily pins analyzer 14.5.0 to test the rest of the stack; this is a test-tool workaround, not a recommendation to change the production app's analyzer constraint. Re-evaluate the pin when updating build_runner/analyzer. Versions are a PoC snapshot, not a promise that the combinations work together. The SQLite package pin matches the root app's current locked `sqlite3` version `3.6.0`, and the build hook matches its `sqlite3mc` selection. Neither proves PowerSync encryption compatibility.
 
 ## Run
 
