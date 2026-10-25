@@ -184,7 +184,7 @@ Review the region and data-processing implications for both Supabase Postgres an
 
 **Windows execution guide:** [PowerSync PoC Windows PowerShell runbook](powersync-poc-windows-powershell-runbook.md). It contains safe local setup and command-by-command checks; it is not evidence that any runtime experiment passed.
 
-**All experiments are currently NOT RUN.** Documentation is not execution evidence. Use synthetic data, local disposable volumes and fresh test keys only. Do not create a hosted project, subscription, payment method, production credential or production data set for Run A.
+**Run A is in progress.** The evidence ledger below is authoritative; only experiments explicitly marked PASS with a run URL and captured output count as passed. The isolated Linux encryption and Drift tests have passed; Android runtime is pending, and Docker sync, two-user server isolation, adoption, deletion and Google OAuth have not yet passed. Use synthetic data, local disposable volumes and fresh test keys only. Do not create a hosted project, subscription, payment method, production credential or production data set for Run A.
 
 ### Step 0 — environment, isolated package, and CI fallback
 
@@ -197,14 +197,14 @@ Review the region and data-processing implications for both Supabase Postgres an
 
 ### Experiment checkpoint — fixed v1 account scope
 
-The owner has fixed the v1 product scope to one active authenticated cloud account per app installation. Do not compare or implement a multi-account/per-owner database topology as a routine design option. The PoC should prove one encrypted local database bound to the active Guest or cloud identity, owner-bound pending changes, retained sign-out, safe explicit local removal, and clean restore/adoption. If this simpler model fails a mandatory requirement, stop and request owner approval before adding multi-workspace architecture.
+The owner has fixed the v1 product scope to one active authenticated cloud account per app installation. Do not compare or implement a multi-account/per-account database topology as a routine design option. The PoC should prove one encrypted local database bound to the active Guest or cloud identity, owner-bound pending changes, retained sign-out, safe explicit local removal, and clean restore/adoption. If this simpler model fails a mandatory requirement, stop and request owner approval before adding multi-workspace architecture.
 
 ### Step 1 / POC-1 — encrypted database and key-format gate
 
 - Create, close, reopen and query a disposable PowerSync database with the documented encryption option(s). Start with SQLite3MultipleCiphers where supported; test SQLCipher as the documented alternative if required. Pin exact SDK and cipher versions and inspect version-specific changes.
 - Match the app's existing key format: 32 random bytes encoded as Base64URL. Document whether each API expects raw bytes, a Base64URL string, or another representation; decode/encode explicitly and test round-trip handling. Never accidentally use the UTF-8 bytes of the Base64URL text as though those were the original 32-byte key.
 - Verify correct-key reopen and integrity; opening with a missing/wrong key must fail closed. Inspect the file signature/header and assert the encrypted database does not begin with the plaintext SQLite header `SQLite format 3\\0`. A missing/wrong-key failure alone is not enough to prove the file is encrypted.
-- Verify the application does not silently create/open a plaintext database after an encryption/key error. Repeat these minimum checks with both W1 and W2 file/key layouts.
+- Verify the app does not silently create/open a plaintext database after an encryption/key error. Repeat these checks for one encrypted database bound to the current Guest/cloud identity, including sign-out retention and explicit local removal.
 
 ### Step 2 / POC-2 — Drift and production boundary checks
 
@@ -234,7 +234,7 @@ The owner has fixed the v1 product scope to one active authenticated cloud accou
 
 - Test adoption into an empty cloud account; an account with existing cloud data; Restore; Cancel; and Guest behavior after sign-out.
 - During reconciliation, do not bind/expose/sync local data until the choice is resolved. Cancel signs out the newly authenticated account and preserves the prior local workspace; no data may be exposed or uploaded during the pending decision.
-- Compare the observed behavior to the previously selected single-active-account topology topology.
+- Compare the observed behavior to the previously selected single-active-account topology.
 
 ### Step 6b / POC-6b — session expiry, revocation, and permanent failure
 
@@ -263,7 +263,7 @@ The owner has fixed the v1 product scope to one active authenticated cloud accou
 ### Pass/fail rules, overall timebox, and Run A exit
 
 - Each experiment must have a written expected result before execution, a result of **PASS**, **FAIL**, or **BLOCKED**, the exact command(s), PoC commit SHA, CI run URL if used, and a brief evidence summary. **NOT RUN** is not a pass and must never be inferred from a related test or app CI run.
-- POC-1 passes only if correct-key reopen/integrity work, wrong/missing-key open fails closed, the file has no plaintext SQLite header, Base64URL key handling is verified, and the single-active-identity database model is covered.
+- POC-1 passes only when the correct-key reopen/integrity, wrong/missing-key fail-closed, encrypted-header and 32-byte Base64URL checks pass on the target Android runtime/release build, using the single-active-identity database model. Linux evidence is a partial result, not the Android gate.
 - POC-2 passes only if the declared Drift operations/migrations work in the isolated package, clean resolution is reproducible, and the two root checkers pass unchanged against the clean production checkout. Any checker failure is recorded as a boundary finding, not fixed by weakening the checker.
 - POC-3 through POC-7b pass only when their described state-transition, integrity, replay, ownership/security, error-classification and deletion assertions are supported by captured output/tests. Any cross-user read/write, false-zero queue count, silent data reset, or deleted-account resurrection is a blocking FAIL.
 - POC-8 passes only when required Android builds, relevant tests and unchanged root checks complete successfully on the recorded SHA.
@@ -279,9 +279,9 @@ PowerSync is NO-GO if encrypted Android release cannot reliably create/reopen an
 
 | ID | Experiment | Result | Command / PoC SHA / CI run / evidence | Gate |
 |---|---|---|---|---|
-| POC-0 | Toolchain, package/license/version checks and CI fallback decision | PARTIAL PASS | CI preflight/clean production architecture checks passed at run 40200437779; lockfile is artifact-only and enforce-lockfile proof remains outstanding. Run 40200668390 exposed build_runner/analyzer incompatibility; pinning analyzer 14.5.0 and rerunning. | First prerequisite |
-| POC-1 | Encrypted single-active-identity database, wrong/missing key, plaintext-header and 32-byte Base64URL key handling | IN PROGRESS | Linux smoke test passed on PoC commit 85f5c031; rerunning after Drift-toolchain fix. Android runtime/release check remains outstanding. | Blocking |
-| POC-2 | Isolated Drift/SQL/migration behavior and unchanged root architecture checks | IN PROGRESS | Adapter test added; first codegen attempt blocked by analyzer 14.6.0 and build_runner 2.16.1 incompatibility. Pin updated in PoC and awaiting CI rerun. Root architecture checkers passed. | Blocking |
+| POC-0 | Toolchain, package/license/version checks and CI fallback decision | PARTIAL PASS | Run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327) resolved all 126 package entries, detected license files/markers with no missing entries, and passed clean production boundary and both unchanged architecture checks. Exact direct pins verified. Lockfile is still artifact-only; committed-lock and enforce-lock proof remain outstanding. | First prerequisite |
+| POC-1 | Encrypted single-active-identity database, wrong/missing key, plaintext-header and 32-byte Base64URL key handling | IN PROGRESS — Linux PASS | Run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327): two Linux encryption tests passed (create/write/close/reopen, no plaintext header, wrong/missing key fails without rewriting a copy). Android emulator/release test is running in [40201716063](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201716063) on PoC SHA `a4b73eca`; Android is the required gate. | Blocking |
+| POC-2 | Isolated Drift/SQL/migration behavior and unchanged root architecture checks | IN PROGRESS — Linux PASS, warning recheck pending | Run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327): `build_runner 2.16.2` + `drift_dev 2.35.2` with analyzer 14.5.0 generated successfully; Drift read/write, SQL visibility, watch propagation, close/reopen, queue count and encrypted persistence tests passed. A duplicate-handle warning was observed in that commit and test cleanup was fixed in `a4b73eca`; rerun pending. Root architecture checkers passed unchanged. | Blocking |
 | POC-3 | Qaza events, reversal/idempotency, expected-revision RPC and queue status/count | NOT RUN | Not yet recorded | Blocking |
 | POC-4 | Local Docker sync, offline writes, process restart, replay and acknowledgement | NOT RUN | Not yet recorded | Blocking |
 | POC-5 | Email/password test users, RLS, publication/Sync Streams and owner-bound queue | NOT RUN | Not yet recorded | Blocking security gate |
@@ -324,7 +324,7 @@ Next:
 
 ## 12. Review addendum — explicit blockers and clarifications (2026-10-25)
 - **Execution rigor update (2026-10-25):** the PoC is a separately versioned package outside the production app tree with its own manifest/lockfile; root architecture checks run unchanged against the clean production checkout, and the intended future phase boundary is documented separately. CI fallback must be read-only/check-only and avoid auto-format/push workflows.
-- **Experiment split and exit criteria:** encryption now explicitly checks the existing 32-byte Base64URL key representation and absence of the plaintext SQLite header for both W1/W2 layouts; lifecycle work is split into POC-6a/6b and POC-7a/7b; local two-user tests use email/password. Google-to-Supabase sign-in is a separate POC-GOOGLE item, NOT RUN until a throwaway OAuth client is approved. Run A has a two-engineering-day timebox and closes only after evidence/results for every row (or an owner-approved written OAuth deferral), an Accepted/Rejected ADR, and explicit owner decision.
+- **Experiment split and exit criteria:** encryption checks the 32-byte Base64URL key representation and absence of the plaintext SQLite header for the single-active-identity layout; lifecycle work is split into POC-6a/6b and POC-7a/7b; local two-user tests use synthetic email/password users. Google-to-Supabase sign-in is a separate POC-GOOGLE item, BLOCKED until a throwaway OAuth client is explicitly approved. Run A has a two-engineering-day timebox and closes only after evidence/results for each required row (or an owner-approved written OAuth deferral), an ADR updated to reflect evidence, and the owner's explicit decision on Run B.
 - **Licensing gate:** inspect the exact package/transitive licenses and PowerSync edition terms before deployment. Official summaries distinguish Apache-2.0 client SDKs from the Functional Source License for the self-hosted PowerSync Open Edition service; do not equate “free local PoC” with an unconditional right to every deployment/usage model.
 
 

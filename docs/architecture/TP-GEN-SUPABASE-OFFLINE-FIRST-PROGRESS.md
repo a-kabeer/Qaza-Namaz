@@ -31,8 +31,8 @@
 | V1 local workspace scope | FIXED PRODUCT REQUIREMENT | One active authenticated account per installation; prove single encrypted database bound to current Guest/cloud owner. Multi-account retained workspaces are out of scope unless a hard blocker is approved. |
 | Run A — Qaza event/conflict policy | OPEN — prerequisite | Proposed append-only completion/reversal event model and revision-checked RPC require mapping to real domain/test behavior. |
 | POC-0 — toolchain, isolated package, license/version checks and CI fallback | PARTIAL PASS | Read-only CI run 40200437779 passed dependency resolution, license inventory and unchanged architecture boundary checks. Lockfile artifact is not checked in yet; enforce-lockfile proof pending. |
-| POC-1 — encryption, wrong/missing key, plaintext header/Base64URL format | IN PROGRESS | Linux encryption smoke tests passed at SHA 85f5c031 (correct-key reopen, wrong/missing-key failure, encrypted header). Re-run after test cleanup; Android runtime/release proof pending. |
-| POC-2 — isolated Drift/data layer/schema and unchanged root architecture checks | IN PROGRESS | Drift integration test added; first codegen run exposed build_runner 2.16.1 vs analyzer 14.6.0 mismatch. Analyzer pinned to 14.5.0 in PoC only; CI rerun pending. Root checks PASS. |
+| POC-1 — encryption, wrong/missing key, plaintext header/Base64URL format | IN PROGRESS — Linux PASS | Linux encrypted database smoke tests passed in run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327). Android emulator and arm64 release build are running in [40201716063](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201716063). |
+| POC-2 — isolated Drift/data layer/schema and unchanged root architecture checks | IN PROGRESS — Linux PASS, warning recheck pending | Run [40201396327](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40201396327): code generation succeeded with build_runner 2.16.2/drift_dev 2.35.2/analyzer 14.5.0; Drift reads/writes, watch propagation, reopen and queue count passed. A same-file handle warning was fixed in PoC commit `a4b73eca`; recheck pending. Root checks PASS. |
 | POC-3 — Qaza events/reversal/idempotency/revision RPC/queue status | NOT RUN | Unknown pending count must never appear as zero; classify permanent errors. |
 | POC-4 — local Docker sync, restart/offline replay and acknowledgement | NOT RUN | Use disposable local volumes, keys and synthetic data only. |
 | POC-5 — email/password test users, RLS, publication/Sync Streams and queue isolation | NOT RUN | Two-user server-side isolation is a blocking security gate. |
@@ -170,7 +170,7 @@ These requirements are accepted into the planning scope. They are design/test cr
 
 
 
-- 2026-10-25: Incorporated the external review: added W1/W2 topology gate; Qaza append-only completion/reversal candidate; Auth expiry/deletion and provider-linking cases; key-loss/Android backup; sensitive-data treatment; queue-count requirement; local self-host PoC path; quantified no-go triggers; and POC-0 through POC-8 ledger. Runtime experiments remain NOT RUN.
+- 2026-10-25: Incorporated the external review: added single-active-account v1 topology gate; Qaza append-only completion/reversal candidate; Auth expiry/deletion and provider-linking cases; key-loss/Android backup; sensitive-data treatment; queue-count requirement; local self-host PoC path; quantified no-go triggers; and POC-0 through POC-8 ledger. Runtime experiments remain NOT RUN.
 - 2026-10-25: Applied second review and recorded the subsequent green branch CI run `40178245177` for commit `b17bb2fce735fc4f41509ff8126152b893f2ad4`. All app CI jobs passed; Supabase/PowerSync PoC experiments remain NOT RUN.
 ## Research source of truth
 
@@ -180,7 +180,7 @@ All official documentation, version snapshots, candidate options, security impli
 
 - **Source inventory and baseline:** COMPLETE.
 - **Official-docs and qualitative options review:** COMPLETE; details live in ADR-001.
-- **Workspace topology (W1 vs W2):** OPEN; V1 topology fixed: one current Guest/cloud identity per installation. Prove this model; retained multi-account workspaces are out of scope unless approved.
+- **Workspace topology (W1 vs W2):** OPEN; V1 topology fixed: one active Guest/cloud identity per installation. Prove this model; retained multi-account workspaces are out of scope unless approved.
 - **Qaza completion/undo conflict policy:** OPEN; map append-only event candidate to current domain behavior and tests.
 - **PoC:** NOT RUN. Use an independently versioned package outside the production app tree; local self-hosted Docker is the intended zero-budget route, with a read-only CI fallback if the local toolchain is missing.
 - **Windows PowerShell PoC runbook:** [powersync-poc-windows-powershell-runbook.md](powersync-poc-windows-powershell-runbook.md) now pins the reviewed official starter commit `eb149604014f243c6379f50c99bfdc9fa086abf6`, verifies expected starter files/ports/container before proceeding, documents Node 20+/WSL 2/Docker Desktop setup, keeps one PowerShell session for the scratch key, restores path variables safely in a new shell, passes `POC_DB_KEY` to database-backed tests and Android builds, and uses exact Pub version constraints. Official package listings confirm the versions individually, but joint dependency resolution and all runtime experiments remain NOT RUN.
@@ -206,7 +206,7 @@ See the authoritative list of POC-0 through POC-8 plus POC-GOOGLE, detailed comm
 - These runs verify current app/CI behavior, not PowerSync or Supabase compatibility.
 
 
-- 2026-10-25: Run A execution started. Created isolated POC-0 CI and package; exact direct package pin `sqlite_async 0.14.6` and 93-package license inventory resolved; untouched production architecture checks passed. Added PowerSync encrypted database create/write/reopen/wrong/missing-key smoke tests; Linux test result passed at PoC SHA `85f5c031`. Added a Drift adapter test; first codegen attempt failed because `build_runner 2.16.1` did not compile with freshly resolved `analyzer 14.6.0`. Pinning `analyzer 14.5.0` in the isolated PoC to investigate; no production dependencies changed. Android runtime, Docker sync, two-user server isolation, E2E adoption, key loss, deletion, and Google OAuth remain unproven.
+- 2026-10-25: Run A execution started. Created isolated POC-0 CI/package; exact pins resolved and 126 packages were inventoried with 0 missing/unclassified license files. Clean production boundary and both unchanged architecture checks passed. Linux PowerSync encryption tests (correct-key reopen, encrypted header, wrong/missing key fail-closed) passed in run `40201396327`. Updated build_runner to 2.16.2 (its changelog supports analyzer 14.5.0) and drift_dev to 2.35.2; Drift adapter codegen and Linux integration tests passed in the same run. That run showed a duplicate PowerSync-handle warning; fixed test lifecycle in `a4b73eca`, rerun pending. No production manifest/source changes. Android runtime/release, committed lockfile/enforce-lock, Docker sync, two-user server isolation, adoption, session-expiry, key-loss, deletion, and Google OAuth remain unproven.
 
 - 2026-10-25: Added a Windows PowerShell runbook with isolation guards, Supabase CLI/local stack commands, loopback-bound PowerSync service setup, reference demo checks, encryption and Drift tests, two-user safety tests, Android build steps, and explicit stop conditions. The PoC itself remains not run.
 

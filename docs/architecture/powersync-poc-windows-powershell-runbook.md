@@ -225,10 +225,10 @@ Add the following versions to this scratch client only, using exact version cons
 
     flutter pub add 'powersync:=2.5.0' 'supabase_flutter:=2.18.3'
     flutter pub add 'drift:=2.35.0' 'drift_sqlite_async:=0.3.1' 'sqlite_async:=0.14.6' 'flutter_secure_storage:=10.3.4'
-    flutter pub add --dev 'build_runner:=2.16.1' 'drift_dev:=2.35.0'
+    flutter pub add --dev 'build_runner:=2.16.2' 'drift_dev:=2.35.2' 'analyzer:=14.5.0'
     flutter pub get
 
-The official pub.dev version pages currently list these versions individually: `powersync 2.5.0` (Dart >=3.10), `supabase_flutter 2.18.3` (Dart >=3.9), `drift 2.35.0` (Dart >=3.10), `drift_sqlite_async 0.3.1` (Dart >=3.5), `sqlite_async 0.14.6` (Dart >=3.6), `flutter_secure_storage 10.3.4` (Dart >=3.3), `build_runner 2.16.1` (Dart >=3.11), and `drift_dev 2.35.0` (Dart >=3.10). See the package links below. Individual publication is not proof of joint compatibility; only a successful local dependency resolution proves this pinned set resolves together.
+The official pub.dev version pages currently list these versions individually: `powersync 2.5.0` (Dart >=3.10), `supabase_flutter 2.18.3` (Dart >=3.9), `drift 2.35.0` (Dart >=3.10), `drift_sqlite_async 0.3.1` (Dart >=3.5), `sqlite_async 0.14.6` (Dart >=3.6), `flutter_secure_storage 10.3.4` (Dart >=3.3), `build_runner 2.16.2` (Dart >=3.11), `drift_dev 2.35.2` (Dart >=3.10), and `analyzer 14.5.0` (development-tool compatibility pin). See the package links below. Individual publication is not proof of joint compatibility; only a successful local dependency resolution proves this pinned set resolves together.
 
 If dependency resolution fails, preserve the full resolver output and stop. Do not override constraints, loosen the exact pins or force versions with `dependency_overrides` merely to obtain a green solve. Record the resolver output and actual resolved versions in `pubspec.lock`; if any lockfile version differs from the requested exact version, stop and inspect before continuing. Review the license files for direct and transitive packages and the terms for the exact PowerSync deployment edition before recommending any hosted use; record the result without assuming a feature/pricing entitlement.
 
