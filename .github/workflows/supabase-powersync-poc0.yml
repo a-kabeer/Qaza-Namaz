@@ -170,6 +170,20 @@ jobs:
           cd "$POC_DIR"
           flutter test test/powersync_encryption_test.dart --reporter expanded 2>&1 | tee "$EVIDENCE_DIR/powersync-encryption-tests.txt"
 
+      - name: Generate isolated Drift adapter code
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$POC_DIR"
+          dart run build_runner build --delete-conflicting-outputs 2>&1 | tee "$EVIDENCE_DIR/drift-codegen.txt"
+
+      - name: Run PowerSync encryption and Drift adapter smoke tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cd "$POC_DIR"
+          flutter test test/powersync_encryption_test.dart test/drift_powersync_adapter_test.dart --reporter expanded 2>&1 | tee "$EVIDENCE_DIR/powersync-drift-tests.txt"
+
       - name: Upload POC-0 evidence
         if: always()
         uses: actions/upload-artifact@v4

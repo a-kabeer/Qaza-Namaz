@@ -20,6 +20,9 @@ dev_dependencies:
     sdk: flutter
   flutter_test:
     sdk: flutter
+  async: 2.13.1
+  build_runner: 2.16.1
+  drift_dev: 2.35.0
   flutter_lints: 6.0.0
 
 # Match the existing app's current SQLite3MultipleCiphers build-hook choice

@@ -130,21 +130,32 @@ void main() {
     final originalBytes = await file.readAsBytes();
     expect(originalBytes, isNotEmpty);
 
+    final wrongKeyPath = '${temporaryDirectory.path}/wrong-key-copy.sqlite';
+    final wrongKeyFile = await file.copy(wrongKeyPath);
+    final wrongKeyBytes = await wrongKeyFile.readAsBytes();
     final wrongKeyFailure =
-        await _tryOpenAndRead(path: path, key: _keyWithSeed(91));
+        await _tryOpenAndRead(path: wrongKeyPath, key: _keyWithSeed(91));
     expect(wrongKeyFailure, isNotNull);
     expect(
-      await file.readAsBytes(),
-      equals(originalBytes),
-      reason: 'A wrong-key attempt must not replace or rewrite the original file.',
+      await wrongKeyFile.readAsBytes(),
+      equals(wrongKeyBytes),
+      reason: 'A wrong-key attempt must not rewrite the encrypted copy.',
     );
 
-    final noKeyFailure = await _tryOpenAndRead(path: path);
+    final noKeyPath = '${temporaryDirectory.path}/no-key-copy.sqlite';
+    final noKeyFile = await file.copy(noKeyPath);
+    final noKeyBytes = await noKeyFile.readAsBytes();
+    final noKeyFailure = await _tryOpenAndRead(path: noKeyPath);
     expect(noKeyFailure, isNotNull);
+    expect(
+      await noKeyFile.readAsBytes(),
+      equals(noKeyBytes),
+      reason: 'A no-key attempt must not rewrite the encrypted copy.',
+    );
     expect(
       await file.readAsBytes(),
       equals(originalBytes),
-      reason: 'A no-key attempt must not replace or rewrite the original file.',
+      reason: 'Neither key-probe attempt may alter the original encrypted file.',
     );
   });
 }
