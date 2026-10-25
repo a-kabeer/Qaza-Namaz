@@ -45,7 +45,7 @@ packages:
     dependency: transitive
     description:
       name: app_links_web
-      sha256: "382d32c6f486f15d7f5d6a37a70a481a4fc08382eef419d373169921a3e765"
+      sha256: "382d32c6f486f15b1d7f5d6a37a70a481a4fc08382eef419d373169921a3e765"
       url: "https://pub.dev"
     source: hosted
     version: "1.0.5"
@@ -168,7 +168,7 @@ packages:
       sha256: bf394f466ba9205f1812a0433b392d6af280f155f56651eda7c18cc32ed493b8
       url: "https://pub.dev"
     source: hosted
-    version: "0.19.3"
+    version: "1.2.1"
   collection:
     dependency: transitive
     description:
@@ -897,7 +897,8 @@ packages:
     dependency: transitive
     description:
       name: url_launcher_web
-      sha256: "85c81589622e4bf... [cut]"
+      sha256: "85c81589622fbc87c1c683aaea164d3604a7777495a79d91e39ffcdec39ddb34"
+      url: "https://pub.dev"
     source: hosted
     version: "2.4.3"
   url_launcher_windows:
@@ -920,7 +921,7 @@ packages:
     dependency: transitive
     description:
       name: vector_math
-      sha256: "92b9910f66ed1056fd4da7b040ae7c74cafacf885bdc81be496928d5049b032d"
+      sha256: "92b9910f66ed1057fd4da7b040ae7c74cafacf885bdc81be496928d5049b032d"
       url: "https://pub.dev"
     source: hosted
     version: "2.4.3"
@@ -984,7 +985,7 @@ packages:
     dependency: transitive
     description:
       name: yaml_edit
-      sha256: "07c9e63ba425eb1a1bb0e6f6db341e5f2bc4e2a6b0f35f2e583d1dc179a0a22e"
+      sha256: "07c9e63ba42519745182b88ca12264a7ba2484d8239958778dfe4d44fe760488"
       url: "https://pub.dev"
     source: hosted
     version: "2.2.4"
