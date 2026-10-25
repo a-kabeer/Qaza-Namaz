@@ -155,7 +155,7 @@ These requirements are accepted into the planning scope. They are design/test cr
 - These runs verify the merged test/CI repair, **not** PowerSync, Supabase, encryption interoperability, two-user isolation or cross-device conflict behavior.
 - Supabase is not implemented; no PowerSync PoC has run. The proposed ADR remains unapproved.
 - Documentation branch `tp-gen/supabase-run-a-adr` was created from main at `4e9747ed2`; it contains ADR/tracker/baseline documentation only. Original prior planning branch `tp-gen/supabase-offline-first` began at `565d11f4d`; that earlier SHA is the code-inspection baseline, not the current main HEAD.
-- [Flutter CI run 40178245177](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40178245177) on documentation branch commit `b17bb2fce735fc4f41509ff8126152b893f2ad4d` completed successfully: Analyze, test, and offline architecture checks; Android release artifacts; Android offline startup smoke test all passed. This is app/repository regression evidence only, not a PoC result.
+- [Flutter CI run 40178245177](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40178245177) on documentation branch commit `b17bb2fce735fc4f41509ff8126152b893f2ad4a` completed successfully: Analyze, test, and offline architecture checks; Android release artifacts; Android offline startup smoke test all passed. This is app/repository regression evidence only, not a PoC result.
 
 ## Change log
 
