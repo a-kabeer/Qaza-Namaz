@@ -55,6 +55,23 @@ If any tool is missing, stop and install/configure it first. Do not install tool
 - https://supabase.com/docs/guides/local-development/cli/getting-started
 - https://supabase.com/docs/guides/local-development
 
+## Reopen a PowerShell window without losing track of the scratch project
+
+If you open a new window, first navigate to the existing Qaza Namaz repository root, then run this block to reconstruct the paths without recreating or overwriting any folders:
+
+    $ErrorActionPreference = 'Stop'
+    $RepoRoot = (git rev-parse --show-toplevel).Trim()
+    if ($LASTEXITCODE -ne 0 -or -not $RepoRoot) { throw 'Not inside the Qaza Namaz Git repository.' }
+    $ScratchParent = Split-Path $RepoRoot -Parent
+    $PocRoot = Join-Path $ScratchParent 'qaza-powersync-poc-20261025'
+    $ReferenceRoot = Join-Path $PocRoot 'reference'
+    $ClientRoot = Join-Path $PocRoot 'qaza_poc_client'
+    foreach ($Path in @($PocRoot, $ReferenceRoot, $ClientRoot)) {
+        if (-not (Test-Path $Path)) { throw "Expected existing scratch path not found: $Path" }
+    }
+
+This restores paths only; it cannot restore an environment variable from another PowerShell process. If POC_DB_KEY is empty, return to the original key-bearing window if it is still open. If that session is gone, do not generate a different key for the existing encrypted database. Use a new disposable client/database path and a fresh key to repeat the encryption experiment from scratch.
+
 ## Phase 1 — Create an isolated scratch folder and clone the official starter
 
 This command refuses to overwrite an existing scratch folder.
@@ -284,14 +301,16 @@ Use pgTAP and supabase test db for database authorization checks. Do not declare
 
 ## Phase 7 — Android verification and evidence collection
 
+For each meaningful change in the scratch client, run the analyzer first. It does not execute the database and does not need the key:
+
+    flutter analyze
+
 Before any database-backed test or build, verify the same PowerShell session still contains the key generated in Phase 5. Do not print the key:
 
     if ([string]::IsNullOrWhiteSpace($env:POC_DB_KEY)) { throw 'POC_DB_KEY is missing in this PowerShell session. Return to the session that created it, or use a new database path and new scratch key; do not regenerate a key for an existing encrypted database.' }
     "PoC key present; length only: $($env:POC_DB_KEY.Length)"
 
-For each meaningful change in the scratch client, `flutter analyze` does not execute the database and does not need the define. Tests and both APK builds must receive the define because the harness reads it using `String.fromEnvironment('POC_DB_KEY')`:
-
-    flutter analyze
+Tests and both APK builds must receive the define because the harness reads it using String.fromEnvironment('POC_DB_KEY'):
     flutter test "--dart-define=POC_DB_KEY=$env:POC_DB_KEY"
     flutter build apk --debug "--dart-define=POC_DB_KEY=$env:POC_DB_KEY"
     flutter build apk --release "--dart-define=POC_DB_KEY=$env:POC_DB_KEY"
