@@ -13,8 +13,8 @@ EXPECTED = {
     "sqlite3": "3.6.0",
     "supabase_flutter": "2.18.3",
     "flutter_lints": "6.0.0",
-    "build_runner": "2.16.1",
-    "drift_dev": "2.35.0",
+    "build_runner": "2.16.2",
+    "drift_dev": "2.35.2",
     "analyzer": "14.5.0",
     "async": "2.13.1",
 }
