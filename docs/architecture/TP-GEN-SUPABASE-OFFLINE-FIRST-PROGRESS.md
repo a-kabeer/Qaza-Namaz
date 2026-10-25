@@ -1,6 +1,6 @@
 # TP-GEN Progress Tracker — Supabase Offline-First Rebuild
 
-**Status:** Run A in progress; CI-AM baseline audit complete, repair blocked by execution environment  
+**Status:** Run A in progress; account-safety requirements added to plan; CI-AM remains RED pending diagnosis/fix  
 **Last updated:** 2026-10-25 (Asia/Karachi)  
 **Repository:** `a-kabeer/Qaza-Namaz`  
 **Working branch:** `tp-gen/supabase-offline-first`  
@@ -71,6 +71,60 @@
 - Guest adoption remains a product requirement. Existing cloud data must not be silently overwritten or merged.
 - No sync-engine choice has been made. Encryption compatibility, Drift integration, Android release build, and database ownership remain unproven.
 
+## Account ownership, reconciliation, and destructive-action requirements
+
+These requirements are accepted into the planning scope. They are design/test criteria only; no application behavior or backend has been implemented.
+
+### Pending account reconciliation and Cancel
+
+- Completing provider sign-in must not by itself bind a local workspace, expose workspace data, or start synchronization while cloud/account reconciliation is pending.
+- Keep the account and workspace context in a pending/isolated state until reconciliation resolves.
+- Cancel must sign out the newly authenticated account, leave the previous local workspace unchanged, and guarantee no data was exposed or synced during the pending check.
+- Do not assume the prior provider session can always be restored; if necessary, require the previous account to sign in again.
+- If the target account already has cloud data, present an explicit restore/adopt/reconcile decision; never silently overwrite or merge.
+
+### Crash-safe local wipe
+
+- Persist a durable wipe-in-progress marker outside the database and outside the encryption key being removed.
+- Delete the relevant encryption key first, then remove workspace database files (including SQLite sidecars), pending changes, sync metadata, ownership bindings, cached identity/email, and local session state.
+- Keep the marker until cleanup is verified complete. On every startup, recover any marked wipe before opening the affected database, selecting a workspace, or exposing account data.
+- Recovery must be idempotent and tolerate interruption at every step. Failed cleanup leaves the marker for retry. Wiping local data must never silently delete cloud data.
+- “Remove data and continue” must show an explicit irreversible-loss warning and the real pending-change count. If the count cannot be determined reliably, do not display zero or imply there are no pending changes.
+
+### Ownership matrix required in the ADR
+
+| Local state | Identity selected | Required outcome |
+|---|---|---|
+| Empty, unbound workspace | Account X | Bind to X |
+| Data-bearing Guest workspace | Account X | Explicit guest-to-X adoption only |
+| Workspace owned by Account X | Account X | Resume X |
+| Workspace owned by Account X | Account Y | Block direct rebinding; use the defined account-switch/reconciliation flow |
+| Wipe marker present | Any identity | Complete/recover wipe before account access |
+
+“Unowned” must distinguish an empty workspace from a data-bearing guest workspace. Guest-to-cloud adoption is the only permitted ownership change, and it must pass through the explicit adoption screen. Define behavior for existing target-account cloud data before approving adoption.
+
+### Ownership on queued changes and server enforcement
+
+- Use the immutable Supabase Auth user ID as the owner key, never email or masked email.
+- Each queued cloud mutation must retain its owner identity from enqueue time where the selected sync engine exposes an application-managed queue.
+- The upload path must refuse or quarantine any queued change whose owner differs from the currently authenticated user. Never rewrite a mismatched owner to make upload pass.
+- Supabase RLS must independently block unauthorized reads/writes; client-side owner checks are not the security boundary.
+- If PowerSync is selected, verify its upload queue/metadata model before adding a duplicate custom queue or redundant ownership mechanism.
+
+### Identity display and deletion semantics
+
+- Masked email is only a display hint; it is not an authorization key or durable account identifier.
+- Remove the cached email during the local wipe.
+- Clearly distinguish removal of local device data from deletion of cloud data. Account deletion is a separate explicit operation.
+
+### Required tests and phase mapping
+
+- **Phase 4 tests:** (1) Cancel signs out the newly authenticated account, preserves old local data, and exposes/syncs nothing during reconciliation; (2) an interrupted wipe is completed safely on next startup, including failure injection between each stage; (3) an upload with a mismatched owner is refused client-side and unauthorized server writes are denied by RLS.
+- **Phase 5 UI:** pending reconciliation/cancel flow and explicit guest adoption; local-data removal confirmation with actual pending-change count and irreversible-loss warning.
+- **Run A ADR:** ownership matrix, cancellation contract, wipe protocol, queued-change ownership, email/display-only policy, cloud-existing-data behavior, and architecture-specific proof for the chosen sync engine.
+- **Run C implementation:** only after Run A evidence is complete and the user explicitly approves the ADR.
+- These criteria do not mean the ADR is decided, CI-AM is fixed, or any app implementation is complete.
+
 ## Next actions
 
 1. In a runnable Windows/Flutter environment, reproduce the four timeouts individually with expanded test output; identify the shared hang and apply the smallest justified fix.
@@ -82,15 +136,19 @@
 7. Create the ADR and present evidence to the user.
 8. **Stop for explicit approval. Do not begin backend implementation before approval.**
 
-## Current branch CI after documentation-only commits
+## Current branch CI
 
-- Latest inspected feature-branch commit: `b174564735c0188aa6935157e7071b7baa8563a1`.
-- CI for the previous tracker commit is still running: [Flutter CI run 40166074570](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166074570). A newer run for the baseline research document is pending: [Flutter CI run 40166098688](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166098688). These are documentation-only commits; test outcomes are not yet known.
-- Official research added to the baseline report: PowerSync 2.5.0 release notes (2026-10-19), `drift_sqlite_async` 0.3.1 stable documentation, Supabase RLS guidance, and published Supabase/PowerSync Cloud pricing. Links are in `docs/architecture/supabase-migration-baseline.md`.
+- Latest branch head at last status check: `4ae584b18e239b328a5e4ba4488428b8a7fdb924` (`docs: track initial PowerSync research and branch CI`).
+- Latest Flutter CI run: [40166108911](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166108911), status `in_progress` when checked. Setup, pub get, localization/Drift code generation, offline architecture policy, phase-boundary policy, dead-code/dependency audit, analysis, and formatting completed successfully; `Test with coverage` was still running. This is **not a green CI result**.
+- Earlier docs-only runs [40166074570](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166074570) and [40166098688](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40166098688) were cancelled by newer branch pushes; they do not provide a complete test result.
+- The known main-branch baseline remains RED due to four 10-minute account-choice test timeouts. No fix is claimed.
+- No application/backend code has been changed. No PowerSync encryption/Drift proof of concept has run. CI-AM remains unresolved until the shared timeout is diagnosed and a justified fix passes targeted tests and full CI.
 
 ## Change log
 
 - 2026-10-25: Created feature branch from audited main SHA.
 - 2026-10-25: Inspected root and host dependency manifests, AGENTS.md, encryption/database/session code, account-choice tests, architecture policy scripts, and both CI workflows.
 - 2026-10-25: Recorded the shared four-test CI timeout baseline and created the migration baseline report.
-- 2026-10-25: Added official package, RLS, and pricing research. Documentation-only feature-branch CI runs are pending/in progress; no application code has been changed.
+- 2026-10-25: Added official package, RLS, and pricing research.
+- 2026-10-25: Added account-reconciliation, crash-safe wipe, ownership matrix, queued-change ownership, masked-email, destructive-warning, test, and phase-mapping criteria to the tracker. Planning documentation only; no application code has been changed.
+- 2026-10-25: Refreshed branch CI status; test-with-coverage remains in progress and CI-AM remains unresolved.
