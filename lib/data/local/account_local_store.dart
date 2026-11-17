@@ -1102,16 +1102,18 @@ class AccountLocalStore {
           if (row == null ||
               row.userId != localAccountId ||
               row.prayerType != record.prayerType.name ||
-              !sameInstant(row.originalDate, record.originalDate) ||
-              row.status != record.status.name ||
-              !sameInstant(row.completedAt, record.completedAt) ||
-              row.completionId != record.completionId ||
-              row.additionId != record.additionId ||
-              row.recordVersion != record.recordVersion ||
-              !sameInstant(row.createdAt, record.createdAt) ||
-              !sameInstant(row.updatedAt, record.updatedAt)) {
+              !sameInstant(row.originalDate, record.originalDate)) {
             throw StateError(
               'Onboarding Qaza row verification failed for record ${record.id}.',
+            );
+          }
+          // If the record was already present in the database (e.g. from an
+          // earlier sync or prior session), retain it. If it was completed,
+          // preserve its completed state.
+          if (row.status != record.status.name &&
+              row.status != QazaStatus.completed.name) {
+            throw StateError(
+              'Onboarding Qaza row status conflict for record ${record.id}: ${row.status}.',
             );
           }
         }

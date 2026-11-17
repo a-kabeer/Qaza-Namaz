@@ -387,6 +387,10 @@ class DriftQazaLocalStore extends QazaLocalStore
         onProgress?.call(processedWork, totalWork);
       }
 
+      if (additions.isNotEmpty) {
+        await _upsertProfilePlanProvenance(additions);
+      }
+
       return QazaProfilePlanMutationResult(
         userId: userId,
         added: List.unmodifiable(inserted),
