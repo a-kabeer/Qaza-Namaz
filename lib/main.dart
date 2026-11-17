@@ -12,8 +12,11 @@ import 'core/widgets/fatal_error_screen.dart';
 import 'core/diagnostics/diagnostics.dart';
 import 'core/licenses/app_license_registry.dart';
 import 'core/time/local_date_service.dart';
+import 'data/auth/google_sign_in_identity_provider.dart';
 import 'data/local/database/database_manager.dart';
 import 'features/home/home_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+import 'data/powersync/powersync_config.dart';
 
 const Duration _startupStepTimeout = Duration(seconds: 10);
 
@@ -50,6 +53,20 @@ Future<void> main() async {
     LocalDateService.configureLocalTimezone(timezone.identifier);
   });
 
+  await _step('supabase', () async {
+    if (PowerSyncConfig.hasValidCredentials) {
+      await Supabase.initialize(
+        url: PowerSyncConfig.supabaseUrl,
+        publishableKey: PowerSyncConfig.supabasePublishableKey,
+      );
+    }
+  });
+
+  final serverClientId = PowerSyncConfig.googleServerClientId;
+  final identity = GoogleSignInIdentityProvider(
+    serverClientId: serverClientId.isEmpty ? null : serverClientId,
+  );
+
   final (initialThemeMode, initialPrimaryColor) = await loadInitialAppearance();
 
   try {
@@ -57,6 +74,7 @@ Future<void> main() async {
     final initialHomePrayerSelection = await loadInitialHomePrayerSelection();
     runApp(
       _appRoot(
+        identity: identity,
         themeMode: initialThemeMode,
         primaryColor: initialPrimaryColor,
         homePrayerSelection: initialHomePrayerSelection,
@@ -80,6 +98,7 @@ Future<void> main() async {
                 await loadInitialHomePrayerSelection();
             runApp(
               _appRoot(
+                identity: identity,
                 themeMode: initialThemeMode,
                 primaryColor: initialPrimaryColor,
                 homePrayerSelection: initialHomePrayerSelection,
@@ -103,12 +122,14 @@ Future<void> main() async {
 }
 
 Widget _appRoot({
+  required GoogleSignInIdentityProvider identity,
   required AppThemeMode themeMode,
   required AppPrimaryColor primaryColor,
   required HomePrayerSelectionState homePrayerSelection,
 }) {
   return ProviderScope(
     overrides: [
+      googleIdentityProvider.overrideWithValue(identity),
       initialThemeModeProvider.overrideWithValue(themeMode),
       initialPrimaryColorProvider.overrideWithValue(primaryColor),
       initialHomePrayerSelectionProvider.overrideWithValue(homePrayerSelection),

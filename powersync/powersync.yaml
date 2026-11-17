@@ -1,0 +1,26 @@
+# =============================================================================
+# PowerSync Sync Rules — Edition 3 (Sync Streams)
+# Application: Qaza Namaz
+# Target Backend: Supabase (PostgreSQL)
+# =============================================================================
+
+config:
+  edition: 3
+
+streams:
+  # ---------------------------------------------------------------------------
+  # user_data: User-isolated sync stream
+  # Replicates only the authenticated user's private ledger and preferences
+  # ---------------------------------------------------------------------------
+  user_data:
+    auto_subscribe: true
+    queries:
+      - SELECT * FROM account_profiles WHERE user_id = auth.user_id()
+      - SELECT * FROM account_plan_revisions WHERE user_id = auth.user_id()
+      - SELECT * FROM qaza_additions WHERE user_id = auth.user_id()
+      - SELECT * FROM qaza_records WHERE user_id = auth.user_id()
+      - SELECT * FROM daily_salah_logs WHERE user_id = auth.user_id()
+      - SELECT * FROM qaza_deletion_actions WHERE user_id = auth.user_id()
+      - SELECT * FROM qaza_deletion_action_record_snapshots WHERE user_id = auth.user_id()
+      - SELECT * FROM qaza_profile_plan_provenance WHERE user_id = auth.user_id()
+      - SELECT * FROM user_preferences WHERE user_id = auth.user_id()

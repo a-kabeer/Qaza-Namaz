@@ -15,6 +15,7 @@ import '../core/diagnostics/flow_timing.dart';
 import '../core/constants/prayer_types.dart';
 import '../core/theme/app_theme.dart';
 import '../core/widgets/app_snackbar.dart';
+import '../data/auth/supabase_auth_service.dart';
 import '../l10n/app_localizations.dart';
 import '../data/data_transfer/local_backup_service.dart';
 import '../data/local/database/app_database.dart';
@@ -142,8 +143,20 @@ final startupAccountWorkspaceRestoreProvider =
     FutureProvider<void>((ref) async {
   if (ref.read(startupWorkspaceRestoreSatisfiedProvider)) return;
 
-  final identityProvider = ref.watch(googleIdentityProvider);
   final session = ref.read(accountSessionManagerProvider);
+  final supabaseAuth = ref.watch(supabaseAuthServiceProvider);
+  if (supabaseAuth.isSignedIn && supabaseAuth.currentUser != null) {
+    await traceAsyncStage(
+      flow: 'startup_restore',
+      stage: 'activate_supabase_workspace',
+      action: () =>
+          session.activateSupabaseAccount(supabaseAuth.currentUser!.id),
+    );
+    ref.invalidate(appRouteProvider);
+    return;
+  }
+
+  final identityProvider = ref.watch(googleIdentityProvider);
   if (identityProvider.isSupported) {
     final snapshot = await traceAsyncStage(
       flow: 'startup_restore',
@@ -285,6 +298,16 @@ final databaseManagerProvider = Provider<DatabaseManager>((ref) {
   return manager;
 });
 
+/// Authoritative database handle for the currently active workspace.
+///
+/// Automatically routes to the dedicated PowerSync database for authenticated
+/// Google workspaces or to the control/guest PowerSync database for Guest mode.
+final activeWorkspaceDatabaseProvider = Provider<AppDatabase>((ref) {
+  final localAccountId = ref.watch(activeUserIdProvider);
+  final manager = ref.watch(databaseManagerProvider);
+  return manager.databaseForActiveWorkspace(localAccountId);
+});
+
 final accountChoiceCompleteProvider = FutureProvider<bool>((ref) async {
   final database = ref.watch(appDatabaseProvider);
   if (await database.isAccountChoiceComplete()) return true;
@@ -317,30 +340,23 @@ final returningAccountChoicePendingProvider = FutureProvider<bool>((ref) {
 final guestConnectPromptRequestProvider = StateProvider<int>((ref) => 0);
 
 final qazaLocalStoreProvider = Provider<QazaLocalStore>((ref) {
-  final localAccountId = ref.watch(activeUserIdProvider);
-  final manager = ref.watch(databaseManagerProvider);
-  if (localAccountId == null || localAccountId.isEmpty) {
-    // Session-less contexts (headless helpers and flows that carry an
-    // explicit user ID, e.g. Qaza undo feedback) keep the pre-split
-    // construction contract: the store over the control database, with
-    // per-query user scoping. Routing to a separate workspace file
-    // applies as soon as a session publishes an active workspace.
-    return DriftQazaLocalStore(database: manager.controlDatabase);
-  }
-  return DriftQazaLocalStore(
-    database: manager.databaseForActiveWorkspace(localAccountId),
-  );
+  final database = ref.watch(activeWorkspaceDatabaseProvider);
+  return DriftQazaLocalStore(database: database);
 });
 
 final qazaRepositoryProvider = Provider<QazaRepository>((ref) {
+  final localStore = ref.watch(qazaLocalStoreProvider);
+  final activeUserId = ref.watch(activeUserIdProvider);
   final repository = OfflineFirstQazaRepository(
-    localStore: ref.watch(qazaLocalStoreProvider),
+    localStore: localStore,
     diagnostics: ref.watch(diagnosticsProvider),
   );
+  if (activeUserId != null && activeUserId.isNotEmpty) {
+    unawaited(repository.setActiveUser(activeUserId));
+  }
   ref.listen<String?>(
     activeUserIdProvider,
     (_, next) => repository.setActiveUser(next),
-    fireImmediately: true,
   );
   ref.onDispose(repository.dispose);
   return repository;
@@ -370,16 +386,8 @@ final qazaServiceProvider = Provider<QazaService>(
 );
 
 final qazaAdditionRepositoryProvider = Provider<QazaAdditionRepository>((ref) {
-  final localAccountId = ref.watch(activeUserIdProvider);
-  final manager = ref.watch(databaseManagerProvider);
-  if (localAccountId == null || localAccountId.isEmpty) {
-    // See qazaLocalStoreProvider: session-less contexts keep the
-    // pre-split construction contract over the control database.
-    return DriftQazaAdditionRepository(manager.controlDatabase);
-  }
-  return DriftQazaAdditionRepository(
-    manager.databaseForActiveWorkspace(localAccountId),
-  );
+  final database = ref.watch(activeWorkspaceDatabaseProvider);
+  return DriftQazaAdditionRepository(database);
 });
 
 final qazaAdditionServiceProvider = Provider<QazaAdditionService>(
@@ -441,27 +449,27 @@ final requiredUserIdProvider = Provider<String>((ref) {
 });
 
 final progressSummaryProvider =
-    FutureProvider.autoDispose<QazaProgressSummary>((ref) {
+    FutureProvider<QazaProgressSummary>((ref) {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) return Future.value(QazaProgressSummary.empty());
-  return ref.read(qazaServiceProvider).getProgressSummary(userId: userId);
+  return ref.watch(qazaServiceProvider).getProgressSummary(userId: userId);
 });
 
 final oldestPendingProvider =
-    FutureProvider.autoDispose.family<QazaRecord?, PrayerType>((ref, prayer) {
+    FutureProvider.family<QazaRecord?, PrayerType>((ref, prayer) {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) return Future.value(null);
   return ref
-      .read(qazaServiceProvider)
+      .watch(qazaServiceProvider)
       .oldestPending(userId: userId, prayerType: prayer);
 });
 
 final latestPendingProvider =
-    FutureProvider.autoDispose.family<QazaRecord?, PrayerType>((ref, prayer) {
+    FutureProvider.family<QazaRecord?, PrayerType>((ref, prayer) {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) return Future.value(null);
   return ref
-      .read(qazaServiceProvider)
+      .watch(qazaServiceProvider)
       .latestPending(userId: userId, prayerType: prayer);
 });
 

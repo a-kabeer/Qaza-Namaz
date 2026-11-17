@@ -1020,14 +1020,24 @@
   "qazaAdditionEditSummary": "{addedCount} شامل، {removedCount} ہٹائے گئے، {protectedCount} محفوظ",
   "@qazaAdditionEditSummary": {
     "placeholders": {
-      "addedCount": { "type": "int" },
-      "removedCount": { "type": "int" },
-      "protectedCount": { "type": "int" }
+      "addedCount": {
+        "type": "int"
+      },
+      "removedCount": {
+        "type": "int"
+      },
+      "protectedCount": {
+        "type": "int"
+      }
     }
   },
   "qazaAdditionMoreDates": "مزید {count}",
   "@qazaAdditionMoreDates": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaSelectedCount": "{count, plural, =1{1 منتخب} other{{count} منتخب}}",
   "@qazaSelectedCount": {
@@ -1171,5 +1181,86 @@
   "profilePubertyDate": "بلوغت کی تاریخ",
   "profileEstimateUsingAge": "عمر کے اندازے سے",
   "dailySalahTrackingConfirmPrayedTitle": "نماز کو ادا شدہ قرار دیں؟",
-  "dailySalahTrackingConfirmPrayedMessage": "اس سے نماز کی کیفیت ادا شدہ ہو جائے گی اور اس سے منسلک قضا ریکارڈ مکمل ہو جائے گا۔"
+  "dailySalahTrackingConfirmPrayedMessage": "اس سے نماز کی کیفیت ادا شدہ ہو جائے گی اور اس سے منسلک قضا ریکارڈ مکمل ہو جائے گا۔",
+  "accountStatusProtected": "آن لائن محفوظ ہے",
+  "accountGuestDeviceOnly": "ریکارڈ صرف اس فون پر محفوظ ہے",
+  "accountProtectRecordsTitle": "اپنا ریکارڈ محفوظ بنائیں",
+  "accountProtectRecordsSubtitle": "اپنے تمام قضا ریکارڈ کو آن لائن محفوظ رکھنے کے لیے اکاؤنٹ جوڑیں۔",
+  "accountConnectEmail": "ای میل کے ذریعے جوڑیں",
+  "accountConnectedSuccess": "اکاؤنٹ کامیابی سے جڑ گیا!",
+  "accountGuestProfilesTitle": "مہمان پروفائلز",
+  "accountGuestProfilesSubtitle": "مختلف مہمان پروفائلز کے درمیان تبدیل کریں",
+  "accountReturnToWelcome": "شروع کی اسکرین پر جائیں",
+  "accountSignOutConfirmTitle": "لاگ آؤٹ کریں؟",
+  "accountSignOutConfirmBody": "کیا آپ واقعی اکاؤنٹ سے لاگ آؤٹ کرنا چاہتے ہیں؟ آپ کا محفوظ شدہ ریکارڈ ضائع نہیں ہوگا۔",
+  "accountSignOutConfirmAction": "لاگ آؤٹ",
+  "dataBackupAndRestoreTitle": "بیک اپ اور بحالی",
+  "dataBackupAndRestoreSubtitle": "ریکارڈ کی فائل فون میں رکھیں یا پرانا ڈیٹا واپس لائیں",
+  "dataSaveBackupTitle": "بیک اپ فائل محفوظ کریں",
+  "dataSaveBackupSubtitle": "اپنے تمام قضا ریکارڈ کی فائل اپنے فون میں محفوظ کریں",
+  "dataSaveBackupAction": "فائل محفوظ کریں",
+  "dataRestoreBackupTitle": "پرانا ڈیٹا واپس لائیں",
+  "dataRestoreBackupSubtitle": "پہلے سے محفوظ شدہ بیک اپ فائل سے ریکارڈ بحال کریں",
+  "dataRestoreBackupAction": "فائل منتخب کریں",
+  "dataLocalBackupNote": "نوٹ: یہ بیک اپ فائل آپ کے فون کی میموری میں محفوظ ہوتی ہے اور انٹرنیٹ کے بغیر بھی کام کرتی ہے۔",
+  "dataProcessingWaiting": "عمل جاری ہے، برائے مہربانی انتظار کریں...",
+  "dataBackupSavedSuccess": "بیک اپ فائل کامیابی سے محفوظ ہو گئی!",
+  "dataBackupSaveFailed": "بیک اپ فائل محفوظ نہ ہو سکی",
+  "dataImportFileEmpty": "منتخب کردہ فائل خالی ہے",
+  "dataImportSuccessWithCount": "{count, plural, =1{1 ریکارڈ کامیابی سے بحال ہو گیا} other{{count} ریکارڈز کامیابی سے بحال ہو گئے}}",
+  "dataImportFailedMessage": "فائل بحال کرنے میں رکاوٹ پیش آئی",
+  "dataImportConfirmPrompt": "کیا پرانا ریکارڈ بحال کریں؟",
+  "dataImportConfirmBody": "اس فائل میں {count} ریکارڈز موجود ہیں۔ کیا آپ موجودہ ریکارڈ کی جگہ یہ فائل بحال کرنا چاہتے ہیں؟",
+  "dataImportConfirmAction": "بحال کریں",
+  "authSignIn": "لاگ ان کریں",
+  "authSignUp": "سائن اپ",
+  "authSignInSubtitle": "تمام ڈیوائسز پر ریکارڈز سنک رکھنے کے لیے لاگ ان کریں۔",
+  "authSignUpSubtitle": "اپنے قضاء ریکارڈز کو محفوظ رکھنے کے لیے نیا اکاؤنٹ بنائیں۔",
+  "authEmailAddressLabel": "ای میل ایڈریس",
+  "authEmailRequired": "ای میل درج کریں",
+  "authEmailInvalid": "درست ای میل درج کریں",
+  "authPasswordLabel": "پاس ورڈ",
+  "authPasswordRequired": "پاس ورڈ درج کریں",
+  "authPasswordMinLength": "پاس ورڈ کم از کم 6 ہندسوں کا ہو",
+  "authConfirmationSentNotice": "اکاؤنٹ بن گیا ہے! تصدیقی ای میل بھیج دی گئی ہے۔ تصدیق کے بعد لاگ ان کریں۔",
+  "authErrorGeneric": "لاگ ان مکمل نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+  "authErrorRateLimit": "سروس عارضی طور پر مصروف ہے۔ براہ کرم چند منٹ بعد دوبارہ کوشش کریں۔",
+  "authErrorInvalidCredentials": "ای میل یا پاس ورڈ درست نہیں ہے۔ براہ کرم دوبارہ چیک کریں۔",
+  "authErrorAlreadyRegistered": "یہ ای میل پہلے سے رجسٹر ہے۔ براہ کرم \"لاگ ان کریں\" منتخب کریں۔",
+  "authErrorEmailNotConfirmed": "براہ کرم پہلے اپنے ای میل ان باکس سے اکاؤنٹ کی تصدیق کریں۔",
+  "authErrorWeakPassword": "پاس ورڈ کم از کم 6 ہندسوں کا ہونا چاہیے۔",
+  "authErrorNetwork": "انٹرنیٹ کنکشن دستیاب نہیں۔ آپ بطورِ مہمان آف لائن بھی جاری رکھ سکتے ہیں۔",
+  "welcomeContinueWithEmail": "ای میل کے ساتھ لاگ ان کریں",
+  "welcomeDividerOr": "یا",
+  "welcomePrivacyNotice": "آپ کا ڈیٹا محفوظ اور پرائیویٹ ہے",
+  "welcomeGoogleSelectFailed": "گوگل اکاؤنٹ منتخب نہیں ہو سکا۔ دوبارہ کوشش کریں یا مہمان کے طور پر جاری رکھیں۔",
+  "welcomeGoogleInterrupted": "گوگل سائن ان میں رکاوٹ پیش آئی۔ آپ بطورِ مہمان جاری رکھ سکتے ہیں۔",
+  "guestSelectionTitle": "مہمان پروفائل منتخب کریں",
+  "guestSelectionSubtitle": "پہلے سے موجود پروفائل جاری رکھیں یا نیا شروع کریں۔",
+  "guestCreateNewAction": "+ نیا پروفائل بنائیں",
+  "guestActiveBadge": "موجودہ",
+  "guestSwitchedMessage": "{name} پر منتقل ہو گئے",
+  "guestAlreadyActive": "یہ پروفائل پہلے سے فعال ہے",
+  "guestNoWorkspaces": "کوئی محفوظ شدہ مہمان پروفائل نہیں ہے",
+  "guestSetupInProgress": "سیٹ اپ جاری ہے · مکمل کرنے کے لیے کھولیں",
+  "guestActiveWorkspaceDescription": "موجودہ اکاؤنٹ · ڈیلیٹ کرنے سے پہلے دوسرا اکاؤنٹ منتخب کریں",
+  "guestCreatedDate": "بنایا گیا: {date}",
+  "guestRenameTitle": "مہمان پروفائل کا نام تبدیل کریں",
+  "guestRenameLabel": "پروفائل کا نام",
+  "guestRenameHint": "نام درج کریں",
+  "guestRenameValidation": "1 سے 50 حروف پر مشتمل نام درج کریں۔",
+  "guestRenameSuccess": "پروفائل کا نام تبدیل کر دیا گیا۔",
+  "guestRenameAction": "نام بدلیں",
+  "guestDeleteActiveError": "اسے ڈیلیٹ کرنے سے پہلے کسی دوسرے اکاؤنٹ پر جائیں۔",
+  "guestDeleteTitle": "کیا یہ مہمان پروفائل ڈیلیٹ کرنا چاہتے ہیں؟",
+  "guestDeleteScheduled": "ڈیلیٹ کرنے کا شیڈول {date} ہے۔ آپ نیچے سے اسے بحال کر سکتے ہیں۔",
+  "guestUndoSuccess": "مہمان پروفائل بحال کر دی گئی۔",
+  "guestUndoUnavailable": "یہ ڈیلیٹ شدہ ریکارڈ اب بحال نہیں ہو سکتا۔",
+  "guestRecentlyDeletedTitle": "حال ہی میں ڈیلیٹ کردہ",
+  "guestRecentlyDeletedSubtitle": "ریکارڈ سات دن تک بحال کیے جا سکتے ہیں۔",
+  "guestScheduledDeletion": "ڈیلیٹ ہونے کی تاریخ: {date}",
+  "guestUndoAction": "بحال کریں",
+  "guestDeleteDialogMessage": "اس اکاؤنٹ کو ڈیلیٹ کرنے سے اس کا پروفائل، {qazaRecords} اور {dailySalahRecords} ہٹ جائیں گے۔ سات دن کے اندر آپ اسے واپس لا سکتے ہیں۔",
+  "guestQazaRecordCount": "{count} قضا نمازوں کا ریکارڈ",
+  "guestDailySalahRecordCount": "{count} روزانہ نمازوں کا ریکارڈ"
 }

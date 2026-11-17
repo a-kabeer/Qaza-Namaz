@@ -196,18 +196,7 @@ class _TodayProgressSection extends ConsumerWidget {
     final daily = ref.watch(homeDashboardActivityProvider);
     final today = ref.watch(homeLocalDateProvider);
 
-    ref.listen<AsyncValue<HomeDashboardActivity>>(
-      homeDashboardActivityProvider,
-      (previous, next) {
-        if (!next.hasError || next.error == previous?.error) return;
-        ref.read(diagnosticsProvider).recordFailure(
-              DiagnosticArea.uncaught,
-              'home_daily_progress_failed',
-              next.error!,
-              stack: next.stackTrace,
-            );
-      },
-    );
+
 
     return daily.when(
       loading: () => const HomeTodayProgressSkeleton(),

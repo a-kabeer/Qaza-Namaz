@@ -326,7 +326,13 @@ class _DatabaseManagerMigrationHelper {
           .customSelect('SELECT COUNT(*) AS row_count FROM qaza_records')
           .get();
 
-      for (final (table, ownerColumn) in _workspaceOwnedTables) {
+      for (final (table, defaultOwnerColumn) in _workspaceOwnedTables) {
+        final srcCols = await _tableColumns(_manager.controlDatabase, table);
+        final ownerColumn = srcCols.contains('user_id')
+            ? 'user_id'
+            : (srcCols.contains('local_account_id')
+                ? 'local_account_id'
+                : defaultOwnerColumn);
         await _copyOwnedTableRows(
           source: _manager.controlDatabase,
           target: staging,

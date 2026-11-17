@@ -363,6 +363,12 @@ class OfflineFirstQazaRepository
     );
 
     if (changed.isNotEmpty) {
+      _syncCloudStatus(
+        recordId: recordId,
+        status: 'completed',
+        completedAt: completedAt,
+        completionId: completionId,
+      );
       return QazaCompletionResult.completed;
     }
 
@@ -391,12 +397,21 @@ class OfflineFirstQazaRepository
   }) async {
     _validateActive(userId);
     if (recordIds.isEmpty) return const <QazaRecord>[];
-    return _localStore.completeRecords(
+    final records = await _localStore.completeRecords(
       userId: userId,
       recordIds: recordIds.toSet().toList(growable: false),
       completedAt: completedAt,
       completionIds: completionIds,
     );
+    for (final r in records) {
+      _syncCloudStatus(
+        recordId: r.id,
+        status: 'completed',
+        completedAt: completedAt,
+        completionId: r.completionId,
+      );
+    }
+    return records;
   }
 
   @override
@@ -412,6 +427,14 @@ class OfflineFirstQazaRepository
       expectedCompletionIds: expectedCompletionIds,
       undoneAt: undoneAt,
     );
+    for (final r in changed) {
+      _syncCloudStatus(
+        recordId: r.id,
+        status: 'pending',
+        completedAt: null,
+        completionId: null,
+      );
+    }
     return changed.map((record) => record.id).toList(growable: false);
   }
 
@@ -422,11 +445,32 @@ class OfflineFirstQazaRepository
     required DateTime updatedAt,
   }) async {
     _validateActive(userId);
-    return _localStore.markCompletedAsPendingBatch(
+    final records = await _localStore.markCompletedAsPendingBatch(
       userId: userId,
       expectedCompletionIds: expectedCompletionIds,
       updatedAt: updatedAt,
     );
+    for (final r in records) {
+      _syncCloudStatus(
+        recordId: r.id,
+        status: 'pending',
+        completedAt: null,
+        completionId: null,
+      );
+    }
+    return records;
+  }
+
+  void _syncCloudStatus({
+    required String recordId,
+    required String status,
+    DateTime? completedAt,
+    String? completionId,
+  }) {
+    // Isolated in Phase 3A: Direct Supabase updates are decommissioned.
+    // In Option A, PowerSync manages all synchronization and local CRUD queues.
+    // Opportunistic REST updates directly to Supabase bypass PowerSync and cause
+    // inconsistency. Remote synchronization will be launched via PowerSync in Phase 3B.
   }
 
   @override

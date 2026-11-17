@@ -1407,14 +1407,24 @@
   "qazaAdditionEditSummary": "{addedCount} added • {removedCount} removed • {protectedCount} protected",
   "@qazaAdditionEditSummary": {
     "placeholders": {
-      "addedCount": { "type": "int" },
-      "removedCount": { "type": "int" },
-      "protectedCount": { "type": "int" }
+      "addedCount": {
+        "type": "int"
+      },
+      "removedCount": {
+        "type": "int"
+      },
+      "protectedCount": {
+        "type": "int"
+      }
     }
   },
   "qazaAdditionMoreDates": "+ {count} more",
   "@qazaAdditionMoreDates": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaSelectedCount": "{count, plural, =1{1 selected} other{{count} selected}}",
   "@qazaSelectedCount": {
@@ -1558,5 +1568,154 @@
   "profilePubertyDate": "Puberty Date",
   "profileEstimateUsingAge": "Estimate using age",
   "dailySalahTrackingConfirmPrayedTitle": "Change prayer to Prayed?",
-  "dailySalahTrackingConfirmPrayedMessage": "This will mark the prayer as prayed and complete its linked Qaza record."
+  "dailySalahTrackingConfirmPrayedMessage": "This will mark the prayer as prayed and complete its linked Qaza record.",
+  "accountStatusProtected": "Online & Protected",
+  "accountGuestDeviceOnly": "Saved on this device only",
+  "accountProtectRecordsTitle": "Protect Your Records",
+  "accountProtectRecordsSubtitle": "Connect an account to sync and protect your records safely.",
+  "accountConnectEmail": "Sign In with Email",
+  "accountConnectedSuccess": "Account successfully connected!",
+  "accountGuestProfilesTitle": "Guest Profiles",
+  "accountGuestProfilesSubtitle": "Switch between different guest profiles",
+  "accountReturnToWelcome": "Go to Welcome Screen",
+  "accountSignOutConfirmTitle": "Sign out?",
+  "accountSignOutConfirmBody": "Are you sure you want to sign out? Your saved records will not be lost.",
+  "accountSignOutConfirmAction": "Sign Out",
+  "dataBackupAndRestoreTitle": "Backup & Restore",
+  "dataBackupAndRestoreSubtitle": "Save records to your phone or restore earlier data",
+  "dataSaveBackupTitle": "Save backup file",
+  "dataSaveBackupSubtitle": "Save all your Qaza records to a file on your device",
+  "dataSaveBackupAction": "Save File",
+  "dataRestoreBackupTitle": "Restore from backup",
+  "dataRestoreBackupSubtitle": "Restore Qaza records from a previously saved backup file",
+  "dataRestoreBackupAction": "Select File",
+  "dataLocalBackupNote": "Note: This backup file is stored in your phone's memory and works without internet.",
+  "dataProcessingWaiting": "Processing, please wait…",
+  "dataBackupSavedSuccess": "Backup file saved successfully!",
+  "dataBackupSaveFailed": "Could not save backup file",
+  "dataImportFileEmpty": "Selected file is empty",
+  "dataImportSuccessWithCount": "{count, plural, =1{1 record successfully restored} other{{count} records successfully restored}}",
+  "@dataImportSuccessWithCount": {
+    "description": "Notification when backup import succeeds with count",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dataImportFailedMessage": "Failed to restore backup file",
+  "dataImportConfirmPrompt": "Restore from backup file?",
+  "dataImportConfirmBody": "This file contains {count} records. Do you want to replace current records with this backup?",
+  "@dataImportConfirmBody": {
+    "description": "Confirmation prompt before restoring a backup file",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "dataImportConfirmAction": "Restore",
+  "authSignIn": "Sign In",
+  "authSignUp": "Sign Up",
+  "authSignInSubtitle": "Sign in to access your synced records across devices.",
+  "authSignUpSubtitle": "Create an account to securely sync and backup your records.",
+  "authEmailAddressLabel": "Email Address",
+  "authEmailRequired": "Please enter your email.",
+  "authEmailInvalid": "Please enter a valid email address.",
+  "authPasswordLabel": "Password",
+  "authPasswordRequired": "Please enter your password.",
+  "authPasswordMinLength": "Password must be at least 6 characters.",
+  "authConfirmationSentNotice": "Account created! Please check your email to confirm, then sign in.",
+  "authErrorGeneric": "Authentication failed. Please try again.",
+  "authErrorRateLimit": "Service is temporarily busy. Please try again in a few minutes.",
+  "authErrorInvalidCredentials": "Incorrect email or password. Please verify and try again.",
+  "authErrorAlreadyRegistered": "This email is already registered. Please switch to Sign In.",
+  "authErrorEmailNotConfirmed": "Please confirm your email from your inbox before signing in.",
+  "authErrorWeakPassword": "Password must be at least 6 characters.",
+  "authErrorNetwork": "No internet connection. You can continue as Guest offline.",
+  "welcomeContinueWithEmail": "Continue with Email",
+  "welcomeDividerOr": "OR",
+  "welcomePrivacyNotice": "Your data is completely safe and private",
+  "welcomeGoogleSelectFailed": "Google account could not be selected. Please try again or continue as Guest.",
+  "welcomeGoogleInterrupted": "Google sign-in was interrupted. You can continue as Guest.",
+  "guestSelectionTitle": "Choose Guest Profile",
+  "guestSelectionSubtitle": "Continue with an existing profile or create a fresh one.",
+  "guestCreateNewAction": "+ Create New Profile",
+  "guestActiveBadge": "Active",
+  "guestSwitchedMessage": "Switched to {name}",
+  "@guestSwitchedMessage": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "guestAlreadyActive": "This profile is already active",
+  "guestNoWorkspaces": "No saved Guest workspaces",
+  "guestSetupInProgress": "Setup in progress · Resume to continue",
+  "guestActiveWorkspaceDescription": "Current workspace · switch away before deleting",
+  "guestCreatedDate": "Created {date}",
+  "@guestCreatedDate": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "guestRenameTitle": "Rename Guest workspace",
+  "guestRenameLabel": "Workspace name",
+  "guestRenameHint": "Enter a name",
+  "guestRenameValidation": "Enter a name containing 1–50 characters.",
+  "guestRenameSuccess": "Guest workspace renamed.",
+  "guestRenameAction": "Rename",
+  "guestDeleteActiveError": "Switch to another workspace before deleting this one.",
+  "guestDeleteTitle": "Delete Guest workspace?",
+  "guestDeleteScheduled": "Deletion scheduled for {date}. Undo is available below.",
+  "@guestDeleteScheduled": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "guestUndoSuccess": "Guest workspace restored.",
+  "guestUndoUnavailable": "This deletion hold is no longer available.",
+  "guestRecentlyDeletedTitle": "Recently deleted",
+  "guestRecentlyDeletedSubtitle": "Records remain recoverable until the seven-day hold ends.",
+  "guestScheduledDeletion": "Scheduled deletion: {date}",
+  "@guestScheduledDeletion": {
+    "placeholders": {
+      "date": {
+        "type": "String"
+      }
+    }
+  },
+  "guestUndoAction": "Undo",
+  "guestDeleteDialogMessage": "Deleting this workspace removes its profile, {qazaRecords} and {dailySalahRecords}. Its records will be kept for seven days. You can undo the deletion during that period.",
+  "@guestDeleteDialogMessage": {
+    "placeholders": {
+      "qazaRecords": {
+        "type": "String"
+      },
+      "dailySalahRecords": {
+        "type": "String"
+      }
+    }
+  },
+  "guestQazaRecordCount": "{count, plural, =1{1 Qaza record} other{{count} Qaza records}}",
+  "@guestQazaRecordCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "guestDailySalahRecordCount": "{count, plural, =1{1 daily Salah record} other{{count} daily Salah records}}",
+  "@guestDailySalahRecordCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  }
 }

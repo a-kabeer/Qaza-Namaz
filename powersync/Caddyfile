@@ -1,0 +1,57 @@
+# =============================================================================
+# Qaza Namaz Production Caddyfile
+# Reverse Proxy with Automatic Let's Encrypt / ZeroSSL TLS (HTTPS / WSS)
+# Active Domains: qaza-api.duckdns.org / qaza-sync.duckdns.org
+# Public Host IP: 92.4.86.19
+# =============================================================================
+
+{
+    log {
+        output file /var/log/caddy/access.log {
+            roll_size 10mb
+            roll_keep 3
+        }
+    }
+}
+
+# -----------------------------------------------------------------------------
+# 1. Supabase API Gateway (Auth, REST, Storage, Realtime)
+# -----------------------------------------------------------------------------
+qaza-api.duckdns.org {
+    tls {
+        protocols tls1.2 tls1.3
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # Preserves external Host (qaza-api.duckdns.org) for Auth redirects & OAuth
+    reverse_proxy 127.0.0.1:8000
+}
+
+# -----------------------------------------------------------------------------
+# 2. PowerSync Sync Service (Streaming HTTP & WebSockets)
+# -----------------------------------------------------------------------------
+qaza-sync.duckdns.org {
+    tls {
+        protocols tls1.2 tls1.3
+    }
+
+    header {
+        Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        -Server
+    }
+
+    # Preserves external Host; unbuffered flush_interval -1 for persistent streaming
+    reverse_proxy 127.0.0.1:8080 {
+        flush_interval -1
+    }
+}

@@ -2,8 +2,10 @@ import 'dart:io';
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
+import 'package:drift_sqlite_async/drift_sqlite_async.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../../powersync/powersync_database.dart';
 import 'database_encryption.dart';
 import 'qaza_records_dao.dart';
 import 'tables/qaza_records.dart';
@@ -19,30 +21,93 @@ enum AppDatabaseRole { controlGuest, googleWorkspace }
 )
 class AppDatabase extends _$AppDatabase {
   /// Test seam retained for in-memory and explicitly supplied executors.
-  AppDatabase([QueryExecutor? executor])
-      : _role = AppDatabaseRole.controlGuest,
+  AppDatabase([QueryExecutor? executor, bool? isPowerSync])
+      : _isPowerSync = isPowerSync ?? (executor is SqliteAsyncDriftConnection),
+        _role = AppDatabaseRole.controlGuest,
         _workspaceId = null,
         super(executor ?? _openEncryptedDatabase());
 
   /// Explicit production constructor for the control + Guest database.
   AppDatabase.control()
-      : _role = AppDatabaseRole.controlGuest,
+      : _isPowerSync = true,
+        _role = AppDatabaseRole.controlGuest,
         _workspaceId = null,
-        super(_openEncryptedDatabase());
+        super(
+          LazyDatabase(() async {
+            return await QazaPowerSyncDatabaseManager.createDriftConnection(
+              workspaceId: 'guest',
+            );
+          }),
+        );
+
+  /// Explicit constructor for a PowerSync-backed AppDatabase instance.
+  AppDatabase.forPowerSync(
+    super.executor, {
+    String? workspaceId,
+    AppDatabaseRole role = AppDatabaseRole.googleWorkspace,
+  })  : _isPowerSync = true,
+        _role = role,
+        _workspaceId = workspaceId;
 
   AppDatabase._workspace({
     required QueryExecutor executor,
     required String workspaceId,
-  })  : _role = AppDatabaseRole.googleWorkspace,
+    bool isPowerSync = false,
+  })  : _isPowerSync = isPowerSync,
+        _role = AppDatabaseRole.googleWorkspace,
         _workspaceId = workspaceId,
         super(executor);
 
+  final bool _isPowerSync;
   final AppDatabaseRole _role;
   final String? _workspaceId;
 
+  bool get isPowerSync => _isPowerSync;
   bool get isGoogleWorkspaceDatabase =>
       _role == AppDatabaseRole.googleWorkspace;
   String? get workspaceId => _workspaceId;
+
+  @override
+  DriftDatabaseOptions get options => _isPowerSync
+      ? const DriftDatabaseOptions(storeDateTimeAsText: true)
+      : const DriftDatabaseOptions(storeDateTimeAsText: false);
+
+  Future<bool> _isPowerSyncManaged() async {
+    if (_isPowerSync) return true;
+    try {
+      final rows = await customSelect(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'ps_data__qaza_records' LIMIT 1",
+      ).get();
+      return rows.isNotEmpty;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _ensurePowerSyncUniqueConstraints() async {
+    await customStatement('''
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_ps_qaza_unique_user_prayer_date
+      ON ps_data__qaza_records(
+        cast(json_extract(data, '\$.user_id') as text),
+        cast(json_extract(data, '\$.prayer_type') as text),
+        cast(json_extract(data, '\$.original_date') as text)
+      )
+    ''');
+    await customStatement('''
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_ps_daily_salah_unique_user_date_prayer
+      ON ps_data__daily_salah_logs(
+        cast(json_extract(data, '\$.user_id') as text),
+        cast(json_extract(data, '\$.prayer_date') as text),
+        cast(json_extract(data, '\$.prayer_type') as text)
+      )
+    ''');
+    await customStatement('''
+      CREATE UNIQUE INDEX IF NOT EXISTS idx_ps_provenance_unique_record
+      ON ps_data__qaza_profile_plan_provenance(
+        cast(json_extract(data, '\$.record_id') as text)
+      )
+    ''');
+  }
 
   static QueryExecutor _openEncryptedDatabase({
     String fileName = 'qaza_namaz.sqlite',
@@ -89,6 +154,31 @@ class AppDatabase extends _$AppDatabase {
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (Migrator m) async {
+          final isPowerSyncDb = await _isPowerSyncManaged();
+          if (isPowerSyncDb) {
+            // PowerSync owns synced tables (views over ps_data__).
+            // Ensure unique constraints on underlying tables:
+            await _ensurePowerSyncUniqueConstraints();
+            // Local-only Drift tables are created directly in SQLite:
+            await _ensureAccountSchema();
+            await _ensureMetaStoreSchema();
+            await _ensureLocalRecoverySnapshotSchema();
+            await _ensureWorkspaceRevisionSchema();
+            await _ensureWorkspaceLifecycleSchema();
+            if (isGoogleWorkspaceDatabase) {
+              await _ensureWorkspaceOwnerGuardSchema();
+              if (_workspaceId == null || _workspaceId.isEmpty) {
+                throw StateError('Google workspace database requires an owner ID.');
+              }
+              await writeWorkspaceFileOwner(_workspaceId);
+            } else {
+              await _ensureRegistryDatabaseRoutingSchema();
+              await _ensureAccountChoiceSchema();
+              await _ensureWorkspaceOperationJournalColumns();
+            }
+            return;
+          }
+
           await m.createAll();
           await _ensureQazaAdditionSchema();
           await _ensureQazaProfilePlanProvenanceSchema();
@@ -112,6 +202,20 @@ class AppDatabase extends _$AppDatabase {
           }
         },
         onUpgrade: (Migrator m, int from, int to) async {
+          final isPowerSyncDb = await _isPowerSyncManaged();
+          if (isPowerSyncDb) {
+            await _ensurePowerSyncUniqueConstraints();
+            await _ensureAccountSchema();
+            await _ensureMetaStoreSchema();
+            await _ensureLocalRecoverySnapshotSchema();
+            await _ensureWorkspaceRevisionSchema();
+            await _ensureWorkspaceLifecycleSchema();
+            if (isGoogleWorkspaceDatabase) {
+              await _ensureWorkspaceOwnerGuardSchema();
+            }
+            return;
+          }
+
           if (isGoogleWorkspaceDatabase) {
             // Google workspace files contain only workspace-owned state.
             // The control registry/session/journal are never installed here.
@@ -680,6 +784,7 @@ class AppDatabase extends _$AppDatabase {
         )
       ''');
     }
+    if (await _isPowerSyncManaged()) return;
     await customStatement('''
       CREATE TABLE IF NOT EXISTS account_profiles (
         local_account_id TEXT NOT NULL PRIMARY KEY,
@@ -728,6 +833,7 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> _ensureWorkspaceOwnerGuardSchema() async {
     if (!isGoogleWorkspaceDatabase) return;
+    if (await _isPowerSyncManaged()) return;
     final id = _workspaceId;
     if (id == null || id.isEmpty) {
       throw StateError('Google workspace database requires an owner ID.');
@@ -1017,55 +1123,57 @@ class AppDatabase extends _$AppDatabase {
       ''');
     }
 
-    final ownerTables = <String, String>{
-      if (!isGoogleWorkspaceDatabase) 'local_accounts': 'local_account_id',
-      'qaza_records': 'user_id',
-      'daily_salah_logs': 'user_id',
-      'qaza_additions': 'user_id',
-      'qaza_deletion_actions': 'user_id',
-      'qaza_deletion_action_record_snapshots': 'user_id',
-      'qaza_profile_plan_provenance': 'user_id',
-      'account_profiles': 'local_account_id',
-      'account_plan_revisions': 'local_account_id',
-    };
+    if (!await _isPowerSyncManaged()) {
+      final ownerTables = <String, String>{
+        if (!isGoogleWorkspaceDatabase) 'local_accounts': 'local_account_id',
+        'qaza_records': 'user_id',
+        'daily_salah_logs': 'user_id',
+        'qaza_additions': 'user_id',
+        'qaza_deletion_actions': 'user_id',
+        'qaza_deletion_action_record_snapshots': 'user_id',
+        'qaza_profile_plan_provenance': 'user_id',
+        'account_profiles': 'local_account_id',
+        'account_plan_revisions': 'local_account_id',
+      };
 
-    for (final entry in ownerTables.entries) {
-      final table = entry.key;
-      final owner = entry.value;
-      await customStatement('''
-        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_insert
-        AFTER INSERT ON $table
-        BEGIN
-          INSERT INTO meta_store (key, value)
-          VALUES ('workspace_revision:' || NEW.$owner, '2')
-          ON CONFLICT(key) DO UPDATE SET
-            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
-        END
-      ''');
-      await customStatement('''
-        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_update
-        AFTER UPDATE ON $table
-        BEGIN
-          INSERT INTO meta_store (key, value)
-          VALUES ('workspace_revision:' || OLD.$owner, '2')
-          ON CONFLICT(key) DO UPDATE SET
-            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
-          INSERT INTO meta_store (key, value)
-          VALUES ('workspace_revision:' || NEW.$owner, '2')
-          ON CONFLICT(key) DO UPDATE SET
-            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
-        END
-      ''');
-      await customStatement('''
-        CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_delete
-        AFTER DELETE ON $table
-        BEGIN
-          INSERT INTO meta_store (key, value)
-          VALUES ('workspace_revision:' || OLD.$owner, '2')
-          ON CONFLICT(key) DO UPDATE SET
-            value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
-        END
-      ''');
+      for (final entry in ownerTables.entries) {
+        final table = entry.key;
+        final owner = entry.value;
+        await customStatement('''
+          CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_insert
+          AFTER INSERT ON $table
+          BEGIN
+            INSERT INTO meta_store (key, value)
+            VALUES ('workspace_revision:' || NEW.$owner, '2')
+            ON CONFLICT(key) DO UPDATE SET
+              value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+          END
+        ''');
+        await customStatement('''
+          CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_update
+          AFTER UPDATE ON $table
+          BEGIN
+            INSERT INTO meta_store (key, value)
+            VALUES ('workspace_revision:' || OLD.$owner, '2')
+            ON CONFLICT(key) DO UPDATE SET
+              value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+            INSERT INTO meta_store (key, value)
+            VALUES ('workspace_revision:' || NEW.$owner, '2')
+            ON CONFLICT(key) DO UPDATE SET
+              value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+          END
+        ''');
+        await customStatement('''
+          CREATE TRIGGER IF NOT EXISTS workspace_rev_${table}_delete
+          AFTER DELETE ON $table
+          BEGIN
+            INSERT INTO meta_store (key, value)
+            VALUES ('workspace_revision:' || OLD.$owner, '2')
+            ON CONFLICT(key) DO UPDATE SET
+              value = CAST(CAST(value AS INTEGER) + 1 AS TEXT);
+          END
+        ''');
+      }
     }
 
     // Workspace preferences and labels live in meta_store rather than owner
@@ -1076,10 +1184,10 @@ class AppDatabase extends _$AppDatabase {
       'daily_salah_tracking_setup_dismissed:',
     ];
     final when = workspaceKeyPrefixes
-        .map((prefix) => "NEW.key GLOB '${prefix}*'")
+        .map((prefix) => "NEW.key GLOB '$prefix*'")
         .join(' OR ');
     final oldWhen = workspaceKeyPrefixes
-        .map((prefix) => "OLD.key GLOB '${prefix}*'")
+        .map((prefix) => "OLD.key GLOB '$prefix*'")
         .join(' OR ');
     await customStatement('''
       CREATE TRIGGER IF NOT EXISTS workspace_rev_meta_insert
@@ -1358,16 +1466,18 @@ class GoogleWorkspaceDatabase extends AppDatabase {
   GoogleWorkspaceDatabase({
     required String fileName,
     required String workspaceId,
-  }) : super._workspace(
-          executor: AppDatabase._openEncryptedDatabase(
-            fileName: fileName,
-            migrateLegacyPlaintext: false,
-          ),
+  }) : super.forPowerSync(
+          LazyDatabase(() async {
+            return await QazaPowerSyncDatabaseManager.createDriftConnection(
+              workspaceId: workspaceId,
+            );
+          }),
           workspaceId: workspaceId,
+          role: AppDatabaseRole.googleWorkspace,
         );
 
   GoogleWorkspaceDatabase.forTesting({
-    required QueryExecutor executor,
-    required String workspaceId,
-  }) : super._workspace(executor: executor, workspaceId: workspaceId);
+    required super.executor,
+    required super.workspaceId,
+  }) : super._workspace();
 }

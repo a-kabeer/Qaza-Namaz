@@ -21,6 +21,15 @@ String googleLocalWorkspaceId(String googleAccountId) {
   return 'google_$normalized';
 }
 
+/// Stable local workspace key for a verified Supabase account.
+String supabaseLocalWorkspaceId(String supabaseUserId) {
+  final normalized = supabaseUserId.trim();
+  if (normalized.isEmpty) {
+    throw ArgumentError.value(supabaseUserId, 'supabaseUserId');
+  }
+  return 'supabase_$normalized';
+}
+
 enum AccountLifecycleState {
   active,
   archived,
@@ -74,6 +83,24 @@ class LocalAccount {
   final DateTime createdAt;
   final DateTime updatedAt;
   final String? displayName;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is LocalAccount &&
+          runtimeType == other.runtimeType &&
+          localAccountId == other.localAccountId &&
+          accountMode == other.accountMode &&
+          lifecycleState == other.lifecycleState &&
+          displayName == other.displayName;
+
+  @override
+  int get hashCode => Object.hash(
+        localAccountId,
+        accountMode,
+        lifecycleState,
+        displayName,
+      );
 }
 
 enum AccountSessionPhase { loading, connecting, ready, error }
@@ -96,4 +123,22 @@ class AccountSessionState {
   final String? activeLocalAccountId;
   final LocalAccount? activeAccount;
   final String? message;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is AccountSessionState &&
+          runtimeType == other.runtimeType &&
+          phase == other.phase &&
+          activeLocalAccountId == other.activeLocalAccountId &&
+          activeAccount == other.activeAccount &&
+          message == other.message;
+
+  @override
+  int get hashCode => Object.hash(
+        phase,
+        activeLocalAccountId,
+        activeAccount,
+        message,
+      );
 }

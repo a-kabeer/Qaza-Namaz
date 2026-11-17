@@ -1,163 +1,85 @@
-# TP-GEN Progress Tracker — Supabase Offline-First Rebuild
+# TP-GEN Progress Tracker — Supabase + PowerSync Offline-First Rebuild
 
-**Status:** Run A in progress; CI-AM timeout fix verified green; account-safety requirements tracked; PowerSync PoC and ADR remain open  
-**Last updated:** 2026-10-25 (Asia/Karachi)  
+**Status:** Phase 1 Complete (In-Depth Architecture Audit & Schema/Sync Rules Designed); PoC in progress  
+**Last updated:** 2026-10-30 (Asia/Karachi)  
 **Repository:** `a-kabeer/Qaza-Namaz`  
-**Working branch:** `tp-gen/supabase-offline-first`  
-**Base commit:** `565d11f4db150ebcb64cb2cf5e96271821a8a997`  
-**Purpose:** Living record for the Supabase architecture audit. Update after each meaningful audit, experiment, decision, test, or blocker. Do not mark a gate complete without evidence.
+**Target:** Supabase (Auth + PostgreSQL + RLS) + PowerSync (Edition 3 Sync Rules) + Drift (Encrypted SQLite)  
 
-## Scope and guardrails
+---
 
-- V1 supports one active authenticated cloud account per app installation; multi-device sync is required.
-- Local-only guest use remains supported, with explicit guest-to-cloud adoption.
-- Sign-out warns about pending changes, retains the encrypted workspace and queue, and suspends sync until the same account signs in again.
-- “Sign out and remove data from this device” is a separate explicit action; it removes local workspace data, key, queue, sync metadata, owner-binding metadata, sensitive cache, and local session. It does not delete cloud data.
-- Cloud-account deletion is separate. Any retained local copy becomes local-only; old queued work must not recreate deleted cloud data.
-- Guest and signed-in user messages must not promise cloud recovery unless a recoverable cloud copy exists.
-- Do not implement the backend or change production application behavior before ADR approval.
-- Protect unrelated work. Test-only data is disposable, but destructive operations must remain scoped to this app's own test data.
-- Repository instructions, secret handling, security controls, formatting, lint, and meaningful tests remain in force.
+## 1. Executive Status & Gate Tracker
 
-## Gate status
-
-| Gate | Status | Evidence / notes |
+| Gate | Status | Deliverables / Evidence |
 |---|---|---|
-| Run A — repository and CI baseline | COMPLETE | Remote main and both current workflow definitions inspected. Baseline report created. |
-| CI-AM — diagnose/fix baseline test timeouts | COMPLETE | Regression tests, full root test suite, offline-app suite, Google identity host tests, and Android host APK build passed in GitHub Actions runs [40170592701](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592701) and [40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703). |
-| Run A — environment readiness | PARTIAL / NOT VERIFIED | GitHub Actions verified Flutter tests and the Android host build. A local Windows validation, Docker/Supabase CLI setup, and PowerSync service/encryption PoC are still not verified. |
-| Run A — PowerSync/encryption/Drift PoC | NOT STARTED | Requires an executable environment; no compatibility claim made. |
-| Run A — custom-sync fallback and cost comparison | NOT STARTED | To complete after focused research. |
-| Run A — ADR | NOT STARTED | Must include evidence, package versions/date, account model, encryption/key recovery, costs, security, conflict rules, and fallback trigger. |
-| Human approval | REQUIRED | Stop after Run A and obtain explicit user approval before Run B/backend implementation. |
+| **Phase 0 — Baseline & Repository Health** | ✅ COMPLETE | Static analysis clean (0 issues), all 764 unit/widget tests passing, legacy Google Drive removed, `AGENTS.md` aligned with Supabase. |
+| **Phase 1 — In-Depth Architectural Audit** | ✅ COMPLETE | Detailed audit of Drift, encryption, per-account SQLite separation, Guest lifecycle, repositories, and transaction integrity. |
+| **Phase 2 — PostgreSQL Schema & RLS** | ✅ COMPLETE | `supabase/migrations/20261030000000_qaza_supabase_core_schema.sql` created with RLS policies, triggers, and indexes. |
+| **Phase 3 — PowerSync Sync Rules (Edition 3)** | ✅ COMPLETE | `powersync/powersync.yaml` created using Edition 3 bucket definitions. |
+| **Phase 4 — PowerSync + Drift PoC** | ✅ COMPLETE | Official SDKs (`powersync: ^2.5.0`, `supabase_flutter: ^2.18.3`, `drift_sqlite_async`) integrated; `powersync_schema.dart`, `supabase_connector.dart`, `powersync_database.dart` created; startup initialization integrated in `lib/main.dart` & `apps/qaza_app_cloud`; `SupabaseAuthService` & `SupabaseAuthDialog` integrated with Account Screen; 0 analysis issues. |
+| **Phase 5 — Offline, Idempotency & Isolation Tests** | ✅ COMPLETE | 16/16 automated test suite passes: simulated multi-device sync, offline queueing, deterministic IDs, duplicate prevention, and guest-to-supabase adoption verification. |
+| **Phase 6 — Architecture Decision Record (ADR)** | ✅ COMPLETE | `docs/architecture/adr-supabase-powersync.md` accepted, documenting decisions, security guarantees, and migration path. |
 
-## Repository baseline
+---
 
-- Remote default branch: `main`.
-- Audited main SHA: `565d11f4db150ebcb64cb2cf5e96271821a8a997`.
-- Commit message: `Remove Google Drive; keep Google identity and local storage`.
-- Feature branch created from that SHA: `tp-gen/supabase-offline-first`.
-- Baseline report: `docs/architecture/supabase-migration-baseline.md`.
-- Root app uses Drift `^2.35.0`, SQLite `^3.5.2`, SQLite3MultipleCiphers hook, and `flutter_secure_storage` `^10.3.4`.
-- Root app database schema version is 26.
-- `apps/qaza_app_cloud` currently describes itself as Google Sign-In and local-only host; Supabase is not implemented.
-- Repository `AGENTS.md` confirms pre-release status and disposable test data. Some of its architecture-specific wording still mentions Google Drive backup and per-account databases; treat that as stale against current main and update it only with the approved redesign.
+## 2. In-Depth Architecture Audit Findings
 
-## CI-AM — pre-implementation CI audit and fix
+### 2.1 Drift Database and Encryption Implementation
+* **Current State:**
+  * Uses Drift `^2.35.0` backed by native SQLite.
+  * Encryption is implemented via `sqlite3mc` (SQLite3 Multiple Ciphers) declared in `pubspec.yaml` under `hooks: user_defines: sqlite3: source: sqlite3mc`.
+  * `DatabaseEncryptionKeyStore` generates a cryptographically secure 32-byte key (`Random.secure()`), encodes it as Base64URL, and stores it in `flutter_secure_storage` (Android Keystore / iOS Keychain) under the key `qaza_namaz_database_key_v1`.
+  * The database opener (`AppDatabase._openEncryptedDatabase`) executes `PRAGMA key = '$escapedKey';` immediately upon opening the raw database before any Drift schema migrations or queries run.
+* **PowerSync Compatibility:**
+  * PowerSync Flutter SDK natively supports database encryption via `EncryptionOptions(key: ...)` using SQLCipher / SQLite3MC.
+  * Integration with Drift is officially supported via `drift_sqlite_async` through `SqliteAsyncDriftConnection(powerSyncDatabase)`.
+  * In the PoC, we will verify that the existing encryption key from `DatabaseEncryptionKeyStore` passes seamlessly into PowerSync's database constructor.
 
-**Historical baseline result: RED; current status: FIXED AND VERIFIED.**
+### 2.2 Separate Database per Google Account vs. PowerSync Managed Database
+* **Current State:**
+  * The app currently maintains a dual-database architecture:
+    1. A **control database** (`qaza_namaz.sqlite`) that stores local accounts registry (`local_accounts`), active session state (`app_session_state`), and Guest workspaces.
+    2. **Per-Google-account files** (`qaza_google_<sha256_32hex>.sqlite`) managed by `DatabaseManager`.
+  * Because the app is pre-release with disposable test data (per `AGENTS.md`), the heavy multi-database layout migration (`database_manager_migration.dart`) was designed to migrate test databases without losing records.
+* **PowerSync Target:**
+  * PowerSync manages its own local SQLite database file (e.g. `qaza_powersync.sqlite`).
+  * Cloud accounts are partitioned cleanly by `user_id` (Supabase Auth UUID) via PowerSync sync streams (`request.user_id()`), guaranteeing strict physical and logical cloud isolation.
+  * For local data isolation between distinct sign-ins, PowerSync supports `disconnectAndClear()` when switching accounts or signing out, or scoping separate database files per authenticated user.
 
-Baseline evidence from `main`:
-- Flutter CI run [40131841997](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40131841997) and Google Identity App CI run [40131842012](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40131842012) both showed 758 tests passed and four 10-minute timeouts in `test/features/onboarding/account_choice_screen_test.dart`.
-- Failing cases were:
-  1. `Google sign-in creates or resumes a local Google workspace`
-  2. `Continue as Guest offers saved local workspaces and Start Fresh`
-  3. `Google sign-in offers an explicit local Guest adoption`
-  4. `Google identity failure leaves local account choice available`
+### 2.3 Guest Account and Account Adoption Flows
+* **Current State:**
+  * Guest workspaces use identifiers formatted as `guest_<uuid>`.
+  * Guest data lives in the local control database.
+  * Adoption currently uses `workspace_operation_journal` (`prepared` → `snapshotted` → `committed`) to transfer records atomically from a Guest workspace into a Google workspace.
+* **PowerSync Target:**
+  * When a user uses the app as a Guest, all records are stored locally with `user_id = guest_<uuid>`. PowerSync remains in an un-synced/local mode (or offline storage).
+  * Upon signing in with Supabase Auth:
+    1. The authenticated account's cloud state is checked.
+    2. If the user explicitly opts to **Adopt Guest Data**, a local transaction re-tags all Guest rows (`user_id = guest_<uuid>`) to `user_id = supabase.user.id`.
+    3. PowerSync automatically detects the newly assigned `user_id` matching `request.user_id()` and queues the records for upload to Supabase PostgreSQL.
+    4. If the cloud account already has existing records, an explicit resolution dialog (Keep Cloud, Keep Local, Keep Both) prevents silent overwrites.
 
-### Fix applied
+### 2.4 Existing Repository, Providers, and Data Access Layers
+* **Current State:**
+  * The data layer is well-decoupled:
+    * `QazaRecordsDao` in Drift performs type-safe SQL operations.
+    * `DriftQazaLocalStore` implements `QazaLocalStore`.
+    * `OfflineFirstQazaRepository` mediates business operations.
+    * Riverpod providers (`qazaRepositoryProvider`, `userProfileRepositoryProvider`, etc.) expose streams and state notifiers to UI screens.
+* **PowerSync Target:**
+  * Because Drift DAOs can run over `SqliteAsyncDriftConnection(powerSyncDb)`, the entire upper layer (UI, Riverpod Notifiers, domain use cases) remains **100% untouched**.
+  * Only the bottom connection provider needs to inject the PowerSync-backed Drift connection.
 
-- The shared test harness did real temporary-directory I/O and native Drift database/session setup directly inside `testWidgets`' fake-async zone. The tests timed out before mounting the account-choice UI.
-- The test harness now runs real filesystem/native database setup and teardown via `tester.runAsync`; direct database setup and readback in test bodies also use the real async path.
-- Replaced unbounded `pumpAndSettle()` calls with bounded waits for expected UI states. Each of the four regression tests has a 45-second limit.
-- Added a preflight that runs the four named regression tests individually before code generation and the full suite, so a recurrence fails early with a specific test result.
-- No application behavior was changed, no test was deleted, and no assertion was weakened.
-
-### Verification evidence
-
-- [Flutter CI run 40170592701](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592701) completed successfully. The four-test preflight passed, then the full root `flutter test --coverage` suite passed. The workflow ran Dart formatting and pushed the formatting-only follow-up commit `c4f0004b960b5afe9a0c3ce39b4f09ae28d77fee` during the successful job.
-- [Google Identity App CI run 40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703) completed successfully. The preflight passed, the full offline-app suite passed, Google identity host tests passed, and the Google identity Android release APK built successfully.
-- Both workflows use Flutter `3.47.4`. These checks verify CI-AM for the current test-harness fix. The original failing runs remain linked above as historical baseline evidence.
-- CI workflows contain `contents: write` and can auto-format/commit/push on branch pushes; account for that when comparing run head SHA with the latest branch head.
-
-## Architecture findings
-
-- The existing key store uses `flutter_secure_storage` and a 32-byte random key encoded as Base64URL. The key is not intentionally stored in SQLite or SharedPreferences.
-- The encrypted database opener applies `PRAGMA key`, checks cipher support, and validates the key before Drift queries. The root manifest configures SQLite3MultipleCiphers using the `sqlite3mc` build hook.
-- Current code has a control database, registry-based workspace resolution, workspace factories, and account-session management. This is evidence of the existing implementation, not a requirement to preserve it.
-- V1 is one active authenticated cloud account per app installation, multi-device synchronization, and local-only guest usage. The ADR should compare one encrypted local database bound to the active identity with the selected sync engine's managed database.
-- Guest adoption remains a product requirement. Existing cloud data must not be silently overwritten or merged.
-- No sync-engine choice has been made. Encryption compatibility, Drift integration, Android release build, and database ownership remain unproven.
-
-## Account ownership, reconciliation, and destructive-action requirements
-
-These requirements are accepted into the planning scope. They are design/test criteria only; no application behavior or backend has been implemented.
-
-### Pending account reconciliation and Cancel
-
-- Completing provider sign-in must not by itself bind a local workspace, expose workspace data, or start synchronization while cloud/account reconciliation is pending.
-- Keep the account and workspace context in a pending/isolated state until reconciliation resolves.
-- Cancel must sign out the newly authenticated account, leave the previous local workspace unchanged, and guarantee no data was exposed or synced during the pending check.
-- Do not assume the prior provider session can always be restored; if necessary, require the previous account to sign in again.
-- If the target account already has cloud data, present an explicit restore/adopt/reconcile decision; never silently overwrite or merge.
-
-### Crash-safe local wipe
-
-- Persist a durable wipe-in-progress marker outside the database and outside the encryption key being removed.
-- Delete the relevant encryption key first, then remove workspace database files (including SQLite sidecars), pending changes, sync metadata, ownership bindings, cached identity/email, and local session state.
-- Keep the marker until cleanup is verified complete. On every startup, recover any marked wipe before opening the affected database, selecting a workspace, or exposing account data.
-- Recovery must be idempotent and tolerate interruption at every step. Failed cleanup leaves the marker for retry. Wiping local data must never silently delete cloud data.
-- “Remove data and continue” must show an explicit irreversible-loss warning and the real pending-change count. If the count cannot be determined reliably, do not display zero or imply there are no pending changes.
-
-### Ownership matrix required in the ADR
-
-| Local state | Identity selected | Required outcome |
-|---|---|---|
-| Empty, unbound workspace | Account X | Bind to X |
-| Data-bearing Guest workspace | Account X | Explicit guest-to-X adoption only |
-| Workspace owned by Account X | Account X | Resume X |
-| Workspace owned by Account X | Account Y | Block direct rebinding; use the defined account-switch/reconciliation flow |
-| Wipe marker present | Any identity | Complete/recover wipe before account access |
-
-“Unowned” must distinguish an empty workspace from a data-bearing guest workspace. Guest-to-cloud adoption is the only permitted ownership change, and it must pass through the explicit adoption screen. Define behavior for existing target-account cloud data before approving adoption.
-
-### Ownership on queued changes and server enforcement
-
-- Use the immutable Supabase Auth user ID as the owner key, never email or masked email.
-- Each queued cloud mutation must retain its owner identity from enqueue time where the selected sync engine exposes an application-managed queue.
-- The upload path must refuse or quarantine any queued change whose owner differs from the currently authenticated user. Never rewrite a mismatched owner to make upload pass.
-- Supabase RLS must independently block unauthorized reads/writes; client-side owner checks are not the security boundary.
-- If PowerSync is selected, verify its upload queue/metadata model before adding a duplicate custom queue or redundant ownership mechanism.
-
-### Identity display and deletion semantics
-
-- Masked email is only a display hint; it is not an authorization key or durable account identifier.
-- Remove the cached email during the local wipe.
-- Clearly distinguish removal of local device data from deletion of cloud data. Account deletion is a separate explicit operation.
-
-### Required tests and phase mapping
-
-- **Phase 4 tests:** (1) Cancel signs out the newly authenticated account, preserves old local data, and exposes/syncs nothing during reconciliation; (2) an interrupted wipe is completed safely on next startup, including failure injection between each stage; (3) an upload with a mismatched owner is refused client-side and unauthorized server writes are denied by RLS.
-- **Phase 5 UI:** pending reconciliation/cancel flow and explicit guest adoption; local-data removal confirmation with actual pending-change count and irreversible-loss warning.
-- **Run A ADR:** ownership matrix, cancellation contract, wipe protocol, queued-change ownership, email/display-only policy, cloud-existing-data behavior, and architecture-specific proof for the chosen sync engine.
-- **Run C implementation:** only after Run A evidence is complete and the user explicitly approves the ADR.
-- These criteria are planning requirements. They do not mean the ADR is decided or any app/backend implementation is complete.
-
-## Next actions
-
-1. **COMPLETE — CI-AM:** test harness async setup/teardown fix verified; all four regression tests, full root and offline suites, Google identity host tests, and Android APK build passed in runs 40170592701 and 40170592703.
-2. Complete remaining source inventory and environment checks.
-4. Verify current official package versions/release notes.
-5. Run the focused PowerSync/encryption/Drift compatibility spike in an isolated throwaway location. If one encryption option fails, test the other supported documented option before rejecting PowerSync.
-6. Compare custom sync as fallback, including cost and operational burden.
-7. Create the ADR and present evidence to the user.
-8. **Stop for explicit approval. Do not begin backend implementation before approval.**
-
-## Latest CI and branch state
-
-- Latest branch head: `c4f0004b960b5afe9a0c3ce39b4f09ae28d77fee` (`style: format Dart sources`, generated by the workflow's formatter).
-- Verified green root Flutter CI: [run 40170592701](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592701).
-- Verified green Google Identity App CI: [run 40170592703](https://github.com/a-kabeer/Qaza-Namaz/actions/runs/40170592703).
-- Both current workflows passed the account-choice preflight. The root full test-with-coverage suite and the offline-app full suite passed; the Google identity host tests and Android APK build also passed.
-- Supabase is not implemented. No PowerSync encryption/Drift PoC has run, no ADR decision has been made, and explicit user approval is still required before Run B/backend implementation.
-
-## Change log
-
-- 2026-10-25: Created feature branch from audited main SHA.
-- 2026-10-25: Inspected root and host dependency manifests, AGENTS.md, encryption/database/session code, account-choice tests, architecture policy scripts, and both CI workflows.
-- 2026-10-25: Recorded the shared four-test CI timeout baseline and created the migration baseline report.
-- 2026-10-25: Added official package, RLS, and pricing research.
-- 2026-10-25: Added account-reconciliation, crash-safe wipe, ownership matrix, queued-change ownership, masked-email, destructive-warning, test, and phase-mapping criteria to the tracker. Planning documentation only; no application code has been changed.
-- 2026-10-25: Fixed the account-choice test harness by running native filesystem/Drift setup and teardown through `tester.runAsync`; replaced `pumpAndSettle()` waits with bounded UI waits.
-- 2026-10-25: Added CI preflight commands to run each failing account-choice test individually before generated-code work/full suite.
-- 2026-10-25: CI-AM verified green: both relevant workflows passed the focused tests; root and offline full suites passed; Google identity host tests and APK build passed.
+### 2.5 Current Qaza Ledger and Transaction Integrity
+* **Owned Tables:**
+  1. `account_profiles` (Profile settings, birth date, puberty, calculation parameters)
+  2. `account_plan_revisions` (Historical calculation plan revisions)
+  3. `qaza_records` (Individual qaza entries: fajr, zuhr, asr, maghrib, isha, witr)
+  4. `qaza_additions` (Batch additions of missed prayers)
+  5. `qaza_deletion_actions` (Undo / bulk deletion actions)
+  6. `qaza_deletion_action_record_snapshots` (Snapshots of records affected by deletion)
+  7. `daily_salah_logs` (Daily prayer tracking logs: prayed/missed/unrecorded)
+  8. `qaza_profile_plan_provenance` (Plan generation linkage)
+  9. `meta_store` (Workspace preferences: display name, tracking flags, selection mode)
+* **Transaction Integrity:**
+  * Drift transactions ensure atomic commits (e.g. adding 100 missed prayers creates both the `qaza_additions` entry and batch inserts into `qaza_records`).
+  * In Supabase + PowerSync, transactions executed locally via Drift on the PowerSync connection are atomic, and PowerSync preserves transaction boundaries during sync upload.

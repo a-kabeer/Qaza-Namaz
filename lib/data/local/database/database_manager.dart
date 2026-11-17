@@ -10,6 +10,8 @@ import 'app_database.dart';
 import 'database_encryption.dart';
 import 'free_space.dart';
 import 'workspace_canonical_content.dart';
+import '../../powersync/legacy_drift_to_powersync_migrator.dart';
+import '../../powersync/powersync_database.dart';
 
 part 'database_manager_migration.dart';
 
@@ -116,6 +118,11 @@ class DatabaseManager {
       _activeWorkspaceId = null;
       return;
     }
+    if (id.startsWith('supabase_')) {
+      _controlResolvedWorkspaceIds.add(id);
+      _activeWorkspaceId = id;
+      return;
+    }
     if (!_workspaceDatabases.containsKey(id) &&
         !_controlResolvedWorkspaceIds.contains(id)) {
       throw StateError(
@@ -151,6 +158,24 @@ class DatabaseManager {
     return 'qaza_google_${hash.substring(0, 32)}.sqlite';
   }
 
+  /// Factory method to create a Drift [QueryExecutor] backed by an encrypted
+  /// PowerSync database instance for a given workspace.
+  ///
+  /// Note: Phase 1 foundation; does not alter active provider routing.
+  static Future<QueryExecutor> createPowerSyncDriftConnection({
+    String? workspaceId,
+    String? customPath,
+    String? encryptionKey,
+    dynamic schema,
+  }) {
+    return QazaPowerSyncDatabaseManager.createDriftConnection(
+      workspaceId: workspaceId,
+      customPath: customPath,
+      encryptionKey: encryptionKey,
+      schema: schema,
+    );
+  }
+
   Future<void> initialize() {
     final pending = _initializeFuture;
     if (pending != null) return pending;
@@ -166,6 +191,13 @@ class DatabaseManager {
 
   Future<void> _initialize() async {
     await controlDatabase.readDbRevision();
+    if (controlDatabase.isPowerSync) {
+      await const LegacyDriftToPowerSyncMigrator().migrateIfNeeded(
+        workspaceId: 'guest',
+        targetPowerSyncDb: controlDatabase,
+        documentsDirectoryProvider: _documentsDirectoryProvider,
+      );
+    }
     await _reconcileWorkspaceCreationJournal();
   }
 
@@ -239,21 +271,30 @@ class DatabaseManager {
   /// during account activation; a missing handle never falls back to Guest.
   AppDatabase databaseForActiveWorkspace(String? localAccountId) {
     final id = localAccountId?.trim();
-    if (id == null ||
-        id.isEmpty ||
-        id == 'guest' ||
-        id.startsWith('guest_') ||
-        id.startsWith('guest:')) {
+    if (id == null || id.isEmpty || !id.startsWith('google_')) {
       return controlDatabase;
     }
-    if (_controlResolvedWorkspaceIds.contains(id)) return controlDatabase;
     final database = _workspaceDatabases[id];
     if (database == null) {
       throw StateError(
-        'The active Google workspace has not been opened and validated.',
+        'The active Google workspace ($id) has not been opened and validated. '
+        'Access is blocked to prevent fallback or cross-workspace data leakage.',
       );
     }
     return database;
+  }
+
+  /// Closes and releases the database handle and PowerSync connection for a workspace.
+  Future<void> closeWorkspaceDatabase(String localAccountId) async {
+    final id = localAccountId.trim();
+    final db = _workspaceDatabases.remove(id);
+    if (db != null) {
+      await db.close();
+      await QazaPowerSyncDatabaseManager.closeDatabase(
+        workspaceId: id,
+        documentsDirectoryProvider: _documentsDirectoryProvider,
+      );
+    }
   }
 
   Future<AppDatabase> databaseForWorkspace(String localAccountId) {
@@ -320,7 +361,12 @@ class DatabaseManager {
     if (cached != null) return cached;
     final directory = await _documentsDirectoryProvider();
     final file = File('${directory.path}/$fileName');
-    if (!await file.exists()) {
+    final psPath = await QazaPowerSyncDatabaseManager.resolveWorkspaceDatabasePath(
+      workspaceId: id,
+      documentsDirectoryProvider: _documentsDirectoryProvider,
+    );
+    final psFile = File(psPath);
+    if (!await file.exists() && !await psFile.exists()) {
       throw StateError(
         'The registered Google workspace database is missing. No empty replacement was created.',
       );
@@ -337,6 +383,13 @@ class DatabaseManager {
       if (integrity.isEmpty ||
           integrity.first.read<String>('integrity_check') != 'ok') {
         throw StateError('Google workspace database integrity check failed.');
+      }
+      if (workspace.isPowerSync) {
+        await const LegacyDriftToPowerSyncMigrator().migrateIfNeeded(
+          workspaceId: id,
+          targetPowerSyncDb: workspace,
+          documentsDirectoryProvider: _documentsDirectoryProvider,
+        );
       }
       _workspaceDatabases[id] = workspace;
       return workspace;
@@ -632,8 +685,9 @@ class DatabaseManager {
           final staging = File('${dir.path}/$stagingName');
           if (await staging.exists()) {
             final quarantine = File('${staging.path}.quarantine');
-            if (!await quarantine.exists())
+            if (!await quarantine.exists()) {
               await staging.rename(quarantine.path);
+            }
           }
         }
         await controlDatabase.customUpdate(
@@ -776,6 +830,7 @@ class DatabaseManager {
     for (final database in handles) {
       await database.close();
     }
+    await QazaPowerSyncDatabaseManager.closeAll();
   }
 
   Future<void> _awaitInFlightOperations() async {

@@ -37,6 +37,11 @@ dependencies:
   flutter_native_oss_licenses: ^1.0.0
   flutter_device_compass: ^2.2.0
   geomag: ^0.3.0
+  powersync: ^2.5.0
+  supabase_flutter: ^2.18.3
+  google_sign_in: ^7.2.0
+  drift_sqlite_async: ^0.3.1
+  path: ^1.9.1
 
 dev_dependencies:
   flutter_test:

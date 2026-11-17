@@ -537,7 +537,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     }
     await (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
     for (final record in records) {
-      await into(qazaRecords).insert(record);
+      await into(qazaRecords).insert(_ensureRecordVersion(record));
     }
   }
 
@@ -545,8 +545,19 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   ///
   /// Rows belonging to other users are left untouched: the whole statement is
   /// scoped by the userId predicate.
-  Future<int> deleteAllForUser({required String userId}) =>
-      (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
+  Future<int> deleteAllForUser({required String userId}) async {
+    if (attachedDatabase.isPowerSync) {
+      return transaction(() async {
+        final rows = await (select(qazaRecords)
+              ..where((r) => r.userId.equals(userId)))
+            .get();
+        if (rows.isEmpty) return 0;
+        await (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
+        return rows.length;
+      });
+    }
+    return (delete(qazaRecords)..where((r) => r.userId.equals(userId))).go();
+  }
 
   /// Marks the given ids completed, returning the ids actually changed.
   ///
@@ -603,7 +614,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           updatedAt: Value(completedAt),
         ));
 
-        if (updated > 0) {
+        if (updated > 0 || attachedDatabase.isPowerSync) {
           changed.add(
             QazaRecord(
               id: current.id,
@@ -676,7 +687,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
           updatedAt: Value(updatedAt),
         ));
 
-        if (updated > 0) {
+        if (updated > 0 || attachedDatabase.isPowerSync) {
           changed.add(
             QazaRecord(
               id: current.id,
@@ -785,6 +796,11 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return (await query.getSingle()).read(qazaRecords.id.count()) ?? 0;
   }
 
+  QazaRecordsCompanion _ensureRecordVersion(QazaRecordsCompanion record) {
+    if (record.recordVersion.present) return record;
+    return record.copyWith(recordVersion: const Value(1));
+  }
+
   Future<bool> _insertIfAbsent(QazaRecordsCompanion record) async {
     final existing = await (select(qazaRecords)
           ..where(
@@ -798,7 +814,7 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
         .getSingleOrNull();
     if (existing != null) return false;
 
-    await into(qazaRecords).insert(record);
+    await into(qazaRecords).insert(_ensureRecordVersion(record));
     return true;
   }
 
@@ -808,8 +824,18 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   Future<void> upsertRecords(List<QazaRecordsCompanion> records) async {
     if (records.isEmpty) return;
     await transaction(() async {
-      for (final record in records) {
-        await into(qazaRecords).insertOnConflictUpdate(record);
+      for (final rawRecord in records) {
+        final record = _ensureRecordVersion(rawRecord);
+        final existing = await (select(qazaRecords)
+              ..where((row) => row.id.equals(record.id.value)))
+            .getSingleOrNull();
+        if (existing != null) {
+          await (update(qazaRecords)
+                ..where((row) => row.id.equals(record.id.value)))
+              .write(record);
+        } else {
+          await into(qazaRecords).insert(record);
+        }
       }
     });
   }
@@ -845,10 +871,12 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
       existingIds.addAll(rows.map((row) => row.id));
     }
 
+    final preparedRecords =
+        records.map(_ensureRecordVersion).toList(growable: false);
     await batch((batch) {
       batch.insertAll(
         qazaRecords,
-        records,
+        preparedRecords,
         mode: InsertMode.insertOrIgnore,
       );
     });
@@ -908,6 +936,27 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   }) async {
     if (ids.isEmpty) return 0;
     final unique = ids.toSet().toList(growable: false);
+    if (attachedDatabase.isPowerSync) {
+      return transaction(() async {
+        var deleted = 0;
+        for (var start = 0; start < unique.length; start += 400) {
+          final end =
+              start + 400 < unique.length ? start + 400 : unique.length;
+          final chunk = unique.sublist(start, end);
+          final existing = await (select(qazaRecords)
+                ..where((row) => row.userId.equals(userId) & row.id.isIn(chunk)))
+              .get();
+          if (existing.isNotEmpty) {
+            await (delete(qazaRecords)
+                  ..where(
+                      (row) => row.userId.equals(userId) & row.id.isIn(chunk)))
+                .go();
+            deleted += existing.length;
+          }
+        }
+        return deleted;
+      });
+    }
     var deleted = 0;
     for (var start = 0; start < unique.length; start += 400) {
       final end = start + 400 < unique.length ? start + 400 : unique.length;
@@ -919,10 +968,23 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
     return deleted;
   }
 
-  Future<int> deleteById({required String userId, required String id}) =>
-      (delete(qazaRecords)
-            ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
-          .go();
+  Future<int> deleteById({required String userId, required String id}) async {
+    if (attachedDatabase.isPowerSync) {
+      return transaction(() async {
+        final existing = await (select(qazaRecords)
+              ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
+            .getSingleOrNull();
+        if (existing == null) return 0;
+        await (delete(qazaRecords)
+              ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
+            .go();
+        return 1;
+      });
+    }
+    return (delete(qazaRecords)
+          ..where((r) => r.userId.equals(userId) & r.id.equals(id)))
+        .go();
+  }
 
   /// Atomically deletes a Qaza row only while it remains pending.
   ///
@@ -931,15 +993,38 @@ class QazaRecordsDao extends DatabaseAccessor<AppDatabase>
   Future<int> deletePendingById({
     required String userId,
     required String id,
-  }) =>
-      (delete(qazaRecords)
-            ..where(
-              (row) =>
-                  row.userId.equals(userId) &
-                  row.id.equals(id) &
-                  row.status.equals(QazaStatus.pending.name),
-            ))
-          .go();
+  }) async {
+    if (attachedDatabase.isPowerSync) {
+      return transaction(() async {
+        final existing = await (select(qazaRecords)
+              ..where(
+                (row) =>
+                    row.userId.equals(userId) &
+                    row.id.equals(id) &
+                    row.status.equals(QazaStatus.pending.name),
+              ))
+            .getSingleOrNull();
+        if (existing == null) return 0;
+        await (delete(qazaRecords)
+              ..where(
+                (row) =>
+                    row.userId.equals(userId) &
+                    row.id.equals(id) &
+                    row.status.equals(QazaStatus.pending.name),
+              ))
+            .go();
+        return 1;
+      });
+    }
+    return (delete(qazaRecords)
+          ..where(
+            (row) =>
+                row.userId.equals(userId) &
+                row.id.equals(id) &
+                row.status.equals(QazaStatus.pending.name),
+          ))
+        .go();
+  }
 
   int _qazaPrayerRankForName(String name) {
     final index =

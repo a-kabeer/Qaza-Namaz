@@ -57,8 +57,9 @@ class LocalBackupService {
     final control = manager.controlDatabase;
     if (localAccountId != null) {
       final id = localAccountId.trim();
-      if (id.isEmpty)
+      if (id.isEmpty) {
         throw ArgumentError.value(localAccountId, 'localAccountId');
+      }
       final workspace = await manager.databaseForWorkspace(id);
       final account = await _readLogicalAccount(control, id);
       return _exportFromSource(
@@ -147,8 +148,9 @@ class LocalBackupService {
         final incoming = scopedMeta[key];
         if (incoming is Map) {
           for (final entry in incoming.entries) {
-            if (entry.key is String)
+            if (entry.key is String) {
               combined[entry.key as String] = entry.value;
+            }
           }
         }
         rootMeta[key] = combined;
@@ -445,7 +447,9 @@ class LocalBackupService {
       if (localAccountId != null) {
         final normalized = localAccountId.trim();
         if (normalized.isEmpty) {
-          throw ArgumentError.value(localAccountId, 'localAccountId');
+          {
+            throw ArgumentError.value(localAccountId, 'localAccountId');
+          }
         }
         final data = document['data'] as Map<String, dynamic>;
         final accounts = data['local_accounts'] as List<dynamic>;

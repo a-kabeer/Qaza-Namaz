@@ -101,17 +101,20 @@ class AppTheme {
     return _base(
       FlexThemeData.dark(
         primary: palette?.primary ?? _darkPrimary,
+        primaryLightRef: palette?.primary ?? _lightPrimary,
         onPrimary: palette?.onPrimary ?? _darkOnPrimary,
         primaryContainer: palette?.primaryContainer ?? _darkPrimaryContainer,
         onPrimaryContainer:
             palette?.onPrimaryContainer ?? _darkOnPrimaryContainer,
         secondary: palette?.secondary ?? _darkSecondary,
+        secondaryLightRef: palette?.secondary ?? _lightSecondary,
         onSecondary: palette?.onSecondary ?? _darkOnSecondary,
         secondaryContainer:
             palette?.secondaryContainer ?? _darkSecondaryContainer,
         onSecondaryContainer:
             palette?.onSecondaryContainer ?? _darkOnSecondaryContainer,
         tertiary: palette?.tertiary ?? _darkTertiary,
+        tertiaryLightRef: palette?.tertiary ?? _lightTertiary,
         onTertiary: palette?.onTertiary ?? _darkOnTertiary,
         tertiaryContainer: palette?.tertiaryContainer ?? _darkTertiaryContainer,
         onTertiaryContainer:

@@ -2925,4 +2925,307 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get dailySalahTrackingConfirmPrayedMessage =>
       'This will mark the prayer as prayed and complete its linked Qaza record.';
+
+  @override
+  String get accountStatusProtected => 'Online & Protected';
+
+  @override
+  String get accountGuestDeviceOnly => 'Saved on this device only';
+
+  @override
+  String get accountProtectRecordsTitle => 'Protect Your Records';
+
+  @override
+  String get accountProtectRecordsSubtitle =>
+      'Connect an account to sync and protect your records safely.';
+
+  @override
+  String get accountConnectEmail => 'Sign In with Email';
+
+  @override
+  String get accountConnectedSuccess => 'Account successfully connected!';
+
+  @override
+  String get accountGuestProfilesTitle => 'Guest Profiles';
+
+  @override
+  String get accountGuestProfilesSubtitle =>
+      'Switch between different guest profiles';
+
+  @override
+  String get accountReturnToWelcome => 'Go to Welcome Screen';
+
+  @override
+  String get accountSignOutConfirmTitle => 'Sign out?';
+
+  @override
+  String get accountSignOutConfirmBody =>
+      'Are you sure you want to sign out? Your saved records will not be lost.';
+
+  @override
+  String get accountSignOutConfirmAction => 'Sign Out';
+
+  @override
+  String get dataBackupAndRestoreTitle => 'Backup & Restore';
+
+  @override
+  String get dataBackupAndRestoreSubtitle =>
+      'Save records to your phone or restore earlier data';
+
+  @override
+  String get dataSaveBackupTitle => 'Save backup file';
+
+  @override
+  String get dataSaveBackupSubtitle =>
+      'Save all your Qaza records to a file on your device';
+
+  @override
+  String get dataSaveBackupAction => 'Save File';
+
+  @override
+  String get dataRestoreBackupTitle => 'Restore from backup';
+
+  @override
+  String get dataRestoreBackupSubtitle =>
+      'Restore Qaza records from a previously saved backup file';
+
+  @override
+  String get dataRestoreBackupAction => 'Select File';
+
+  @override
+  String get dataLocalBackupNote =>
+      'Note: This backup file is stored in your phone\'s memory and works without internet.';
+
+  @override
+  String get dataProcessingWaiting => 'Processing, please wait…';
+
+  @override
+  String get dataBackupSavedSuccess => 'Backup file saved successfully!';
+
+  @override
+  String get dataBackupSaveFailed => 'Could not save backup file';
+
+  @override
+  String get dataImportFileEmpty => 'Selected file is empty';
+
+  @override
+  String dataImportSuccessWithCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count records successfully restored',
+      one: '1 record successfully restored',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dataImportFailedMessage => 'Failed to restore backup file';
+
+  @override
+  String get dataImportConfirmPrompt => 'Restore from backup file?';
+
+  @override
+  String dataImportConfirmBody(int count) {
+    return 'This file contains $count records. Do you want to replace current records with this backup?';
+  }
+
+  @override
+  String get dataImportConfirmAction => 'Restore';
+
+  @override
+  String get authSignIn => 'Sign In';
+
+  @override
+  String get authSignUp => 'Sign Up';
+
+  @override
+  String get authSignInSubtitle =>
+      'Sign in to access your synced records across devices.';
+
+  @override
+  String get authSignUpSubtitle =>
+      'Create an account to securely sync and backup your records.';
+
+  @override
+  String get authEmailAddressLabel => 'Email Address';
+
+  @override
+  String get authEmailRequired => 'Please enter your email.';
+
+  @override
+  String get authEmailInvalid => 'Please enter a valid email address.';
+
+  @override
+  String get authPasswordLabel => 'Password';
+
+  @override
+  String get authPasswordRequired => 'Please enter your password.';
+
+  @override
+  String get authPasswordMinLength => 'Password must be at least 6 characters.';
+
+  @override
+  String get authConfirmationSentNotice =>
+      'Account created! Please check your email to confirm, then sign in.';
+
+  @override
+  String get authErrorGeneric => 'Authentication failed. Please try again.';
+
+  @override
+  String get authErrorRateLimit =>
+      'Service is temporarily busy. Please try again in a few minutes.';
+
+  @override
+  String get authErrorInvalidCredentials =>
+      'Incorrect email or password. Please verify and try again.';
+
+  @override
+  String get authErrorAlreadyRegistered =>
+      'This email is already registered. Please switch to Sign In.';
+
+  @override
+  String get authErrorEmailNotConfirmed =>
+      'Please confirm your email from your inbox before signing in.';
+
+  @override
+  String get authErrorWeakPassword => 'Password must be at least 6 characters.';
+
+  @override
+  String get authErrorNetwork =>
+      'No internet connection. You can continue as Guest offline.';
+
+  @override
+  String get welcomeContinueWithEmail => 'Continue with Email';
+
+  @override
+  String get welcomeDividerOr => 'OR';
+
+  @override
+  String get welcomePrivacyNotice => 'Your data is completely safe and private';
+
+  @override
+  String get welcomeGoogleSelectFailed =>
+      'Google account could not be selected. Please try again or continue as Guest.';
+
+  @override
+  String get welcomeGoogleInterrupted =>
+      'Google sign-in was interrupted. You can continue as Guest.';
+
+  @override
+  String get guestSelectionTitle => 'Choose Guest Profile';
+
+  @override
+  String get guestSelectionSubtitle =>
+      'Continue with an existing profile or create a fresh one.';
+
+  @override
+  String get guestCreateNewAction => '+ Create New Profile';
+
+  @override
+  String get guestActiveBadge => 'Active';
+
+  @override
+  String guestSwitchedMessage(String name) {
+    return 'Switched to $name';
+  }
+
+  @override
+  String get guestAlreadyActive => 'This profile is already active';
+
+  @override
+  String get guestNoWorkspaces => 'No saved Guest workspaces';
+
+  @override
+  String get guestSetupInProgress => 'Setup in progress · Resume to continue';
+
+  @override
+  String get guestActiveWorkspaceDescription =>
+      'Current workspace · switch away before deleting';
+
+  @override
+  String guestCreatedDate(String date) {
+    return 'Created $date';
+  }
+
+  @override
+  String get guestRenameTitle => 'Rename Guest workspace';
+
+  @override
+  String get guestRenameLabel => 'Workspace name';
+
+  @override
+  String get guestRenameHint => 'Enter a name';
+
+  @override
+  String get guestRenameValidation =>
+      'Enter a name containing 1–50 characters.';
+
+  @override
+  String get guestRenameSuccess => 'Guest workspace renamed.';
+
+  @override
+  String get guestRenameAction => 'Rename';
+
+  @override
+  String get guestDeleteActiveError =>
+      'Switch to another workspace before deleting this one.';
+
+  @override
+  String get guestDeleteTitle => 'Delete Guest workspace?';
+
+  @override
+  String guestDeleteScheduled(String date) {
+    return 'Deletion scheduled for $date. Undo is available below.';
+  }
+
+  @override
+  String get guestUndoSuccess => 'Guest workspace restored.';
+
+  @override
+  String get guestUndoUnavailable =>
+      'This deletion hold is no longer available.';
+
+  @override
+  String get guestRecentlyDeletedTitle => 'Recently deleted';
+
+  @override
+  String get guestRecentlyDeletedSubtitle =>
+      'Records remain recoverable until the seven-day hold ends.';
+
+  @override
+  String guestScheduledDeletion(String date) {
+    return 'Scheduled deletion: $date';
+  }
+
+  @override
+  String get guestUndoAction => 'Undo';
+
+  @override
+  String guestDeleteDialogMessage(
+      String qazaRecords, String dailySalahRecords) {
+    return 'Deleting this workspace removes its profile, $qazaRecords and $dailySalahRecords. Its records will be kept for seven days. You can undo the deletion during that period.';
+  }
+
+  @override
+  String guestQazaRecordCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Qaza records',
+      one: '1 Qaza record',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String guestDailySalahRecordCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count daily Salah records',
+      one: '1 daily Salah record',
+    );
+    return '$_temp0';
+  }
 }

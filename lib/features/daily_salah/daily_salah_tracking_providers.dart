@@ -12,7 +12,7 @@ final dailySalahTrackingServiceProvider =
     Provider<DailySalahTrackingService>((ref) {
   final userId = ref.watch(activeUserIdProvider);
   return DailySalahTrackingService(
-    database: ref.watch(appDatabaseProvider),
+    database: ref.watch(activeWorkspaceDatabaseProvider),
     qazaService: ref.watch(qazaServiceProvider),
     activeUserId: () => userId,
   );

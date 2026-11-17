@@ -74,6 +74,10 @@ class AccountSessionManager extends ChangeNotifier {
   Future<void> activateGoogleAccount(String googleAccountId) =>
       activateLocalAccount(googleLocalWorkspaceId(googleAccountId));
 
+  /// Activates the stable workspace associated with a verified Supabase account.
+  Future<void> activateSupabaseAccount(String supabaseUserId) =>
+      activateLocalAccount(supabaseLocalWorkspaceId(supabaseUserId));
+
   /// Returns to a safe local Guest workspace without deleting any records.
   ///
   /// Older installations may have adopted and archived the legacy `guest`
@@ -170,8 +174,12 @@ class AccountSessionManager extends ChangeNotifier {
   }
 
   void _setState(AccountSessionState next) {
+    if (_state == next) return;
+    final previousId = _state.activeLocalAccountId;
     _state = next;
-    onActiveLocalAccountChanged?.call(next.activeLocalAccountId);
+    if (previousId != next.activeLocalAccountId) {
+      onActiveLocalAccountChanged?.call(next.activeLocalAccountId);
+    }
     notifyListeners();
   }
 }

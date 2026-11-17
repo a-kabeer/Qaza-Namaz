@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
@@ -81,10 +80,12 @@ class WorkspaceCanonicalContent {
 
   static Object? _normalizeValue(Object? value, {required bool isOwner}) {
     if (isOwner) return '<workspace>';
-    if (value is Uint8List)
+    if (value is Uint8List) {
       return <String, String>{'blob': base64Encode(value)};
-    if (value is List<int>)
+    }
+    if (value is List<int>) {
       return <String, String>{'blob': base64Encode(value)};
+    }
     return value;
   }
 
@@ -238,8 +239,13 @@ class WorkspaceCanonicalContent {
     String workspaceId,
   ) async {
     final tablePayload = <Object?>[];
-    for (final (table, ownerColumn) in ownedTables) {
+    for (final (table, defaultOwnerColumn) in ownedTables) {
       final columns = await _tableColumns(source, table);
+      final ownerColumn = columns.contains('user_id')
+          ? 'user_id'
+          : (columns.contains('local_account_id')
+              ? 'local_account_id'
+              : defaultOwnerColumn);
       if (columns.isEmpty || !columns.contains(ownerColumn)) {
         throw StateError(
           'Workspace table $table is missing owner column $ownerColumn.',

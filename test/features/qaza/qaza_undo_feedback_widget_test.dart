@@ -34,7 +34,7 @@ class _UnusedDailySalahTrackingService extends Fake
 
 // Dashboard refresh side effects are outside the undo-feedback UI contract.
 class _UnusedHomeController extends HomeController {
-  _UnusedHomeController(Ref ref) : super(ref);
+  _UnusedHomeController(super.ref);
 
   @override
   void invalidateDashboard() {}

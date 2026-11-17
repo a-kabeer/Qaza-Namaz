@@ -151,7 +151,7 @@ class _DailySalahTrackingScreenState
     final theme = Theme.of(context);
 
     return Card(
-      key: Key('daily_salah_prayer_' + prayer.name),
+      key: Key('daily_salah_prayer_${prayer.name}'),
       margin: const EdgeInsets.only(bottom: 10),
       child: Padding(
         padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
@@ -169,12 +169,12 @@ class _DailySalahTrackingScreenState
                 Expanded(
                   child: prayedSelected
                       ? FilledButton(
-                          key: Key('daily_salah_prayed_' + prayer.name),
+                          key: Key('daily_salah_prayed_${prayer.name}'),
                           onPressed: isAvailable ? () {} : null,
                           child: Text(l10n.dailySalahTrackingPrayed),
                         )
                       : OutlinedButton(
-                          key: Key('daily_salah_prayed_' + prayer.name),
+                          key: Key('daily_salah_prayed_${prayer.name}'),
                           onPressed: isAvailable
                               ? () => _setPrayed(
                                     prayer,
@@ -189,12 +189,12 @@ class _DailySalahTrackingScreenState
                 Expanded(
                   child: missedSelected
                       ? FilledButton(
-                          key: Key('daily_salah_missed_' + prayer.name),
+                          key: Key('daily_salah_missed_${prayer.name}'),
                           onPressed: isAvailable ? () {} : null,
                           child: Text(l10n.dailySalahTrackingMissed),
                         )
                       : OutlinedButton(
-                          key: Key('daily_salah_missed_' + prayer.name),
+                          key: Key('daily_salah_missed_${prayer.name}'),
                           onPressed: isAvailable
                               ? () => _confirmMissed(prayer, selectedDate)
                               : null,

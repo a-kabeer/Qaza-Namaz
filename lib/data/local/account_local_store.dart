@@ -22,6 +22,35 @@ class AccountLocalStore {
   final AppDatabase database;
   final DatabaseManager _databaseManager;
 
+  DatabaseManager get databaseManager => _databaseManager;
+  Future<AppDatabase> workspaceDatabase(String localAccountId) =>
+      _workspaceDatabase(localAccountId);
+  Future<bool> hasQazaRecords(String localAccountId) =>
+      hasAnyQaza(localAccountId);
+
+  static final Map<String, String> _ownerColumnCache = {};
+
+  Future<String> resolveOwnerColumn(
+    AppDatabase db,
+    String tableName, [
+    String defaultColumn = 'local_account_id',
+  ]) async {
+    final cacheKey = '${identityHashCode(db)}:$tableName';
+    final cached = _ownerColumnCache[cacheKey];
+    if (cached != null) return cached;
+    try {
+      final info =
+          await db.customSelect("PRAGMA table_info('$tableName')").get();
+      final colNames = info.map((r) => r.read<String>('name')).toSet();
+      final result =
+          colNames.contains('user_id') ? 'user_id' : defaultColumn;
+      _ownerColumnCache[cacheKey] = result;
+      return result;
+    } catch (_) {
+      return defaultColumn;
+    }
+  }
+
   Future<AppDatabase> _workspaceDatabase(String localAccountId) =>
       _databaseManager.databaseForWorkspace(localAccountId);
 
@@ -29,10 +58,14 @@ class AccountLocalStore {
     await _ensureDeviceId();
     await _ensureLocalAccount();
     await _reconcileOnboardingCommitJournals();
+
+
     final persisted = await activeAccount();
     final activeId = persisted?.localAccountId;
     if (activeId != null && activeId.startsWith('google_')) {
       await _databaseManager.ensureGoogleWorkspace(activeId);
+    } else if (activeId != null && activeId.startsWith('supabase_')) {
+      await _databaseManager.databaseForWorkspace(activeId);
     }
     _databaseManager.setActiveWorkspace(activeId);
     final profile = activeId == null ? null : await loadProfile(activeId);
@@ -562,9 +595,11 @@ class AccountLocalStore {
           ('account_profiles', 'local_account_id'),
           ('account_plan_revisions', 'local_account_id'),
         ];
-        for (final (table, ownerColumn) in ownedTables) {
+        for (final (table, defaultOwnerColumn) in ownedTables) {
+          final ownerCol =
+              await resolveOwnerColumn(database, table, defaultOwnerColumn);
           await database.customStatement(
-            'DELETE FROM "$table" WHERE "$ownerColumn" = ?',
+            'DELETE FROM "$table" WHERE "$ownerCol" = ?',
             [id],
           );
         }
@@ -599,15 +634,18 @@ class AccountLocalStore {
 
   Future<bool> hasAnyAccountData(String localAccountId) async {
     final workspace = await _workspaceDatabase(localAccountId);
-    const queries = [
+    final profileCol = await resolveOwnerColumn(workspace, 'account_profiles');
+    final planCol =
+        await resolveOwnerColumn(workspace, 'account_plan_revisions');
+    final queries = [
       'SELECT 1 FROM qaza_records WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM daily_salah_logs WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM qaza_additions WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM qaza_deletion_actions WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM qaza_deletion_action_record_snapshots WHERE user_id = ? LIMIT 1',
       'SELECT 1 FROM qaza_profile_plan_provenance WHERE user_id = ? LIMIT 1',
-      'SELECT 1 FROM account_profiles WHERE local_account_id = ? LIMIT 1',
-      'SELECT 1 FROM account_plan_revisions WHERE local_account_id = ? LIMIT 1',
+      'SELECT 1 FROM account_profiles WHERE $profileCol = ? LIMIT 1',
+      'SELECT 1 FROM account_plan_revisions WHERE $planCol = ? LIMIT 1',
     ];
     for (final query in queries) {
       final rows = await workspace.customSelect(
@@ -621,9 +659,10 @@ class AccountLocalStore {
 
   Future<UserProfile?> loadProfile(String localAccountId) async {
     final workspace = await _workspaceDatabase(localAccountId);
+    final ownerCol = await resolveOwnerColumn(workspace, 'account_profiles');
     final rows = await workspace.customSelect(
       '''SELECT payload_json FROM account_profiles
-         WHERE local_account_id = ? LIMIT 1''',
+         WHERE $ownerCol = ? LIMIT 1''',
       variables: [Variable(localAccountId)],
     ).get();
     if (rows.isEmpty) return null;
@@ -643,8 +682,9 @@ class AccountLocalStore {
     final opId = _randomId('op');
     final beforeGeneration = await database.readSessionGeneration();
     final changed = await workspace.transactionWithRevision<bool>(() async {
+      final ownerCol = await resolveOwnerColumn(workspace, 'account_profiles');
       final existingRows = await workspace.customSelect(
-        'SELECT payload_json FROM account_profiles WHERE local_account_id = ? LIMIT 1',
+        'SELECT payload_json FROM account_profiles WHERE $ownerCol = ? LIMIT 1',
         variables: [Variable(localAccountId)],
       ).get();
       UserProfile? existing;
@@ -735,26 +775,67 @@ class AccountLocalStore {
     required int nowMicros,
     required String writerDeviceId,
     required String operationId,
-  }) {
-    return targetDatabase.customUpdate(
-      '''INSERT INTO account_profiles
-         (local_account_id, payload_json, entity_version, updated_at,
-          writer_device_id, operation_id)
-         VALUES (?, ?, 1, ?, ?, ?)
-         ON CONFLICT(local_account_id) DO UPDATE SET
-           payload_json = excluded.payload_json,
-           entity_version = account_profiles.entity_version + 1,
-           updated_at = excluded.updated_at,
-           writer_device_id = excluded.writer_device_id,
-           operation_id = excluded.operation_id''',
-      variables: [
-        Variable(localAccountId),
-        Variable(jsonEncode(profile.toJson())),
-        Variable(nowMicros),
-        Variable(writerDeviceId),
-        Variable(operationId),
-      ],
-    );
+  }) async {
+    final ownerCol =
+        await resolveOwnerColumn(targetDatabase, 'account_profiles');
+    final payloadJson = jsonEncode(profile.toJson());
+    final existingRows = await targetDatabase.customSelect(
+      'SELECT entity_version FROM account_profiles WHERE $ownerCol = ? LIMIT 1',
+      variables: [Variable(localAccountId)],
+    ).get();
+
+    if (existingRows.isNotEmpty) {
+      final curVersion = existingRows.first.read<int>('entity_version');
+      await targetDatabase.customUpdate(
+        '''UPDATE account_profiles
+           SET payload_json = ?,
+               entity_version = ?,
+               updated_at = ?,
+               writer_device_id = ?,
+               operation_id = ?
+           WHERE $ownerCol = ?''',
+        variables: [
+          Variable(payloadJson),
+          Variable(curVersion + 1),
+          Variable(nowMicros),
+          Variable(writerDeviceId),
+          Variable(operationId),
+          Variable(localAccountId),
+        ],
+      );
+    } else {
+      if (ownerCol == 'user_id') {
+        await targetDatabase.customInsert(
+          '''INSERT INTO account_profiles
+             (id, user_id, payload_json, entity_version, updated_at,
+              writer_device_id, operation_id, created_at)
+             VALUES (?, ?, ?, 1, ?, ?, ?, ?)''',
+          variables: [
+            Variable(localAccountId),
+            Variable(localAccountId),
+            Variable(payloadJson),
+            Variable(nowMicros),
+            Variable(writerDeviceId),
+            Variable(operationId),
+            Variable(nowMicros),
+          ],
+        );
+      } else {
+        await targetDatabase.customInsert(
+          '''INSERT INTO account_profiles
+             (local_account_id, payload_json, entity_version, updated_at,
+              writer_device_id, operation_id)
+             VALUES (?, ?, 1, ?, ?, ?)''',
+          variables: [
+            Variable(localAccountId),
+            Variable(payloadJson),
+            Variable(nowMicros),
+            Variable(writerDeviceId),
+            Variable(operationId),
+          ],
+        );
+      }
+    }
   }
 
   /// Atomically commits profile, initial plan revision, Qaza records,
@@ -926,10 +1007,12 @@ class AccountLocalStore {
       operationId: '${operationId}_profile',
     );
 
+    final planOwnerCol =
+        await resolveOwnerColumn(targetDatabase, 'account_plan_revisions');
     final revisionPayload = jsonEncode(revision.toJson());
     final existingRevision = await targetDatabase.customSelect(
       '''SELECT payload_json FROM account_plan_revisions
-         WHERE local_account_id = ? AND revision_id = ? LIMIT 1''',
+         WHERE $planOwnerCol = ? AND revision_id = ? LIMIT 1''',
       variables: [Variable(localAccountId), Variable(revision.revisionId)],
     ).get();
     if (existingRevision.isNotEmpty) {
@@ -938,17 +1021,32 @@ class AccountLocalStore {
         throw StateError('Immutable onboarding plan revision conflict.');
       }
     } else {
-      await targetDatabase.customInsert(
-        '''INSERT INTO account_plan_revisions
-           (local_account_id, revision_id, payload_json, created_at)
-           VALUES (?, ?, ?, ?)''',
-        variables: [
-          Variable(localAccountId),
-          Variable(revision.revisionId),
-          Variable(revisionPayload),
-          Variable(revision.createdAt.microsecondsSinceEpoch),
-        ],
-      );
+      if (planOwnerCol == 'user_id') {
+        await targetDatabase.customInsert(
+          '''INSERT INTO account_plan_revisions
+             (id, user_id, revision_id, payload_json, created_at)
+             VALUES (?, ?, ?, ?, ?)''',
+          variables: [
+            Variable('$localAccountId:${revision.revisionId}'),
+            Variable(localAccountId),
+            Variable(revision.revisionId),
+            Variable(revisionPayload),
+            Variable(revision.createdAt.microsecondsSinceEpoch),
+          ],
+        );
+      } else {
+        await targetDatabase.customInsert(
+          '''INSERT INTO account_plan_revisions
+             (local_account_id, revision_id, payload_json, created_at)
+             VALUES (?, ?, ?, ?)''',
+          variables: [
+            Variable(localAccountId),
+            Variable(revision.revisionId),
+            Variable(revisionPayload),
+            Variable(revision.createdAt.microsecondsSinceEpoch),
+          ],
+        );
+      }
     }
 
     for (var start = 0; start < records.length; start += 500) {
@@ -1099,15 +1197,16 @@ class AccountLocalStore {
 
   Future<void> clearProfile(String localAccountId) async {
     final workspace = await _workspaceDatabase(localAccountId);
+    final ownerCol = await resolveOwnerColumn(workspace, 'account_profiles');
     final beforeGeneration = await database.readSessionGeneration();
     final changed = await workspace.transactionWithRevision<bool>(() async {
       final rows = await workspace.customSelect(
-        'SELECT 1 FROM account_profiles WHERE local_account_id = ? LIMIT 1',
+        'SELECT 1 FROM account_profiles WHERE $ownerCol = ? LIMIT 1',
         variables: [Variable(localAccountId)],
       ).get();
       if (rows.isEmpty) return false;
       await workspace.customUpdate(
-        'DELETE FROM account_profiles WHERE local_account_id = ?',
+        'DELETE FROM account_profiles WHERE $ownerCol = ?',
         variables: [Variable(localAccountId)],
       );
       if (identical(workspace, database)) {
@@ -1131,9 +1230,11 @@ class AccountLocalStore {
     String localAccountId,
   ) async {
     final workspace = await _workspaceDatabase(localAccountId);
+    final planCol =
+        await resolveOwnerColumn(workspace, 'account_plan_revisions');
     final rows = await workspace.customSelect(
       '''SELECT payload_json FROM account_plan_revisions
-         WHERE local_account_id = ?
+         WHERE $planCol = ?
          ORDER BY created_at DESC''',
       variables: [Variable(localAccountId)],
     ).get();
@@ -1156,10 +1257,12 @@ class AccountLocalStore {
     QazaPlanRevision revision,
   ) async {
     final workspace = await _workspaceDatabase(localAccountId);
+    final planCol =
+        await resolveOwnerColumn(workspace, 'account_plan_revisions');
     final payload = jsonEncode(revision.toJson());
     final existing = await workspace.customSelect(
       '''SELECT payload_json FROM account_plan_revisions
-         WHERE local_account_id = ? AND revision_id = ? LIMIT 1''',
+         WHERE $planCol = ? AND revision_id = ? LIMIT 1''',
       variables: [
         Variable(localAccountId),
         Variable(revision.revisionId),
@@ -1172,17 +1275,32 @@ class AccountLocalStore {
       return;
     }
     await workspace.transactionWithRevision(() async {
-      await workspace.customInsert(
-        '''INSERT INTO account_plan_revisions
-           (local_account_id, revision_id, payload_json, created_at)
-           VALUES (?, ?, ?, ?)''',
-        variables: [
-          Variable(localAccountId),
-          Variable(revision.revisionId),
-          Variable(payload),
-          Variable(revision.createdAt.microsecondsSinceEpoch),
-        ],
-      );
+      if (planCol == 'user_id') {
+        await workspace.customInsert(
+          '''INSERT INTO account_plan_revisions
+             (id, user_id, revision_id, payload_json, created_at)
+             VALUES (?, ?, ?, ?, ?)''',
+          variables: [
+            Variable('$localAccountId:${revision.revisionId}'),
+            Variable(localAccountId),
+            Variable(revision.revisionId),
+            Variable(payload),
+            Variable(revision.createdAt.microsecondsSinceEpoch),
+          ],
+        );
+      } else {
+        await workspace.customInsert(
+          '''INSERT INTO account_plan_revisions
+             (local_account_id, revision_id, payload_json, created_at)
+             VALUES (?, ?, ?, ?)''',
+          variables: [
+            Variable(localAccountId),
+            Variable(revision.revisionId),
+            Variable(payload),
+            Variable(revision.createdAt.microsecondsSinceEpoch),
+          ],
+        );
+      }
     });
   }
 

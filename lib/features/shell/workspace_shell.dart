@@ -100,18 +100,18 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    final activeUserId = ref.watch(activeUserIdProvider);
     ref.listen<String?>(activeUserIdProvider, (previous, next) {
       if (previous == next) return;
-      ref.read(workspaceDestinationProvider.notifier).state =
-          WorkspaceDestination.home;
-      if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        ref.read(workspaceDestinationProvider.notifier).state =
+            WorkspaceDestination.home;
         setState(() {
           _mounted
             ..clear()
             ..add(0);
         });
-      }
+      });
     });
 
     final destination = ref.watch(workspaceDestinationProvider);
@@ -129,18 +129,12 @@ class _WorkspaceShellState extends ConsumerState<WorkspaceShell> {
         if (!didPop) _handleBack();
       },
       child: Scaffold(
-        body: KeyedSubtree(
-          key: ValueKey<String?>('workspace:$activeUserId'),
-          child: IndexedStack(
-            index: index,
-            children: [
-              for (var i = 0; i < _pages.length; i++)
-                if (_mounted.contains(i))
-                  _pages[i]
-                else
-                  const SizedBox.shrink(),
-            ],
-          ),
+        body: IndexedStack(
+          index: index,
+          children: [
+            for (var i = 0; i < _pages.length; i++)
+              if (_mounted.contains(i)) _pages[i] else const SizedBox.shrink(),
+          ],
         ),
         floatingActionButton: null,
         bottomNavigationBar: NavigationBar(

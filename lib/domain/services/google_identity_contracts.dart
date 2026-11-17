@@ -37,21 +37,19 @@ class GoogleIdentitySnapshot {
         message = null;
 
   const GoogleIdentitySnapshot.signedIn({
-    required String accountId,
+    required this.accountId,
     this.displayName,
     this.email,
     this.photoUrl,
   })  : status = GoogleIdentityStatus.signedIn,
-        accountId = accountId,
         message = null;
 
-  const GoogleIdentitySnapshot.failed(String message)
+  const GoogleIdentitySnapshot.failed(this.message)
       : status = GoogleIdentityStatus.failed,
         accountId = null,
         displayName = null,
         email = null,
-        photoUrl = null,
-        message = message;
+        photoUrl = null;
 
   const GoogleIdentitySnapshot.cancelled()
       : status = GoogleIdentityStatus.cancelled,

@@ -60,6 +60,11 @@ class _GuestWorkspaceManagementScreenState
   }
 
   Future<void> _resumeWorkspace(LocalAccount workspace) async {
+    final l10n = AppLocalizations.of(context);
+    if (workspace.localAccountId == _activeWorkspaceId) {
+      _showMessage(l10n.guestAlreadyActive);
+      return;
+    }
     try {
       // Workspace switching is local-only. End any in-memory Google identity
       // session, then activate the selected Guest without deleting any data.
@@ -70,15 +75,7 @@ class _GuestWorkspaceManagementScreenState
           .read(accountSessionManagerProvider)
           .activateLocalAccount(workspace.localAccountId);
 
-      // The selected workspace is now active. Keep the current root route and
-      // let its account-scoped providers settle before removing the settings
-      // routes. Pushing a second StartupGate while invalidating its async
-      // dependencies can strand the user on a blank/loading route with no
-      // workspace navigation.
       ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = true;
-      // Account-scoped profile, progress and repository providers already react
-      // to activeUserIdProvider. Refresh only the independent route provider.
-      ref.invalidate(appRouteProvider);
 
       // These providers are used by StartupGate on the root route. Wait for
       // the newly selected workspace's routing/profile state to finish loading
@@ -95,6 +92,28 @@ class _GuestWorkspaceManagementScreenState
       }
 
       if (!mounted) return;
+      final name = guestWorkspaceDisplayLabel(
+        workspace,
+        _workspaces,
+        fallbackName: l10n.accountGuest,
+      );
+      _showMessage(l10n.guestSwitchedMessage(name));
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    } catch (error) {
+      if (mounted) _showMessage(error.toString());
+    }
+  }
+
+  Future<void> _startNewGuestWorkspace() async {
+    try {
+      final store = ref.read(accountLocalStoreProvider);
+      final newId = await store.startFreshGuestWorkspace();
+      final identity = ref.read(googleIdentityProvider);
+      if (identity.isSupported) await identity.signOut();
+      if (!mounted) return;
+      await ref.read(accountSessionManagerProvider).activateLocalAccount(newId);
+      ref.read(startupWorkspaceRestoreSatisfiedProvider.notifier).state = true;
+      if (!mounted) return;
       Navigator.of(context).popUntil((route) => route.isFirst);
     } catch (error) {
       if (mounted) _showMessage(error.toString());
@@ -102,6 +121,7 @@ class _GuestWorkspaceManagementScreenState
   }
 
   Future<void> _renameWorkspace(LocalAccount workspace) async {
+    final l10n = AppLocalizations.of(context);
     final name = await showDialog<String>(
       context: context,
       builder: (_) => _RenameGuestWorkspaceDialog(
@@ -111,7 +131,7 @@ class _GuestWorkspaceManagementScreenState
     if (name == null || !mounted) return;
     final trimmed = name.trim();
     if (trimmed.isEmpty || trimmed.length > 50) {
-      _showMessage('Enter a name containing 1–50 characters.');
+      _showMessage(l10n.guestRenameValidation);
       return;
     }
     try {
@@ -119,15 +139,16 @@ class _GuestWorkspaceManagementScreenState
           .read(accountLocalStoreProvider)
           .saveWorkspaceDisplayName(workspace.localAccountId, trimmed);
       await _reload();
-      if (mounted) _showMessage('Guest workspace renamed.');
+      if (mounted) _showMessage(l10n.guestRenameSuccess);
     } catch (error) {
       if (mounted) _showMessage(error.toString());
     }
   }
 
   Future<void> _deleteWorkspace(LocalAccount workspace) async {
+    final l10n = AppLocalizations.of(context);
     if (workspace.localAccountId == _activeWorkspaceId) {
-      _showMessage('Switch to another workspace before deleting this one.');
+      _showMessage(l10n.guestDeleteActiveError);
       return;
     }
     final GuestWorkspaceRecordCounts counts;
@@ -143,25 +164,21 @@ class _GuestWorkspaceManagementScreenState
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete Guest workspace?'),
+        title: Text(l10n.guestDeleteTitle),
         content: Text(
-          'Deleting this workspace removes its profile, '
-          '${counts.qazaRecords} '
-          '${counts.qazaRecords == 1 ? 'Qaza record' : 'Qaza records'} and '
-          '${counts.dailySalahRecords} '
-          '${counts.dailySalahRecords == 1 ? 'daily Salah record' : 'daily Salah records'}. '
-          'Its records will be kept for seven days. You can undo the deletion '
-          'during that period. Afterward, records are permanently removed only '
-          'when no backup is pending.',
+          l10n.guestDeleteDialogMessage(
+            l10n.guestQazaRecordCount(counts.qazaRecords),
+            l10n.guestDailySalahRecordCount(counts.dailySalahRecords),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: Text(AppLocalizations.of(dialogContext).commonCancel),
+            child: Text(l10n.commonCancel),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(dialogContext, true),
-            child: Text(AppLocalizations.of(dialogContext).commonDelete),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -174,8 +191,9 @@ class _GuestWorkspaceManagementScreenState
       await _reload();
       if (mounted) {
         _showMessage(
-          'Deletion scheduled for '
-          '${MaterialLocalizations.of(context).formatMediumDate(expiry)}. Undo is available below.',
+          l10n.guestDeleteScheduled(
+            MaterialLocalizations.of(context).formatMediumDate(expiry),
+          ),
         );
       }
     } catch (error) {
@@ -184,6 +202,7 @@ class _GuestWorkspaceManagementScreenState
   }
 
   Future<void> _undoDeletion(LocalWorkspaceDeletionHold hold) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final undone = await ref
           .read(accountLocalStoreProvider)
@@ -191,9 +210,7 @@ class _GuestWorkspaceManagementScreenState
       await _reload();
       if (mounted) {
         _showMessage(
-          undone
-              ? 'Guest workspace restored.'
-              : 'This deletion hold is no longer available.',
+          undone ? l10n.guestUndoSuccess : l10n.guestUndoUnavailable,
         );
       }
     } catch (error) {
@@ -208,8 +225,16 @@ class _GuestWorkspaceManagementScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
     return AppScaffold(
       title: l10n.accountGuestTitle,
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.add_rounded),
+          tooltip: l10n.guestCreateNewAction,
+          onPressed: _startNewGuestWorkspace,
+        ),
+      ],
       body: _loading
           ? const Center(child: CircularProgressIndicator())
           : _loadError != null
@@ -232,70 +257,131 @@ class _GuestWorkspaceManagementScreenState
                   children: [
                     Text(
                       l10n.accountGuestLocalDataSubtitle,
-                      style: Theme.of(context).textTheme.bodyMedium,
+                      style: theme.textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 12),
                     if (_workspaces.isEmpty)
-                      const ListTile(
-                        leading: Icon(Icons.person_outline_rounded),
-                        title: Text('No saved Guest workspaces'),
+                      ListTile(
+                        leading: const Icon(Icons.person_outline_rounded),
+                        title: Text(l10n.guestNoWorkspaces),
                       ),
-                    for (final workspace in _workspaces)
-                      Card(
-                        child: ListTile(
-                          key: Key(
-                              'guest_workspace_${workspace.localAccountId}'),
-                          onTap: () => _resumeWorkspace(workspace),
-                          leading: const Icon(Icons.person_outline_rounded),
-                          title: Text(
-                            guestWorkspaceDisplayLabel(
-                              workspace,
-                              _workspaces,
-                              fallbackName: l10n.accountGuest,
+                    for (final workspace in _workspaces) ...[
+                      () {
+                        final isActive =
+                            workspace.localAccountId == _activeWorkspaceId;
+                        return Card(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: isActive
+                                ? BorderSide(
+                                    color: theme.colorScheme.primary,
+                                    width: 1.5,
+                                  )
+                                : BorderSide.none,
+                          ),
+                          child: ListTile(
+                            key: Key(
+                              'guest_workspace_${workspace.localAccountId}',
+                            ),
+                            onTap: () => _resumeWorkspace(workspace),
+                            leading: Icon(
+                              isActive
+                                  ? Icons.check_circle_rounded
+                                  : Icons.person_outline_rounded,
+                              color:
+                                  isActive ? theme.colorScheme.primary : null,
+                            ),
+                            title: Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    guestWorkspaceDisplayLabel(
+                                      workspace,
+                                      _workspaces,
+                                      fallbackName: l10n.accountGuest,
+                                    ),
+                                    style: TextStyle(
+                                      fontWeight: isActive
+                                          ? FontWeight.bold
+                                          : FontWeight.normal,
+                                    ),
+                                  ),
+                                ),
+                                if (isActive)
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 8,
+                                      vertical: 2,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: theme.colorScheme.primary
+                                          .withAlpha(25),
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      l10n.guestActiveBadge,
+                                      style:
+                                          theme.textTheme.labelSmall?.copyWith(
+                                        color: theme.colorScheme.primary,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                              ],
+                            ),
+                            subtitle: Text(
+                              workspace.lifecycleState ==
+                                      AccountLifecycleState.draft
+                                  ? l10n.guestSetupInProgress
+                                  : isActive
+                                      ? l10n.guestActiveWorkspaceDescription
+                                      : l10n.guestCreatedDate(
+                                          MaterialLocalizations.of(context)
+                                              .formatMediumDate(
+                                            workspace.createdAt,
+                                          ),
+                                        ),
+                            ),
+                            trailing: PopupMenuButton<String>(
+                              tooltip: l10n.guestRenameTitle,
+                              onSelected: (action) {
+                                if (action == 'rename') {
+                                  _renameWorkspace(workspace);
+                                } else if (action == 'delete') {
+                                  _deleteWorkspace(workspace);
+                                }
+                              },
+                              itemBuilder: (context) => [
+                                PopupMenuItem(
+                                  value: 'rename',
+                                  child: Text(l10n.guestRenameAction),
+                                ),
+                                if (!isActive)
+                                  PopupMenuItem(
+                                    value: 'delete',
+                                    child: Text(l10n.commonDelete),
+                                  ),
+                              ],
                             ),
                           ),
-                          subtitle: Text(
-                            workspace.lifecycleState ==
-                                    AccountLifecycleState.draft
-                                ? 'Setup in progress · Resume to continue'
-                                : workspace.localAccountId == _activeWorkspaceId
-                                    ? 'Current workspace · switch away before deleting'
-                                    : 'Created '
-                                        '${MaterialLocalizations.of(context).formatMediumDate(workspace.createdAt)}',
-                          ),
-                          trailing: PopupMenuButton<String>(
-                            tooltip: 'Manage Guest workspace',
-                            onSelected: (action) {
-                              if (action == 'rename') {
-                                _renameWorkspace(workspace);
-                              } else if (action == 'delete') {
-                                _deleteWorkspace(workspace);
-                              }
-                            },
-                            itemBuilder: (context) => [
-                              const PopupMenuItem(
-                                value: 'rename',
-                                child: Text('Rename'),
-                              ),
-                              if (workspace.localAccountId !=
-                                  _activeWorkspaceId)
-                                PopupMenuItem(
-                                  value: 'delete',
-                                  child: Text(l10n.commonDelete),
-                                ),
-                            ],
-                          ),
-                        ),
-                      ),
+                        );
+                      }(),
+                    ],
+                    const SizedBox(height: 16),
+                    FilledButton.tonalIcon(
+                      onPressed: _startNewGuestWorkspace,
+                      icon: const Icon(Icons.add_rounded),
+                      label: Text(l10n.guestCreateNewAction),
+                    ),
                     if (_holds.isNotEmpty) ...[
-                      const SizedBox(height: 16),
+                      const SizedBox(height: 24),
                       Text(
-                        'Recently deleted',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        l10n.guestRecentlyDeletedTitle,
+                        style: theme.textTheme.titleMedium,
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Records remain recoverable until the seven-day hold ends.',
+                      Text(
+                        l10n.guestRecentlyDeletedSubtitle,
                       ),
                       for (final hold in _holds)
                         Card(
@@ -307,12 +393,14 @@ class _GuestWorkspaceManagementScreenState
                                   : l10n.accountGuest,
                             ),
                             subtitle: Text(
-                              'Scheduled deletion: '
-                              '${MaterialLocalizations.of(context).formatMediumDate(hold.expiresAt)}',
+                              l10n.guestScheduledDeletion(
+                                MaterialLocalizations.of(context)
+                                    .formatMediumDate(hold.expiresAt),
+                              ),
                             ),
                             trailing: TextButton(
                               onPressed: () => _undoDeletion(hold),
-                              child: const Text('Undo'),
+                              child: Text(l10n.guestUndoAction),
                             ),
                           ),
                         ),
@@ -357,26 +445,27 @@ class _RenameGuestWorkspaceDialogState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return AlertDialog(
-      title: const Text('Rename Guest workspace'),
+      title: Text(l10n.guestRenameTitle),
       content: TextField(
         controller: _controller,
         autofocus: true,
         maxLength: 50,
         textCapitalization: TextCapitalization.words,
-        decoration: const InputDecoration(
-          labelText: 'Workspace name',
-          hintText: 'Enter a name',
+        decoration: InputDecoration(
+          labelText: l10n.guestRenameLabel,
+          hintText: l10n.guestRenameHint,
         ),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context),
-          child: Text(AppLocalizations.of(context).commonCancel),
+          child: Text(l10n.commonCancel),
         ),
         FilledButton(
           onPressed: () => Navigator.pop(context, _controller.text),
-          child: Text(AppLocalizations.of(context).commonContinue),
+          child: Text(l10n.commonContinue),
         ),
       ],
     );

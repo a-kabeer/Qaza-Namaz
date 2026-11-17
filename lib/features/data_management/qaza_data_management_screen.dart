@@ -28,6 +28,7 @@ class _QazaDataManagementScreenState
   bool _busy = false;
 
   Future<void> _export() async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _busy = true);
     try {
       final json = await ref.read(localBackupServiceProvider).exportJson();
@@ -41,7 +42,7 @@ class _QazaDataManagementScreenState
       );
       if (mounted) {
         _showMessage(
-          AppLocalizations.of(context).dataExportSaved,
+          l10n.dataBackupSavedSuccess,
           success: true,
         );
       }
@@ -54,7 +55,7 @@ class _QazaDataManagementScreenState
           );
       if (mounted) {
         _showMessage(
-          AppLocalizations.of(context).dataExportFailed(error.toString()),
+          l10n.dataBackupSaveFailed,
           error: true,
         );
       }
@@ -73,14 +74,14 @@ class _QazaDataManagementScreenState
       );
       if (picked == null) {
         if (mounted) {
-          _showMessage(AppLocalizations.of(context).dataImportCanceled);
+          _showMessage(l10n.dataImportCanceled);
         }
         return;
       }
 
       final bytes = await picked.readAsBytes();
       if (bytes.isEmpty) {
-        throw LocalBackupException(l10n.dataImportEmptyFile);
+        throw LocalBackupException(l10n.dataImportFileEmpty);
       }
 
       final jsonText = utf8.decode(bytes, allowMalformed: false);
@@ -96,7 +97,7 @@ class _QazaDataManagementScreenState
 
       if (mounted) {
         _showMessage(
-          l10n.dataImportRestored(restored.recordCount),
+          l10n.dataImportSuccessWithCount(restored.recordCount),
           success: true,
         );
       }
@@ -110,9 +111,7 @@ class _QazaDataManagementScreenState
       if (mounted) {
         final message = error is LocalBackupException
             ? error.message
-            : AppLocalizations.of(context).dataImportRejected(
-                error.toString(),
-              );
+            : l10n.dataImportFailedMessage;
         _showMessage(message, error: true);
       }
     } finally {
@@ -122,21 +121,13 @@ class _QazaDataManagementScreenState
 
   Future<bool> _confirmImport(LocalBackupAnalysis analysis) async {
     final l10n = AppLocalizations.of(context);
-    final onboardingState = analysis.onboardingCompleted
-        ? l10n.dataImportOnboardingComplete
-        : l10n.dataImportOnboardingIncomplete;
     final result = await showDialog<bool>(
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: Text(l10n.dataImportReviewTitle),
+        title: Text(l10n.dataImportConfirmPrompt),
         content: Text(
-          l10n.dataImportRestoreSummary(
-            analysis.recordCount,
-            analysis.accountCount,
-            analysis.dbRevision,
-            onboardingState,
-          ),
+          l10n.dataImportConfirmBody(analysis.recordCount),
           textAlign: TextAlign.start,
         ),
         actions: [
@@ -146,7 +137,7 @@ class _QazaDataManagementScreenState
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(l10n.dataImportAction),
+            child: Text(l10n.dataImportConfirmAction),
           ),
         ],
       ),
@@ -170,57 +161,53 @@ class _QazaDataManagementScreenState
   }
 
   @override
-  Widget build(BuildContext context) => AppScaffold(
-        title: AppLocalizations.of(context).dataTitle,
-        onBack: () => Navigator.maybePop(context),
-        body: ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            Card(
-              child: Column(
-                children: [
-                  ListTile(
-                    leading: const Icon(Icons.file_upload_outlined),
-                    title: Text(AppLocalizations.of(context).dataExportTitle),
-                    subtitle: Text(AppLocalizations.of(context).dataExportBody),
-                    trailing: FilledButton.tonal(
-                      onPressed: _busy ? null : _export,
-                      child: Text(
-                        AppLocalizations.of(context).dataExportAction,
-                      ),
-                    ),
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    return AppScaffold(
+      title: l10n.dataBackupAndRestoreTitle,
+      onBack: () => Navigator.maybePop(context),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: Column(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.file_upload_outlined),
+                  title: Text(l10n.dataSaveBackupTitle),
+                  subtitle: Text(l10n.dataSaveBackupSubtitle),
+                  trailing: FilledButton.tonal(
+                    onPressed: _busy ? null : _export,
+                    child: Text(l10n.dataSaveBackupAction),
                   ),
-                  const Divider(height: 1, indent: 16, endIndent: 16),
-                  ListTile(
-                    leading: const Icon(Icons.file_download_outlined),
-                    title: Text(AppLocalizations.of(context).dataImportTitle),
-                    subtitle: Text(AppLocalizations.of(context).dataImportBody),
-                    trailing: FilledButton.tonal(
-                      onPressed: _busy ? null : _import,
-                      child: Text(
-                        AppLocalizations.of(context).dataImportAction,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Text(
-                  AppLocalizations.of(context).dataLocalOnlyNote,
                 ),
-              ),
+                const Divider(height: 1, indent: 16, endIndent: 16),
+                ListTile(
+                  leading: const Icon(Icons.file_download_outlined),
+                  title: Text(l10n.dataRestoreBackupTitle),
+                  subtitle: Text(l10n.dataRestoreBackupSubtitle),
+                  trailing: FilledButton.tonal(
+                    onPressed: _busy ? null : _import,
+                    child: Text(l10n.dataRestoreBackupAction),
+                  ),
+                ),
+              ],
             ),
-            if (_busy) ...[
-              const SizedBox(height: 16),
-              LoadingState(
-                message: AppLocalizations.of(context).dataProcessing,
-              ),
-            ],
+          ),
+          const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(l10n.dataLocalBackupNote),
+            ),
+          ),
+          if (_busy) ...[
+            const SizedBox(height: 16),
+            LoadingState(message: l10n.dataProcessingWaiting),
           ],
-        ),
-      );
+        ],
+      ),
+    );
+  }
 }

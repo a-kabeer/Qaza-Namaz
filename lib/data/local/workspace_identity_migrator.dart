@@ -78,9 +78,21 @@ class WorkspaceIdentityMigrator {
     return '${hex.substring(0, 8)}-${hex.substring(8, 12)}-${hex.substring(12, 16)}-${hex.substring(16, 20)}-${hex.substring(20)}';
   }
 
+  Future<String> _resolveOwnerColumn(String tableName) async {
+    try {
+      final info =
+          await database.customSelect("PRAGMA table_info('$tableName')").get();
+      final colNames = info.map((r) => r.read<String>('name')).toSet();
+      return colNames.contains('user_id') ? 'user_id' : 'local_account_id';
+    } catch (_) {
+      return 'local_account_id';
+    }
+  }
+
   Future<void> _moveWorkspace(String oldId, String newId) async {
+    final planCol = await _resolveOwnerColumn('account_plan_revisions');
     final revisions = await database.customSelect(
-      'SELECT revision_id, payload_json FROM account_plan_revisions WHERE local_account_id = ?',
+      'SELECT revision_id, payload_json FROM account_plan_revisions WHERE $planCol = ?',
       variables: [Variable(oldId)],
     ).get();
     for (final row in revisions) {
@@ -94,7 +106,7 @@ class WorkspaceIdentityMigrator {
       if (payload['userId'] == oldId) payload['userId'] = newId;
       if (payload['user_id'] == oldId) payload['user_id'] = newId;
       await database.customUpdate(
-        'UPDATE account_plan_revisions SET payload_json = ? WHERE local_account_id = ? AND revision_id = ?',
+        'UPDATE account_plan_revisions SET payload_json = ? WHERE $planCol = ? AND revision_id = ?',
         variables: [
           Variable(jsonEncode(payload)),
           Variable(oldId),
@@ -103,17 +115,18 @@ class WorkspaceIdentityMigrator {
       );
     }
 
-    const owners = <(String, String)>[
-      ('qaza_records', 'user_id'),
-      ('daily_salah_logs', 'user_id'),
-      ('qaza_additions', 'user_id'),
-      ('qaza_deletion_actions', 'user_id'),
-      ('qaza_deletion_action_record_snapshots', 'user_id'),
-      ('qaza_profile_plan_provenance', 'user_id'),
-      ('account_profiles', 'local_account_id'),
-      ('account_plan_revisions', 'local_account_id'),
+    const tables = <String>[
+      'qaza_records',
+      'daily_salah_logs',
+      'qaza_additions',
+      'qaza_deletion_actions',
+      'qaza_deletion_action_record_snapshots',
+      'qaza_profile_plan_provenance',
+      'account_profiles',
+      'account_plan_revisions',
     ];
-    for (final (table, ownerColumn) in owners) {
+    for (final table in tables) {
+      final ownerColumn = await _resolveOwnerColumn(table);
       await database.customUpdate(
         'UPDATE "$table" SET "$ownerColumn" = ? WHERE "$ownerColumn" = ?',
         variables: [Variable(newId), Variable(oldId)],

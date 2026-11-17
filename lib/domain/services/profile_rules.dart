@@ -209,7 +209,9 @@ class ProfileRules {
           max == null ||
           _compareCalendarDates(min, max) > 0 ||
           _compareCalendarDates(date, min) < 0 ||
-          _compareCalendarDates(date, max) > 0) return null;
+          _compareCalendarDates(date, max) > 0) {
+        return null;
+      }
       return LocalDateService.dateOnly(date);
     }
     final age = profile.pubertyAge;
@@ -227,7 +229,9 @@ class ProfileRules {
       if (date == null ||
           min == null ||
           _compareCalendarDates(date, min) < 0 ||
-          _compareCalendarDates(date, today) > 0) return null;
+          _compareCalendarDates(date, today) > 0) {
+        return null;
+      }
       return LocalDateService.dateOnly(date);
     }
     final age = profile.startPrayingAge;

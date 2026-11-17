@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 import '../../app/providers.dart';
-import '../../core/diagnostics/diagnostics.dart';
 import '../../core/widgets/app_scaffold.dart';
 import '../../core/widgets/state_widgets.dart';
 import '../../domain/entities/qaza_progress.dart';
@@ -135,25 +134,17 @@ class _HomeScreenState extends ConsumerState<HomeScreen>
   @override
   Widget build(BuildContext context) {
     ref.listen(prayerTimeControllerProvider, (_, __) {
-      _refreshIfDayTurned();
-      _scheduleMidnight();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _refreshIfDayTurned();
+        _scheduleMidnight();
+      });
     });
     final l10n = AppLocalizations.of(context);
     final importState = ref.watch(qazaImportProvider);
     final summaryAsync = ref.watch(progressSummaryProvider);
 
-    ref.listen<AsyncValue<QazaProgressSummary>>(
-      progressSummaryProvider,
-      (previous, next) {
-        if (!next.hasError || next.error == previous?.error) return;
-        ref.read(diagnosticsProvider).recordFailure(
-              DiagnosticArea.uncaught,
-              'home_summary_failed',
-              next.error!,
-              stack: next.stackTrace,
-            );
-      },
-    );
+
 
     ref.listen<QazaImportTaskState>(
       qazaImportProvider,

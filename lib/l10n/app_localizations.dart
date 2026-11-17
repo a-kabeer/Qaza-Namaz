@@ -5088,6 +5088,492 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This will mark the prayer as prayed and complete its linked Qaza record.'**
   String get dailySalahTrackingConfirmPrayedMessage;
+
+  /// No description provided for @accountStatusProtected.
+  ///
+  /// In en, this message translates to:
+  /// **'Online & Protected'**
+  String get accountStatusProtected;
+
+  /// No description provided for @accountGuestDeviceOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved on this device only'**
+  String get accountGuestDeviceOnly;
+
+  /// No description provided for @accountProtectRecordsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Protect Your Records'**
+  String get accountProtectRecordsTitle;
+
+  /// No description provided for @accountProtectRecordsSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect an account to sync and protect your records safely.'**
+  String get accountProtectRecordsSubtitle;
+
+  /// No description provided for @accountConnectEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In with Email'**
+  String get accountConnectEmail;
+
+  /// No description provided for @accountConnectedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Account successfully connected!'**
+  String get accountConnectedSuccess;
+
+  /// No description provided for @accountGuestProfilesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest Profiles'**
+  String get accountGuestProfilesTitle;
+
+  /// No description provided for @accountGuestProfilesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch between different guest profiles'**
+  String get accountGuestProfilesSubtitle;
+
+  /// No description provided for @accountReturnToWelcome.
+  ///
+  /// In en, this message translates to:
+  /// **'Go to Welcome Screen'**
+  String get accountReturnToWelcome;
+
+  /// No description provided for @accountSignOutConfirmTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out?'**
+  String get accountSignOutConfirmTitle;
+
+  /// No description provided for @accountSignOutConfirmBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to sign out? Your saved records will not be lost.'**
+  String get accountSignOutConfirmBody;
+
+  /// No description provided for @accountSignOutConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Out'**
+  String get accountSignOutConfirmAction;
+
+  /// No description provided for @dataBackupAndRestoreTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup & Restore'**
+  String get dataBackupAndRestoreTitle;
+
+  /// No description provided for @dataBackupAndRestoreSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save records to your phone or restore earlier data'**
+  String get dataBackupAndRestoreSubtitle;
+
+  /// No description provided for @dataSaveBackupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save backup file'**
+  String get dataSaveBackupTitle;
+
+  /// No description provided for @dataSaveBackupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Save all your Qaza records to a file on your device'**
+  String get dataSaveBackupSubtitle;
+
+  /// No description provided for @dataSaveBackupAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Save File'**
+  String get dataSaveBackupAction;
+
+  /// No description provided for @dataRestoreBackupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from backup'**
+  String get dataRestoreBackupTitle;
+
+  /// No description provided for @dataRestoreBackupSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore Qaza records from a previously saved backup file'**
+  String get dataRestoreBackupSubtitle;
+
+  /// No description provided for @dataRestoreBackupAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Select File'**
+  String get dataRestoreBackupAction;
+
+  /// No description provided for @dataLocalBackupNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Note: This backup file is stored in your phone\'s memory and works without internet.'**
+  String get dataLocalBackupNote;
+
+  /// No description provided for @dataProcessingWaiting.
+  ///
+  /// In en, this message translates to:
+  /// **'Processing, please wait…'**
+  String get dataProcessingWaiting;
+
+  /// No description provided for @dataBackupSavedSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Backup file saved successfully!'**
+  String get dataBackupSavedSuccess;
+
+  /// No description provided for @dataBackupSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not save backup file'**
+  String get dataBackupSaveFailed;
+
+  /// No description provided for @dataImportFileEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected file is empty'**
+  String get dataImportFileEmpty;
+
+  /// Notification when backup import succeeds with count
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 record successfully restored} other{{count} records successfully restored}}'**
+  String dataImportSuccessWithCount(int count);
+
+  /// No description provided for @dataImportFailedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to restore backup file'**
+  String get dataImportFailedMessage;
+
+  /// No description provided for @dataImportConfirmPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore from backup file?'**
+  String get dataImportConfirmPrompt;
+
+  /// Confirmation prompt before restoring a backup file
+  ///
+  /// In en, this message translates to:
+  /// **'This file contains {count} records. Do you want to replace current records with this backup?'**
+  String dataImportConfirmBody(int count);
+
+  /// No description provided for @dataImportConfirmAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get dataImportConfirmAction;
+
+  /// No description provided for @authSignIn.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign In'**
+  String get authSignIn;
+
+  /// No description provided for @authSignUp.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign Up'**
+  String get authSignUp;
+
+  /// No description provided for @authSignInSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to access your synced records across devices.'**
+  String get authSignInSubtitle;
+
+  /// No description provided for @authSignUpSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an account to securely sync and backup your records.'**
+  String get authSignUpSubtitle;
+
+  /// No description provided for @authEmailAddressLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Email Address'**
+  String get authEmailAddressLabel;
+
+  /// No description provided for @authEmailRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email.'**
+  String get authEmailRequired;
+
+  /// No description provided for @authEmailInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email address.'**
+  String get authEmailInvalid;
+
+  /// No description provided for @authPasswordLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Password'**
+  String get authPasswordLabel;
+
+  /// No description provided for @authPasswordRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your password.'**
+  String get authPasswordRequired;
+
+  /// No description provided for @authPasswordMinLength.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters.'**
+  String get authPasswordMinLength;
+
+  /// No description provided for @authConfirmationSentNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Account created! Please check your email to confirm, then sign in.'**
+  String get authConfirmationSentNotice;
+
+  /// No description provided for @authErrorGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Authentication failed. Please try again.'**
+  String get authErrorGeneric;
+
+  /// No description provided for @authErrorRateLimit.
+  ///
+  /// In en, this message translates to:
+  /// **'Service is temporarily busy. Please try again in a few minutes.'**
+  String get authErrorRateLimit;
+
+  /// No description provided for @authErrorInvalidCredentials.
+  ///
+  /// In en, this message translates to:
+  /// **'Incorrect email or password. Please verify and try again.'**
+  String get authErrorInvalidCredentials;
+
+  /// No description provided for @authErrorAlreadyRegistered.
+  ///
+  /// In en, this message translates to:
+  /// **'This email is already registered. Please switch to Sign In.'**
+  String get authErrorAlreadyRegistered;
+
+  /// No description provided for @authErrorEmailNotConfirmed.
+  ///
+  /// In en, this message translates to:
+  /// **'Please confirm your email from your inbox before signing in.'**
+  String get authErrorEmailNotConfirmed;
+
+  /// No description provided for @authErrorWeakPassword.
+  ///
+  /// In en, this message translates to:
+  /// **'Password must be at least 6 characters.'**
+  String get authErrorWeakPassword;
+
+  /// No description provided for @authErrorNetwork.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection. You can continue as Guest offline.'**
+  String get authErrorNetwork;
+
+  /// No description provided for @welcomeContinueWithEmail.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with Email'**
+  String get welcomeContinueWithEmail;
+
+  /// No description provided for @welcomeDividerOr.
+  ///
+  /// In en, this message translates to:
+  /// **'OR'**
+  String get welcomeDividerOr;
+
+  /// No description provided for @welcomePrivacyNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Your data is completely safe and private'**
+  String get welcomePrivacyNotice;
+
+  /// No description provided for @welcomeGoogleSelectFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Google account could not be selected. Please try again or continue as Guest.'**
+  String get welcomeGoogleSelectFailed;
+
+  /// No description provided for @welcomeGoogleInterrupted.
+  ///
+  /// In en, this message translates to:
+  /// **'Google sign-in was interrupted. You can continue as Guest.'**
+  String get welcomeGoogleInterrupted;
+
+  /// No description provided for @guestSelectionTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Guest Profile'**
+  String get guestSelectionTitle;
+
+  /// No description provided for @guestSelectionSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue with an existing profile or create a fresh one.'**
+  String get guestSelectionSubtitle;
+
+  /// No description provided for @guestCreateNewAction.
+  ///
+  /// In en, this message translates to:
+  /// **'+ Create New Profile'**
+  String get guestCreateNewAction;
+
+  /// No description provided for @guestActiveBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'Active'**
+  String get guestActiveBadge;
+
+  /// No description provided for @guestSwitchedMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Switched to {name}'**
+  String guestSwitchedMessage(String name);
+
+  /// No description provided for @guestAlreadyActive.
+  ///
+  /// In en, this message translates to:
+  /// **'This profile is already active'**
+  String get guestAlreadyActive;
+
+  /// No description provided for @guestNoWorkspaces.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved Guest workspaces'**
+  String get guestNoWorkspaces;
+
+  /// No description provided for @guestSetupInProgress.
+  ///
+  /// In en, this message translates to:
+  /// **'Setup in progress · Resume to continue'**
+  String get guestSetupInProgress;
+
+  /// No description provided for @guestActiveWorkspaceDescription.
+  ///
+  /// In en, this message translates to:
+  /// **'Current workspace · switch away before deleting'**
+  String get guestActiveWorkspaceDescription;
+
+  /// No description provided for @guestCreatedDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Created {date}'**
+  String guestCreatedDate(String date);
+
+  /// No description provided for @guestRenameTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename Guest workspace'**
+  String get guestRenameTitle;
+
+  /// No description provided for @guestRenameLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Workspace name'**
+  String get guestRenameLabel;
+
+  /// No description provided for @guestRenameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name'**
+  String get guestRenameHint;
+
+  /// No description provided for @guestRenameValidation.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name containing 1–50 characters.'**
+  String get guestRenameValidation;
+
+  /// No description provided for @guestRenameSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest workspace renamed.'**
+  String get guestRenameSuccess;
+
+  /// No description provided for @guestRenameAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get guestRenameAction;
+
+  /// No description provided for @guestDeleteActiveError.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch to another workspace before deleting this one.'**
+  String get guestDeleteActiveError;
+
+  /// No description provided for @guestDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete Guest workspace?'**
+  String get guestDeleteTitle;
+
+  /// No description provided for @guestDeleteScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Deletion scheduled for {date}. Undo is available below.'**
+  String guestDeleteScheduled(String date);
+
+  /// No description provided for @guestUndoSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Guest workspace restored.'**
+  String get guestUndoSuccess;
+
+  /// No description provided for @guestUndoUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'This deletion hold is no longer available.'**
+  String get guestUndoUnavailable;
+
+  /// No description provided for @guestRecentlyDeletedTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Recently deleted'**
+  String get guestRecentlyDeletedTitle;
+
+  /// No description provided for @guestRecentlyDeletedSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Records remain recoverable until the seven-day hold ends.'**
+  String get guestRecentlyDeletedSubtitle;
+
+  /// No description provided for @guestScheduledDeletion.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled deletion: {date}'**
+  String guestScheduledDeletion(String date);
+
+  /// No description provided for @guestUndoAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get guestUndoAction;
+
+  /// No description provided for @guestDeleteDialogMessage.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleting this workspace removes its profile, {qazaRecords} and {dailySalahRecords}. Its records will be kept for seven days. You can undo the deletion during that period.'**
+  String guestDeleteDialogMessage(String qazaRecords, String dailySalahRecords);
+
+  /// No description provided for @guestQazaRecordCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Qaza record} other{{count} Qaza records}}'**
+  String guestQazaRecordCount(int count);
+
+  /// No description provided for @guestDailySalahRecordCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 daily Salah record} other{{count} daily Salah records}}'**
+  String guestDailySalahRecordCount(int count);
 }
 
 class _AppLocalizationsDelegate

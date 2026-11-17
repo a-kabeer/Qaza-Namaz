@@ -43,7 +43,7 @@ final homeLocalDateProvider = Provider<DateTime>((ref) {
 });
 
 final homeDailyProgressProvider =
-    FutureProvider.autoDispose<HomeDailyProgress>((ref) async {
+    FutureProvider<HomeDailyProgress>((ref) async {
   final userId = ref.watch(activeUserIdProvider);
   final target = ref.watch(dailyQazaTargetProvider);
   final today = ref.watch(homeLocalDateProvider);
@@ -54,7 +54,7 @@ final homeDailyProgressProvider =
 
   final start = homeLocalDayStartForDate(today);
   final end = homeLocalDayEndForDate(today);
-  final completed = await ref.read(qazaServiceProvider).countCompletedBetween(
+  final completed = await ref.watch(qazaServiceProvider).countCompletedBetween(
         userId: userId,
         from: start,
         to: end,
@@ -88,11 +88,11 @@ class HomeDashboardActivity {
 }
 
 final homeDashboardActivityProvider =
-    FutureProvider.autoDispose<HomeDashboardActivity>((ref) async {
+    FutureProvider<HomeDashboardActivity>((ref) async {
   final userId = ref.watch(activeUserIdProvider);
   final today = ref.watch(homeLocalDateProvider);
   final target = ref.watch(dailyQazaTargetProvider);
-  final service = ref.read(qazaActivityServiceProvider);
+  final service = ref.watch(qazaActivityServiceProvider);
   final enabled = service.enabledPrayerTypes;
 
   final currentWeek = homeCurrentWeekStartForDate(today);
@@ -329,8 +329,15 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
 
   @override
   HomePrayerSelectionState build() {
-    Future<void>.microtask(_restore);
-    return ref.read(initialHomePrayerSelectionProvider);
+    final activeUserId = ref.watch(activeUserIdProvider);
+    final buildRevision = _targetRevision;
+    Future<void>.microtask(() => _restore(activeUserId, buildRevision));
+    if (activeUserId == null ||
+        activeUserId.isEmpty ||
+        activeUserId.startsWith('guest')) {
+      return ref.read(initialHomePrayerSelectionProvider);
+    }
+    return const HomePrayerSelectionState();
   }
 
   /// Explicitly selects a prayer and switches to sticky Prayer Selection.
@@ -429,12 +436,29 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     }
   }
 
-  Future<void> _restore() async {
-    final restoreRevision = _targetRevision;
+  String _scopedKey(String key, [String? explicitUserId]) {
+    final id = (explicitUserId ?? ref.read(activeUserIdProvider))?.trim();
+    if (id == null ||
+        id.isEmpty ||
+        id == 'guest' ||
+        id.startsWith('guest_') ||
+        id.startsWith('guest:')) {
+      return 'ws_guest_$key';
+    }
+    return 'ws_${id}_$key';
+  }
+
+  Future<void> _restore([String? userId, int? expectedRevision]) async {
+    if (expectedRevision != null && expectedRevision != _targetRevision) {
+      return;
+    }
+    final restoreRevision = expectedRevision ?? _targetRevision;
     try {
-      final modeName = await _readStoredValue(_modeStorageKey);
-      final sequenceName = await _readStoredValue(_sequencePrayerStorageKey);
-      final selectedName = await _readStoredValue(_selectedPrayerStorageKey);
+      final modeName = await _readStoredValue(_modeStorageKey, userId);
+      final sequenceName =
+          await _readStoredValue(_sequencePrayerStorageKey, userId);
+      final selectedName =
+          await _readStoredValue(_selectedPrayerStorageKey, userId);
       final mode = HomePrayerSelectionMode.values.firstWhere(
         (value) => value.name == modeName,
         // Existing installations without saved state keep their legacy value;
@@ -499,31 +523,71 @@ class HomePrayerSelectionNotifier extends Notifier<HomePrayerSelectionState> {
     } catch (_) {}
   }
 
-  Future<String?> _readStoredValue(String key) async {
-    final rows = await ref.read(appDatabaseProvider).customSelect(
+  Future<String?> _readStoredValue(String key, [String? userId]) async {
+    final scopedKey = _scopedKey(key, userId);
+    final db = ref.read(activeWorkspaceDatabaseProvider);
+    final rows = await db.customSelect(
       'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
-      variables: [Variable.withString(key)],
+      variables: [Variable.withString(scopedKey)],
     ).get();
-    if (rows.isEmpty) return null;
-    return rows.first.read<String>('value');
+    if (rows.isNotEmpty) return rows.first.read<String>('value');
+
+    // Fallback for legacy un-scoped key if workspace is guest
+    final id = (userId ?? ref.read(activeUserIdProvider))?.trim();
+    final isGuest = id == null ||
+        id.isEmpty ||
+        id == 'guest' ||
+        id.startsWith('guest_') ||
+        id.startsWith('guest:');
+    if (isGuest) {
+      final legacyRows = await db.customSelect(
+        'SELECT value FROM meta_store WHERE key = ? LIMIT 1',
+        variables: [Variable.withString(key)],
+      ).get();
+      if (legacyRows.isNotEmpty) return legacyRows.first.read<String>('value');
+    }
+    return null;
   }
 
   Future<void> _writeStoredValue(String key, String value) async {
-    await ref.read(appDatabaseProvider).customUpdate(
+    final scopedKey = _scopedKey(key);
+    final db = ref.read(activeWorkspaceDatabaseProvider);
+    await db.customUpdate(
       '''INSERT INTO meta_store (key, value)
          VALUES (?, ?)
          ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
       variables: [
-        Variable.withString(key),
+        Variable.withString(scopedKey),
         Variable.withString(value),
       ],
     );
+
+    // Also persist under legacy un-scoped key for Guest backward compatibility
+    final id = ref.read(activeUserIdProvider)?.trim();
+    final isGuest = id == null ||
+        id.isEmpty ||
+        id == 'guest' ||
+        id.startsWith('guest_') ||
+        id.startsWith('guest:');
+    if (isGuest && scopedKey != key) {
+      await db.customUpdate(
+        '''INSERT INTO meta_store (key, value)
+           VALUES (?, ?)
+           ON CONFLICT(key) DO UPDATE SET value = excluded.value''',
+        variables: [
+          Variable.withString(key),
+          Variable.withString(value),
+        ],
+      );
+    }
   }
 
   Future<void> _removeStoredValue(String key) async {
-    await ref.read(appDatabaseProvider).customUpdate(
-      'DELETE FROM meta_store WHERE key = ?',
-      variables: [Variable.withString(key)],
+    final scopedKey = _scopedKey(key);
+    final db = ref.read(activeWorkspaceDatabaseProvider);
+    await db.customUpdate(
+      'DELETE FROM meta_store WHERE key IN (?, ?)',
+      variables: [Variable.withString(scopedKey), Variable.withString(key)],
     );
   }
 }
@@ -556,14 +620,14 @@ final homePrayerSelectionDisabledPrayersProvider =
 });
 
 final homeFallbackPendingProvider =
-    FutureProvider.autoDispose<QazaRecord?>((ref) async {
+    FutureProvider<QazaRecord?>((ref) async {
   final userId = ref.watch(activeUserIdProvider);
   if (userId == null) return null;
   return ref.read(qazaServiceProvider).oldestPendingOverall(userId: userId);
 });
 
 final homeSelectedPrayerProvider =
-    Provider.autoDispose<HomeSelectedPrayerState>((ref) {
+    Provider<HomeSelectedPrayerState>((ref) {
   final selection = ref.watch(homePrayerSelectionProvider);
 
   // Auto Sequence is record-first. Its persisted prayer cursor is retained

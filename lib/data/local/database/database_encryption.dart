@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:sqlite3/sqlite3.dart' as sqlite3;
 
@@ -21,8 +22,9 @@ class DatabaseEncryptionKeyStore {
 
   final FlutterSecureStorage _storage;
 
-  Future<String> readOrCreate() async {
-    final existing = await _storage.read(key: keyName);
+  Future<String> readOrCreate({String? keyName}) async {
+    final targetKey = keyName ?? DatabaseEncryptionKeyStore.keyName;
+    final existing = await _storage.read(key: targetKey);
     if (existing != null) {
       _validateEncodedKey(existing);
       return existing;
@@ -34,8 +36,22 @@ class DatabaseEncryptionKeyStore {
       growable: false,
     );
     final encoded = base64UrlEncode(bytes);
-    await _storage.write(key: keyName, value: encoded);
+    await _storage.write(key: targetKey, value: encoded);
     return encoded;
+  }
+
+  /// Derives or resolves a workspace-scoped encryption key identifier in secure storage.
+  /// Uses a cryptographic hash of the workspace identifier so that raw email or PII
+  /// is never stored in key names.
+  static String workspaceKeyName(String workspaceId) {
+    final normalized = workspaceId.trim().toLowerCase();
+    final hash = sha256.convert(utf8.encode(normalized)).toString();
+    return 'qaza_namaz_database_key_ws_${hash.substring(0, 32)}';
+  }
+
+  /// Reads or creates an independent secure encryption key for a specific workspace.
+  Future<String> readOrCreateForWorkspace(String workspaceId) {
+    return readOrCreate(keyName: workspaceKeyName(workspaceId));
   }
 
   void _validateEncodedKey(String value) {
@@ -65,7 +81,8 @@ class DatabaseSafetyCopy {
     final key = await DatabaseEncryptionKeyStore().readOrCreate();
     final database = sqlite3.sqlite3.open(file.path);
     try {
-      database.execute("PRAGMA key = '$key';");
+      final escapedKey = key.replaceAll("'", "''");
+      database.execute("PRAGMA key = '$escapedKey';");
       final rows = database.select('PRAGMA integrity_check;');
       return rows.isNotEmpty && rows.first.values.first == 'ok';
     } on sqlite3.SqliteException {

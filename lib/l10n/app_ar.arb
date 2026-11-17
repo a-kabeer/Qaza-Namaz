@@ -1244,14 +1244,24 @@
   "qazaAdditionEditSummary": "{addedCount} مضاف • {removedCount} محذوف • {protectedCount} محفوظ",
   "@qazaAdditionEditSummary": {
     "placeholders": {
-      "addedCount": { "type": "int" },
-      "removedCount": { "type": "int" },
-      "protectedCount": { "type": "int" }
+      "addedCount": {
+        "type": "int"
+      },
+      "removedCount": {
+        "type": "int"
+      },
+      "protectedCount": {
+        "type": "int"
+      }
     }
   },
   "qazaAdditionMoreDates": "المزيد {count}",
   "@qazaAdditionMoreDates": {
-    "placeholders": { "count": { "type": "int" } }
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   },
   "qazaSelectedCount": "{count, plural, =1{تم تحديد عنصر واحد} other{تم تحديد {count} عناصر}}",
   "@qazaSelectedCount": {
@@ -1395,5 +1405,86 @@
   "profilePubertyDate": "تاريخ البلوغ",
   "profileEstimateUsingAge": "تقدير باستخدام العمر",
   "dailySalahTrackingConfirmPrayedTitle": "تغيير حالة الصلاة إلى أُدّيت؟",
-  "dailySalahTrackingConfirmPrayedMessage": "سيتم تسجيل الصلاة على أنها أُدّيت وإكمال سجل القضاء المرتبط بها."
+  "dailySalahTrackingConfirmPrayedMessage": "سيتم تسجيل الصلاة على أنها أُدّيت وإكمال سجل القضاء المرتبط بها.",
+  "accountStatusProtected": "محفوظ على الإنترنت",
+  "accountGuestDeviceOnly": "محفوظ على هذا الجهاز فقط",
+  "accountProtectRecordsTitle": "احمِ سجل صلواتك",
+  "accountProtectRecordsSubtitle": "اربط حساباً لمزامنة وحفظ سجل صلواتك بأمان.",
+  "accountConnectEmail": "تسجيل الدخول بالبريد الإلكتروني",
+  "accountConnectedSuccess": "تم ربط الحساب بنجاح!",
+  "accountGuestProfilesTitle": "ملفات الضيف",
+  "accountGuestProfilesSubtitle": "التبديل بين ملفات تعريف الضيف المختلفة",
+  "accountReturnToWelcome": "الذهاب إلى شاشة الترحيب",
+  "accountSignOutConfirmTitle": "تسجيل الخروج؟",
+  "accountSignOutConfirmBody": "هل أنت متأكد أنك تريد تسجيل الخروج؟ لن تفقد سجلاتك المحفوظة.",
+  "accountSignOutConfirmAction": "تسجيل الخروج",
+  "dataBackupAndRestoreTitle": "النسخ الاحتياطي والاستعادة",
+  "dataBackupAndRestoreSubtitle": "احفظ ملف السجلات على هاتفك أو استعد البيانات السابقة",
+  "dataSaveBackupTitle": "حفظ ملف النسخة الاحتياطية",
+  "dataSaveBackupSubtitle": "احفظ جميع سجلات قضاء صلواتك في ملف على جهازك",
+  "dataSaveBackupAction": "حفظ الملف",
+  "dataRestoreBackupTitle": "استعادة من نسخة احتياطية",
+  "dataRestoreBackupSubtitle": "استعادة سجلات القضاء من ملف نسخة احتياطية محفوظ مسبقاً",
+  "dataRestoreBackupAction": "اختيار الملف",
+  "dataLocalBackupNote": "ملاحظة: يتم حفظ ملف النسخة الاحتياطية في ذاكرة هاتفك ويعمل دون اتصال بالإنترنت.",
+  "dataProcessingWaiting": "جارٍ التنفيذ، يرجى الانتظار...",
+  "dataBackupSavedSuccess": "تم حفظ ملف النسخة الاحتياطية بنجاح!",
+  "dataBackupSaveFailed": "تعذر حفظ ملف النسخة الاحتياطية",
+  "dataImportFileEmpty": "الملف المحدد فارغ",
+  "dataImportSuccessWithCount": "{count, plural, =1{تمت استعادة سجل واحد بنجاح} other{تمت استعادة {count} سجل بنجاح}}",
+  "dataImportFailedMessage": "حدث خطأ أثناء استعادة الملف",
+  "dataImportConfirmPrompt": "هل تريد استعادة السجلات من ملف النسخ الاحتياطي؟",
+  "dataImportConfirmBody": "يحتوي هذا الملف على {count} سجل. هل تريد استبدال السجلات الحالية بهذه النسخة؟",
+  "dataImportConfirmAction": "استعادة",
+  "authSignIn": "تسجيل الدخول",
+  "authSignUp": "إنشاء حساب",
+  "authSignInSubtitle": "سجّل الدخول للوصول إلى سجلاتك المتزامنة عبر أجهزتك.",
+  "authSignUpSubtitle": "أنشئ حساباً لمزامنة وحفظ سجل صلواتك بأمان.",
+  "authEmailAddressLabel": "عنوان البريد الإلكتروني",
+  "authEmailRequired": "يرجى إدخال بريدك الإلكتروني.",
+  "authEmailInvalid": "يرجى إدخال عنوان بريد إلكتروني صالح.",
+  "authPasswordLabel": "كلمة المرور",
+  "authPasswordRequired": "يرجى إدخال كلمة المرور.",
+  "authPasswordMinLength": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.",
+  "authConfirmationSentNotice": "تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول.",
+  "authErrorGeneric": "فشلت المصادقة. يرجى المحاولة مرة أخرى.",
+  "authErrorRateLimit": "الخدمة مشغولة مؤقتاً. يرجى المحاولة مرة أخرى بعد بضع دقائق.",
+  "authErrorInvalidCredentials": "البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى التحقق والمحاولة مرة أخرى.",
+  "authErrorAlreadyRegistered": "هذا البريد الإلكتروني مسجل بالفعل. يرجى التبديل إلى تسجيل الدخول.",
+  "authErrorEmailNotConfirmed": "يرجى تأكيد بريدك الإلكتروني من صندوق الوارد قبل تسجيل الدخول.",
+  "authErrorWeakPassword": "يجب أن تكون كلمة المرور 6 أحرف على الأقل.",
+  "authErrorNetwork": "لا يوجد اتصال بالإنترنت. يمكنك المتابعة كضيف دون اتصال.",
+  "welcomeContinueWithEmail": "المتابعة بالبريد الإلكتروني",
+  "welcomeDividerOr": "أو",
+  "welcomePrivacyNotice": "بياناتك آمنة وخاصة تماماً",
+  "welcomeGoogleSelectFailed": "تعذر اختيار حساب Google. يرجى المحاولة مرة أخرى أو المتابعة كضيف.",
+  "welcomeGoogleInterrupted": "حدث انقطاع أثناء تسجيل الدخول عبر Google. يمكنك المتابعة كضيف.",
+  "guestSelectionTitle": "اختر ملف الضيف",
+  "guestSelectionSubtitle": "تابع باستخدام ملف شخصي موجود أو أنشئ ملفًا جديدًا.",
+  "guestCreateNewAction": "+ إنشاء ملف جديد",
+  "guestActiveBadge": "نشط",
+  "guestSwitchedMessage": "تم التبديل إلى {name}",
+  "guestAlreadyActive": "هذا الملف الشخصي نشط بالفعل",
+  "guestNoWorkspaces": "لا توجد مساحات عمل ضيف محفوظة",
+  "guestSetupInProgress": "الإعداد قيد التنفيذ · استأنف للمتابعة",
+  "guestActiveWorkspaceDescription": "مساحة العمل الحالية · قم بالتبديل قبل الحذف",
+  "guestCreatedDate": "تم الإنشاء في {date}",
+  "guestRenameTitle": "إعادة تسمية مساحة عمل الضيف",
+  "guestRenameLabel": "اسم مساحة العمل",
+  "guestRenameHint": "أدخل اسماً",
+  "guestRenameValidation": "أدخل اسماً يتراوح بين 1 و 50 حرفاً.",
+  "guestRenameSuccess": "تمت إعادة تسمية مساحة عمل الضيف.",
+  "guestRenameAction": "إعادة تسمية",
+  "guestDeleteActiveError": "قم بالتبديل إلى مساحة عمل أخرى قبل حذف هذه.",
+  "guestDeleteTitle": "هل تريد حذف مساحة عمل الضيف؟",
+  "guestDeleteScheduled": "تمت جدولة الحذف في {date}. التراجع متاح أدناه.",
+  "guestUndoSuccess": "تمت استعادة مساحة عمل الضيف.",
+  "guestUndoUnavailable": "هذا السجل المحذوف لم يعد متاحاً للاستعادة.",
+  "guestRecentlyDeletedTitle": "المحذوفة مؤخراً",
+  "guestRecentlyDeletedSubtitle": "تبقى السجلات قابلة للاستعادة حتى تنتهي مهلة السبعة أيام.",
+  "guestScheduledDeletion": "الحذف المجدول: {date}",
+  "guestUndoAction": "تراجع",
+  "guestDeleteDialogMessage": "سيؤدي حذف مساحة العمل هذه إلى إزالة ملف التعريف الخاص بها و{qazaRecords} و{dailySalahRecords}. سيتم الاحتفاظ بسجلاتها لمدة سبعة أيام حيث يمكنك التراجع عن الحذف خلال تلك الفترة.",
+  "guestQazaRecordCount": "{count, plural, =1{سجل قضاء واحد} =2{سجلان قضاء} few{{count} سجلات قضاء} many{{count} سجلاً للقضاء} other{{count} سجل قضاء}}",
+  "guestDailySalahRecordCount": "{count, plural, =1{سجل صلاة يومي واحد} =2{سجلان للصلوات اليومية} few{{count} سجلات صلوات يومية} many{{count} سجلاً للصلوات اليومية} other{{count} سجل صلاة يومي}}"
 }

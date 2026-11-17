@@ -10,16 +10,15 @@ import 'package:qaza_namaz/data/local/database/app_database.dart';
 import 'package:qaza_namaz/data/local/database/database_manager.dart';
 import 'package:qaza_namaz/domain/services/google_identity_contracts.dart';
 import 'package:qaza_namaz/features/account/account_session_manager.dart';
-import 'package:qaza_namaz/features/onboarding/account_choice_screen.dart';
-import 'package:qaza_namaz/features/onboarding/language_selection_screen.dart';
 import 'package:qaza_namaz/features/onboarding/startup_gate.dart';
+import 'package:qaza_namaz/features/onboarding/welcome_auth_screen.dart';
 import 'package:qaza_namaz/l10n/app_localizations.dart';
 
 class _FakeIdentityProvider implements GoogleIdentityProvider {
-  _FakeIdentityProvider(
-      {this.snapshot = const GoogleIdentitySnapshot.signedOut()});
+  _FakeIdentityProvider();
 
-  final GoogleIdentitySnapshot snapshot;
+  final GoogleIdentitySnapshot snapshot =
+      const GoogleIdentitySnapshot.signedOut();
 
   @override
   bool get isSupported => true;
@@ -49,7 +48,7 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
-  testWidgets('offline startup reaches local onboarding without cloud services',
+  testWidgets('initial startup presents WelcomeAuthScreen with theme and language options',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = DatabaseManager(controlDatabase: database);
@@ -86,15 +85,19 @@ void main() {
     );
     await _pumpUntil(
       tester,
-      find.byType(LanguageSelectionScreen),
+      find.byType(WelcomeAuthScreen),
     );
 
-    expect(find.byType(AccountChoiceScreen), findsNothing);
-    expect(find.byType(LanguageSelectionScreen), findsOneWidget);
+    expect(find.byType(WelcomeAuthScreen), findsOneWidget);
+    expect(find.byKey(const Key('welcome_continue_google')), findsOneWidget);
+    expect(find.byKey(const Key('welcome_continue_email')), findsOneWidget);
+    expect(find.byKey(const Key('welcome_continue_guest')), findsOneWidget);
+    expect(find.byKey(const Key('welcome_theme_toggle_button')), findsOneWidget);
+    expect(find.byKey(const Key('welcome_language_selector')), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('identity-enabled startup uses local account choice only',
+  testWidgets('identity-enabled startup also uses WelcomeAuthScreen as unified gateway',
       (tester) async {
     final database = AppDatabase(NativeDatabase.memory());
     final manager = DatabaseManager(controlDatabase: database);
@@ -127,9 +130,9 @@ void main() {
         ),
       ),
     );
-    await _pumpUntil(tester, find.byType(AccountChoiceScreen));
+    await _pumpUntil(tester, find.byType(WelcomeAuthScreen));
 
-    expect(find.byType(AccountChoiceScreen), findsOneWidget);
+    expect(find.byType(WelcomeAuthScreen), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 }

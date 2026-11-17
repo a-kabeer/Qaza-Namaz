@@ -364,39 +364,44 @@ class _ProfileFormState extends State<ProfileForm> {
           l10n.profileIslamicBackground,
           style: Theme.of(context).textTheme.titleMedium,
         ),
-        RadioListTile<bool>(
-          key: const Key('profile_muslim_from_childhood'),
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          value: false,
+        RadioGroup<bool>(
           groupValue: profile.isNewMuslim,
-          title: Text(l10n.profileMuslimFromChildhood),
           onChanged: (value) {
             if (value == null) return;
-            _update(
-              _profile.copyWith(
-                isNewMuslim: false,
-                clearIslamAcceptanceDate: true,
-              ),
-            );
-            setState(() {
-              _islamAcceptanceExpanded = false;
-              _startPrayingDateExpanded = false;
-            });
-          },
-        ),
-        RadioListTile<bool>(
-          key: const Key('profile_accepted_islam_later'),
-          contentPadding: EdgeInsets.zero,
-          dense: true,
-          value: true,
-          groupValue: profile.isNewMuslim,
-          title: Text(l10n.profileAcceptedIslamLater),
-          onChanged: (value) {
-            if (value != null) {
+            if (value) {
               _update(_profile.copyWith(isNewMuslim: true));
+            } else {
+              _update(
+                _profile.copyWith(
+                  isNewMuslim: false,
+                  clearIslamAcceptanceDate: true,
+                ),
+              );
+              setState(() {
+                _islamAcceptanceExpanded = false;
+                _startPrayingDateExpanded = false;
+              });
             }
           },
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              RadioListTile<bool>(
+                key: const Key('profile_muslim_from_childhood'),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                value: false,
+                title: Text(l10n.profileMuslimFromChildhood),
+              ),
+              RadioListTile<bool>(
+                key: const Key('profile_accepted_islam_later'),
+                contentPadding: EdgeInsets.zero,
+                dense: true,
+                value: true,
+                title: Text(l10n.profileAcceptedIslamLater),
+              ),
+            ],
+          ),
         ),
         if (profile.isNewMuslim) ...[
           const SizedBox(height: 4),

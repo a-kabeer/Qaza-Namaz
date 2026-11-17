@@ -2921,4 +2921,314 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get dailySalahTrackingConfirmPrayedMessage =>
       'سيتم تسجيل الصلاة على أنها أُدّيت وإكمال سجل القضاء المرتبط بها.';
+
+  @override
+  String get accountStatusProtected => 'محفوظ على الإنترنت';
+
+  @override
+  String get accountGuestDeviceOnly => 'محفوظ على هذا الجهاز فقط';
+
+  @override
+  String get accountProtectRecordsTitle => 'احمِ سجل صلواتك';
+
+  @override
+  String get accountProtectRecordsSubtitle =>
+      'اربط حساباً لمزامنة وحفظ سجل صلواتك بأمان.';
+
+  @override
+  String get accountConnectEmail => 'تسجيل الدخول بالبريد الإلكتروني';
+
+  @override
+  String get accountConnectedSuccess => 'تم ربط الحساب بنجاح!';
+
+  @override
+  String get accountGuestProfilesTitle => 'ملفات الضيف';
+
+  @override
+  String get accountGuestProfilesSubtitle =>
+      'التبديل بين ملفات تعريف الضيف المختلفة';
+
+  @override
+  String get accountReturnToWelcome => 'الذهاب إلى شاشة الترحيب';
+
+  @override
+  String get accountSignOutConfirmTitle => 'تسجيل الخروج؟';
+
+  @override
+  String get accountSignOutConfirmBody =>
+      'هل أنت متأكد أنك تريد تسجيل الخروج؟ لن تفقد سجلاتك المحفوظة.';
+
+  @override
+  String get accountSignOutConfirmAction => 'تسجيل الخروج';
+
+  @override
+  String get dataBackupAndRestoreTitle => 'النسخ الاحتياطي والاستعادة';
+
+  @override
+  String get dataBackupAndRestoreSubtitle =>
+      'احفظ ملف السجلات على هاتفك أو استعد البيانات السابقة';
+
+  @override
+  String get dataSaveBackupTitle => 'حفظ ملف النسخة الاحتياطية';
+
+  @override
+  String get dataSaveBackupSubtitle =>
+      'احفظ جميع سجلات قضاء صلواتك في ملف على جهازك';
+
+  @override
+  String get dataSaveBackupAction => 'حفظ الملف';
+
+  @override
+  String get dataRestoreBackupTitle => 'استعادة من نسخة احتياطية';
+
+  @override
+  String get dataRestoreBackupSubtitle =>
+      'استعادة سجلات القضاء من ملف نسخة احتياطية محفوظ مسبقاً';
+
+  @override
+  String get dataRestoreBackupAction => 'اختيار الملف';
+
+  @override
+  String get dataLocalBackupNote =>
+      'ملاحظة: يتم حفظ ملف النسخة الاحتياطية في ذاكرة هاتفك ويعمل دون اتصال بالإنترنت.';
+
+  @override
+  String get dataProcessingWaiting => 'جارٍ التنفيذ، يرجى الانتظار...';
+
+  @override
+  String get dataBackupSavedSuccess => 'تم حفظ ملف النسخة الاحتياطية بنجاح!';
+
+  @override
+  String get dataBackupSaveFailed => 'تعذر حفظ ملف النسخة الاحتياطية';
+
+  @override
+  String get dataImportFileEmpty => 'الملف المحدد فارغ';
+
+  @override
+  String dataImportSuccessWithCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تمت استعادة $count سجل بنجاح',
+      one: 'تمت استعادة سجل واحد بنجاح',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get dataImportFailedMessage => 'حدث خطأ أثناء استعادة الملف';
+
+  @override
+  String get dataImportConfirmPrompt =>
+      'هل تريد استعادة السجلات من ملف النسخ الاحتياطي؟';
+
+  @override
+  String dataImportConfirmBody(int count) {
+    return 'يحتوي هذا الملف على $count سجل. هل تريد استبدال السجلات الحالية بهذه النسخة؟';
+  }
+
+  @override
+  String get dataImportConfirmAction => 'استعادة';
+
+  @override
+  String get authSignIn => 'تسجيل الدخول';
+
+  @override
+  String get authSignUp => 'إنشاء حساب';
+
+  @override
+  String get authSignInSubtitle =>
+      'سجّل الدخول للوصول إلى سجلاتك المتزامنة عبر أجهزتك.';
+
+  @override
+  String get authSignUpSubtitle => 'أنشئ حساباً لمزامنة وحفظ سجل صلواتك بأمان.';
+
+  @override
+  String get authEmailAddressLabel => 'عنوان البريد الإلكتروني';
+
+  @override
+  String get authEmailRequired => 'يرجى إدخال بريدك الإلكتروني.';
+
+  @override
+  String get authEmailInvalid => 'يرجى إدخال عنوان بريد إلكتروني صالح.';
+
+  @override
+  String get authPasswordLabel => 'كلمة المرور';
+
+  @override
+  String get authPasswordRequired => 'يرجى إدخال كلمة المرور.';
+
+  @override
+  String get authPasswordMinLength =>
+      'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل.';
+
+  @override
+  String get authConfirmationSentNotice =>
+      'تم إنشاء الحساب! يرجى التحقق من بريدك الإلكتروني للتأكيد ثم تسجيل الدخول.';
+
+  @override
+  String get authErrorGeneric => 'فشلت المصادقة. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get authErrorRateLimit =>
+      'الخدمة مشغولة مؤقتاً. يرجى المحاولة مرة أخرى بعد بضع دقائق.';
+
+  @override
+  String get authErrorInvalidCredentials =>
+      'البريد الإلكتروني أو كلمة المرور غير صحيحة. يرجى التحقق والمحاولة مرة أخرى.';
+
+  @override
+  String get authErrorAlreadyRegistered =>
+      'هذا البريد الإلكتروني مسجل بالفعل. يرجى التبديل إلى تسجيل الدخول.';
+
+  @override
+  String get authErrorEmailNotConfirmed =>
+      'يرجى تأكيد بريدك الإلكتروني من صندوق الوارد قبل تسجيل الدخول.';
+
+  @override
+  String get authErrorWeakPassword =>
+      'يجب أن تكون كلمة المرور 6 أحرف على الأقل.';
+
+  @override
+  String get authErrorNetwork =>
+      'لا يوجد اتصال بالإنترنت. يمكنك المتابعة كضيف دون اتصال.';
+
+  @override
+  String get welcomeContinueWithEmail => 'المتابعة بالبريد الإلكتروني';
+
+  @override
+  String get welcomeDividerOr => 'أو';
+
+  @override
+  String get welcomePrivacyNotice => 'بياناتك آمنة وخاصة تماماً';
+
+  @override
+  String get welcomeGoogleSelectFailed =>
+      'تعذر اختيار حساب Google. يرجى المحاولة مرة أخرى أو المتابعة كضيف.';
+
+  @override
+  String get welcomeGoogleInterrupted =>
+      'حدث انقطاع أثناء تسجيل الدخول عبر Google. يمكنك المتابعة كضيف.';
+
+  @override
+  String get guestSelectionTitle => 'اختر ملف الضيف';
+
+  @override
+  String get guestSelectionSubtitle =>
+      'تابع باستخدام ملف شخصي موجود أو أنشئ ملفًا جديدًا.';
+
+  @override
+  String get guestCreateNewAction => '+ إنشاء ملف جديد';
+
+  @override
+  String get guestActiveBadge => 'نشط';
+
+  @override
+  String guestSwitchedMessage(String name) {
+    return 'تم التبديل إلى $name';
+  }
+
+  @override
+  String get guestAlreadyActive => 'هذا الملف الشخصي نشط بالفعل';
+
+  @override
+  String get guestNoWorkspaces => 'لا توجد مساحات عمل ضيف محفوظة';
+
+  @override
+  String get guestSetupInProgress => 'الإعداد قيد التنفيذ · استأنف للمتابعة';
+
+  @override
+  String get guestActiveWorkspaceDescription =>
+      'مساحة العمل الحالية · قم بالتبديل قبل الحذف';
+
+  @override
+  String guestCreatedDate(String date) {
+    return 'تم الإنشاء في $date';
+  }
+
+  @override
+  String get guestRenameTitle => 'إعادة تسمية مساحة عمل الضيف';
+
+  @override
+  String get guestRenameLabel => 'اسم مساحة العمل';
+
+  @override
+  String get guestRenameHint => 'أدخل اسماً';
+
+  @override
+  String get guestRenameValidation => 'أدخل اسماً يتراوح بين 1 و 50 حرفاً.';
+
+  @override
+  String get guestRenameSuccess => 'تمت إعادة تسمية مساحة عمل الضيف.';
+
+  @override
+  String get guestRenameAction => 'إعادة تسمية';
+
+  @override
+  String get guestDeleteActiveError =>
+      'قم بالتبديل إلى مساحة عمل أخرى قبل حذف هذه.';
+
+  @override
+  String get guestDeleteTitle => 'هل تريد حذف مساحة عمل الضيف؟';
+
+  @override
+  String guestDeleteScheduled(String date) {
+    return 'تمت جدولة الحذف في $date. التراجع متاح أدناه.';
+  }
+
+  @override
+  String get guestUndoSuccess => 'تمت استعادة مساحة عمل الضيف.';
+
+  @override
+  String get guestUndoUnavailable =>
+      'هذا السجل المحذوف لم يعد متاحاً للاستعادة.';
+
+  @override
+  String get guestRecentlyDeletedTitle => 'المحذوفة مؤخراً';
+
+  @override
+  String get guestRecentlyDeletedSubtitle =>
+      'تبقى السجلات قابلة للاستعادة حتى تنتهي مهلة السبعة أيام.';
+
+  @override
+  String guestScheduledDeletion(String date) {
+    return 'الحذف المجدول: $date';
+  }
+
+  @override
+  String get guestUndoAction => 'تراجع';
+
+  @override
+  String guestDeleteDialogMessage(
+      String qazaRecords, String dailySalahRecords) {
+    return 'سيؤدي حذف مساحة العمل هذه إلى إزالة ملف التعريف الخاص بها و$qazaRecords و$dailySalahRecords. سيتم الاحتفاظ بسجلاتها لمدة سبعة أيام حيث يمكنك التراجع عن الحذف خلال تلك الفترة.';
+  }
+
+  @override
+  String guestQazaRecordCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count سجل قضاء',
+      many: '$count سجلاً للقضاء',
+      few: '$count سجلات قضاء',
+      two: 'سجلان قضاء',
+      one: 'سجل قضاء واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String guestDailySalahRecordCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count سجل صلاة يومي',
+      many: '$count سجلاً للصلوات اليومية',
+      few: '$count سجلات صلوات يومية',
+      two: 'سجلان للصلوات اليومية',
+      one: 'سجل صلاة يومي واحد',
+    );
+    return '$_temp0';
+  }
 }
