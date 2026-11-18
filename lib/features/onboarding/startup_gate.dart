@@ -80,7 +80,6 @@ class StartupGate extends ConsumerWidget {
   Widget _profileDestination(WidgetRef ref) {
     final routeAsync = ref.watch(appRouteProvider);
     return routeAsync.when(
-      skipLoadingOnReload: true,
       loading: () => const SplashScreen(),
       error: (_, __) => StartupProfileLoadErrorBoundary(
         key: const Key('startup_route_load_error'),
@@ -89,7 +88,6 @@ class StartupGate extends ConsumerWidget {
       data: (route) {
         final profileAsync = ref.watch(userProfileProvider);
         return profileAsync.when(
-          skipLoadingOnReload: true,
           loading: () => const SplashScreen(),
           error: (_, __) => StartupProfileLoadErrorBoundary(
             key: const Key('startup_profile_load_error'),

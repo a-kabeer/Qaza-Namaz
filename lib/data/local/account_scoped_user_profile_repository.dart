@@ -82,29 +82,117 @@ class AccountScopedUserProfileRepository implements UserProfileRepository {
   Future<void> _reconcileLedgerIfMissing(String id, UserProfile profile) async {
     try {
       if (!profile.isComplete || !profile.onboardingCompleted) return;
-      final hasRecords = await _store.hasQazaRecords(id);
-      if (hasRecords) return;
 
       // 1. Check if Supabase cloud has qaza_records for this authenticated user
       final client = _client;
       final user = client?.auth.currentUser;
       if (user != null) {
-        final dynamic remoteRows = await client!
+        final localCount = await _store.countQazaRecords(id);
+        final remoteCountResponse = await client!
             .from('qaza_records')
-            .select()
-            .eq('user_id', user.id);
-        if (remoteRows is List && remoteRows.isNotEmpty) {
+            .select('id')
+            .eq('user_id', user.id)
+            .count(CountOption.exact);
+        final remoteCount = remoteCountResponse.count;
+
+        if (remoteCount > 0 && localCount < remoteCount) {
           final workspace =
               await _store.databaseManager.databaseForWorkspace(id);
-          for (var i = 0; i < remoteRows.length; i += 200) {
-            final end =
-                (i + 200 < remoteRows.length) ? i + 200 : remoteRows.length;
-            final chunk = remoteRows.sublist(i, end);
-            await workspace.qazaRecordsDao
-                .insertRecordsReturningInsertedIds([
+
+          // Restore account_plan_revisions if present
+          String? latestRevisionId;
+          try {
+            final dynamic remoteRevisions = await client
+                .from('account_plan_revisions')
+                .select()
+                .eq('user_id', user.id)
+                .order('created_at', ascending: true);
+            if (remoteRevisions is List && remoteRevisions.isNotEmpty) {
+              final planOwnerCol = await _store.resolveOwnerColumn(
+                  workspace, 'account_plan_revisions');
+              for (final rev in remoteRevisions) {
+                final revId = rev['revision_id'] as String;
+                final payload = rev['payload_json'];
+                final payloadStr =
+                    payload is String ? payload : jsonEncode(payload);
+                final createdAt = rev['created_at'] != null
+                    ? DateTime.parse(rev['created_at'] as String)
+                        .microsecondsSinceEpoch
+                    : DateTime.now().microsecondsSinceEpoch;
+                latestRevisionId = revId;
+                if (planOwnerCol == 'user_id') {
+                  await workspace.customInsert(
+                    '''INSERT OR REPLACE INTO account_plan_revisions
+                       (id, user_id, revision_id, payload_json, created_at)
+                       VALUES (?, ?, ?, ?, ?)''',
+                    variables: [
+                      Variable('$id:$revId'),
+                      Variable(id),
+                      Variable(revId),
+                      Variable(payloadStr),
+                      Variable(createdAt),
+                    ],
+                  );
+                } else {
+                  await workspace.customInsert(
+                    '''INSERT OR REPLACE INTO account_plan_revisions
+                       (local_account_id, revision_id, payload_json, created_at)
+                       VALUES (?, ?, ?, ?)''',
+                    variables: [
+                      Variable(id),
+                      Variable(revId),
+                      Variable(payloadStr),
+                      Variable(createdAt),
+                    ],
+                  );
+                }
+              }
+            }
+          } catch (revErr) {
+            if (kDebugMode) {
+              debugPrint('[UserProfileRepository] Reconcile revision error: $revErr');
+            }
+          }
+
+          // Paginated fetch of all remote qaza records
+          const pageSize = 1000;
+          var from = 0;
+          final allRemoteRows = <dynamic>[];
+          while (true) {
+            final dynamic page = await client
+                .from('qaza_records')
+                .select()
+                .eq('user_id', user.id)
+                .order('original_date', ascending: true)
+                .order('prayer_type', ascending: true)
+                .range(from, from + pageSize - 1);
+            if (page is List && page.isNotEmpty) {
+              allRemoteRows.addAll(page);
+              if (page.length < pageSize) break;
+              from += pageSize;
+            } else {
+              break;
+            }
+          }
+
+          final plan = QazaPlanService().planFor(profile);
+          final planFingerprint = plan != null
+              ? ProfileQazaPlanReconciliationService.planFingerprint(plan)
+              : null;
+          final effectiveRevisionId = latestRevisionId ??
+              ProfileQazaPlanReconciliationService.newRevisionId();
+
+          for (var i = 0; i < allRemoteRows.length; i += 200) {
+            final end = (i + 200 < allRemoteRows.length)
+                ? i + 200
+                : allRemoteRows.length;
+            final chunk = allRemoteRows.sublist(i, end);
+            await workspace.qazaRecordsDao.insertRecordsReturningInsertedIds([
               for (final raw in chunk)
                 QazaRecordsCompanion.insert(
-                  id: raw['id'] as String,
+                  id: (raw['id'] as String).startsWith('${id}_')
+                      ? (raw['id'] as String)
+                      : '${id}_${raw['prayer_type']}_${raw['original_date']}',
                   userId: id,
                   prayerType: raw['prayer_type'] as String,
                   originalDate:
@@ -129,10 +217,36 @@ class AccountScopedUserProfileRepository implements UserProfileRepository {
                       : DateTime.now(),
                 ),
             ]);
+
+            if (planFingerprint != null) {
+              for (final raw in chunk) {
+                final recId = (raw['id'] as String).startsWith('${id}_')
+                    ? (raw['id'] as String)
+                    : '${id}_${raw['prayer_type']}_${raw['original_date']}';
+                await workspace.customInsert(
+                  '''INSERT INTO qaza_profile_plan_provenance
+                     (record_id, user_id, plan_revision_id, plan_fingerprint)
+                     VALUES (?, ?, ?, ?)
+                     ON CONFLICT(record_id) DO UPDATE SET
+                       user_id = excluded.user_id,
+                       plan_revision_id = excluded.plan_revision_id,
+                       plan_fingerprint = excluded.plan_fingerprint''',
+                  variables: [
+                    Variable(recId),
+                    Variable(id),
+                    Variable(effectiveRevisionId),
+                    Variable(planFingerprint),
+                  ],
+                );
+              }
+            }
           }
           return;
         }
       }
+
+      final hasRecords = await _store.hasQazaRecords(id);
+      if (hasRecords) return;
 
       // 3. Fallback: Auto-reconstruct initial plan from the valid profile
       if (profile.isComplete) {
@@ -154,7 +268,7 @@ class AccountScopedUserProfileRepository implements UserProfileRepository {
           final records = dates.expand((date) {
             final dateStr = date.toIso8601String().substring(0, 10);
             return prayerTypes.map((prayer) => QazaRecord(
-                  id: '${dateStr}_${prayer.name}',
+                  id: '${id}_${prayer.name}_$dateStr',
                   userId: id,
                   prayerType: prayer,
                   originalDate: date,
@@ -218,7 +332,7 @@ class AccountScopedUserProfileRepository implements UserProfileRepository {
                                 r.updatedAt.toUtc().toIso8601String(),
                           })
                       .toList(),
-                  onConflict: 'user_id,prayer_type,original_date',
+                  onConflict: 'id',
                 );
               }
             } catch (cloudErr) {

@@ -61,7 +61,9 @@ class AccountLocalOnboardingCommitRepository
           await client.from('qaza_records').upsert(
             batch
                 .map((r) => {
-                      'id': r.id,
+                      'id': r.id.startsWith('supabase_')
+                          ? r.id
+                          : 'supabase_${user.id}_${r.prayerType.name}_${r.originalDate.toIso8601String().substring(0, 10)}',
                       'user_id': user.id,
                       'prayer_type': r.prayerType.name,
                       'original_date':
@@ -75,7 +77,7 @@ class AccountLocalOnboardingCommitRepository
                       'updated_at': r.updatedAt.toUtc().toIso8601String(),
                     })
                 .toList(),
-            onConflict: 'user_id,prayer_type,original_date',
+            onConflict: 'id',
           );
         }
       }

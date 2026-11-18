@@ -217,4 +217,130 @@ void main() {
     expect(fajrRows.first.status, 'completed');
     expect(fajrRows.first.completionId, 'cmp_1');
   });
+
+  test('commitOnboarding for two distinct accounts with identical dates succeeds without collision', () async {
+    const user1 = 'supabase_user_1';
+    const user2 = 'supabase_user_2';
+
+    await store.ensureAccountActive(user1);
+    await store.activate(user1);
+
+    final profile1 = UserProfile(
+      gender: Gender.male,
+      madhab: Madhab.hanafi,
+      dateOfBirth: DateTime(1995, 1, 1),
+      pubertyAge: 12,
+      startPrayingAge: 13,
+      onboardingCompleted: false,
+    );
+
+    final plan = QazaPlan(
+      startDate: DateTime(2007, 1, 1),
+      endDate: DateTime(2007, 1, 2),
+      totalDays: 1,
+      includeWitr: true,
+      totalPrayers: 6,
+      prayerBreakdown: {
+        for (final p in PrayerType.values) p: 1,
+      },
+    );
+
+    final rev1 = QazaPlanRevision.fromPlan(
+      revisionId: 'rev_user1',
+      userId: user1,
+      createdAt: DateTime.now(),
+      plan: plan,
+      planFingerprint: 'fp_1',
+      profileSnapshot: profile1.toJson(),
+      previousProfileSnapshot: const {},
+      changedFields: const [],
+      addedRecords: 6,
+      removedRecords: 0,
+      ledgerDecision: QazaPlanLedgerDecision.applied,
+      ledgerPlan: plan,
+      ledgerPlanFingerprint: 'fp_1',
+    );
+
+    final user1Records = [
+      for (final p in PrayerType.values)
+        QazaRecord(
+          id: '${user1}_${p.name}_2007-01-01',
+          userId: user1,
+          prayerType: p,
+          originalDate: DateTime(2007, 1, 1),
+          status: QazaStatus.pending,
+          profilePlanRevisionId: 'rev_user1',
+          profilePlanFingerprint: 'fp_1',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+    ];
+
+    await store.commitOnboarding(
+      localAccountId: user1,
+      profile: profile1,
+      revision: rev1,
+      records: user1Records,
+    );
+
+    expect(await store.countQazaRecords(user1), 6);
+
+    // Now switch to user2
+    await store.ensureAccountActive(user2);
+    await store.activate(user2);
+
+    final profile2 = UserProfile(
+      gender: Gender.male,
+      madhab: Madhab.hanafi,
+      dateOfBirth: DateTime(1995, 1, 1),
+      pubertyAge: 12,
+      startPrayingAge: 13,
+      onboardingCompleted: false,
+    );
+
+    final rev2 = QazaPlanRevision.fromPlan(
+      revisionId: 'rev_user2',
+      userId: user2,
+      createdAt: DateTime.now(),
+      plan: plan,
+      planFingerprint: 'fp_2',
+      profileSnapshot: profile2.toJson(),
+      previousProfileSnapshot: const {},
+      changedFields: const [],
+      addedRecords: 6,
+      removedRecords: 0,
+      ledgerDecision: QazaPlanLedgerDecision.applied,
+      ledgerPlan: plan,
+      ledgerPlanFingerprint: 'fp_2',
+    );
+
+    final user2Records = [
+      for (final p in PrayerType.values)
+        QazaRecord(
+          id: '${user2}_${p.name}_2007-01-01',
+          userId: user2,
+          prayerType: p,
+          originalDate: DateTime(2007, 1, 1),
+          status: QazaStatus.pending,
+          profilePlanRevisionId: 'rev_user2',
+          profilePlanFingerprint: 'fp_2',
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+        ),
+    ];
+
+    // User2 commits onboarding on the same dates - must complete cleanly!
+    await expectLater(
+      store.commitOnboarding(
+        localAccountId: user2,
+        profile: profile2,
+        revision: rev2,
+        records: user2Records,
+      ),
+      completes,
+    );
+
+    expect(await store.countQazaRecords(user2), 6);
+    expect(await store.countQazaRecords(user1), 6);
+  });
 }

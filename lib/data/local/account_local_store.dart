@@ -28,6 +28,16 @@ class AccountLocalStore {
   Future<bool> hasQazaRecords(String localAccountId) =>
       hasAnyQaza(localAccountId);
 
+  Future<int> countQazaRecords(String localAccountId) async {
+    final workspace = await _workspaceDatabase(localAccountId);
+    final rows = await workspace.customSelect(
+      'SELECT count(*) AS count FROM qaza_records WHERE user_id = ?',
+      variables: [Variable(localAccountId)],
+    ).get();
+    if (rows.isEmpty) return 0;
+    return rows.first.read<int>('count');
+  }
+
   static final Map<String, String> _ownerColumnCache = {};
 
   Future<String> resolveOwnerColumn(
@@ -998,6 +1008,16 @@ class AccountLocalStore {
     required String operationId,
     void Function(int processed, int total)? onProgress,
   }) async {
+    // Clear any stale uncompleted records for this user so fresh onboarding ledger is clean
+    await targetDatabase.customStatement(
+      'DELETE FROM qaza_records WHERE user_id = ? AND status = ?',
+      [localAccountId, 'pending'],
+    );
+    await targetDatabase.customStatement(
+      'DELETE FROM qaza_profile_plan_provenance WHERE user_id = ?',
+      [localAccountId],
+    );
+
     await _writeProfileRowInsideTransaction(
       targetDatabase: targetDatabase,
       localAccountId: localAccountId,
